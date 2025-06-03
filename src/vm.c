@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
@@ -39,13 +40,11 @@
 #define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
 
 BOOL
-GetPrivilege  (
-    VOID
-    )
-{
+GetPrivilege(
+    VOID) {
     struct {
         DWORD Count;
-        LUID_AND_ATTRIBUTES Privilege [1];
+        LUID_AND_ATTRIBUTES Privilege[1];
     } Info;
 
     //
@@ -62,14 +61,14 @@ GetPrivilege  (
     // Open the token.
     //
 
-    hProcess = GetCurrentProcess ();
+    hProcess = GetCurrentProcess();
 
-    Result = OpenProcessToken (hProcess,
-                               TOKEN_ADJUST_PRIVILEGES,
-                               &Token);
+    Result = OpenProcessToken(hProcess,
+                              TOKEN_ADJUST_PRIVILEGES,
+                              &Token);
 
     if (Result == FALSE) {
-        printf ("Cannot open process token.\n");
+        printf("Cannot open process token.\n");
         return FALSE;
     }
 
@@ -84,12 +83,12 @@ GetPrivilege  (
     // Get the LUID.
     //
 
-    Result = LookupPrivilegeValue (NULL,
-                                   SE_LOCK_MEMORY_NAME,
-                                   &(Info.Privilege[0].Luid));
+    Result = LookupPrivilegeValue(NULL,
+                                  SE_LOCK_MEMORY_NAME,
+                                  &(Info.Privilege[0].Luid));
 
     if (Result == FALSE) {
-        printf ("Cannot get privilege\n");
+        printf("Cannot get privilege\n");
         return FALSE;
     }
 
@@ -97,28 +96,28 @@ GetPrivilege  (
     // Adjust the privilege.
     //
 
-    Result = AdjustTokenPrivileges (Token,
-                                    FALSE,
-                                    (PTOKEN_PRIVILEGES) &Info,
-                                    0,
-                                    NULL,
-                                    NULL);
+    Result = AdjustTokenPrivileges(Token,
+                                   FALSE,
+                                   (PTOKEN_PRIVILEGES) &Info,
+                                   0,
+                                   NULL,
+                                   NULL);
 
     //
     // Check the result.
     //
 
     if (Result == FALSE) {
-        printf ("Cannot adjust token privileges %u\n", GetLastError ());
+        printf("Cannot adjust token privileges %u\n", GetLastError());
         return FALSE;
     }
 
-    if (GetLastError () != ERROR_SUCCESS) {
-        printf ("Cannot enable the SE_LOCK_MEMORY_NAME privilege - check local policy\n");
+    if (GetLastError() != ERROR_SUCCESS) {
+        printf("Cannot enable the SE_LOCK_MEMORY_NAME privilege - check local policy\n");
         return FALSE;
     }
 
-    CloseHandle (Token);
+    CloseHandle(Token);
 
     return TRUE;
 }
@@ -157,23 +156,20 @@ CreateSharedMemorySection (
 #endif
 
 VOID
-malloc_test (
-    VOID
-    )
-{
+malloc_test(
+    VOID) {
     unsigned i;
     PULONG_PTR p;
     unsigned random_number;
 
-    p = malloc (VIRTUAL_ADDRESS_SIZE);
+    p = malloc(VIRTUAL_ADDRESS_SIZE);
 
     if (p == NULL) {
-        printf ("malloc_test : could not malloc memory\n");
+        printf("malloc_test : could not malloc memory\n");
         return;
     }
 
-    for (i = 0; i < MB (1); i += 1) {
-
+    for (i = 0; i < MB(1); i += 1) {
         //
         // Randomly access different portions of the virtual address
         // space we obtained above.
@@ -201,41 +197,38 @@ malloc_test (
         *(p + random_number) = (ULONG_PTR) p;
     }
 
-    printf ("malloc_test : finished accessing %u random virtual addresses\n", i);
+    printf("malloc_test : finished accessing %u random virtual addresses\n", i);
 
     //
     // Now that we're done with our memory we can be a good
     // citizen and free it.
     //
 
-    free (p);
+    free(p);
 
     return;
 }
 
 VOID
-commit_at_fault_time_test (
-    VOID
-    )
-{
+commit_at_fault_time_test(
+    VOID) {
     unsigned i;
     PULONG_PTR p;
     PULONG_PTR committed_va;
     unsigned random_number;
     BOOL page_faulted;
 
-    p = VirtualAlloc (NULL,
-                      VIRTUAL_ADDRESS_SIZE,
-                      MEM_RESERVE,
-                      PAGE_NOACCESS);
+    p = VirtualAlloc(NULL,
+                     VIRTUAL_ADDRESS_SIZE,
+                     MEM_RESERVE,
+                     PAGE_NOACCESS);
 
     if (p == NULL) {
-        printf ("commit_at_fault_time_test : could not reserve memory\n");
+        printf("commit_at_fault_time_test : could not reserve memory\n");
         return;
     }
 
-    for (i = 0; i < MB (1); i += 1) {
-
+    for (i = 0; i < MB(1); i += 1) {
         //
         // Randomly access different portions of the virtual address
         // space we obtained above.
@@ -263,16 +256,12 @@ commit_at_fault_time_test (
         page_faulted = FALSE;
 
         __try {
-
             *(p + random_number) = (ULONG_PTR) p;
-
         } __except (EXCEPTION_EXECUTE_HANDLER) {
-
             page_faulted = TRUE;
         }
 
         if (page_faulted) {
-
             //
             // Commit the virtual address now - if that succeeds then
             // we'll be able to access it from now on.
@@ -280,13 +269,13 @@ commit_at_fault_time_test (
 
             committed_va = p + random_number;
 
-            committed_va = VirtualAlloc (committed_va,
-                                         sizeof (ULONG_PTR),
-                                         MEM_COMMIT,
-                                         PAGE_READWRITE);
+            committed_va = VirtualAlloc(committed_va,
+                                        sizeof(ULONG_PTR),
+                                        MEM_COMMIT,
+                                        PAGE_READWRITE);
 
             if (committed_va == NULL) {
-                printf ("commit_at_fault_time_test : could not commit memory\n");
+                printf("commit_at_fault_time_test : could not commit memory\n");
                 return;
             }
 
@@ -300,127 +289,93 @@ commit_at_fault_time_test (
         }
     }
 
-    printf ("commit_at_fault_time_test : finished accessing %u random virtual addresses\n", i);
+    printf("commit_at_fault_time_test : finished accessing %u random virtual addresses\n", i);
 
     //
     // Now that we're done with our memory we can be a good
     // citizen and free it.
     //
 
-    VirtualFree (p, 0, MEM_RELEASE);
+    VirtualFree(p, 0, MEM_RELEASE);
 
     return;
 }
 
 
 typedef struct {
-
-    ULONG64 valid:1;
-    ULONG64 state:3;
-    ULONG64 fn:40;
-    ULONG64 time:4;
-    ULONG64 pad:16;
-
-
+    ULONG64 valid: 1;
+    ULONG64 state: 3;
+    ULONG64 fn: 40;
+    ULONG64 time: 4;
+    ULONG64 pad: 16;
 } validPte;
 
 typedef struct {
-
     // otherwise would be other format
-    ULONG64 mustBeZero:1;
-    ULONG64 state:3;
-    ULONG64 da:40;
-    ULONG64 pad:20;
-
-
+    ULONG64 mustBeZero: 1;
+    ULONG64 state: 3;
+    ULONG64 da: 40;
+    ULONG64 pad: 20;
 } invalidPte;
 
 typedef struct {
-
     // overlays
     union {
         validPte validFormat;
         invalidPte invalidFormat;
         ULONG64 entireFormat;
     };
-
 } pte;
-
-
 
 
 typedef struct {
     LIST_ENTRY entry;
-    pte* pte;
+    pte *pte;
 
-    ULONG64 fn:40;
-    ULONG pfnState:3;
 } pfn;
 
-typedef struct {
-
-    struct queueEntry* Blink;
-    pfn* pfn;
-
-} queueEntry;
-
-
-typedef struct {
-
-    queueEntry* Flink;
-    queueEntry* Blink;
-
-} queueHead;
-
-queueHead activeQueueHead;
 
 LIST_ENTRY headFreeList;
+LIST_ENTRY activeListHead;
 
-pte* pagetable;
-pfn* pfns;
+pte *pagetable;
+pfn *pfns;
+
 
 VOID
-queueAdd(pfn* pfn) {
+listAdd(pfn *pfn, boolean active) {
+    if (active) {
+        pfn->entry.Flink = &activeListHead;
+        pfn->entry.Blink = activeListHead.Blink;
+        activeListHead.Blink->Flink = &pfn->entry;
+        activeListHead.Blink = &pfn->entry;
 
-    queueEntry* temp = malloc(sizeof(queueEntry));
-    temp->Blink = &activeQueueHead;
-    activeQueueHead.Blink->Blink = temp;
-    activeQueueHead.Blink = temp;
-    temp->pfn = pfn;
-    pfn->pte->invalidFormat.mustBeZero = 0;
+    } else {
+        pfn->entry.Flink = &headFreeList;
+        pfn->entry.Blink = headFreeList.Blink;
+        headFreeList.Blink->Flink = &pfn->entry;
+        headFreeList.Blink = &pfn->entry;
+    }
 }
-VOID
-listAdd(pfn* pfn) {
 
-    pfn->entry.Flink = &headFreeList;
-    pfn->entry.Blink = headFreeList.Blink;
-    headFreeList.Blink->Flink = &pfn->entry;
-    headFreeList.Blink = &pfn->entry;
-}
-pfn* listRemove() {
-
-    pfn* freePage = (pfn*)headFreeList.Flink;
-    headFreeList.Flink = freePage->entry.Flink;
-    headFreeList.Flink->Blink = &headFreeList;
-    return freePage;
-
-
-}
-pfn* queueRemove() {
-
-    queueEntry* temp = activeQueueHead.Flink;
-    activeQueueHead.Flink = temp->Blink;
-
-    return temp->pfn;
-
+pfn *listRemove(boolean active) {
+    if (active) {
+        pfn *freePage = (pfn *) activeListHead.Flink;
+        activeListHead.Flink = freePage->entry.Flink;
+        activeListHead.Flink->Blink = &activeListHead;
+        return freePage;
+    } else {
+        pfn *freePage = (pfn *) headFreeList.Flink;
+        headFreeList.Flink = freePage->entry.Flink;
+        headFreeList.Flink->Blink = &headFreeList;
+        return freePage;
+    }
 }
 
 
 VOID
-full_virtual_memory_test (
-    VOID
-    )
-{
+full_virtual_memory_test(
+    VOID) {
     unsigned i;
     PULONG_PTR p;
     PULONG_PTR arbitrary_va;
@@ -436,10 +391,6 @@ full_virtual_memory_test (
     ULONG_PTR virtual_address_size_in_unsigned_chunks;
 
 
-
-
-
-
     //
     // Allocate the physical pages that we will be managing.
     //
@@ -448,10 +399,10 @@ full_virtual_memory_test (
     // right to do.
     //
 
-    privilege = GetPrivilege ();
+    privilege = GetPrivilege();
 
     if (privilege == FALSE) {
-        printf ("full_virtual_memory_test : could not get privilege\n");
+        printf("full_virtual_memory_test : could not get privilege\n");
         return;
     }
 
@@ -466,90 +417,72 @@ full_virtual_memory_test (
 
 #else
 
-    physical_page_handle = GetCurrentProcess ();
+    physical_page_handle = GetCurrentProcess();
 
 #endif
 
     physical_page_count = NUMBER_OF_PHYSICAL_PAGES;
 
-    physical_page_numbers = malloc (physical_page_count * sizeof (ULONG_PTR));
+    physical_page_numbers = malloc(physical_page_count * sizeof(ULONG_PTR));
 
     if (physical_page_numbers == NULL) {
-        printf ("full_virtual_memory_test : could not allocate array to hold physical page numbers\n");
+        printf("full_virtual_memory_test : could not allocate array to hold physical page numbers\n");
         return;
     }
 
-    allocated = AllocateUserPhysicalPages (physical_page_handle,
-                                           &physical_page_count,
-                                           physical_page_numbers);
-
+    allocated = AllocateUserPhysicalPages(physical_page_handle,
+                                          &physical_page_count,
+                                          physical_page_numbers);
 
 
     if (allocated == FALSE) {
-        printf ("full_virtual_memory_test : could not allocate physical pages\n");
+        printf("full_virtual_memory_test : could not allocate physical pages\n");
         return;
     }
 
     if (physical_page_count != NUMBER_OF_PHYSICAL_PAGES) {
-
-        printf ("full_virtual_memory_test : allocated only %llu pages out of %u pages requested\n",
-                physical_page_count,
-                NUMBER_OF_PHYSICAL_PAGES);
+        printf("full_virtual_memory_test : allocated only %llu pages out of %u pages requested\n",
+               physical_page_count,
+               NUMBER_OF_PHYSICAL_PAGES);
     }
-
 
 
     //free list (flink and blink)
 
 
+    pagetable = malloc(VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte));
 
 
-
-
-
-    pagetable = malloc(VIRTUAL_ADDRESS_SIZE/PAGE_SIZE * sizeof (pte));
-
-
-    pfns = malloc(NUMBER_OF_PHYSICAL_PAGES * sizeof (pfn));
-
-
+    pfns = malloc(NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn));
 
 
     headFreeList.Flink = &headFreeList;
     headFreeList.Blink = &headFreeList;
 
 
-
-
-    activeQueueHead.Flink = &activeQueueHead;
-    activeQueueHead.Blink = &activeQueueHead;
+    activeListHead.Flink = &activeListHead;
+    activeListHead.Blink = &activeListHead;
 
 
     for (int i = 0; i < physical_page_count; ++i) {
-
-        pfn* new_pfn = pfns + i;
-        new_pfn->fn = physical_page_numbers[i];
-        listAdd(new_pfn);
-
+        pfn *new_pfn = pfns + i;
+        listAdd(new_pfn, false);
+        new_pfn->pte = &pagetable[i];
+        new_pfn->pte->validFormat.fn = physical_page_numbers[i];
     }
 
     // Write page fault handler
-        //Try to access va's in full virtual memory
-        //
+    //Try to access va's in full virtual memory
+    //
 
     //pte array // install pag
     // Make pte array
 
 
-
-
-
-
-        // see how many ptes you can make.
+    // see how many ptes you can make.
     //3bits to keep track of time
-        // ask where I should implement custom parts of pte
-        //this is for a page trimmer
-
+    // ask where I should implement custom parts of pte
+    //this is for a page trimmer
 
 
     //
@@ -574,7 +507,7 @@ full_virtual_memory_test (
 
 
     virtual_address_size_in_unsigned_chunks =
-                        virtual_address_size / sizeof (ULONG_PTR);
+            virtual_address_size / sizeof(ULONG_PTR);
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 
@@ -598,17 +531,16 @@ full_virtual_memory_test (
 
 #else
 
-    p = VirtualAlloc (NULL,
-                      virtual_address_size,
-                      MEM_RESERVE | MEM_PHYSICAL,
-                      PAGE_READWRITE);
+    p = VirtualAlloc(NULL,
+                     virtual_address_size,
+                     MEM_RESERVE | MEM_PHYSICAL,
+                     PAGE_READWRITE);
 
 #endif
 
     if (p == NULL) {
-
-        printf ("full_virtual_memory_test : could not reserve memory %x\n",
-                GetLastError ());
+        printf("full_virtual_memory_test : could not reserve memory %x\n",
+               GetLastError());
 
         return;
     }
@@ -617,8 +549,7 @@ full_virtual_memory_test (
     // Now perform random accesses.
     //
 
-    for (i = 0; i < MB (1); i += 1) {
-
+    for (i = 0; i < MB(1); i += 1) {
         //
         // Randomly access different portions of the virtual address
         // space we obtained above.
@@ -658,37 +589,29 @@ full_virtual_memory_test (
         arbitrary_va = p + random_number;
 
         __try {
-
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
-
         } __except (EXCEPTION_EXECUTE_HANDLER) {
-
             page_faulted = TRUE;
         }
 
         if (page_faulted) {
-
-
             // if free list is empty trim
             if (headFreeList.Flink == &headFreeList) {
+                pfn *trimmed = listRemove(true);
 
-
-                pfn* trimmed = queueRemove();
                 trimmed->pte->validFormat.valid = 1;
 
-                if (MapUserPhysicalPages (trimmed, 1, NULL) == FALSE) {
-
-                    printf ("full_virtual_memory_test : could not unmap VA %p\n", trimmed);
+                if (MapUserPhysicalPages(&trimmed->pte->validFormat.fn, 1, NULL) == FALSE) {
+                    printf("full_virtual_memory_test : could not unmap VA %p\n", trimmed);
                     return;
                 }
 
-                listAdd(trimmed);
+                listAdd(trimmed, false);
                 printf("succesful trim");
             }
 
             // Take page off free list
-            pfn* freePage = listRemove();
-
+            pfn *freePage = listRemove(false);
 
 
             //
@@ -701,16 +624,14 @@ full_virtual_memory_test (
             // STATE MACHINE !
             //
 
-            ULONG64 frameNumber = freePage->fn;
-            if (MapUserPhysicalPages (arbitrary_va, 1, &frameNumber) == FALSE) {
-
-                printf ("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+            ULONG64 frameNumber = freePage->pte->validFormat.fn;
+            if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
 
                 return;
             } else {
-                //freePage->pte->validFormat.valid = 1;
-                queueAdd(freePage);
-
+                freePage->pte->validFormat.valid = 1;
+                listAdd(freePage, true);
             }
 
             //
@@ -725,20 +646,17 @@ full_virtual_memory_test (
             // Unmap the virtual address translation we installed above
             // now that we're done writing our value into it.
             //
-
-
-
         }
     }
 
-    printf ("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
+    printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
 
     //
     // Now that we're done with our memory we can be a good
     // citizen and free it.
     //
 
-    VirtualFree (p, 0, MEM_RELEASE);
+    VirtualFree(p, 0, MEM_RELEASE);
 
     return;
 }
@@ -747,11 +665,10 @@ full_virtual_memory_test (
 
 
 VOID
-main (
+main(
     int argc,
-    char** argv
-    )
-{
+    char **argv
+) {
     //
     // Test a simple malloc implementation - we call the operating
     // system to pay the up front cost to reserve and commit everything.
@@ -760,7 +677,7 @@ main (
     // handle them under the covers invisibly to us.
     //
 
-//    malloc_test ();
+    //    malloc_test ();
 
     //
     // Test a slightly more complicated implementation - where we reserve
@@ -771,7 +688,7 @@ main (
     // fault !
     //
 
-   // commit_at_fault_time_test ();
+    // commit_at_fault_time_test ();
 
     //
     // Test our very complicated usermode virtual implementation.
@@ -797,7 +714,7 @@ main (
     // This is where we can be as creative as we like, the sky's the limit !
     //
 
-    full_virtual_memory_test ();
+    full_virtual_memory_test();
 
     return;
 }
