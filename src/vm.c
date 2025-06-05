@@ -304,18 +304,14 @@ commit_at_fault_time_test(
 
 typedef struct {
     ULONG64 valid: 1;
-    ULONG64 state: 3;
     ULONG64 fn: 40;
-    ULONG64 time: 4;
-    ULONG64 pad: 16;
 } validPte;
 
 typedef struct {
     // otherwise would be other format
     ULONG64 mustBeZero: 1;
-    ULONG64 state: 3;
     ULONG64 da: 40;
-    ULONG64 pad: 20;
+
 } invalidPte;
 
 typedef struct {
@@ -329,8 +325,10 @@ typedef struct {
 
 
 typedef struct {
+
     LIST_ENTRY entry;
     pte *pte;
+    ULONG64 fn;
 
 } pfn;
 
@@ -340,7 +338,7 @@ LIST_ENTRY activeListHead;
 
 pte *pagetable;
 pfn *pfns;
-
+PULONG_PTR vaStart;
 
 VOID
 listAdd(pfn *pfn, boolean active) {
@@ -358,14 +356,15 @@ listAdd(pfn *pfn, boolean active) {
     }
 }
 
-pfn *listRemove(boolean active) {
+//make better
+pfn* listRemove(boolean active) {
     if (active) {
         pfn *freePage = (pfn *) activeListHead.Flink;
         activeListHead.Flink = freePage->entry.Flink;
         activeListHead.Flink->Blink = &activeListHead;
         return freePage;
     } else {
-        pfn *freePage = (pfn *) headFreeList.Flink;
+        pfn* freePage =  (pfn *) headFreeList.Flink;
         headFreeList.Flink = freePage->entry.Flink;
         headFreeList.Flink->Blink = &headFreeList;
         return freePage;
@@ -373,11 +372,27 @@ pfn *listRemove(boolean active) {
 }
 
 
+
+pte* va_to_pte(PVOID va) {
+    // if pagetable was a pvoid must multiply by size
+    ULONG64 index = ((ULONG_PTR)va - (ULONG_PTR) vaStart)/PAGE_SIZE;
+    pte* pte = pagetable + index;
+    return pte;
+}
+
+PVOID pte_to_va(pte* pte) {
+
+    ULONG64 index = (pte - pagetable);
+    return (PVOID)((index * PAGE_SIZE) + (ULONG_PTR) vaStart);
+
+}
+
+
 VOID
 full_virtual_memory_test(
     VOID) {
     unsigned i;
-    PULONG_PTR p;
+
     PULONG_PTR arbitrary_va;
     unsigned random_number;
     BOOL allocated;
@@ -466,9 +481,10 @@ full_virtual_memory_test(
 
     for (int i = 0; i < physical_page_count; ++i) {
         pfn *new_pfn = pfns + i;
+
+
+        new_pfn->fn = physical_page_numbers[i];
         listAdd(new_pfn, false);
-        new_pfn->pte = &pagetable[i];
-        new_pfn->pte->validFormat.fn = physical_page_numbers[i];
     }
 
     // Write page fault handler
@@ -531,14 +547,20 @@ full_virtual_memory_test(
 
 #else
 
-    p = VirtualAlloc(NULL,
+    vaStart = VirtualAlloc(NULL,
                      virtual_address_size,
                      MEM_RESERVE | MEM_PHYSICAL,
                      PAGE_READWRITE);
 
+#if 0
+
+
+
 #endif
 
-    if (p == NULL) {
+#endif
+
+    if (vaStart == NULL) {
         printf("full_virtual_memory_test : could not reserve memory %x\n",
                GetLastError());
 
@@ -586,7 +608,7 @@ full_virtual_memory_test(
 
         random_number &= ~0x7;
 
-        arbitrary_va = p + random_number;
+        arbitrary_va = vaStart + random_number;
 
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
@@ -597,21 +619,27 @@ full_virtual_memory_test(
         if (page_faulted) {
             // if free list is empty trim
             if (headFreeList.Flink == &headFreeList) {
+                // get va
                 pfn *trimmed = listRemove(true);
+                ULONG64 trimmedVa = pte_to_va(trimmed->pte);
 
-                trimmed->pte->validFormat.valid = 1;
 
-                if (MapUserPhysicalPages(&trimmed->pte->validFormat.fn, 1, NULL) == FALSE) {
-                    printf("full_virtual_memory_test : could not unmap VA %p\n", trimmed);
+                // need to unmap to trigger page fault
+                if (MapUserPhysicalPages(trimmedVa, 1, NULL) == FALSE) {
+                    printf("full_virtual_memory_test : could not unmap VA %p\n", trimmedVa);
                     return;
                 }
+                trimmed->pte->validFormat.valid = 0;
 
                 listAdd(trimmed, false);
-                printf("succesful trim");
+               // printf("succesful trim");
             }
 
+            // Next Steps: handle page f
+
+
             // Take page off free list
-            pfn *freePage = listRemove(false);
+            pfn* freePage = listRemove(false);
 
 
             //
@@ -623,14 +651,16 @@ full_virtual_memory_test(
             // IT NEEDS TO BE REPLACED WITH A TRUE MEMORY MANAGEMENT
             // STATE MACHINE !
             //
+            ULONG64 frameNumber = freePage->fn;
 
-            ULONG64 frameNumber = freePage->pte->validFormat.fn;
             if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
                 printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
 
                 return;
             } else {
+                freePage->pte = va_to_pte((PVOID) arbitrary_va);
                 freePage->pte->validFormat.valid = 1;
+
                 listAdd(freePage, true);
             }
 
@@ -656,7 +686,7 @@ full_virtual_memory_test(
     // citizen and free it.
     //
 
-    VirtualFree(p, 0, MEM_RELEASE);
+    VirtualFree(vaStart, 0, MEM_RELEASE);
 
     return;
 }
