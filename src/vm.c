@@ -339,6 +339,7 @@ LIST_ENTRY activeListHead;
 pte *pagetable;
 pfn *pfns;
 PULONG_PTR vaStart;
+PVOID diskSpace;
 
 VOID
 listAdd(pfn *pfn, boolean active) {
@@ -371,6 +372,22 @@ pfn* listRemove(boolean active) {
     }
 }
 
+#if 0
+pfn* listRemove(LIST_ENTRY head) {
+    pfn *freePage = (pfn *) head.Flink;
+    head.Flink = freePage->entry.Flink;
+    head.Flink->Blink = &head;
+    return freePage;
+}
+listAdd(pfn *pfn, LIST_ENTRY head) {
+    pfn->entry.Flink = &head;
+    pfn->entry.Blink = head.Blink;
+    head.Blink->Flink = &pfn->entry;
+    head.Blink = &pfn->entry;
+}
+
+#endif
+
 
 
 pte* va_to_pte(PVOID va) {
@@ -386,6 +403,9 @@ PVOID pte_to_va(pte* pte) {
     return (PVOID)((index * PAGE_SIZE) + (ULONG_PTR) vaStart);
 
 }
+
+
+PVOID transferVa;
 
 
 VOID
@@ -404,7 +424,13 @@ full_virtual_memory_test(
     HANDLE physical_page_handle;
     ULONG_PTR virtual_address_size;
     ULONG_PTR virtual_address_size_in_unsigned_chunks;
+    ULONG_PTR numBytes;
 
+    numBytes = VIRTUAL_ADDRESS_SIZE + PAGE_SIZE;
+    diskSpace = malloc(numBytes);
+    memset(diskSpace, 0, numBytes);
+
+    transferVa = malloc(PAGE_SIZE);
 
     //
     // Allocate the physical pages that we will be managing.
@@ -465,11 +491,16 @@ full_virtual_memory_test(
     //free list (flink and blink)
 
 
-    pagetable = malloc(VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte));
+    numBytes = VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte);
+    pagetable = malloc(numBytes);
+    memset(pagetable, 0, numBytes);
 
 
-    pfns = malloc(NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn));
+    numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
+    pfns = malloc(numBytes);
+    memset(pfns, 0, numBytes);
 
+    // split into functions make a page fault thing
 
     headFreeList.Flink = &headFreeList;
     headFreeList.Blink = &headFreeList;
@@ -552,6 +583,11 @@ full_virtual_memory_test(
                      MEM_RESERVE | MEM_PHYSICAL,
                      PAGE_READWRITE);
 
+    transferVa = VirtualAlloc(NULL,
+                     PAGE_SIZE,
+                     MEM_RESERVE | MEM_PHYSICAL,
+                     PAGE_READWRITE);
+
 #if 0
 
 
@@ -616,59 +652,111 @@ full_virtual_memory_test(
             page_faulted = TRUE;
         }
 
+        //
+        pte* currentPTE = va_to_pte(arbitrary_va);
+
         if (page_faulted) {
+
             // if free list is empty trim
             if (headFreeList.Flink == &headFreeList) {
                 // get va
-                pfn *trimmed = listRemove(true);
-                ULONG64 trimmedVa = pte_to_va(trimmed->pte);
+                pfn* trimmed = listRemove(true);
+                ULONG64 trimmedVa = (ULONG64) pte_to_va(trimmed->pte);
 
+                trimmed->pte->invalidFormat.da =  (ULONG64) trimmedVa - (ULONG64) vaStart;
+                trimmed->pte->validFormat.valid = 0;
 
                 // need to unmap to trigger page fault
                 if (MapUserPhysicalPages(trimmedVa, 1, NULL) == FALSE) {
                     printf("full_virtual_memory_test : could not unmap VA %p\n", trimmedVa);
                     return;
                 }
-                trimmed->pte->validFormat.valid = 0;
+
+                // modified writing
+                ULONG64 diskIndex = ((ULONG64) trimmedVa - (ULONG64) vaStart);
+                ULONG64 index = (ULONG64) diskSpace +  diskIndex * PAGE_SIZE;
+
+                if (MapUserPhysicalPages(transferVa, 1, &trimmed->fn) == FALSE) {
+                    printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->fn);
+                    return;
+                }
+
+                memcpy((PVOID) index, transferVa, PAGE_SIZE);
+
+                if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
+                    printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
+                    return;
+                }
 
                 listAdd(trimmed, false);
                // printf("succesful trim");
             }
-
-            // Next Steps: handle page f
-
-
-            // Take page off free list
             pfn* freePage = listRemove(false);
 
 
-            //
-            // Connect the virtual address now - if that succeeds then
-            // we'll be able to access it from now on.
-            //
-            // THIS IS JUST REUSING THE SAME PHYSICAL PAGE OVER AND OVER !
-            //
-            // IT NEEDS TO BE REPLACED WITH A TRUE MEMORY MANAGEMENT
-            // STATE MACHINE !
-            //
-            ULONG64 frameNumber = freePage->fn;
+            // Next Steps: modified writing -> need to save contents -> make pretend disk -> just malloc an array and pretend it is a diskfile -> memcopy to diskfile. update original trimmed pte to where we just copied. If accessing valid bit zero memcopy it back into a new page.
 
-            if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
-                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+            // if valid bit is wrong
+            if (currentPTE->invalidFormat.da != 0) {
 
-                return;
-            } else {
-                freePage->pte = va_to_pte((PVOID) arbitrary_va);
-                freePage->pte->validFormat.valid = 1;
+
+                // modified reading
+                //change class variable
+                ULONG64 diskIndex = currentPTE->invalidFormat.da;
+                ULONG64 diskAddress = (ULONG64) diskSpace + diskIndex * PAGE_SIZE;
+
+                // MUPP(va, size, physical page)
+
+                if (MapUserPhysicalPages(transferVa, 1, &freePage->fn) == FALSE) {
+                    printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, &freePage->fn);
+                    return;
+                }
+
+                    //memcpy(va,va,size)
+                memcpy(transferVa, (PVOID) diskAddress,PAGE_SIZE);
+                //next time make a mark free on disk array of booleans
+
+                if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
+                    printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
+                    return;
+                }
+
+                currentPTE->validFormat.valid = 1;
+                currentPTE->validFormat.fn = freePage->fn;
+                freePage->pte = currentPTE;
+
+                ULONG64 frameNumber = freePage->fn;
+
+                if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+                    printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+
+                    return;
+                }
 
                 listAdd(freePage, true);
-            }
 
-            //
-            // No exception handler needed now since we have connected
-            // the virtual address above to one of our physical pages
-            // so no subsequent fault can occur.
-            //
+
+            } else {
+
+                ULONG64 frameNumber = freePage->fn;
+
+                if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+                    printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+
+                    return;
+                } else {
+                    freePage->pte = va_to_pte((PVOID) arbitrary_va);
+                    freePage->pte->validFormat.valid = 1;
+
+                    listAdd(freePage, true);
+                }
+
+                //
+                // No exception handler needed now since we have connected
+                // the virtual address above to one of our physical pages
+                // so no subsequent fault can occur.
+                //
+            }
 
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
 
