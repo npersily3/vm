@@ -360,11 +360,17 @@ listAdd(pfn* pfn, boolean active) {
 //make better
 pfn* listRemove(boolean active) {
     if (active) {
+        if (headActiveList.Flink == & headActiveList) {
+            DebugBreak();
+        }
         pfn *freePage = (pfn *) headActiveList.Flink;
         headActiveList.Flink = freePage->entry.Flink;
         headActiveList.Flink->Blink = &headActiveList;
         return freePage;
     } else {
+        if (headFreeList.Flink == & headFreeList) {
+            DebugBreak();
+        }
         pfn* freePage =  (pfn *) headFreeList.Flink;
         headFreeList.Flink = freePage->entry.Flink;
         headFreeList.Flink->Blink = &headFreeList;
@@ -412,7 +418,7 @@ ULONG64 frameNumber;
 pte* currentPTE;
 pfn* freePage;
 boolean* diskFree;
-
+pfn* endPFN;
 VOID init_virtual_memory() {
 
     ULONG_PTR numBytes;
@@ -436,6 +442,7 @@ VOID init_virtual_memory() {
     numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
     pfns = malloc(numBytes);
     memset(pfns, 0, numBytes);
+    endPFN = pfns + NUMBER_OF_PHYSICAL_PAGES;
 
 
     // initialize the free and active list as empty
@@ -481,17 +488,31 @@ VOID modified_read(ULONG64 arbitrary_va) {
 
     diskFree[diskIndex] = TRUE;
 
-    currentPTE->validFormat.valid = 1;
-    currentPTE->validFormat.fn = freePage->fn;
-    freePage->pte = currentPTE;
 
 
 
-    if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
-        return;
+}
+
+VOID pfnInbounds(pfn* trimmed) {
+    pfn* flink;
+    pfn* blink;
+    if (trimmed < pfns || trimmed >= endPFN) {
+        DebugBreak();
+    }
+    flink = trimmed->entry.Flink;
+    if (flink == (pfn*) &headFreeList || flink == (pfn*) &headActiveList) {
+
+    } else if ((pfn*) flink < pfns || (pfn*) flink >= endPFN) {
+        DebugBreak();
     }
 
+    blink = trimmed->entry.Blink;
+
+    if (blink == (pfn*) &headFreeList || blink == (pfn*) &headActiveList) {
+
+    } else if ((pfn*) blink < pfns || (pfn*) blink >= endPFN) {
+        DebugBreak();
+    }
 
 }
 
@@ -502,7 +523,10 @@ VOID page_trimmer(VOID) {
         pfn* trimmed = listRemove(true);
         ULONG64 trimmedVa = (ULONG64) pte_to_va(trimmed->pte);
 
-        trimmed->pte->invalidFormat.di =  (ULONG64) trimmedVa - (ULONG64) vaStart;
+        ULONG64 diskIndex = ((ULONG64) trimmedVa - (ULONG64) vaStart)/PAGE_SIZE;
+
+        pfnInbounds(trimmed);
+        trimmed->pte->invalidFormat.di =  diskIndex;
         trimmed->pte->validFormat.valid = 0;
 
         // unmap from trimmed va
@@ -510,10 +534,8 @@ VOID page_trimmer(VOID) {
             printf("full_virtual_memory_test : could not unmap VA %p\n", trimmedVa);
             return;
         }
-
         // modified writing
-        ULONG64 diskIndex = ((ULONG64) trimmedVa - (ULONG64) vaStart);
-        ULONG64 index = (ULONG64) diskSpace +  diskIndex * PAGE_SIZE;
+        ULONG64 diskByteAddress = (ULONG64) diskSpace +  diskIndex * PAGE_SIZE;
         // map to transfer va
         if (MapUserPhysicalPages(transferVa, 1, &trimmed->fn) == FALSE) {
             printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->fn);
@@ -521,7 +543,7 @@ VOID page_trimmer(VOID) {
         }
 
         // copy from transfer to disk
-        memcpy((PVOID) index, transferVa, PAGE_SIZE);
+        memcpy((PVOID) diskByteAddress, transferVa, PAGE_SIZE);
 
         // unmap transfer
         if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
@@ -532,6 +554,17 @@ VOID page_trimmer(VOID) {
         listAdd(trimmed, false);
 
 
+}
+
+VOID checkVa(PULONG64 va) {
+
+    va = (PULONG64) ((ULONG64)va & ~(PAGE_SIZE - 1));
+    for (int i = 0; i < PAGE_SIZE / 8; ++i) {
+        if (!(*va == 0 || *va == (ULONG64) va)) {
+            DebugBreak();
+        }
+        va += 1;
+    }
 }
 
 VOID
@@ -735,24 +768,26 @@ full_virtual_memory_test(
             }
 
             freePage = listRemove(false);
+            pfnInbounds(freePage);
+
             frameNumber = freePage->fn;
             currentPTE = va_to_pte(arbitrary_va);
             // if di is zero
             if (currentPTE->invalidFormat.di != 0) {
                     modified_read(arbitrary_va);
-                continue;
-            } else {
+            }
+
 
                 if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
                     printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
                     return;
                 }
                 // update pte and activate the page
-                freePage->pte = va_to_pte((PVOID) arbitrary_va);
+                freePage->pte = currentPTE;
                 freePage->pte->validFormat.fn = frameNumber;
                 freePage->pte->validFormat.valid = 1;
 
-            }
+
             listAdd(freePage, true);
 
 
@@ -763,6 +798,7 @@ full_virtual_memory_test(
             // now that we're done writing our value into it.
             //
         }
+        checkVa(arbitrary_va);
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
