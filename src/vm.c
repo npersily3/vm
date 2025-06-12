@@ -304,13 +304,13 @@ commit_at_fault_time_test(
 
 typedef struct {
     ULONG64 valid: 1;
-    ULONG64 fn: 40;
+    ULONG64 frameNumber: 40;
 } validPte;
 
 typedef struct {
     // otherwise would be other format
     ULONG64 mustBeZero: 1;
-    ULONG64 di: 40;
+    ULONG64 diskIndex: 40;
 
 } invalidPte;
 
@@ -328,7 +328,7 @@ typedef struct {
 
     LIST_ENTRY entry;
     pte *pte;
-    ULONG64 fn;
+    ULONG64 frameNumber;
 
 } pfn;
 
@@ -343,39 +343,35 @@ PVOID diskSpace;
 
 VOID
 listAdd(pfn* pfn, boolean active) {
+    LIST_ENTRY head;
     if (active) {
-        pfn->entry.Flink = &headActiveList;
-        pfn->entry.Blink = headActiveList.Blink;
-        headActiveList.Blink->Flink = &pfn->entry;
-        headActiveList.Blink = &pfn->entry;
-
+        head = headActiveList;
     } else {
-        pfn->entry.Flink = &headFreeList;
-        pfn->entry.Blink = headFreeList.Blink;
-        headFreeList.Blink->Flink = &pfn->entry;
-        headFreeList.Blink = &pfn->entry;
+
+        head = headFreeList;
     }
+
+        pfn->entry.Flink = &head;
+        pfn->entry.Blink = head.Blink;
+        head.Blink->Flink = &pfn->entry;
+        head.Blink = &pfn->entry;
 }
 
 //make better
 pfn* listRemove(boolean active) {
+    LIST_ENTRY head;
     if (active) {
-        if (headActiveList.Flink == & headActiveList) {
-            DebugBreak();
-        }
-        pfn *freePage = (pfn *) headActiveList.Flink;
-        headActiveList.Flink = freePage->entry.Flink;
-        headActiveList.Flink->Blink = &headActiveList;
-        return freePage;
+        head = headActiveList;
     } else {
-        if (headFreeList.Flink == & headFreeList) {
-            DebugBreak();
-        }
-        pfn* freePage =  (pfn *) headFreeList.Flink;
-        headFreeList.Flink = freePage->entry.Flink;
-        headFreeList.Flink->Blink = &headFreeList;
-        return freePage;
+
+        head = headFreeList;
     }
+
+    pfn *freePage = (pfn *) head.Flink;
+    head.Flink = freePage->entry.Flink;
+    head.Flink->Blink = &head;
+    return freePage;
+
 }
 
 #if 0
@@ -409,41 +405,43 @@ PVOID pte_to_va(pte* pte) {
 }
 
 
+PVOID init(ULONG64 numBytes) {
+    PVOID new;
+    new = malloc(numBytes);
+    memset(new, 0, numBytes);
+    return new;
+}
 
 
 PVOID transferVa;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
-ULONG64 frameNumber;
-pte* currentPTE;
-pfn* freePage;
-boolean* diskFree;
+
+
+boolean* diskActive;
 pfn* endPFN;
 VOID init_virtual_memory() {
 
     ULONG_PTR numBytes;
-
+    ULONG_PTR numDiskSlots;
+    pte* currentPTE;
+    pfn* freePage;
     // init disk stuff
-    numBytes = VIRTUAL_ADDRESS_SIZE; // - NUMBER_OF_PHYSICAL_PAGES;
-    diskSpace = malloc(numBytes);
-    memset(diskSpace, 0, numBytes);
+    numBytes = VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES;
+    diskSpace = init(numBytes);
 
-    numBytes = VIRTUAL_ADDRESS_SIZE / PAGE_SIZE;// - NUMBER_OF_PHYSICAL_PAGES;
-    diskFree = malloc(numBytes);
-    memset(diskFree, 1, numBytes);
+    numDiskSlots = numBytes / PAGE_SIZE;
+    diskActive = init(numDiskSlots);
 
 
     // init the pagetable
     numBytes = VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte);
-    pagetable = malloc(numBytes);
-    memset(pagetable, 0, numBytes);
-
+    pagetable = init(numBytes);
     // init the pfn array which will manage the free and active list
     numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
-    pfns = malloc(numBytes);
-    memset(pfns, 0, numBytes);
-    endPFN = pfns + NUMBER_OF_PHYSICAL_PAGES;
+    pfns = init(numBytes);
 
+    endPFN = pfns+numBytes;
 
     // initialize the free and active list as empty
     headFreeList.Flink = &headFreeList;
@@ -456,24 +454,24 @@ VOID init_virtual_memory() {
     // add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
         pfn *new_pfn = pfns + i;
-        new_pfn->fn = physical_page_numbers[i];
+        new_pfn->frameNumber = physical_page_numbers[i];
         listAdd(new_pfn, false);
     }
 
 
 }
 
-VOID modified_read(ULONG64 arbitrary_va) {
+VOID modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
 
     // modified reading
 
-    ULONG64 diskIndex = currentPTE->invalidFormat.di;
+    ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskSpace + diskIndex * PAGE_SIZE;
 
     // MUPP(va, size, physical page)
 
-    if (MapUserPhysicalPages(transferVa, 1, &freePage->fn) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, &freePage->fn);
+    if (MapUserPhysicalPages(transferVa, 1, &freePage->frameNumber) == FALSE) {
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, &freePage->frameNumber);
         return;
     }
 
@@ -486,7 +484,7 @@ VOID modified_read(ULONG64 arbitrary_va) {
         return;
     }
 
-    diskFree[diskIndex] = TRUE;
+    diskActive[diskIndex] = FALSE;
 
 
 
@@ -499,35 +497,48 @@ VOID pfnInbounds(pfn* trimmed) {
     if (trimmed < pfns || trimmed >= endPFN) {
         DebugBreak();
     }
-    flink = trimmed->entry.Flink;
-    if (flink == (pfn*) &headFreeList || flink == (pfn*) &headActiveList) {
-
-    } else if ((pfn*) flink < pfns || (pfn*) flink >= endPFN) {
-        DebugBreak();
-    }
-
-    blink = trimmed->entry.Blink;
-
-    if (blink == (pfn*) &headFreeList || blink == (pfn*) &headActiveList) {
-
-    } else if ((pfn*) blink < pfns || (pfn*) blink >= endPFN) {
-        DebugBreak();
-    }
+    // flink = trimmed->entry.Flink;
+    // if (flink == (pfn*) &headFreeList || flink == (pfn*) &headActiveList) {
+    //
+    // } else if ((pfn*) flink < pfns || (pfn*) flink >= endPFN) {
+    //     DebugBreak();
+    // }
+    //
+    // blink = trimmed->entry.Blink;
+    //
+    // if (blink == (pfn*) &headFreeList || blink == (pfn*) &headActiveList) {
+    //
+    // } else if ((pfn*) blink < pfns || (pfn*) blink >= endPFN) {
+    //     DebugBreak();
+    // }
 
 }
 
+#if 0
+
+ULONG64 pageBatch[5];
+pfn* pfnBatch[5];
+// get va
+for (int i = 0; i < 5; ++i) {
+    pfnBatch[i] = listRemove(true);
+    pageBatch[i] = pfnBatch[i]->fn;
+}
+#endif
+
+
 VOID page_trimmer(VOID) {
 
-
-        // get va
         pfn* trimmed = listRemove(true);
         ULONG64 trimmedVa = (ULONG64) pte_to_va(trimmed->pte);
 
+        //kingbob make this not one to one and utilize the total space (disk-size = va size - physical size)
+    //example search,  regionize, bound search
         ULONG64 diskIndex = ((ULONG64) trimmedVa - (ULONG64) vaStart)/PAGE_SIZE;
 
-        pfnInbounds(trimmed);
-        trimmed->pte->invalidFormat.di =  diskIndex;
+       pfnInbounds(trimmed);
+
         trimmed->pte->validFormat.valid = 0;
+        trimmed->pte->invalidFormat.diskIndex =  diskIndex;
 
         // unmap from trimmed va
         if (MapUserPhysicalPages(trimmedVa, 1, NULL) == FALSE) {
@@ -537,8 +548,8 @@ VOID page_trimmer(VOID) {
         // modified writing
         ULONG64 diskByteAddress = (ULONG64) diskSpace +  diskIndex * PAGE_SIZE;
         // map to transfer va
-        if (MapUserPhysicalPages(transferVa, 1, &trimmed->fn) == FALSE) {
-            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->fn);
+        if (MapUserPhysicalPages(transferVa, 1, &trimmed->frameNumber) == FALSE) {
+            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->frameNumber);
             return;
         }
 
@@ -550,10 +561,8 @@ VOID page_trimmer(VOID) {
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
             return;
         }
-        diskFree[diskIndex] = FALSE;
+        diskActive[diskIndex] = TRUE;
         listAdd(trimmed, false);
-
-
 }
 
 VOID checkVa(PULONG64 va) {
@@ -582,6 +591,9 @@ full_virtual_memory_test(
     HANDLE physical_page_handle;
     ULONG_PTR virtual_address_size;
     ULONG_PTR virtual_address_size_in_unsigned_chunks;
+
+    pte* currentPTE;
+    pfn* freePage;
 
     //
     // Allocate the physical pages that we will be managing.
@@ -770,33 +782,30 @@ full_virtual_memory_test(
             freePage = listRemove(false);
             pfnInbounds(freePage);
 
-            frameNumber = freePage->fn;
+
             currentPTE = va_to_pte(arbitrary_va);
-            // if di is zero
-            if (currentPTE->invalidFormat.di != 0) {
-                    modified_read(arbitrary_va);
+
+            // if di is not zero read in from the disk address
+            if (currentPTE->invalidFormat.diskIndex != 0) {
+                modified_read(arbitrary_va, currentPTE, freePage);
             }
 
-
-                if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
-                    printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
-                    return;
-                }
-                // update pte and activate the page
-                freePage->pte = currentPTE;
-                freePage->pte->validFormat.fn = frameNumber;
-                freePage->pte->validFormat.valid = 1;
-
+            if (MapUserPhysicalPages(arbitrary_va, 1, &freePage->frameNumber) == FALSE) {
+                GetLastError();
+                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, freePage->frameNumber);
+                return;
+            }
+            // update pte and activate the page
+            freePage->pte = currentPTE;
+            freePage->pte->validFormat.frameNumber = freePage->frameNumber;
+            freePage->pte->validFormat.valid = 1;
 
             listAdd(freePage, true);
 
 
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
 
-            //
-            // Unmap the virtual address translation we installed above
-            // now that we're done writing our value into it.
-            //
+
         }
         checkVa(arbitrary_va);
     }
@@ -812,8 +821,6 @@ full_virtual_memory_test(
 
     return;
 }
-
-//todo keep track of pages in use. then send in them to theoretical trimmer (trim anything).
 
 
 VOID
