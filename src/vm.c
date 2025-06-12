@@ -26,6 +26,7 @@
 
 #define MB(x)                       ((x) * 1024 * 1024)
 
+
 //
 // This is intentionally a power of two so we can use masking to stay
 // within bounds.
@@ -49,6 +50,14 @@
 // easier syntax for list adds and removes
 #define REMOVE_FREE_PAGE FALSE
 #define REMOVE_ACTIVE_PAGE TRUE
+
+
+#define NUMBER_OF_DISK_DIVISIONS 8
+
+
+// for 8 this is 0x1f8
+#define DISK_DIVISION_SIZE ((VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES)/PAGE_SIZE)/NUMBER_OF_DISK_DIVISIONS;
+
 BOOL
 GetPrivilege(
     VOID) {
@@ -165,153 +174,6 @@ CreateSharedMemorySection (
 
 #endif
 
-VOID
-malloc_test(
-    VOID) {
-    unsigned i;
-    PULONG_PTR p;
-    unsigned random_number;
-
-    p = malloc(VIRTUAL_ADDRESS_SIZE);
-
-    if (p == NULL) {
-        printf("malloc_test : could not malloc memory\n");
-        return;
-    }
-
-    for (i = 0; i < MB(1); i += 1) {
-        //
-        // Randomly access different portions of the virtual address
-        // space we obtained above.
-        //
-        // If we have never accessed the surrounding page size (4K)
-        // portion, the operating system will receive a page fault
-        // from the CPU and proceed to obtain a physical page and
-        // install a PTE to map it - thus connecting the end-to-end
-        // virtual address translation.  Then the operating system
-        // will tell the CPU to repeat the instruction that accessed
-        // the virtual address and this time, the CPU will see the
-        // valid PTE and proceed to obtain the physical contents
-        // (without faulting to the operating system again).
-        //
-
-        random_number = (unsigned) (ReadTimeStampCounter() >> 4);
-
-        random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;
-
-        //
-        // Write the virtual address into each page.  If we need to
-        // debug anything, we'll be able to see these in the pages.
-        //
-
-        *(p + random_number) = (ULONG_PTR) p;
-    }
-
-    printf("malloc_test : finished accessing %u random virtual addresses\n", i);
-
-    //
-    // Now that we're done with our memory we can be a good
-    // citizen and free it.
-    //
-
-    free(p);
-
-    return;
-}
-
-VOID
-commit_at_fault_time_test(
-    VOID) {
-    unsigned i;
-    PULONG_PTR p;
-    PULONG_PTR committed_va;
-    unsigned random_number;
-    BOOL page_faulted;
-
-    p = VirtualAlloc(NULL,
-                     VIRTUAL_ADDRESS_SIZE,
-                     MEM_RESERVE,
-                     PAGE_NOACCESS);
-
-    if (p == NULL) {
-        printf("commit_at_fault_time_test : could not reserve memory\n");
-        return;
-    }
-
-    for (i = 0; i < MB(1); i += 1) {
-        //
-        // Randomly access different portions of the virtual address
-        // space we obtained above.
-        //
-        // If we have never accessed the surrounding page size (4K)
-        // portion, the operating system will receive a page fault
-        // from the CPU and proceed to obtain a physical page and
-        // install a PTE to map it - thus connecting the end-to-end
-        // virtual address translation.  Then the operating system
-        // will tell the CPU to repeat the instruction that accessed
-        // the virtual address and this time, the CPU will see the
-        // valid PTE and proceed to obtain the physical contents
-        // (without faulting to the operating system again).
-        //
-
-        random_number = (unsigned) (ReadTimeStampCounter() >> 4);
-
-        random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;
-
-        //
-        // Write the virtual address into each page.  If we need to
-        // debug anything, we'll be able to see these in the pages.
-        //
-
-        page_faulted = FALSE;
-
-        __try {
-            *(p + random_number) = (ULONG_PTR) p;
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            page_faulted = TRUE;
-        }
-
-        if (page_faulted) {
-            //
-            // Commit the virtual address now - if that succeeds then
-            // we'll be able to access it from now on.
-
-
-            committed_va = p + random_number;
-
-            committed_va = VirtualAlloc(committed_va,
-                                        sizeof(ULONG_PTR),
-                                        MEM_COMMIT,
-                                        PAGE_READWRITE);
-
-            if (committed_va == NULL) {
-                printf("commit_at_fault_time_test : could not commit memory\n");
-                return;
-            }
-
-
-            // No exception handler needed now since we are guaranteed
-            // by virtue of our commit that the operating system will
-            // honor our access.
-            //
-
-            *committed_va = (ULONG_PTR) committed_va;
-        }
-    }
-
-    printf("commit_at_fault_time_test : finished accessing %u random virtual addresses\n", i);
-
-    //
-    // Now that we're done with our memory we can be a good
-    // citizen and free it.
-    //
-
-    VirtualFree(p, 0, MEM_RELEASE);
-
-    return;
-}
-
-
 
 ULONG64 frameNumberSize;
 typedef struct {
@@ -352,7 +214,10 @@ LIST_ENTRY headActiveList;
 pte *pagetable;
 pfn *pfnStart;
 PULONG_PTR vaStart;
-PVOID diskSpace;
+PVOID diskStart;
+
+
+
 
 VOID
 listAdd(pfn* pfn, boolean active) {
@@ -393,21 +258,6 @@ pfn* listRemove(boolean active) {
 
 }
 
-#if 0
-pfn* listRemove(LIST_ENTRY head) {
-    pfn *freePage = (pfn *) head.Flink;
-    head.Flink = freePage->entry.Flink;
-    head.Flink->Blink = &head;
-    return freePage;
-}
-listAdd(pfn *pfn, LIST_ENTRY head) {
-    pfn->entry.Flink = &head;
-    pfn->entry.Blink = head.Blink;
-    head.Blink->Flink = &pfn->entry;
-    head.Blink = &pfn->entry;
-}
-
-#endif
 
 pte* va_to_pte(PVOID va) {
     // if pagetable was a pvoid must multiply by size
@@ -438,19 +288,73 @@ PULONG_PTR physical_page_numbers;
 
 
 boolean* diskActive;
+ULONG64 * number_of_open_slots;
+
+
 pfn* endPFN;
+
+
+
+ULONG64 most_free_disk_portion() {
+
+    ULONG64 max = 0;
+    ULONG64 index = 0;
+
+    for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
+        if (max<= number_of_open_slots[i]) {
+            max = number_of_open_slots[i];
+            index = i;
+        }
+    }
+    return index;
+}
+
+
+// the size for the portions, I will be searching of diskSize
+#define DISK_DIVISION_SIZE ((VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES)/PAGE_SIZE)/NUMBER_OF_DISK_DIVISIONS;
+ULONG64 get_free_disk_index() {
+
+    // get the subsection of the diskSlots array that you will be searching through
+    ULONG64 freePortion = most_free_disk_portion();
+    ULONG64 start = freePortion * DISK_DIVISION_SIZE + (ULONG64) diskActive;
+    ULONG64 end = start + DISK_DIVISION_SIZE;
+
+
+    for (start; start <= end; ++start) {
+        if (!diskActive[start]) {
+            number_of_open_slots[freePortion] -= 1;
+            // This math translate a disk slot into the start of the corresponding page in the disk
+            return (start - (ULONG64) diskActive);
+        }
+    }
+
+
+    printf("couldn't find free page");
+    return -1;
+}
+
+ULONG64 diskEnd;
+
 VOID init_virtual_memory() {
 
     ULONG_PTR numBytes;
     ULONG_PTR numDiskSlots;
-    pte* currentPTE;
-    pfn* freePage;
+
     // init disk stuff
-    numBytes = VIRTUAL_ADDRESS_SIZE*NUMBER_OF_PHYSICAL_PAGES; //- PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES;
-    diskSpace = init(numBytes);
+    numBytes = VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES;
+    diskStart = init(numBytes);
+    diskEnd = diskStart + numBytes;
 
     numDiskSlots = numBytes / PAGE_SIZE;
     diskActive = init(numDiskSlots);
+
+    numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
+    number_of_open_slots = malloc(numBytes);
+    for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
+        number_of_open_slots[i] = DISK_DIVISION_SIZE;
+    }
+
+
 
 
     // init the pagetable
@@ -485,7 +389,7 @@ VOID modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
     // modified reading
 
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
-    ULONG64 diskAddress = (ULONG64) diskSpace + diskIndex * PAGE_SIZE;
+    ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
     // MUPP(va, size, physical page)
 
@@ -552,7 +456,7 @@ VOID page_trimmer(VOID) {
 
         //kingbob make this not one to one and utilize the total space (disk-size = va size - physical size)
     //example search,  regionize, bound search
-        ULONG64 diskIndex = ((ULONG64) trimmedVa - (ULONG64) vaStart)/PAGE_SIZE;
+        ULONG64 diskIndex = get_free_disk_index() + (ULONG64) diskStart;
 
        pfnInbounds(trimmed);
 
@@ -566,7 +470,7 @@ VOID page_trimmer(VOID) {
             return;
         }
         // modified writing
-        ULONG64 diskByteAddress = (ULONG64) diskSpace +  diskIndex * PAGE_SIZE;
+        ULONG64 diskByteAddress = (ULONG64) diskStart +  diskIndex * PAGE_SIZE;
         // map to transfer va
         if (MapUserPhysicalPages(transferVa, 1, &trimmed->frameNumber) == FALSE) {
             printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->frameNumber);
@@ -813,6 +717,7 @@ full_virtual_memory_test(
 
             freePage = listRemove(REMOVE_FREE_PAGE);
             pfnInbounds(freePage);
+
 
 
             currentPTE = va_to_pte(arbitrary_va);
