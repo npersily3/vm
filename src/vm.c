@@ -21,12 +21,17 @@
 
 #define PAGE_SIZE                   4096
 
+// 40 bit because highest PA is 52 bits so 52/ pagesize -> 2^12 = 2^40
+#define frame_number_size       40
+
 #define MB(x)                       ((x) * 1024 * 1024)
 
 //
 // This is intentionally a power of two so we can use masking to stay
 // within bounds.
 //
+
+
 
 #define VIRTUAL_ADDRESS_SIZE        MB(16)
 
@@ -39,6 +44,11 @@
 
 #define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
 
+
+
+// easier syntax for list adds and removes
+#define REMOVE_FREE_PAGE FALSE
+#define REMOVE_ACTIVE_PAGE TRUE
 BOOL
 GetPrivilege(
     VOID) {
@@ -302,15 +312,18 @@ commit_at_fault_time_test(
 }
 
 
+
+ULONG64 frameNumberSize;
 typedef struct {
     ULONG64 valid: 1;
-    ULONG64 frameNumber: 40;
+    ULONG64 frameNumber: frame_number_size;
 } validPte;
 
+//right now the diskIndex lenngth is the same as frame_number because it is nice to be parrallel
 typedef struct {
     // otherwise would be other format
     ULONG64 mustBeZero: 1;
-    ULONG64 diskIndex: 40;
+    ULONG64 diskIndex: frame_number_size;
 
 } invalidPte;
 
@@ -337,7 +350,7 @@ LIST_ENTRY headFreeList;
 LIST_ENTRY headActiveList;
 
 pte *pagetable;
-pfn *pfns;
+pfn *pfnStart;
 PULONG_PTR vaStart;
 PVOID diskSpace;
 
@@ -445,9 +458,9 @@ VOID init_virtual_memory() {
     pagetable = init(numBytes);
     // init the pfn array which will manage the free and active list
     numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
-    pfns = init(numBytes);
+    pfnStart = init(numBytes);
 
-    endPFN = pfns+numBytes;
+    endPFN = pfnStart+numBytes;
 
     // initialize the free and active list as empty
     headFreeList.Flink = &headFreeList;
@@ -459,7 +472,7 @@ VOID init_virtual_memory() {
 
     // add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
-        pfn *new_pfn = pfns + i;
+        pfn *new_pfn = pfnStart + i;
         new_pfn->frameNumber = physical_page_numbers[i];
         listAdd(new_pfn, false);
     }
@@ -500,7 +513,7 @@ VOID modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
 VOID pfnInbounds(pfn* trimmed) {
     pfn* flink;
     pfn* blink;
-    if (trimmed < pfns || trimmed >= endPFN) {
+    if (trimmed < pfnStart || trimmed >= endPFN) {
         DebugBreak();
     }
     // flink = trimmed->entry.Flink;
@@ -534,7 +547,7 @@ for (int i = 0; i < 5; ++i) {
 
 VOID page_trimmer(VOID) {
 
-        pfn* trimmed = listRemove(true);
+        pfn* trimmed = listRemove(REMOVE_ACTIVE_PAGE);
         ULONG64 trimmedVa = (ULONG64) pte_to_va(trimmed->pte);
 
         //kingbob make this not one to one and utilize the total space (disk-size = va size - physical size)
@@ -543,6 +556,7 @@ VOID page_trimmer(VOID) {
 
        pfnInbounds(trimmed);
 
+        // update pte
         trimmed->pte->validFormat.valid = 0;
         trimmed->pte->invalidFormat.diskIndex =  diskIndex;
 
@@ -561,6 +575,9 @@ VOID page_trimmer(VOID) {
 
         // copy from transfer to disk
         memcpy((PVOID) diskByteAddress, transferVa, PAGE_SIZE);
+
+        // I need to zero it because when a new va gets this page, it cant have another va's data
+        memset(transferVa, 0, PAGE_SIZE);
 
         // unmap transfer
         if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
@@ -581,6 +598,15 @@ VOID checkVa(PULONG64 va) {
         va += 1;
     }
 }
+// implement this to save space instead of having a field
+ULONG64 pfn_to_frame_number (pfn* pfn) {
+    ULONG64 frameNumber;
+    frameNumber = pfn - pfnStart;
+    return frameNumber;
+
+}
+
+
 
 VOID
 full_virtual_memory_test(
@@ -785,7 +811,7 @@ full_virtual_memory_test(
                 page_trimmer();
             }
 
-            freePage = listRemove(false);
+            freePage = listRemove(REMOVE_FREE_PAGE);
             pfnInbounds(freePage);
 
 
