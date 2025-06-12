@@ -343,33 +343,39 @@ PVOID diskSpace;
 
 VOID
 listAdd(pfn* pfn, boolean active) {
-    LIST_ENTRY head;
+    LIST_ENTRY* head;
     if (active) {
-        head = headActiveList;
+        head = &headActiveList;
     } else {
 
-        head = headFreeList;
+        head = &headFreeList;
     }
 
-        pfn->entry.Flink = &head;
-        pfn->entry.Blink = head.Blink;
-        head.Blink->Flink = &pfn->entry;
-        head.Blink = &pfn->entry;
+        pfn->entry.Flink = head;
+        pfn->entry.Blink = head->Blink;
+        head->Blink->Flink = &pfn->entry;
+        head->Blink = &pfn->entry;
 }
 
 //make better
 pfn* listRemove(boolean active) {
-    LIST_ENTRY head;
+    LIST_ENTRY* head;
     if (active) {
-        head = headActiveList;
+        head = &headActiveList;
     } else {
 
-        head = headFreeList;
+        head = &headFreeList;
+    }
+    if (head->Flink->Flink == head) {
+        pfn* freePage = head->Flink;
+        head->Flink = head;
+        head->Blink = head;
+        return freePage;
     }
 
-    pfn *freePage = (pfn *) head.Flink;
-    head.Flink = freePage->entry.Flink;
-    head.Flink->Blink = &head;
+    pfn *freePage = (pfn *) head->Flink;
+    head->Flink = freePage->entry.Flink;
+    head->Flink->Blink = head;
     return freePage;
 
 }
@@ -427,7 +433,7 @@ VOID init_virtual_memory() {
     pte* currentPTE;
     pfn* freePage;
     // init disk stuff
-    numBytes = VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES;
+    numBytes = VIRTUAL_ADDRESS_SIZE*NUMBER_OF_PHYSICAL_PAGES; //- PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES;
     diskSpace = init(numBytes);
 
     numDiskSlots = numBytes / PAGE_SIZE;
@@ -567,7 +573,7 @@ VOID page_trimmer(VOID) {
 
 VOID checkVa(PULONG64 va) {
 
-    va = (PULONG64) ((ULONG64)va & ~(PAGE_SIZE - 1));
+    va = (PULONG64) ((ULONG64)va &  ~(PAGE_SIZE - 1));
     for (int i = 0; i < PAGE_SIZE / 8; ++i) {
         if (!(*va == 0 || *va == (ULONG64) va)) {
             DebugBreak();
@@ -791,7 +797,7 @@ full_virtual_memory_test(
             }
 
             if (MapUserPhysicalPages(arbitrary_va, 1, &freePage->frameNumber) == FALSE) {
-                GetLastError();
+                DebugBreak();
                 printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, freePage->frameNumber);
                 return;
             }
