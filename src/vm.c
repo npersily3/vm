@@ -55,8 +55,6 @@
 #define NUMBER_OF_DISK_DIVISIONS 8
 
 
-// for 8 this is 0x1f8
-#define DISK_DIVISION_SIZE ((VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES)/PAGE_SIZE)/NUMBER_OF_DISK_DIVISIONS;
 
 BOOL
 GetPrivilege(
@@ -211,7 +209,7 @@ typedef struct {
 LIST_ENTRY headFreeList;
 LIST_ENTRY headActiveList;
 
-pte *pagetable;
+pte *pageTable;
 pfn *pfnStart;
 PULONG_PTR vaStart;
 PVOID diskStart;
@@ -235,6 +233,13 @@ listAdd(pfn* pfn, boolean active) {
         head->Blink = &pfn->entry;
 }
 
+#define DBG 1
+#if DBG
+#define ASSERT(x) if ((x) == FALSE) DebugBreak();
+#else
+#define ASSERT(x)
+#endif
+
 //make better
 pfn* listRemove(boolean active) {
     LIST_ENTRY* head;
@@ -244,6 +249,10 @@ pfn* listRemove(boolean active) {
 
         head = &headFreeList;
     }
+
+    ASSERT (head->Flink != head);
+
+    // if removing the last entry reset the head and pop off the page
     if (head->Flink->Flink == head) {
         pfn* freePage = head->Flink;
         head->Flink = head;
@@ -262,13 +271,13 @@ pfn* listRemove(boolean active) {
 pte* va_to_pte(PVOID va) {
     // if pagetable was a pvoid must multiply by size
     ULONG64 index = ((ULONG_PTR)va - (ULONG_PTR) vaStart)/PAGE_SIZE;
-    pte* pte = pagetable + index;
+    pte* pte = pageTable + index;
     return pte;
 }
 
 PVOID pte_to_va(pte* pte) {
 
-    ULONG64 index = (pte - pagetable);
+    ULONG64 index = (pte - pageTable);
     return (PVOID)((index * PAGE_SIZE) + (ULONG_PTR) vaStart);
 
 }
@@ -310,39 +319,66 @@ ULONG64 most_free_disk_portion() {
 }
 
 
-// the size for the portions, I will be searching of diskSize
-#define DISK_DIVISION_SIZE ((VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES)/PAGE_SIZE)/NUMBER_OF_DISK_DIVISIONS;
+
+
+#define DISK_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + PAGE_SIZE)
+
+#define DISK_SIZE_IN_PAGES (DISK_SIZE_IN_BYTES / PAGE_SIZE)
+
+#define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / NUMBER_OF_DISK_DIVISIONS)
+
+
 ULONG64 get_free_disk_index() {
 
-    ULONG64 noah = DISK_DIVISION_SIZE;
+
     // get the subsection of the diskSlots array that you will be searching through
     ULONG64 freePortion;
-    ULONG64 start;
-    ULONG64 end;
+    boolean* start;
+    boolean* end;
     ULONG64 index;
 
 
     freePortion = most_free_disk_portion();
 
-    start =  freePortion * DISK_DIVISION_SIZE;
-    end = start + DISK_DIVISION_SIZE;
+    start = diskActive + freePortion * DISK_DIVISION_SIZE_IN_PAGES;
 
+
+    // accounts for extra slot case
+    if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
+
+        end = start + DISK_DIVISION_SIZE_IN_PAGES;
+    } else {
+        end = start + DISK_DIVISION_SIZE_IN_PAGES - 1;
+    }
+
+
+    // this will make it go over 1 so it can find the transfer slot
+
+    if(number_of_open_slots[freePortion] == 0) {
+    DebugBreak();
+}
 
     while (start <= end) {
-        if (!diskActive[start]) {
+        if (*start == FALSE) {
+
+            *start = TRUE;
+
             number_of_open_slots[freePortion] -= 1;
-            // This math translate a disk slot into the start of the corresponding page in the disk
-            return start;
+
+            return start - diskActive;
         }
         start++;
     }
 
-
     printf("couldn't find free page");
+    DebugBreak();
     return -1;
 }
 
 ULONG64 diskEnd;
+
+
+#define EMPTY_PTE 0xFFFFFFFFFF
 
 VOID init_virtual_memory() {
 
@@ -350,25 +386,37 @@ VOID init_virtual_memory() {
     ULONG_PTR numDiskSlots;
 
     // init disk stuff
-    numBytes = VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES;
+    numBytes = DISK_SIZE_IN_BYTES;
     diskStart = init(numBytes);
     diskEnd = (ULONG64) diskStart + numBytes;
 
-    numDiskSlots = numBytes / PAGE_SIZE;
+    numDiskSlots = DISK_SIZE_IN_PAGES;
     diskActive = init(numDiskSlots);
 
     numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
     number_of_open_slots = malloc(numBytes);
     for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
-        number_of_open_slots[i] = DISK_DIVISION_SIZE;
+        number_of_open_slots[i] = DISK_DIVISION_SIZE_IN_PAGES;
     }
+    number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 1;
 
 
 
 
     // init the pagetable
     numBytes = VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte);
-    pagetable = init(numBytes);
+    pageTable = malloc(numBytes);
+
+    ULONG64 length= numBytes/sizeof(pte);
+    for (int i = 0; i < length; i++) {
+        pageTable[i].invalidFormat.diskIndex = EMPTY_PTE;
+        pageTable[i].invalidFormat.mustBeZero = 0;
+    }
+
+
+
+
+
     // init the pfn array which will manage the free and active list
     numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
     pfnStart = init(numBytes);
@@ -393,18 +441,23 @@ VOID init_virtual_memory() {
 
 }
 
-VOID set_disk_active(ULONG64 diskIndex) {
+VOID set_disk_space_free(ULONG64 diskIndex) {
+
+    // mark the place as inactive
+    diskActive[diskIndex] = FALSE;
+
 
     ULONG64 diskIndexRoundedDown;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
     // there is truncation when stuff cant go in easily
-    diskIndexRoundedDown = diskIndex / DISK_DIVISION_SIZE;
-    diskIndexRoundedDown *= DISK_DIVISION_SIZE;
+    diskIndexRoundedDown = diskIndex / DISK_DIVISION_SIZE_IN_PAGES;
+    //diskIndexRoundedDown *= DISK_DIVISION_SIZE_IN_PAGES;
 
-    // this is my index into my table that keeps track of how full each page is
-    ULONG64 diskMetaIndex;
-    diskMetaIndex = diskIndexRoundedDown / DISK_DIVISION_SIZE;
-    number_of_open_slots[diskMetaIndex] += 1;
+    if (diskIndexRoundedDown >= NUMBER_OF_DISK_DIVISIONS) {
+        diskIndexRoundedDown = NUMBER_OF_DISK_DIVISIONS - 1;
+    }
+
+    number_of_open_slots[diskIndexRoundedDown] += 1;
 }
 
 
@@ -431,14 +484,16 @@ VOID modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
         return;
     }
 
-    set_disk_active(diskIndex);
-    diskActive[diskIndex] = FALSE;
+    set_disk_space_free(diskIndex);
+
 
 
 
 
 }
 
+
+// add assert to
 VOID pfnInbounds(pfn* trimmed) {
     pfn* flink;
     pfn* blink;
@@ -498,13 +553,15 @@ VOID page_trimmer(VOID) {
         // unmap from trimmed va
         if (MapUserPhysicalPages(trimmedVa, 1, NULL) == FALSE) {
             printf("full_virtual_memory_test : could not unmap VA %p\n", trimmedVa);
+            DebugBreak();
             return;
         }
         // modified writing
-        ULONG64 diskByteAddress = (ULONG64) diskStart +  diskIndex * PAGE_SIZE;
+        ULONG64 diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
         // map to transfer va
         if (MapUserPhysicalPages(transferVa, 1, &trimmed->frameNumber) == FALSE) {
             printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->frameNumber);
+            DebugBreak();
             return;
         }
 
@@ -517,9 +574,9 @@ VOID page_trimmer(VOID) {
         // unmap transfer
         if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
+            DebugBreak();
             return;
         }
-        diskActive[diskIndex] = TRUE;
         listAdd(trimmed, false);
 }
 
@@ -754,7 +811,7 @@ full_virtual_memory_test(
             currentPTE = va_to_pte(arbitrary_va);
 
             // if di is not zero read in from the disk address
-            if (currentPTE->invalidFormat.diskIndex != 0) {
+            if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
                 modified_read(arbitrary_va, currentPTE, freePage);
             }
 
