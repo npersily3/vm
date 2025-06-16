@@ -1,0 +1,84 @@
+#ifndef UTIL_H
+#define UTIL_H
+
+#include <windows.h>
+#include <stdbool.h>
+
+//
+// Configuration constants
+//
+#define PAGE_SIZE                   4096
+#define frame_number_size           40
+#define MB(x)                       ((x) * 1024 * 1024)
+#define VIRTUAL_ADDRESS_SIZE        MB(16)
+#define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
+#define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
+#define NUMBER_OF_DISK_DIVISIONS   8
+#define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + PAGE_SIZE)
+#define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
+#define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / NUMBER_OF_DISK_DIVISIONS)
+#define EMPTY_PTE                  0xFFFFFFFFFF
+
+// List operation constants
+#define REMOVE_FREE_PAGE           FALSE
+#define REMOVE_ACTIVE_PAGE         TRUE
+
+// Debug macros
+#define DBG 1
+#if DBG
+#define ASSERT(x) if ((x) == FALSE) DebugBreak();
+#else
+#define ASSERT(x)
+#endif
+
+//
+// Data structures
+//
+typedef struct {
+    ULONG64 valid: 1;
+    ULONG64 frameNumber: frame_number_size;
+} validPte;
+
+typedef struct {
+    ULONG64 mustBeZero: 1;
+    ULONG64 diskIndex: frame_number_size;
+} invalidPte;
+
+typedef struct {
+    union {
+        validPte validFormat;
+        invalidPte invalidFormat;
+        ULONG64 entireFormat;
+    };
+} pte;
+
+typedef struct {
+    LIST_ENTRY entry;
+    pte *pte;
+    ULONG64 frameNumber;
+} pfn;
+
+//
+// Global variables (declared here, defined in init.c)
+//
+extern LIST_ENTRY headFreeList;
+extern LIST_ENTRY headActiveList;
+extern pte *pageTable;
+extern pfn *pfnStart;
+extern pfn *endPFN;
+extern PULONG_PTR vaStart;
+extern PVOID transferVa;
+extern ULONG_PTR physical_page_count;
+extern PULONG_PTR physical_page_numbers;
+
+//
+// Utility function declarations
+//
+VOID listAdd(pfn* pfn, boolean active);
+pfn* listRemove(boolean active);
+pte* va_to_pte(PVOID va);
+PVOID pte_to_va(pte* pte);
+PVOID init_memory(ULONG64 numBytes);
+VOID pfnInbounds(pfn* trimmed);
+
+#endif // UTIL_H
