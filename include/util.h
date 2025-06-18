@@ -18,6 +18,17 @@
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
 #define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / NUMBER_OF_DISK_DIVISIONS)
 #define EMPTY_PTE                  0xFFFFFFFFFF
+#define NUMBER_OF_THREADS 2
+#define AUTO_RESET              FALSE
+#define MANUAL_RESET            TRUE
+#define WAIT_FOR_ALL            TRUE
+#define WAIT_FOR_ONE            FALSE
+#define DEFAULT_SECURITY        ((LPSECURITY_ATTRIBUTES) NULL)
+#define DEFAULT_STACK_SIZE      0
+#define DEFAULT_CREATION_FLAGS  0
+
+
+
 
 // List operation constants
 #define REMOVE_FREE_PAGE           FALSE
@@ -55,8 +66,32 @@ typedef struct {
 typedef struct {
     LIST_ENTRY entry;
     pte *pte;
-    ULONG64 frameNumber;
+//    ULONG64 frameNumber;
 } pfn;
+
+typedef struct _THREAD_INFO {
+
+    ULONG ThreadNumber;
+
+    ULONG ThreadId;
+    HANDLE ThreadHandle;
+
+    volatile ULONG ThreadCounter;
+
+    HANDLE WorkDoneHandle;
+
+#if 1
+
+    // // way faster, now everything consumes 1 cache line
+    // What effect would consuming extra space here have ?
+    //
+
+    volatile UCHAR Pad[32];
+
+#endif
+
+} THREAD_INFO, *PTHREAD_INFO;
+
 
 //
 // Global variables (declared here, defined in init.c)
@@ -70,15 +105,18 @@ extern PULONG_PTR vaStart;
 extern PVOID transferVa;
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
+extern HANDLE  workDoneThreadHandles[NUMBER_OF_THREADS];
 
 //
 // Utility function declarations
 //
+
 VOID listAdd(pfn* pfn, boolean active);
 pfn* listRemove(boolean active);
 pte* va_to_pte(PVOID va);
 PVOID pte_to_va(pte* pte);
 PVOID init_memory(ULONG64 numBytes);
 VOID pfnInbounds(pfn* trimmed);
+ULONG64 getFrameNumber(pfn* pfn);
 
 #endif // UTIL_H

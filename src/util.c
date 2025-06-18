@@ -30,12 +30,12 @@ listRemove(boolean active) {
     ASSERT (head->Flink != head);
 
     // if removing the last entry reset the head and pop off the page
-    if (head->Flink->Flink == head) {
-        pfn* freePage = (pfn*)head->Flink;
-        head->Flink = head;
-        head->Blink = head;
-        return freePage;
-    }
+    // if (head->Flink->Flink == head) {
+    //     pfn* freePage = (pfn*)head->Flink;
+    //     head->Flink = head;
+    //     head->Blink = head;
+    //     return freePage;
+    // }
 
     pfn *freePage = (pfn *) head->Flink;
     head->Flink = freePage->entry.Flink;
@@ -69,4 +69,7 @@ pfnInbounds(pfn* trimmed) {
     if (trimmed < pfnStart || trimmed >= endPFN) {
         DebugBreak();
     }
+}
+ULONG64 getFrameNumber(pfn* pfn) {
+    return pfn - pfnStart;
 }

@@ -43,6 +43,7 @@ set(HEADERS
         include/disk.h
         include/init.h
         include/pages.h
+        include/vm.h
 )
 
 # Create the executable

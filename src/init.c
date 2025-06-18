@@ -3,6 +3,7 @@
 //
 #include "init.h"
 #include "disk.h"
+#include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -30,6 +31,10 @@ PVOID diskStart;
 ULONG64 diskEnd;
 boolean* diskActive;
 ULONG64* number_of_open_slots;
+
+HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
+CRITICAL_SECTION GlobalCriticalSection;
+HANDLE GlobalStartEvent;
 
 BOOL
 GetPrivilege(VOID) {
@@ -138,7 +143,12 @@ init_virtual_memory(VOID) {
     // Initialize the PFN array which will manage the free and active list
     numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
     pfnStart = (pfn*)init_memory(numBytes);
-    endPFN = pfnStart + NUMBER_OF_PHYSICAL_PAGES;
+    ULONG64 max = getMaxFrameNumber();
+    max+=1;
+    pfnStart = VirtualAlloc(NULL,sizeof(pfn)*max,MEM_RESERVE,PAGE_READWRITE);
+    endPFN = pfnStart + max;
+
+
 
     // Initialize the free and active list as empty
     headFreeList.Flink = &headFreeList;
@@ -148,8 +158,65 @@ init_virtual_memory(VOID) {
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
-        pfn *new_pfn = pfnStart + i;
-        new_pfn->frameNumber = physical_page_numbers[i];
+        pfn *new_pfn = VirtualAlloc(pfnStart + physical_page_numbers[i], sizeof(pfn), MEM_COMMIT, PAGE_READWRITE);
+      //  new_pfn->frameNumber = physical_page_numbers[i];
         listAdd(new_pfn, FALSE);
+    }
+    createThreads();
+  //  createThreads();
+
+
+}
+
+ULONG64 getMaxFrameNumber(VOID) {
+    ULONG64 maxFrameNumber = 0;
+
+    for (int i = 0; i < NUMBER_OF_PHYSICAL_PAGES; ++i) {
+        maxFrameNumber = max(maxFrameNumber, physical_page_numbers[i]);
+    }
+    return maxFrameNumber;
+}
+
+VOID createThreads(VOID) {
+    LPVOID ThreadParameter;
+    PTHREAD_INFO ThreadContext;
+    HANDLE Handle;
+    BOOL ReturnValue;
+    LPTHREAD_START_ROUTINE ThreadFunction;
+    THREAD_INFO ThreadInfo[NUMBER_OF_THREADS] = {0};
+
+
+    ThreadFunction = testVM;
+
+    GlobalStartEvent = CreateEvent(NULL, MANUAL_RESET, FALSE, NULL);
+
+    for (int i = 0; i < NUMBER_OF_THREADS; ++i) {
+        ThreadContext = &ThreadInfo[i];
+        ThreadContext->ThreadNumber = i;
+        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
+                                                     AUTO_RESET,
+                                                     FALSE,
+                                                     NULL);
+        if (ThreadContext->WorkDoneHandle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create work event %x\n", ReturnValue);
+            return;
+        }
+
+        Handle = CreateThread (DEFAULT_SECURITY,
+                               DEFAULT_STACK_SIZE,
+                               ThreadFunction,
+                               ThreadContext,
+                               DEFAULT_CREATION_FLAGS,
+                               &ThreadContext->ThreadId);
+
+        if (Handle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create thread %x\n", ReturnValue);
+            return;
+        }
+
+        ThreadContext->ThreadHandle = Handle;
+        workDoneThreadHandles[i] = ThreadContext->WorkDoneHandle;
     }
 }

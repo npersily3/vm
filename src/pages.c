@@ -12,9 +12,10 @@ modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
+    ULONG64 frameNumber = getFrameNumber(freePage);
     // MUPP(va, size, physical page)
-    if (MapUserPhysicalPages(transferVa, 1, &freePage->frameNumber) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, &freePage->frameNumber);
+    if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
         return;
     }
 
@@ -53,9 +54,11 @@ page_trimmer(VOID) {
     // modified writing
     ULONG64 diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
+    ULONG64 frameNumber = getFrameNumber(trimmed);
+
     // map to transfer va
-    if (MapUserPhysicalPages(transferVa, 1, &trimmed->frameNumber) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, trimmed->frameNumber);
+    if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
         DebugBreak();
         return;
     }

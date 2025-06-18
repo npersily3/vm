@@ -13,6 +13,8 @@
 //
 BOOL GetPrivilege(VOID);
 VOID init_virtual_memory(VOID);
+VOID createThreads(VOID);
+ULONG64 getMaxFrameNumber(VOID);
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 HANDLE CreateSharedMemorySection(VOID);
