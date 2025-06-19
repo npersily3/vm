@@ -28,7 +28,8 @@
 #define DEFAULT_CREATION_FLAGS  0
 
 
-
+#define ROUND_DOWN_TO_PAGE(addr) ((ULONG_PTR)(addr) & ~(PAGE_SIZE - 1))
+#define ROUND_UP_TO_PAGE(addr) (((ULONG_PTR)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
 // List operation constants
 #define REMOVE_FREE_PAGE           FALSE

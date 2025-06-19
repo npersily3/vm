@@ -71,5 +71,5 @@ pfnInbounds(pfn* trimmed) {
     }
 }
 ULONG64 getFrameNumber(pfn* pfn) {
-    return pfn - pfnStart;
+    return (ULONG64)(pfn - pfnStart);
 }

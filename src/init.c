@@ -141,7 +141,7 @@ init_virtual_memory(VOID) {
     }
 
     // Initialize the PFN array which will manage the free and active list
-    numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
+   // numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
     pfnStart = (pfn*)init_memory(numBytes);
     ULONG64 max = getMaxFrameNumber();
     max+=1;
@@ -158,8 +158,22 @@ init_virtual_memory(VOID) {
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
-        pfn *new_pfn = VirtualAlloc(pfnStart + physical_page_numbers[i], sizeof(pfn), MEM_COMMIT, PAGE_READWRITE);
-      //  new_pfn->frameNumber = physical_page_numbers[i];
+
+
+        pfn *new_pfn = (pfn*)(pfnStart + physical_page_numbers[i]);
+
+        // Calculate the page-aligned range that contains this pfn structure
+        PVOID startPage = (PVOID)ROUND_DOWN_TO_PAGE(new_pfn);
+        PVOID endPage = (PVOID)ROUND_UP_TO_PAGE((ULONG_PTR)new_pfn + sizeof(pfn));
+        SIZE_T commitSize = (ULONG_PTR)endPage - (ULONG_PTR)startPage;
+
+        // Commit the full page(s) that contain this pfn structure
+        if (VirtualAlloc(startPage, commitSize, MEM_COMMIT, PAGE_READWRITE) != startPage) {
+            printf("Failed to commit at expected address\n");
+        }
+
+        // Now initialize the pfn structure
+        memset(new_pfn, 0, sizeof(pfn));
         listAdd(new_pfn, FALSE);
     }
     createThreads();

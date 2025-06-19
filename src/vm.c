@@ -308,7 +308,7 @@ VOID testVMSingleThreaded() {
 
             // update pte and activate the page
             freePage->pte = currentPTE;
-            freePage->pte->validFormat.frameNumber = freePage;
+            freePage->pte->validFormat.frameNumber = frameNumber;
             freePage->pte->validFormat.valid = 1;
 
             listAdd(freePage, TRUE);
