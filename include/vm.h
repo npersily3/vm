@@ -6,9 +6,12 @@
 #define VM_H
 
 DWORD testVM(LPVOID lpParam);
-VOID testVMSingleThreaded(VOID);
 VOID full_virtual_memory_test(VOID);
-extern CRITICAL_SECTION GlobalCriticalSection;
-extern HANDLE GlobalStartEvent;
+VOID mapPage(ULONG64 arbitrary_va, pte* currentPTE);
+VOID rescue_page(ULONG64 arbitrary_va, pte* currentPTE);
+VOID startTrimmer(VOID);
+
+
+extern HANDLE GlobalStartEvent;;
 
 #endif //VM_H

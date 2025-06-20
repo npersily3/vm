@@ -73,3 +73,15 @@ pfnInbounds(pfn* trimmed) {
 ULONG64 getFrameNumber(pfn* pfn) {
     return (ULONG64)(pfn - pfnStart);
 }
+
+pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
+    return pfnStart + frameNumber;
+}
+
+VOID removeFromMiddleOfList(LIST_ENTRY* entry) {
+    LIST_ENTRY* nextEntry = entry->Flink;
+    LIST_ENTRY* prevEntry = nextEntry->Blink;
+
+    nextEntry->Blink = prevEntry;
+    prevEntry->Flink = nextEntry;
+}

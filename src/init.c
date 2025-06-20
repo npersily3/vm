@@ -6,6 +6,8 @@
 #include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "macros.h"
+#include "pages.h"
 
 #pragma comment(lib, "advapi32.lib")
 
@@ -18,6 +20,9 @@
 //
 LIST_ENTRY headFreeList;
 LIST_ENTRY headActiveList;
+LIST_ENTRY headModifiedList;
+LIST_ENTRY headStandByList;
+
 pte *pageTable;
 pfn *pfnStart;
 pfn *endPFN;
@@ -33,8 +38,18 @@ boolean* diskActive;
 ULONG64* number_of_open_slots;
 
 HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
-CRITICAL_SECTION GlobalCriticalSection;
+
+ CRITICAL_SECTION lockFreeList;
+ CRITICAL_SECTION lockActiveList;
+ CRITICAL_SECTION lockModifiedList;
+ CRITICAL_SECTION lockStandByList;
+ CRITICAL_SECTION lockDiskActive;
+ CRITICAL_SECTION lockNumberOfSlots;
+
 HANDLE GlobalStartEvent;
+HANDLE trimmingStartEvent;
+HANDLE writingStartEvent;
+HANDLE writingEndEvent;
 
 BOOL
 GetPrivilege(VOID) {
@@ -153,8 +168,16 @@ init_virtual_memory(VOID) {
     // Initialize the free and active list as empty
     headFreeList.Flink = &headFreeList;
     headFreeList.Blink = &headFreeList;
+
     headActiveList.Flink = &headActiveList;
     headActiveList.Blink = &headActiveList;
+
+    headModifiedList.Flink = &headModifiedList;
+    headModifiedList.Blink = &headModifiedList;
+
+    headStandByList.Flink = &headStandByList;
+    headStandByList.Blink = &headStandByList;
+
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
@@ -174,7 +197,7 @@ init_virtual_memory(VOID) {
 
         // Now initialize the pfn structure
         memset(new_pfn, 0, sizeof(pfn));
-        listAdd(new_pfn, FALSE);
+        InsertTailList(&headFreeList, &new_pfn->entry);
     }
     createThreads();
   //  createThreads();
@@ -191,6 +214,8 @@ ULONG64 getMaxFrameNumber(VOID) {
     return maxFrameNumber;
 }
 
+
+
 VOID createThreads(VOID) {
     LPVOID ThreadParameter;
     PTHREAD_INFO ThreadContext;
@@ -199,14 +224,21 @@ VOID createThreads(VOID) {
     LPTHREAD_START_ROUTINE ThreadFunction;
     THREAD_INFO ThreadInfo[NUMBER_OF_THREADS] = {0};
 
+    THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS] = {0};
+    THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS] = {0};
+    THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS] = {0};
+
+    ULONG maxThread = 0;
 
     ThreadFunction = testVM;
 
-    GlobalStartEvent = CreateEvent(NULL, MANUAL_RESET, FALSE, NULL);
+    createEvents();
 
-    for (int i = 0; i < NUMBER_OF_THREADS; ++i) {
-        ThreadContext = &ThreadInfo[i];
-        ThreadContext->ThreadNumber = i;
+    initCriticalSections();
+
+    for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+        ThreadContext = &UserThreadInfo[i];
+        ThreadContext->ThreadNumber = maxThread;
         ThreadContext->WorkDoneHandle = CreateEvent (NULL,
                                                      AUTO_RESET,
                                                      FALSE,
@@ -217,12 +249,7 @@ VOID createThreads(VOID) {
             return;
         }
 
-        Handle = CreateThread (DEFAULT_SECURITY,
-                               DEFAULT_STACK_SIZE,
-                               ThreadFunction,
-                               ThreadContext,
-                               DEFAULT_CREATION_FLAGS,
-                               &ThreadContext->ThreadId);
+        Handle = createUserThread(ThreadContext);
 
         if (Handle == NULL) {
             ReturnValue = GetLastError ();
@@ -231,6 +258,103 @@ VOID createThreads(VOID) {
         }
 
         ThreadContext->ThreadHandle = Handle;
-        workDoneThreadHandles[i] = ThreadContext->WorkDoneHandle;
+        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+
+        maxThread++;
     }
+
+    for (int i = 0; i < NUMBER_OF_TRIMMING_THREADS; ++i) {
+        ThreadContext = &TrimmerThreadInfo[i];
+        ThreadContext->ThreadNumber = maxThread;
+        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
+                                                     AUTO_RESET,
+                                                     FALSE,
+                                                     NULL);
+        if (ThreadContext->WorkDoneHandle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create work event %x\n", ReturnValue);
+            return;
+        }
+
+        Handle = createTrimmingThread(ThreadContext);
+
+        if (Handle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create thread %x\n", ReturnValue);
+            return;
+        }
+
+        ThreadContext->ThreadHandle = Handle;
+        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+
+        maxThread++;
+    }
+    for (int i = 0; i < NUMBER_OF_WRITING_THREADS; ++i) {
+        ThreadContext = &WriterThreadInfo[i];
+        ThreadContext->ThreadNumber = maxThread;
+        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
+                                                     AUTO_RESET,
+                                                     FALSE,
+                                                     NULL);
+        if (ThreadContext->WorkDoneHandle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create work event %x\n", ReturnValue);
+            return;
+        }
+
+        Handle = createWritingThread(ThreadContext);
+
+        if (Handle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create thread %x\n", ReturnValue);
+            return;
+        }
+
+        ThreadContext->ThreadHandle = Handle;
+        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+
+        maxThread++;
+    }
+
+}
+VOID createEvents(VOID) {
+
+
+    writingStartEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
+    trimmingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
+    writingEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_ON, NULL);
+}
+VOID initCriticalSections(VOID) {
+    InitializeCriticalSection(&lockFreeList);
+    InitializeCriticalSection(&lockActiveList);
+    InitializeCriticalSection(&lockModifiedList);
+    InitializeCriticalSection(&lockStandByList);
+    InitializeCriticalSection(&lockDiskActive);
+    InitializeCriticalSection(&lockNumberOfSlots);
+}
+
+HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext) {
+    return CreateThread(DEFAULT_SECURITY,
+                               DEFAULT_STACK_SIZE,
+                               page_trimmer,
+                               ThreadContext,
+                               DEFAULT_CREATION_FLAGS,
+                               &ThreadContext->ThreadId);
+}
+HANDLE createWritingThread(PTHREAD_INFO ThreadContext) {
+    return CreateThread(DEFAULT_SECURITY,
+                           DEFAULT_STACK_SIZE,
+                           diskWriter,
+                           ThreadContext,
+                           DEFAULT_CREATION_FLAGS,
+                           &ThreadContext->ThreadId);
+}
+
+HANDLE createUserThread(PTHREAD_INFO ThreadContext) {
+    return CreateThread(DEFAULT_SECURITY,
+                           DEFAULT_STACK_SIZE,
+                           testVM,
+                           ThreadContext,
+                           DEFAULT_CREATION_FLAGS,
+                           &ThreadContext->ThreadId);
 }

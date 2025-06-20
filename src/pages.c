@@ -2,17 +2,19 @@
 // Created by nrper on 6/16/2025.
 //
 #include "pages.h"
+#include "util.h"
 #include "disk.h"
 #include <stdio.h>
 #include <string.h>
+#include"macros.h"
 
 VOID
-modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
+modified_read(pte* currentPTE, ULONG64 frameNumber) {
     // Modified reading
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
-    ULONG64 frameNumber = getFrameNumber(freePage);
+
     // MUPP(va, size, physical page)
     if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
@@ -30,53 +32,99 @@ modified_read(ULONG64 arbitrary_va, pte* currentPTE, pfn* freePage) {
     set_disk_space_free(diskIndex);
 }
 
-VOID
-page_trimmer(VOID) {
-    pfn* trimmed = listRemove(REMOVE_ACTIVE_PAGE);
-    ULONG64 trimmedVa = (ULONG64) pte_to_va(trimmed->pte);
+DWORD
+page_trimmer(LPVOID lpParam) {
 
-    // gets which disk page to write to
-    ULONG64 diskIndex = get_free_disk_index();
+    WaitForSingleObject(trimmingStartEvent, INFINITE);
 
-    pfnInbounds(trimmed);
+    pfn* page;
+    ULONG64 va;
 
-    // update pte
-    trimmed->pte->validFormat.valid = 0;
-    trimmed->pte->invalidFormat.diskIndex = diskIndex;
+    for (int i = 0; i < BATCH_SIZE; ++i) {
 
-    // unmap from trimmed va
-    if (MapUserPhysicalPages((PVOID)trimmedVa, 1, NULL) == FALSE) {
-        printf("full_virtual_memory_test : could not unmap VA %p\n", (PVOID)trimmedVa);
-        DebugBreak();
-        return;
+        EnterCriticalSection(&lockActiveList);
+        page = container_of(RemoveHeadList(&headActiveList), pfn, entry);
+        LeaveCriticalSection(&lockActiveList);
+
+        page->pte->transitionFormat.mustBeZero = 0;
+        page->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
+        va = (ULONG64) pte_to_va(page->pte);
+
+        // unmap everpage, ask how I can string these together
+        if (MapUserPhysicalPages(va, 1, NULL) == FALSE) {
+            printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
+            return 1;
+        }
+
+        EnterCriticalSection(&lockModifiedList);
+        InsertTailList(&headModifiedList, &page->entry);
+        LeaveCriticalSection(&lockModifiedList);
+
     }
+    SetEvent(writingStartEvent);
+    return 0;
+}
 
-    // modified writing
-    ULONG64 diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
+//modified to standBy
+DWORD diskWriter(LPVOID lpParam) {
+    WaitForSingleObject(writingStartEvent, INFINITE);
 
-    ULONG64 frameNumber = getFrameNumber(trimmed);
+    pfn* page;
+    ULONG64 frameNumber;
+    ULONG64 diskIndex;
+    ULONG64 diskAddressArray[BATCH_SIZE];
+    ULONG64 frameNumberArray[BATCH_SIZE];
+    pfn* pfnArray[BATCH_SIZE];
+
+
+    for (int i = 0; i < BATCH_SIZE; ++i) {
+        EnterCriticalSection(&lockModifiedList);
+        page = container_of(RemoveHeadList(&headModifiedList), pfn, entry);
+        LeaveCriticalSection(&lockModifiedList);
+
+        pfnArray[i] = page;
+
+        frameNumber = getFrameNumber(page);
+        frameNumberArray[i] = frameNumber;
+
+        diskIndex = get_free_disk_index();
+        page->diskIndex = diskIndex;
+        // modified writing
+        ULONG64 diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
+        diskAddressArray[i] = diskByteAddress;
+
+        page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
+    }
 
     // map to transfer va
-    if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
+    if (MapUserPhysicalPages(transferVa, BATCH_SIZE, frameNumberArray) == FALSE) {
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
         DebugBreak();
-        return;
+        return 1;
     }
 
-    // copy from transfer to disk
-    memcpy((PVOID) diskByteAddress, transferVa, PAGE_SIZE);
-
-    // I need to zero it because when a new va gets this page, it cant have another va's data
-    memset(transferVa, 0, PAGE_SIZE);
+    for (int i = 0; i < BATCH_SIZE; ++i) {
+        // copy from transfer to disk
+        memcpy(&diskAddressArray[i], transferVa + i * PAGE_SIZE , PAGE_SIZE);
+    }
 
     // unmap transfer
-    if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
+    if (MapUserPhysicalPages(transferVa, BATCH_SIZE, NULL) == FALSE) {
         printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
         DebugBreak();
-        return;
+        return 1;
     }
 
-    listAdd(trimmed, FALSE);
+    for (int i = 0; i < BATCH_SIZE; ++i) {
+        EnterCriticalSection(&lockStandByList);
+
+        InsertHeadList(&headStandByList, &pfnArray[i]->entry);
+
+        LeaveCriticalSection(&lockStandByList);
+    }
+
+    SetEvent(writingEndEvent);
+    return 0;
 }
 
 VOID

@@ -44,6 +44,7 @@ set(HEADERS
         include/init.h
         include/pages.h
         include/vm.h
+        include/macros.h
 )
 
 # Create the executable

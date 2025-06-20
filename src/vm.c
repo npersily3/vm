@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <intrin.h>
 #include "vm.h"
+#include "macros.h"
 
 // Timestamp counter for random number generation
 static __inline unsigned __int64 GetTimeStampCounter(void) {
@@ -20,11 +21,11 @@ full_virtual_memory_test(VOID) {
     BOOL allocated;
     BOOL page_faulted;
     BOOL privilege;
+
     HANDLE physical_page_handle;
     ULONG_PTR virtual_address_size;
     ULONG_PTR virtual_address_size_in_unsigned_chunks;
-    pte* currentPTE;
-    pfn* freePage;
+
 
     // Allocate the physical pages that we will be managing.
     // First acquire privilege to do this since physical page control
@@ -109,7 +110,7 @@ full_virtual_memory_test(VOID) {
                                        PAGE_READWRITE);
 
     transferVa = VirtualAlloc(NULL,
-                              PAGE_SIZE,
+                              PAGE_SIZE * BATCH_SIZE,
                               MEM_RESERVE | MEM_PHYSICAL,
                               PAGE_READWRITE);
 #endif
@@ -120,7 +121,7 @@ full_virtual_memory_test(VOID) {
     }
 
 
-    testVMSingleThreaded();
+
     // SetEvent(GlobalStartEvent);
     //
     //
@@ -137,13 +138,12 @@ DWORD testVM(LPVOID lpParam) {
 
 
     pte* currentPTE;
-    pfn* freePage;
+
     PULONG_PTR arbitrary_va;
     unsigned random_number;
     unsigned i;
     BOOL allocated;
     BOOL page_faulted;
-
 
     //this line is what put it all together
     WaitForSingleObject(GlobalStartEvent, INFINITE);
@@ -173,7 +173,7 @@ DWORD testVM(LPVOID lpParam) {
         // straddle a PAGE_SIZE boundary just to keep things simple for now.
         random_number &= ~0x7;
 
-        EnterCriticalSection(&GlobalCriticalSection);
+
         arbitrary_va = vaStart + random_number;
 
         __try {
@@ -183,45 +183,23 @@ DWORD testVM(LPVOID lpParam) {
         }
 
 
+
         if (page_faulted) {
-
-            // if free list is empty trim
-            if (headFreeList.Flink == &headFreeList) {
-
-                page_trimmer();
-
-            }
-
-            freePage = listRemove(REMOVE_FREE_PAGE);
-            pfnInbounds(freePage);
 
             currentPTE = va_to_pte(arbitrary_va);
 
-            // if di is not zero read in from the disk address
-            if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-                modified_read((ULONG64)arbitrary_va, currentPTE, freePage);
+            // if the page can be rescued
+            if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
+                currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+                rescue_page(arbitrary_va, currentPTE);
+            } else {
+                mapPage(arbitrary_va, currentPTE);
             }
-
-            ULONG64 frameNumber = getFrameNumber(freePage);
-            if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
-                DebugBreak();
-                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
-                return 1;
-            }
-
-            // update pte and activate the page
-            freePage->pte = currentPTE;
-            freePage->pte->validFormat.frameNumber = frameNumber;
-            freePage->pte->validFormat.valid = 1;
-
-            listAdd(freePage, TRUE);
 
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
             checkVa((PULONG64)arbitrary_va);
 
         }
-        LeaveCriticalSection (&GlobalCriticalSection);
-
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
@@ -229,100 +207,107 @@ DWORD testVM(LPVOID lpParam) {
 }
 
 
-VOID testVMSingleThreaded() {
+VOID rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
+    pfn* page;
+    ULONG64 frameNumber;
+
+        frameNumber = currentPTE->transitionFormat.frameNumber;
+        page = getPFNfromFrameNumber(frameNumber);
+
+    //two different kinds of locks
+    if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+
+        EnterCriticalSection(&lockStandByList);
+        removeFromMiddleOfList(page);
+        LeaveCriticalSection(&lockStandByList);
+
+        wipePage(page->diskIndex);
+
+    } else {
+        EnterCriticalSection(&lockModifiedList);
+        removeFromMiddleOfList(page);
+        LeaveCriticalSection(&lockModifiedList);
+    }
+
+    if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+        return;
+    }
+
+    // validate pte and add it to the activeList
+    currentPTE->transitionFormat.contentsLocation = ACTIVE_LIST;
+    currentPTE->validFormat.valid = 1;
+
+    EnterCriticalSection(&lockActiveList);
+    InsertTailList(&page->entry, &headActiveList);
+    LeaveCriticalSection(&lockActiveList);
+}
 
 
+VOID mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
 
-    pte* currentPTE;
-    pfn* freePage;
-    PULONG_PTR arbitrary_va;
-    unsigned random_number;
-    unsigned i;
-    BOOL allocated;
-    BOOL page_faulted;
+    pfn* page;
+    ULONG64 frameNumber;
+    // if it is not empty
+    if (headFreeList.Flink != &headFreeList) {
+
+        EnterCriticalSection(&lockFreeList);
+        page = RemoveHeadList(&headFreeList);
+        LeaveCriticalSection(&lockFreeList);
 
 
-    //this line is what put it all together
-  //  WaitForSingleObject(GlobalStartEvent, INFINITE);
-      // Now perform random accesses
-    for (i = 0; i < MB(1); i += 1) {
-        // Randomly access different portions of the virtual address
-        // space we obtained above.
-        //
-        // If we have never accessed the surrounding page size (4K)
-        // portion, the operating system will receive a page fault
-        // from the CPU and proceed to obtain a physical page and
-        // install a PTE to map it - thus connecting the end-to-end
-        // virtual address translation. Then the operating system
-        // will tell the CPU to repeat the instruction that accessed
-        // the virtual address and this time, the CPU will see the
-        // valid PTE and proceed to obtain the physical contents
-        // (without faulting to the operating system again).
-
-        random_number = (unsigned) (GetTimeStampCounter() >> 4);
-        random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
-
-        // Write the virtual address into each page. If we need to
-        // debug anything, we'll be able to see these in the pages.
-        page_faulted = FALSE;
-
-        // Ensure the write to the arbitrary virtual address doesn't
-        // straddle a PAGE_SIZE boundary just to keep things simple for now.
-        random_number &= ~0x7;
-
-        arbitrary_va = vaStart + random_number;
-
-        __try {
-            *arbitrary_va = (ULONG_PTR) arbitrary_va;
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            page_faulted = TRUE;
+        frameNumber = getFrameNumber(page);
+        if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
+            if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+                DebugBreak();
+                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+                return;
+            }
+        } else {
+            modified_read(currentPTE, frameNumber);
         }
+    } else {
+        if (headStandByList.Flink != &headStandByList) {
+            EnterCriticalSection(&lockStandByList);
+            page = RemoveHeadList(&headStandByList);
+            LeaveCriticalSection(&lockStandByList);
 
+            page->pte->transitionFormat.contentsLocation = DISK;
+            page->pte->invalidFormat.diskIndex = page->diskIndex;
 
-        if (page_faulted) {
-            EnterCriticalSection(&GlobalCriticalSection);
-            // if free list is empty trim
-            if (headFreeList.Flink == &headFreeList) {
-
-                page_trimmer();
-
-            }
-
-            freePage = listRemove(REMOVE_FREE_PAGE);
-            pfnInbounds(freePage);
-
-            currentPTE = va_to_pte(arbitrary_va);
-
-            // if di is not zero read in from the disk address
-            if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-                modified_read((ULONG64)arbitrary_va, currentPTE, freePage);
-            }
-
-            ULONG64 frameNumber = getFrameNumber(freePage);
+            frameNumber = getFrameNumber(page);
 
             if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
                 DebugBreak();
                 printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
-                return ;
+                return;
             }
 
-            // update pte and activate the page
-            freePage->pte = currentPTE;
-            freePage->pte->validFormat.frameNumber = frameNumber;
-            freePage->pte->validFormat.valid = 1;
-
-            listAdd(freePage, TRUE);
-
-            *arbitrary_va = (ULONG_PTR) arbitrary_va;
+        } else {
+            SetEvent(&trimmingStartEvent);
+            // ask what to do from here
+            WaitForSingleObject(writingEndEvent, INFINITE);
+            // if the page can be rescued
+            if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
+                currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+                rescue_page(arbitrary_va, currentPTE);
+                } else {
+                    mapPage(arbitrary_va, currentPTE);
+                }
         }
-
-        checkVa((PULONG64)arbitrary_va);
-        LeaveCriticalSection (&GlobalCriticalSection);
     }
 
-    printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
-    return ;
+    //do I need a lock here
+    currentPTE->validFormat.frameNumber = frameNumber;
+    currentPTE->validFormat.transition = ACTIVE_LIST;
+    currentPTE->validFormat.valid = 1;
+
+    EnterCriticalSection(&lockActiveList);
+    InsertTailList( &headActiveList, &page->entry);
+    LeaveCriticalSection(&lockActiveList);
 }
+
 
 
 VOID
@@ -349,7 +334,6 @@ main(int argc, char **argv) {
     //
     // This is where we can be as creative as we like, the sky's the limit !
 
-    InitializeCriticalSection(&GlobalCriticalSection);
 
     full_virtual_memory_test();
 

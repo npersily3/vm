@@ -3,7 +3,7 @@
 
 #include <windows.h>
 #include <stdbool.h>
-
+#include <stddef.h>
 //
 // Configuration constants
 //
@@ -31,6 +31,7 @@
 #define ROUND_DOWN_TO_PAGE(addr) ((ULONG_PTR)(addr) & ~(PAGE_SIZE - 1))
 #define ROUND_UP_TO_PAGE(addr) (((ULONG_PTR)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
+
 // List operation constants
 #define REMOVE_FREE_PAGE           FALSE
 #define REMOVE_ACTIVE_PAGE         TRUE
@@ -43,23 +44,38 @@
 #define ASSERT(x)
 #endif
 
+#define container_of(ptr, type, member) \
+((type *)((char *)(ptr) - offsetof(type, member)))
+
 //
 // Data structures
 //
 typedef struct {
     ULONG64 valid: 1;
+    ULONG64 transition: 2;
     ULONG64 frameNumber: frame_number_size;
 } validPte;
 
 typedef struct {
     ULONG64 mustBeZero: 1;
+    ULONG64 transition: 2;
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
+#define DISK 0
+#define ACTIVE_LIST 1
+#define MODIFIED_LIST 2
+#define STAND_BY_LIST 3
+typedef struct {
+    ULONG64 mustBeZero: 1;
+    ULONG64 contentsLocation: 2;
+    ULONG64 frameNumber: frame_number_size;
+} transitionPte;
 
 typedef struct {
     union {
         validPte validFormat;
         invalidPte invalidFormat;
+        transitionPte transitionFormat;
         ULONG64 entireFormat;
     };
 } pte;
@@ -67,7 +83,7 @@ typedef struct {
 typedef struct {
     LIST_ENTRY entry;
     pte *pte;
-//    ULONG64 frameNumber;
+   ULONG64 diskIndex;
 } pfn;
 
 typedef struct _THREAD_INFO {
@@ -99,6 +115,10 @@ typedef struct _THREAD_INFO {
 //
 extern LIST_ENTRY headFreeList;
 extern LIST_ENTRY headActiveList;
+extern LIST_ENTRY headModifiedList;
+extern LIST_ENTRY headStandByList;
+
+
 extern pte *pageTable;
 extern pfn *pfnStart;
 extern pfn *endPFN;
@@ -119,5 +139,7 @@ PVOID pte_to_va(pte* pte);
 PVOID init_memory(ULONG64 numBytes);
 VOID pfnInbounds(pfn* trimmed);
 ULONG64 getFrameNumber(pfn* pfn);
+pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
+VOID removeFromMiddleOfList(LIST_ENTRY* entry) ;
 
 #endif // UTIL_H
