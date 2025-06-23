@@ -5,12 +5,13 @@
 #ifndef VM_H
 #define VM_H
 
+#define REDO_FAULT TRUE
+
 DWORD testVM(LPVOID lpParam);
 VOID full_virtual_memory_test(VOID);
-VOID mapPage(ULONG64 arbitrary_va, pte* currentPTE);
-VOID rescue_page(ULONG64 arbitrary_va, pte* currentPTE);
-VOID startTrimmer(VOID);
-
+BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE);
+BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE);
+BOOL pageFault(PULONG_PTR arbitrary_va);
 
 extern HANDLE GlobalStartEvent;;
 

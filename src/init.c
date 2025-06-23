@@ -11,6 +11,8 @@
 
 #pragma comment(lib, "advapi32.lib")
 
+#define SUPPORT_MULTIPLE_VA_TO_SAME_PAGE TRUE
+
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 #pragma comment(lib, "onecore.lib")
 #endif
@@ -45,11 +47,15 @@ HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
  CRITICAL_SECTION lockStandByList;
  CRITICAL_SECTION lockDiskActive;
  CRITICAL_SECTION lockNumberOfSlots;
+CRITICAL_SECTION lockPageTable;
+
 
 HANDLE GlobalStartEvent;
 HANDLE trimmingStartEvent;
 HANDLE writingStartEvent;
 HANDLE writingEndEvent;
+HANDLE userStartEvent;
+HANDLE userEndEvent;
 
 BOOL
 GetPrivilege(VOID) {
@@ -151,15 +157,16 @@ init_virtual_memory(VOID) {
 
     ULONG64 length = numBytes / sizeof(pte);
     for (int i = 0; i < length; i++) {
+        pageTable[i].entireFormat = 0;
         pageTable[i].invalidFormat.diskIndex = EMPTY_PTE;
-        pageTable[i].invalidFormat.mustBeZero = 0;
+
     }
 
     // Initialize the PFN array which will manage the free and active list
    // numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
     pfnStart = (pfn*)init_memory(numBytes);
     ULONG64 max = getMaxFrameNumber();
-    max+=1;
+    max += 1;
     pfnStart = VirtualAlloc(NULL,sizeof(pfn)*max,MEM_RESERVE,PAGE_READWRITE);
     endPFN = pfnStart + max;
 
@@ -200,7 +207,7 @@ init_virtual_memory(VOID) {
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
     createThreads();
-  //  createThreads();
+
 
 
 }
@@ -319,10 +326,11 @@ VOID createThreads(VOID) {
 }
 VOID createEvents(VOID) {
 
-
-    writingStartEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
+    userStartEvent = CreateEvent (NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
+    writingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     trimmingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
-    writingEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_ON, NULL);
+    writingEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
+    userEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
 }
 VOID initCriticalSections(VOID) {
     InitializeCriticalSection(&lockFreeList);
@@ -331,6 +339,7 @@ VOID initCriticalSections(VOID) {
     InitializeCriticalSection(&lockStandByList);
     InitializeCriticalSection(&lockDiskActive);
     InitializeCriticalSection(&lockNumberOfSlots);
+    InitializeCriticalSection(&lockPageTable);
 }
 
 HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext) {

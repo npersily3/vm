@@ -62,7 +62,7 @@ typedef struct {
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
 #define DISK 0
-#define ACTIVE_LIST 1
+#define UNASSIGNED 1
 #define MODIFIED_LIST 2
 #define STAND_BY_LIST 3
 typedef struct {

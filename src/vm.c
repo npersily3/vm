@@ -121,11 +121,9 @@ full_virtual_memory_test(VOID) {
     }
 
 
+    SetEvent(userStartEvent);
 
-    // SetEvent(GlobalStartEvent);
-    //
-    //
-    // WaitForMultipleObjects(NUMBER_OF_THREADS, workDoneThreadHandles, WAIT_FOR_ALL, INFINITE);
+    WaitForSingleObject(userEndEvent, INFINITE);
 
     // Now that we're done with our memory we can be a good
     // citizen and free it.
@@ -135,7 +133,7 @@ full_virtual_memory_test(VOID) {
 
 DWORD testVM(LPVOID lpParam) {
 
-
+    WaitForSingleObject(userStartEvent, INFINITE);
 
     pte* currentPTE;
 
@@ -146,7 +144,7 @@ DWORD testVM(LPVOID lpParam) {
     BOOL page_faulted;
 
     //this line is what put it all together
-    WaitForSingleObject(GlobalStartEvent, INFINITE);
+
       // Now perform random accesses
     for (i = 0; i < MB(1); i += 1) {
         // Randomly access different portions of the virtual address
@@ -182,40 +180,61 @@ DWORD testVM(LPVOID lpParam) {
             page_faulted = TRUE;
         }
 
-
-
         if (page_faulted) {
-
-            currentPTE = va_to_pte(arbitrary_va);
-
-            // if the page can be rescued
-            if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
-                currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
-                rescue_page(arbitrary_va, currentPTE);
-            } else {
-                mapPage(arbitrary_va, currentPTE);
+            if (pageFault(arbitrary_va) == REDO_FAULT) {
+                pageFault(arbitrary_va);
             }
-
-            *arbitrary_va = (ULONG_PTR) arbitrary_va;
-            checkVa((PULONG64)arbitrary_va);
-
         }
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
+    SetEvent(userEndEvent);
     return 0;
 }
 
+BOOL pageFault(PULONG_PTR arbitrary_va) {
 
-VOID rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
+    pte* currentPTE;
+
+    currentPTE = va_to_pte(arbitrary_va);
+
+
+    EnterCriticalSection(&lockPageTable);
+    // if the page can be rescued
+    if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
+        currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+        if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
+            LeaveCriticalSection(&lockPageTable);
+            return REDO_FAULT;
+        }
+    } else {
+            if (mapPage(arbitrary_va, currentPTE) == REDO_FAULT) {
+                return REDO_FAULT;
+            }
+        }
+    LeaveCriticalSection(&lockPageTable);
+
+    *arbitrary_va = (ULONG_PTR) arbitrary_va;
+    checkVa((PULONG64)arbitrary_va);
+
+    return !REDO_FAULT;
+
+}
+
+
+BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     pfn* page;
     ULONG64 frameNumber;
+    pte entryContents = *currentPTE;
+
 
         frameNumber = currentPTE->transitionFormat.frameNumber;
         page = getPFNfromFrameNumber(frameNumber);
 
     //two different kinds of locks
     if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+
+
 
         EnterCriticalSection(&lockStandByList);
         removeFromMiddleOfList(page);
@@ -224,10 +243,13 @@ VOID rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         wipePage(page->diskIndex);
 
     } else {
+
+
         EnterCriticalSection(&lockModifiedList);
         removeFromMiddleOfList(page);
         LeaveCriticalSection(&lockModifiedList);
     }
+
 
     if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
         DebugBreak();
@@ -235,43 +257,56 @@ VOID rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         return;
     }
 
-    // validate pte and add it to the activeList
-    currentPTE->transitionFormat.contentsLocation = ACTIVE_LIST;
+
     currentPTE->validFormat.valid = 1;
+
 
     EnterCriticalSection(&lockActiveList);
     InsertTailList(&page->entry, &headActiveList);
     LeaveCriticalSection(&lockActiveList);
+
+
+    return !REDO_FAULT;
+
 }
 
 
-VOID mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
+BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
 
     pfn* page;
     ULONG64 frameNumber;
+    pte entryContents = *currentPTE;
+
+
     // if it is not empty
     if (headFreeList.Flink != &headFreeList) {
+
 
         EnterCriticalSection(&lockFreeList);
         page = RemoveHeadList(&headFreeList);
         LeaveCriticalSection(&lockFreeList);
-
-
         frameNumber = getFrameNumber(page);
-        if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
-            if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
-                DebugBreak();
-                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
-                return;
-            }
-        } else {
+
+
+        if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
             modified_read(currentPTE, frameNumber);
         }
+
+        if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+            DebugBreak();
+            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+            return;
+        }
     } else {
+        // standby is not empty
         if (headStandByList.Flink != &headStandByList) {
+
+
+
             EnterCriticalSection(&lockStandByList);
             page = RemoveHeadList(&headStandByList);
             LeaveCriticalSection(&lockStandByList);
+
 
             page->pte->transitionFormat.contentsLocation = DISK;
             page->pte->invalidFormat.diskIndex = page->diskIndex;
@@ -285,27 +320,33 @@ VOID mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             }
 
         } else {
-            SetEvent(&trimmingStartEvent);
+
+
+            SetEvent(trimmingStartEvent);
+
+            ResetEvent(writingEndEvent);
             // ask what to do from here
+            LeaveCriticalSection(&lockPageTable);
+
             WaitForSingleObject(writingEndEvent, INFINITE);
-            // if the page can be rescued
-            if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
-                currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
-                rescue_page(arbitrary_va, currentPTE);
-                } else {
-                    mapPage(arbitrary_va, currentPTE);
-                }
+
+            return REDO_FAULT;
         }
     }
 
-    //do I need a lock here
+
     currentPTE->validFormat.frameNumber = frameNumber;
-    currentPTE->validFormat.transition = ACTIVE_LIST;
     currentPTE->validFormat.valid = 1;
+    page->pte = currentPTE;
+
 
     EnterCriticalSection(&lockActiveList);
     InsertTailList( &headActiveList, &page->entry);
     LeaveCriticalSection(&lockActiveList);
+
+    LeaveCriticalSection(&lockPageTable);
+
+    return !REDO_FAULT;
 }
 
 

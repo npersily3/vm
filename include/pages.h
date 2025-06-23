@@ -8,6 +8,8 @@
 extern HANDLE trimmingStartEvent;
 extern HANDLE writingStartEvent;
 extern HANDLE writingEndEvent;
+extern HANDLE userStartEvent;
+extern HANDLE userEndEvent;
 
 extern CRITICAL_SECTION lockFreeList;
 extern CRITICAL_SECTION lockActiveList;
@@ -15,6 +17,7 @@ extern CRITICAL_SECTION lockModifiedList;
 extern CRITICAL_SECTION lockStandByList;
 extern CRITICAL_SECTION lockDiskActive;
 extern CRITICAL_SECTION lockNumberOfSlots;
+extern CRITICAL_SECTION lockPageTable;
 //
 // Page management functions
 //
