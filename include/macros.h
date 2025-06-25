@@ -51,8 +51,13 @@ RemoveHeadList(
 PLIST_ENTRY Flink;
 PLIST_ENTRY Entry;
 
+
+
 Entry = ListHead->Flink;
 Flink = Entry->Flink;
+
+        //check if empty
+        if (Entry == ListHead) {DebugBreak(); return NULL;}
 ListHead->Flink = Flink;
 Flink->Blink = ListHead;
 return Entry;
@@ -81,6 +86,9 @@ InsertTailList(
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )
 {
+
+        if (Entry == &headModifiedList || Entry == &headActiveList
+                || Entry == &headFreeList || Entry == &headStandByList) {DebugBreak(); return;}
 PLIST_ENTRY Blink;
 
 Blink = ListHead->Blink;
@@ -98,6 +106,11 @@ InsertHeadList(
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )
 {
+
+        if (Entry == &headModifiedList || Entry == &headActiveList
+                        || Entry == &headFreeList || Entry == &headStandByList) {DebugBreak(); return;}
+
+
 PLIST_ENTRY Flink;
 
 Flink = ListHead->Flink;

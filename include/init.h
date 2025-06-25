@@ -6,7 +6,7 @@
 //
 // Configuration for multiple VA support
 //
-#define SUPPORT_MULTIPLE_VA_TO_SAME_PAGE 0
+#define SUPPORT_MULTIPLE_VA_TO_SAME_PAGE 1
 
 #define EVENT_START_ON TRUE
 #define EVENT_START_OFF FALSE

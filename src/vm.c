@@ -108,12 +108,16 @@ full_virtual_memory_test(VOID) {
                                        virtual_address_size,
                                        MEM_RESERVE | MEM_PHYSICAL,
                                        PAGE_READWRITE);
-
+#endif
     transferVa = VirtualAlloc(NULL,
                               PAGE_SIZE * BATCH_SIZE,
                               MEM_RESERVE | MEM_PHYSICAL,
                               PAGE_READWRITE);
-#endif
+    transferVaRead = VirtualAlloc(NULL,
+                              PAGE_SIZE,
+                              MEM_RESERVE | MEM_PHYSICAL,
+                              PAGE_READWRITE);;
+
 
     if (vaStart == NULL) {
         printf("full_virtual_memory_test : could not reserve memory %x\n", GetLastError());
@@ -212,6 +216,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va) {
                 return REDO_FAULT;
             }
         }
+
     LeaveCriticalSection(&lockPageTable);
 
     *arbitrary_va = (ULONG_PTR) arbitrary_va;
@@ -221,7 +226,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va) {
 
 }
 
-
+// this function assumes a pagetable lock is being held
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     pfn* page;
     ULONG64 frameNumber;
@@ -234,13 +239,11 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     //two different kinds of locks
     if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
-
-
         EnterCriticalSection(&lockStandByList);
         removeFromMiddleOfList(page);
         LeaveCriticalSection(&lockStandByList);
 
-        wipePage(page->diskIndex);
+        set_disk_space_free(page->diskIndex);
 
     } else {
 
@@ -262,7 +265,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
 
     EnterCriticalSection(&lockActiveList);
-    InsertTailList(&page->entry, &headActiveList);
+    InsertTailList(&headActiveList, &page->entry);
     LeaveCriticalSection(&lockActiveList);
 
 
@@ -270,7 +273,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
 }
 
-
+// caller holds pte lock
 BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
 
     pfn* page;
@@ -278,13 +281,15 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
     pte entryContents = *currentPTE;
 
 
-    // if it is not empty
+    // if it is not empty need locks around these type of checks otherwise blow up
+    EnterCriticalSection(&lockFreeList);
     if (headFreeList.Flink != &headFreeList) {
 
 
-        EnterCriticalSection(&lockFreeList);
         page = RemoveHeadList(&headFreeList);
         LeaveCriticalSection(&lockFreeList);
+
+
         frameNumber = getFrameNumber(page);
 
 
@@ -298,20 +303,39 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             return;
         }
     } else {
+        LeaveCriticalSection(&lockFreeList);
+
         // standby is not empty
+        EnterCriticalSection(&lockStandByList);
         if (headStandByList.Flink != &headStandByList) {
 
 
 
-            EnterCriticalSection(&lockStandByList);
             page = RemoveHeadList(&headStandByList);
             LeaveCriticalSection(&lockStandByList);
 
 
             page->pte->transitionFormat.contentsLocation = DISK;
+
+
+
+            // maybe clear the page->
             page->pte->invalidFormat.diskIndex = page->diskIndex;
 
+            // if (page->pte->invalidFormat.diskIndex != EMPTY_PTE) {
+            //     DebugBreak();
+            // };
+            // we dont htink this will ever be used
+
+
+
+
             frameNumber = getFrameNumber(page);
+
+            if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
+                modified_read(currentPTE, frameNumber);
+            }
+
 
             if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
                 DebugBreak();
@@ -320,7 +344,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             }
 
         } else {
-
+            LeaveCriticalSection(&lockStandByList);
 
             SetEvent(trimmingStartEvent);
 

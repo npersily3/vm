@@ -16,16 +16,16 @@ modified_read(pte* currentPTE, ULONG64 frameNumber) {
 
 
     // MUPP(va, size, physical page)
-    if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
+    if (MapUserPhysicalPages(transferVaRead, 1, &frameNumber) == FALSE) {
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaRead, frameNumber);
         return;
     }
 
     // memcpy(va,va,size)
-    memcpy(transferVa, (PVOID) diskAddress, PAGE_SIZE);
+    memcpy(transferVaRead, (PVOID) diskAddress, PAGE_SIZE);
 
-    if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
-        printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
+    if (MapUserPhysicalPages(transferVaRead, 1, NULL) == FALSE) {
+        printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaRead);
         return;
     }
 
@@ -44,15 +44,18 @@ page_trimmer(LPVOID lpParam) {
         pfn* page;
         PULONG64 va;
 
+        EnterCriticalSection(&lockPageTable);
 
         for (int i = 0; i < BATCH_SIZE; ++i) {
+
+
+
 
             EnterCriticalSection(&lockActiveList);
             page = container_of(RemoveHeadList(&headActiveList), pfn, entry);
             LeaveCriticalSection(&lockActiveList);
 
 
-            EnterCriticalSection(&lockPageTable);
             va = (PULONG64) pte_to_va(page->pte);
 
 
@@ -62,6 +65,9 @@ page_trimmer(LPVOID lpParam) {
                 printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
                 return 1;
             }
+
+
+
             page->pte->transitionFormat.mustBeZero = 0;
             page->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
 
@@ -72,9 +78,12 @@ page_trimmer(LPVOID lpParam) {
             InsertTailList(&headModifiedList, &page->entry);
             LeaveCriticalSection(&lockModifiedList);
 
-            LeaveCriticalSection(&lockPageTable);
+
 
         }
+
+        LeaveCriticalSection(&lockPageTable);
+
         SetEvent(writingStartEvent);
 
     }
@@ -86,6 +95,19 @@ DWORD diskWriter(LPVOID lpParam) {
     while (TRUE) {
 
 
+
+        WaitForSingleObject(writingStartEvent, INFINITE);
+
+
+        //think about case where modified pagfe is rescued and there bsize -1 pgaes on the list
+       // ULONG64 localBatchSize
+        ULONG64 localBatchSizeInPages;
+        ULONG64 localBatchSizeInBytes;
+
+
+
+
+
         pfn* page;
         ULONG64 frameNumber;
         ULONG64 diskIndex;
@@ -95,14 +117,25 @@ DWORD diskWriter(LPVOID lpParam) {
         ULONG64 diskByteAddress;
 
 
-        WaitForSingleObject(writingStartEvent, INFINITE);
 
 
-        for (int i = 0; i < BATCH_SIZE; ++i) {
+        EnterCriticalSection(&lockPageTable);
+        // add a head struct that has a len and a entry
+        localBatchSizeInPages = modifiedLongerThanBatch();
+        localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
+
+        if (localBatchSizeInPages == 0) {
+            LeaveCriticalSection(&lockPageTable);
+            continue;
+        }
+
+        for (int i = 0; i < localBatchSizeInPages; ++i) {
+
 
             EnterCriticalSection(&lockModifiedList);
             page = container_of(RemoveHeadList(&headModifiedList), pfn, entry);
             LeaveCriticalSection(&lockModifiedList);
+
 
             pfnArray[i] = page;
 
@@ -110,46 +143,67 @@ DWORD diskWriter(LPVOID lpParam) {
             frameNumberArray[i] = frameNumber;
 
             diskIndex = get_free_disk_index();
-            page->diskIndex = diskIndex;
+
             // modified writing
              diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
             diskAddressArray[i] = diskByteAddress;
 
-            EnterCriticalSection(&lockPageTable);
+
+            page->diskIndex = diskIndex;
             page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
-            LeaveCriticalSection(&lockPageTable);
+            page->pte->transitionFormat.frameNumber = frameNumber;
         }
 
         // map to transfer va
-        if (MapUserPhysicalPages(transferVa, BATCH_SIZE, frameNumberArray) == FALSE) {
+        if (MapUserPhysicalPages(transferVa, localBatchSizeInBytes, frameNumberArray) == FALSE) {
             printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
             DebugBreak();
             return 1;
         }
 
-        for (int i = 0; i < BATCH_SIZE; ++i) {
+        for (int i = 0; i < localBatchSizeInPages; ++i) {
             // copy from transfer to disk
-            memcpy(&diskAddressArray[i], (PVOID) ((ULONG64) transferVa + i * PAGE_SIZE) , PAGE_SIZE);
+            memcpy(diskAddressArray[i], (PVOID) ((ULONG64) transferVa + i * PAGE_SIZE) , PAGE_SIZE);
         }
 
-        // unmap transfer
-        if (MapUserPhysicalPages(transferVa, BATCH_SIZE, NULL) == FALSE) {
+        // unmap transfer and set things to zero
+        memset(transferVa, 0, localBatchSizeInBytes);
+
+        if (MapUserPhysicalPages(transferVa, localBatchSizeInBytes, NULL) == FALSE) {
             DebugBreak();
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
-            DebugBreak();
             return 1;
         }
 
-        for (int i = 0; i < BATCH_SIZE; ++i) {
+
+        for (int i = 0; i < localBatchSizeInPages; ++i) {
             EnterCriticalSection(&lockStandByList);
 
-            InsertHeadList(&headStandByList, &pfnArray[i]->entry);
+            InsertTailList(&headStandByList, &pfnArray[i]->entry);
 
             LeaveCriticalSection(&lockStandByList);
         }
 
+        LeaveCriticalSection(&lockPageTable);
+
         SetEvent(writingEndEvent);
+
     }
+}
+ULONG64 modifiedLongerThanBatch() {
+
+    PLIST_ENTRY entry;
+    entry = headModifiedList.Flink;
+
+    int i;
+
+    for (i = 0; i < BATCH_SIZE; ++i) {
+        if (entry == &headModifiedList) {
+           break;
+        }
+        entry = entry->Flink;
+    }
+    return i;
 }
 
 VOID

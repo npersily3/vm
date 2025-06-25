@@ -54,6 +54,7 @@ get_free_disk_index(VOID) {
         if (*start == FALSE) {
             *start = TRUE;
             number_of_open_slots[freePortion] -= 1;
+            LeaveCriticalSection(&lockDiskActive);
             return start - diskActive;
         }
         start++;
@@ -67,31 +68,29 @@ get_free_disk_index(VOID) {
 
 VOID
 set_disk_space_free(ULONG64 diskIndex) {
-    // mark the place as inactive
 
-    EnterCriticalSection(&lockDiskActive);
-    diskActive[diskIndex] = FALSE;
-    LeaveCriticalSection(&lockDiskActive);
+    ULONG64 diskPage = diskIndex * PAGE_SIZE + (ULONG64) diskStart;
+    memset(diskPage, 0, PAGE_SIZE);
 
-    ULONG64 diskIndexRoundedDown;
+    ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
     // there is truncation when stuff cant go in easily
-    diskIndexRoundedDown = diskIndex / DISK_DIVISION_SIZE_IN_PAGES;
 
-    if (diskIndexRoundedDown >= NUMBER_OF_DISK_DIVISIONS) {
-        diskIndexRoundedDown = NUMBER_OF_DISK_DIVISIONS - 1;
+
+
+    diskIndexSection = diskIndex / DISK_DIVISION_SIZE_IN_PAGES;
+
+    if (diskIndexSection >= NUMBER_OF_DISK_DIVISIONS) {
+        diskIndexSection = NUMBER_OF_DISK_DIVISIONS - 1;
     }
-    EnterCriticalSection(&lockNumberOfSlots);
-    number_of_open_slots[diskIndexRoundedDown] += 1;
-    LeaveCriticalSection(&lockNumberOfSlots);
-}
-VOID wipePage (ULONG64 diskIndex) {
 
-    ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
-    memset (diskAddress, 0, PAGE_SIZE);
+
+
+    EnterCriticalSection(&lockNumberOfSlots);
+    number_of_open_slots[diskIndexSection] += 1;
+    LeaveCriticalSection(&lockNumberOfSlots);
 
     EnterCriticalSection(&lockDiskActive);
     diskActive[diskIndex] = FALSE;
     LeaveCriticalSection(&lockDiskActive);
-
 }

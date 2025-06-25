@@ -11,7 +11,7 @@
 
 #pragma comment(lib, "advapi32.lib")
 
-#define SUPPORT_MULTIPLE_VA_TO_SAME_PAGE TRUE
+
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 #pragma comment(lib, "onecore.lib")
@@ -30,6 +30,7 @@ pfn *pfnStart;
 pfn *endPFN;
 PULONG_PTR vaStart;
 PVOID transferVa;
+PVOID transferVaRead;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
 

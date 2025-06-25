@@ -124,6 +124,7 @@ extern pfn *pfnStart;
 extern pfn *endPFN;
 extern PULONG_PTR vaStart;
 extern PVOID transferVa;
+extern PVOID transferVaRead;
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
 extern HANDLE  workDoneThreadHandles[NUMBER_OF_THREADS];
