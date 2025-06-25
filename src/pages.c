@@ -121,7 +121,7 @@ DWORD diskWriter(LPVOID lpParam) {
 
         EnterCriticalSection(&lockPageTable);
         // add a head struct that has a len and a entry
-        localBatchSizeInPages = modifiedLongerThanBatch();
+        localBatchSizeInPages = 1;//modifiedLongerThanBatch();
         localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
 
         if (localBatchSizeInPages == 0) {
@@ -155,9 +155,11 @@ DWORD diskWriter(LPVOID lpParam) {
         }
 
         // map to transfer va
-        if (MapUserPhysicalPages(transferVa, localBatchSizeInBytes, frameNumberArray) == FALSE) {
-            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
+
+        if (MapUserPhysicalPages(transferVa, localBatchSizeInPages, frameNumberArray) == FALSE) {
+            DWORD error = GetLastError();
             DebugBreak();
+            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVa, frameNumber);
             return 1;
         }
 
@@ -169,7 +171,7 @@ DWORD diskWriter(LPVOID lpParam) {
         // unmap transfer and set things to zero
         memset(transferVa, 0, localBatchSizeInBytes);
 
-        if (MapUserPhysicalPages(transferVa, localBatchSizeInBytes, NULL) == FALSE) {
+        if (MapUserPhysicalPages(transferVa, localBatchSizeInPages, NULL) == FALSE) {
             DebugBreak();
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVa);
             return 1;
@@ -193,12 +195,12 @@ DWORD diskWriter(LPVOID lpParam) {
 ULONG64 modifiedLongerThanBatch() {
 
     PLIST_ENTRY entry;
-    entry = headModifiedList.Flink;
+    entry = headModifiedList.entry.Flink;
 
     int i;
 
     for (i = 0; i < BATCH_SIZE; ++i) {
-        if (entry == &headModifiedList) {
+        if (entry == &headModifiedList.entry) {
            break;
         }
         entry = entry->Flink;

@@ -51,6 +51,13 @@
 // Data structures
 //
 typedef struct {
+
+    LIST_ENTRY entry;
+    ULONG64 length;
+
+} listHead, *pListHead;
+
+typedef struct {
     ULONG64 valid: 1;
     ULONG64 transition: 2;
     ULONG64 frameNumber: frame_number_size;
@@ -113,10 +120,10 @@ typedef struct _THREAD_INFO {
 //
 // Global variables (declared here, defined in init.c)
 //
-extern LIST_ENTRY headFreeList;
-extern LIST_ENTRY headActiveList;
-extern LIST_ENTRY headModifiedList;
-extern LIST_ENTRY headStandByList;
+extern listHead headFreeList;
+extern listHead headActiveList;
+extern listHead headModifiedList;
+extern listHead headStandByList;
 
 
 extern pte *pageTable;

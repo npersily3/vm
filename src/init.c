@@ -20,10 +20,10 @@
 //
 // Global variable definitions
 //
-LIST_ENTRY headFreeList;
-LIST_ENTRY headActiveList;
-LIST_ENTRY headModifiedList;
-LIST_ENTRY headStandByList;
+listHead headFreeList;
+listHead headActiveList;
+listHead headModifiedList;
+listHead headStandByList;
 
 pte *pageTable;
 pfn *pfnStart;
@@ -174,17 +174,17 @@ init_virtual_memory(VOID) {
 
 
     // Initialize the free and active list as empty
-    headFreeList.Flink = &headFreeList;
-    headFreeList.Blink = &headFreeList;
+    headFreeList.entry.Flink = &headFreeList.entry;
+    headFreeList.entry.Blink = &headFreeList.entry;
 
-    headActiveList.Flink = &headActiveList;
-    headActiveList.Blink = &headActiveList;
+    headActiveList.entry.Flink = &headActiveList.entry;
+    headActiveList.entry.Blink = &headActiveList.entry;
 
-    headModifiedList.Flink = &headModifiedList;
-    headModifiedList.Blink = &headModifiedList;
+    headModifiedList.entry.Flink = &headModifiedList.entry;
+    headModifiedList.entry.Blink = &headModifiedList.entry;
 
-    headStandByList.Flink = &headStandByList;
-    headStandByList.Blink = &headStandByList;
+    headStandByList.entry.Flink = &headStandByList.entry;
+    headStandByList.entry.Blink = &headStandByList.entry;
 
 
     // Add every page to the free list
@@ -207,6 +207,18 @@ init_virtual_memory(VOID) {
         memset(new_pfn, 0, sizeof(pfn));
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
+    //create transferVas
+    transferVa = VirtualAlloc(NULL,
+                          PAGE_SIZE * BATCH_SIZE,
+                          MEM_RESERVE | MEM_PHYSICAL,
+                          PAGE_READWRITE);
+    transferVaRead = VirtualAlloc(NULL,
+                              PAGE_SIZE,
+                              MEM_RESERVE | MEM_PHYSICAL,
+                              PAGE_READWRITE);
+
+
+
     createThreads();
 
 

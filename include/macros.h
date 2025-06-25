@@ -1,11 +1,13 @@
 /* This file contains macros for manipulating doubly linked lists.
- * The code for these macros was written by Microsoft. */
+ * The code for these macros was written by Microsoft.
+ * Edited By Noah Persily to accomodate his structs */
 #ifndef VM_MACROS_H
 #define VM_MACROS_H
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include "util.h"
 
 FORCEINLINE
         VOID
@@ -45,7 +47,7 @@ return (BOOLEAN)(Flink == Blink);
 FORCEINLINE
         PLIST_ENTRY
 RemoveHeadList(
-        __inout PLIST_ENTRY ListHead
+        __inout pListHead ListHead
 )
 {
 PLIST_ENTRY Flink;
@@ -53,13 +55,14 @@ PLIST_ENTRY Entry;
 
 
 
-Entry = ListHead->Flink;
+Entry = ListHead->entry.Flink;
 Flink = Entry->Flink;
 
         //check if empty
-        if (Entry == ListHead) {DebugBreak(); return NULL;}
-ListHead->Flink = Flink;
+        if (Entry == &ListHead->entry) {DebugBreak(); return NULL;}
+ListHead->entry.Flink = Flink;
 Flink->Blink = ListHead;
+        ListHead->length--;
 return Entry;
 }
 
@@ -81,21 +84,25 @@ return Entry;
 
 FORCEINLINE
         VOID
+// changed to keep track of length
 InsertTailList(
-        __inout PLIST_ENTRY ListHead,
+        __inout pListHead ListHead,
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )
 {
 
-        if (Entry == &headModifiedList || Entry == &headActiveList
-                || Entry == &headFreeList || Entry == &headStandByList) {DebugBreak(); return;}
+        if (Entry == &headModifiedList.entry || Entry == &headActiveList.entry
+                || Entry == &headFreeList.entry || Entry == &headStandByList.entry) {DebugBreak(); return;}
 PLIST_ENTRY Blink;
 
-Blink = ListHead->Blink;
-Entry->Flink = ListHead;
+
+Blink = ListHead->entry.Blink;
+Entry->Flink = &ListHead->entry;
 Entry->Blink = Blink;
 Blink->Flink = Entry;
-ListHead->Blink = Entry;
+ListHead->entry.Blink = Entry;
+        ListHead->length++;
+
 }
 
 
@@ -106,9 +113,6 @@ InsertHeadList(
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )
 {
-
-        if (Entry == &headModifiedList || Entry == &headActiveList
-                        || Entry == &headFreeList || Entry == &headStandByList) {DebugBreak(); return;}
 
 
 PLIST_ENTRY Flink;

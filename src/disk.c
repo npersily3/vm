@@ -70,7 +70,7 @@ VOID
 set_disk_space_free(ULONG64 diskIndex) {
 
     ULONG64 diskPage = diskIndex * PAGE_SIZE + (ULONG64) diskStart;
-    memset(diskPage, 0, PAGE_SIZE);
+    memset((PVOID)diskPage, 0, PAGE_SIZE);
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
