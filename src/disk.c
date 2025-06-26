@@ -45,7 +45,8 @@ get_free_disk_index(VOID) {
 
     // this will make it go over 1 so it can find the transfer slot
     if(number_of_open_slots[freePortion] == 0) {
-        DebugBreak();
+        return COULD_NOT_FIND_SLOT;
+
     }
 
     //ask if they should go in the loop
@@ -75,6 +76,9 @@ set_disk_space_free(ULONG64 diskIndex) {
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
     // there is truncation when stuff cant go in easily
+
+    if (diskActiveVa[diskIndex] == NULL) {DebugBreak();}
+    diskActiveVa[diskIndex] = NULL;
 
 
 

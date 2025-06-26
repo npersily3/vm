@@ -39,6 +39,7 @@ PULONG_PTR physical_page_numbers;
 PVOID diskStart;
 ULONG64 diskEnd;
 boolean* diskActive;
+PULONG64* diskActiveVa;
 ULONG64* number_of_open_slots;
 
 HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
@@ -145,6 +146,8 @@ init_virtual_memory(VOID) {
 
     numDiskSlots = DISK_SIZE_IN_PAGES;
     diskActive = (boolean*)init_memory(numDiskSlots);
+    diskActiveVa = init_memory(numDiskSlots * sizeof(ULONG64));
+
 
     numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
     number_of_open_slots = (ULONG64*)malloc(numBytes);
@@ -165,8 +168,8 @@ init_virtual_memory(VOID) {
     }
 
     // Initialize the PFN array which will manage the free and active list
-    numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
-    pfnStart = (pfn*)init_memory(numBytes);
+    //numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
+   // pfnStart = (pfn*)init_memory(numBytes);
     ULONG64 max = getMaxFrameNumber();
     max += 1;
     pfnStart = VirtualAlloc(NULL,sizeof(pfn)*max,MEM_RESERVE,PAGE_READWRITE);

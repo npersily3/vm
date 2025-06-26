@@ -109,10 +109,6 @@ DWORD diskWriter(LPVOID lpParam) {
        // ULONG64 localBatchSize
 
 
-
-
-
-
         pfn* page;
         ULONG64 frameNumber;
         ULONG64 diskIndex;
@@ -120,6 +116,9 @@ DWORD diskWriter(LPVOID lpParam) {
         ULONG64 frameNumberArray[BATCH_SIZE];
         pfn* pfnArray[BATCH_SIZE];
         ULONG64 diskByteAddress;
+        boolean doubleBreak;
+
+
 
 
 
@@ -128,7 +127,7 @@ DWORD diskWriter(LPVOID lpParam) {
         // add a head struct that has a len and a entry
         ULONG64 localBatchSizeInPages;
         ULONG64 localBatchSizeInBytes;
-
+        doubleBreak = FALSE;
 
         localBatchSizeInPages = min(BATCH_SIZE, headModifiedList.length);
 
@@ -146,13 +145,37 @@ DWORD diskWriter(LPVOID lpParam) {
             page = container_of(RemoveHeadList(&headModifiedList), pfn, entry);
             LeaveCriticalSection(&lockModifiedList);
 
+            ULONG64 va = (ULONG64) pte_to_va(page->pte);
 
             pfnArray[i] = page;
 
             frameNumber = getFrameNumber(page);
             frameNumberArray[i] = frameNumber;
 
+
+            //nptodo break early from the forloop, add current back to modified, edit local batchsize
             diskIndex = get_free_disk_index();
+            if (diskIndex == COULD_NOT_FIND_SLOT) {
+                localBatchSizeInPages = i;
+                localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
+                InsertTailList(&headModifiedList, &page->entry);
+
+                if (i == 0) {
+                    doubleBreak = TRUE;
+                }
+
+                break;
+            }
+
+            if (doubleBreak) {
+                break;
+            }
+
+            if (diskActiveVa[diskIndex] != NULL) {DebugBreak();}
+            diskActiveVa[diskIndex] = va;
+
+            //nptodo multiple of each thread therefore I need more locks.start with multiple faulting threads
+            // array of pagetable locks similar to disk array
 
             // modified writing
              diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
