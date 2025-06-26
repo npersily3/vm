@@ -12,6 +12,7 @@ VOID full_virtual_memory_test(VOID);
 BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE);
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE);
 BOOL pageFault(PULONG_PTR arbitrary_va);
+BOOL zeroPage (pfn* page);
 
 extern HANDLE GlobalStartEvent;;
 

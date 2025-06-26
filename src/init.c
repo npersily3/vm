@@ -31,6 +31,7 @@ pfn *endPFN;
 PULONG_PTR vaStart;
 PVOID transferVa;
 PVOID transferVaRead;
+PVOID transferVaWipePage;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
 
@@ -164,7 +165,7 @@ init_virtual_memory(VOID) {
     }
 
     // Initialize the PFN array which will manage the free and active list
-   // numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
+    numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
     pfnStart = (pfn*)init_memory(numBytes);
     ULONG64 max = getMaxFrameNumber();
     max += 1;
@@ -176,16 +177,19 @@ init_virtual_memory(VOID) {
     // Initialize the free and active list as empty
     headFreeList.entry.Flink = &headFreeList.entry;
     headFreeList.entry.Blink = &headFreeList.entry;
+    headFreeList.length = 0;
 
     headActiveList.entry.Flink = &headActiveList.entry;
     headActiveList.entry.Blink = &headActiveList.entry;
+    headActiveList.length = 0;
 
     headModifiedList.entry.Flink = &headModifiedList.entry;
     headModifiedList.entry.Blink = &headModifiedList.entry;
+    headModifiedList.length = 0;
 
     headStandByList.entry.Flink = &headStandByList.entry;
     headStandByList.entry.Blink = &headStandByList.entry;
-
+    headStandByList.length = 0;
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
@@ -207,15 +211,10 @@ init_virtual_memory(VOID) {
         memset(new_pfn, 0, sizeof(pfn));
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
-    //create transferVas
-    transferVa = VirtualAlloc(NULL,
-                          PAGE_SIZE * BATCH_SIZE,
-                          MEM_RESERVE | MEM_PHYSICAL,
-                          PAGE_READWRITE);
-    transferVaRead = VirtualAlloc(NULL,
-                              PAGE_SIZE,
-                              MEM_RESERVE | MEM_PHYSICAL,
-                              PAGE_READWRITE);
+    //create transferVas and big va
+
+
+
 
 
 
@@ -224,6 +223,7 @@ init_virtual_memory(VOID) {
 
 
 }
+
 
 ULONG64 getMaxFrameNumber(VOID) {
     ULONG64 maxFrameNumber = 0;

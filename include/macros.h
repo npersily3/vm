@@ -12,25 +12,28 @@
 FORCEINLINE
         VOID
 InitializeListHead(
-        __out PLIST_ENTRY ListHead
+        __out pListHead ListHead
 )
 {
-ListHead->Flink = ListHead->Blink = ListHead;
+ListHead->entry.Flink = &ListHead->entry;
+ListHead->entry.Blink = &ListHead->entry;
+ListHead->length = 0;
 }
 
 __checkReturn
         BOOLEAN
 FORCEINLINE
 IsListEmpty(
-        __in const LIST_ENTRY * ListHead
+        __in const pListHead ListHead
 )
 {
-return (BOOLEAN)(ListHead->Flink == ListHead);
+return (BOOLEAN)(ListHead->entry.Flink == &ListHead->entry);
 }
 
 FORCEINLINE
         BOOLEAN
 RemoveEntryList(
+        __inout pListHead ListHead,
         __in PLIST_ENTRY Entry
 )
 {
@@ -41,6 +44,7 @@ Flink = Entry->Flink;
 Blink = Entry->Blink;
 Blink->Flink = Flink;
 Flink->Blink = Blink;
+ListHead->length--;
 return (BOOLEAN)(Flink == Blink);
 }
 
@@ -61,7 +65,7 @@ Flink = Entry->Flink;
         //check if empty
         if (Entry == &ListHead->entry) {DebugBreak(); return NULL;}
 ListHead->entry.Flink = Flink;
-Flink->Blink = ListHead;
+Flink->Blink = &ListHead->entry;
         ListHead->length--;
 return Entry;
 }
@@ -69,16 +73,17 @@ return Entry;
 FORCEINLINE
         PLIST_ENTRY
 RemoveTailList(
-        __inout PLIST_ENTRY ListHead
+        __inout pListHead ListHead
 )
 {
 PLIST_ENTRY Blink;
 PLIST_ENTRY Entry;
 
-Entry = ListHead->Blink;
+Entry = ListHead->entry.Blink;
 Blink = Entry->Blink;
-ListHead->Blink = Blink;
-Blink->Flink = ListHead;
+ListHead->entry.Blink = Blink;
+Blink->Flink = &ListHead->entry;
+ListHead->length--;
 return Entry;
 }
 
@@ -108,8 +113,8 @@ ListHead->entry.Blink = Entry;
 
 FORCEINLINE
         VOID
-InsertHeadList(
-        __inout PLIST_ENTRY ListHead,
+InsertHeadLAist(
+        __inout pListHead ListHead,
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )
 {
@@ -117,26 +122,29 @@ InsertHeadList(
 
 PLIST_ENTRY Flink;
 
-Flink = ListHead->Flink;
+Flink = ListHead->entry.Flink;
 Entry->Flink = Flink;
-Entry->Blink = ListHead;
+Entry->Blink = &ListHead->entry;
 Flink->Blink = Entry;
-ListHead->Flink = Entry;
+ListHead->entry.Flink = Entry;
+ListHead->length++;
 }
 
 FORCEINLINE
         VOID
 AppendTailList(
-        __inout PLIST_ENTRY ListHead,
+        __inout pListHead ListHead,
         __inout PLIST_ENTRY ListToAppend
 )
 {
-PLIST_ENTRY ListEnd = ListHead->Blink;
+PLIST_ENTRY ListEnd = ListHead->entry.Blink;
 
-ListHead->Blink->Flink = ListToAppend;
-ListHead->Blink = ListToAppend->Blink;
-ListToAppend->Blink->Flink = ListHead;
+ListHead->entry.Blink->Flink = ListToAppend;
+ListHead->entry.Blink = ListToAppend->Blink;
+ListToAppend->Blink->Flink = &ListHead->entry;
 ListToAppend->Blink = ListEnd;
+// Note: This function appends an entire list, so length update would need to count the appended list
+// For now, we'll leave this as a TODO since it requires counting the appended list
 }
 
 FORCEINLINE

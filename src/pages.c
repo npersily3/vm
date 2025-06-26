@@ -46,7 +46,13 @@ page_trimmer(LPVOID lpParam) {
 
         EnterCriticalSection(&lockPageTable);
 
-        for (int i = 0; i < BATCH_SIZE; ++i) {
+        ULONG64 localBatchSizeInPages;
+        ULONG64 localBatchSizeInBytes;
+        localBatchSizeInPages = min(BATCH_SIZE,headActiveList.length);
+        localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
+
+
+        for (int i = 0; i < localBatchSizeInPages; ++i) {
 
 
 
@@ -101,8 +107,7 @@ DWORD diskWriter(LPVOID lpParam) {
 
         //think about case where modified pagfe is rescued and there bsize -1 pgaes on the list
        // ULONG64 localBatchSize
-        ULONG64 localBatchSizeInPages;
-        ULONG64 localBatchSizeInBytes;
+
 
 
 
@@ -121,7 +126,12 @@ DWORD diskWriter(LPVOID lpParam) {
 
         EnterCriticalSection(&lockPageTable);
         // add a head struct that has a len and a entry
-        localBatchSizeInPages = 1;//modifiedLongerThanBatch();
+        ULONG64 localBatchSizeInPages;
+        ULONG64 localBatchSizeInBytes;
+
+
+        localBatchSizeInPages = min(BATCH_SIZE, headModifiedList.length);
+
         localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
 
         if (localBatchSizeInPages == 0) {

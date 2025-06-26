@@ -38,9 +38,9 @@ get_free_disk_index(VOID) {
 
     // accounts for extra slot case
     if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES;
+        end = start + DISK_DIVISION_SIZE_IN_PAGES + 1;
     } else {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES - 1;
+        end = start + DISK_DIVISION_SIZE_IN_PAGES;
     }
 
     // this will make it go over 1 so it can find the transfer slot
@@ -50,7 +50,7 @@ get_free_disk_index(VOID) {
 
     //ask if they should go in the loop
     EnterCriticalSection(&lockDiskActive);
-    while (start <= end) {
+    while (start < end) {
         if (*start == FALSE) {
             *start = TRUE;
             number_of_open_slots[freePortion] -= 1;
@@ -90,6 +90,9 @@ set_disk_space_free(ULONG64 diskIndex) {
     number_of_open_slots[diskIndexSection] += 1;
     LeaveCriticalSection(&lockNumberOfSlots);
 
+    if (diskActive[diskIndex] == FALSE) {
+        DebugBreak();
+    }
     EnterCriticalSection(&lockDiskActive);
     diskActive[diskIndex] = FALSE;
     LeaveCriticalSection(&lockDiskActive);

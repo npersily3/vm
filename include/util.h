@@ -132,6 +132,7 @@ extern pfn *endPFN;
 extern PULONG_PTR vaStart;
 extern PVOID transferVa;
 extern PVOID transferVaRead;
+extern PVOID transferVaWipePage;
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
 extern HANDLE  workDoneThreadHandles[NUMBER_OF_THREADS];
@@ -140,14 +141,15 @@ extern HANDLE  workDoneThreadHandles[NUMBER_OF_THREADS];
 // Utility function declarations
 //
 
-VOID listAdd(pfn* pfn, boolean active);
-pfn* listRemove(boolean active);
+
 pte* va_to_pte(PVOID va);
 PVOID pte_to_va(pte* pte);
 PVOID init_memory(ULONG64 numBytes);
 VOID pfnInbounds(pfn* trimmed);
 ULONG64 getFrameNumber(pfn* pfn);
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
-VOID removeFromMiddleOfList(LIST_ENTRY* entry) ;
+VOID removeFromMiddleOfList(pListHead head, LIST_ENTRY* entry) ;
+
+
 
 #endif // UTIL_H

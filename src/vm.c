@@ -103,8 +103,30 @@ full_virtual_memory_test(VOID) {
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
+
+    transferVa = (PULONG_PTR)VirtualAlloc2(NULL,
+                                        NULL,
+                                        PAGE_SIZE*BATCH_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
+    transferVaRead = (PULONG_PTR)VirtualAlloc2(NULL,
+                                        NULL,
+                                        PAGE_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
+    transferVaWipePage = (PULONG_PTR)VirtualAlloc2(NULL,
+                                        NULL,
+                                        PAGE_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
 #else
-    vaStart = (PULONG_PTR)VirtualAlloc(NULL,
+    vaStart = (PULONG_PTR) VirtualAlloc(NULL,
                                        virtual_address_size,
                                        MEM_RESERVE | MEM_PHYSICAL,
                                        PAGE_READWRITE);
@@ -233,7 +255,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
         EnterCriticalSection(&lockStandByList);
-        removeFromMiddleOfList(&page->entry);
+        removeFromMiddleOfList(&headStandByList,&page->entry);
         LeaveCriticalSection(&lockStandByList);
 
         set_disk_space_free(page->diskIndex);
@@ -242,7 +264,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
 
         EnterCriticalSection(&lockModifiedList);
-        removeFromMiddleOfList(&page->entry);
+        removeFromMiddleOfList(&headModifiedList,&page->entry);
         LeaveCriticalSection(&lockModifiedList);
     }
 
@@ -254,8 +276,10 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     }
 
 
+
     currentPTE->validFormat.valid = 1;
 
+    checkVa((PULONG64)arbitrary_va);
 
     EnterCriticalSection(&lockActiveList);
     InsertTailList(&headActiveList, &page->entry);
@@ -265,6 +289,21 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     return !REDO_FAULT;
 
 }
+BOOL zeroPage (pfn* page) {
+    ULONG64 frameNumber;
+
+    frameNumber = getFrameNumber(page);
+
+    if (MapUserPhysicalPages(transferVaWipePage, 1, &frameNumber) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaWipePage, frameNumber);
+        return FALSE;
+    }
+    memset(transferVaWipePage, 0, PAGE_SIZE);
+
+    return TRUE;
+}
+
 
 // caller holds pte lock
 BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
@@ -295,6 +334,8 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
             return FALSE;
         }
+        checkVa((PULONG64)arbitrary_va);
+
     } else {
         LeaveCriticalSection(&lockFreeList);
 
@@ -303,10 +344,12 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
         if (headStandByList.length > 0) {
 
 
-
             page = container_of(RemoveHeadList(&headStandByList), pfn, entry);
             LeaveCriticalSection(&lockStandByList);
 
+            if (!zeroPage(page)) {
+                DebugBreak();
+            }
 
             page->pte->transitionFormat.contentsLocation = DISK;
 
@@ -335,6 +378,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
                 printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
                 return FALSE;
             }
+            checkVa((PULONG64)arbitrary_va);
 
         } else {
             LeaveCriticalSection(&lockStandByList);
@@ -350,6 +394,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             return REDO_FAULT;
         }
     }
+
 
 
     currentPTE->validFormat.frameNumber = frameNumber;
