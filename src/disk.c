@@ -101,5 +101,7 @@ set_disk_space_free(ULONG64 diskIndex) {
     diskActive[diskIndex] = FALSE;
     LeaveCriticalSection(&lockDiskActive);
 
+
+
     SetEvent(&writingStartEvent);
 }

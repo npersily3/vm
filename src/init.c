@@ -230,7 +230,7 @@ init_virtual_memory(VOID) {
 
 }
 
-VOID initVA (VOID) {
+BOOL initVA (VOID) {
     BOOL allocated;
 
     BOOL privilege;
@@ -328,6 +328,7 @@ VOID initVA (VOID) {
                                        MEM_RESERVE | MEM_PHYSICAL,
                                        PAGE_READWRITE);
 #endif
+    return TRUE;
 }
 
 
@@ -335,7 +336,9 @@ ULONG64 getMaxFrameNumber(VOID) {
     ULONG64 maxFrameNumber;
     maxFrameNumber = 0;
 
-    for (int i = 0; i < NUMBER_OF_PHYSICAL_PAGES; ++i) {
+    ULONG64 i;
+
+    for (i = 0; i < NUMBER_OF_PHYSICAL_PAGES; ++i) {
         maxFrameNumber = max(maxFrameNumber, physical_page_numbers[i]);
     }
     return maxFrameNumber;
@@ -453,13 +456,13 @@ VOID createEvents(VOID) {
     userEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
 }
 VOID initCriticalSections(VOID) {
-    InitializeCriticalSection(&lockFreeList);
-    InitializeCriticalSection(&lockActiveList);
-    InitializeCriticalSection(&lockModifiedList);
-    InitializeCriticalSection(&lockStandByList);
-    InitializeCriticalSection(&lockDiskActive);
-    InitializeCriticalSection(&lockNumberOfSlots);
-    InitializeCriticalSection(&lockPageTable);
+    INITIALIZE_LOCK(lockFreeList);
+    INITIALIZE_LOCK(lockActiveList);
+    INITIALIZE_LOCK(lockModifiedList);
+    INITIALIZE_LOCK(lockStandByList);
+    INITIALIZE_LOCK(lockDiskActive);
+    INITIALIZE_LOCK(lockNumberOfSlots);
+    INITIALIZE_LOCK(lockPageTable);
 }
 
 HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext) {

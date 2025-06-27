@@ -206,17 +206,23 @@ DWORD diskWriter(LPVOID lpParam) {
         }
 
 
+        EnterCriticalSection(&lockStandByList);
         for (int i = 0; i < localBatchSizeInPages; ++i) {
-            EnterCriticalSection(&lockStandByList);
+
 
             InsertTailList(&headStandByList, &pfnArray[i]->entry);
 
-            LeaveCriticalSection(&lockStandByList);
+
         }
+        // this needs to be in a lock to avoid
+        // the race condition where it is reset right after it is
+        SetEvent(writingEndEvent);
+
+        LeaveCriticalSection(&lockStandByList);
 
         LeaveCriticalSection(&lockPageTable);
 
-        SetEvent(writingEndEvent);
+
 
     }
 }

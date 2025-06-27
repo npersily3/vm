@@ -13,6 +13,14 @@
 
 
 
+#define SPIN_COUNTS                              1
+
+#if SPIN_COUNTS
+#define SPIN_COUNT                               0xFFFFFF
+#define INITIALIZE_LOCK(x)                       InitializeCriticalSectionAndSpinCount(&x, SPIN_COUNT)
+#else
+#define INITIALIZE_LOCK(x)                       InitializeCriticalSection(&x)
+#endif
 
 //
 // Initialization functions
@@ -23,7 +31,7 @@ VOID createThreads(VOID);
 ULONG64 getMaxFrameNumber(VOID);
 VOID createEvents(VOID);
 VOID initCriticalSections(VOID);
-VOID initVA (VOID);
+BOOL initVA (VOID);
 
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE

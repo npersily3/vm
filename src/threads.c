@@ -25,9 +25,9 @@ typedef struct _THREAD_INFO {
 
     HANDLE WorkDoneHandle;
 
-#if 1
+#if 0
 
-    // // way faster, now everything consumes 1 cache line
+
     // What effect would consuming extra space here have ?
     //
 
@@ -53,6 +53,8 @@ CacheContentionWorker (
 
     ThreadNumber = ThreadContext->ThreadNumber;
 
+	GlobalThreadCounter = 10;
+
 	for (i = 0; i < 100000000; i += 1) {
 
         //
@@ -68,8 +70,7 @@ CacheContentionWorker (
         // What effect would disabling this counter have ?
         // It makes it way slower because it is constantly pinponging arround (about 13 times (one test))
 
-        GlobalThreadCounter += 1;
-
+		ULONG64 x = GlobalThreadCounter;
 #endif
 		// EnterCriticalSection (&GlobalCriticalSection);
 		//

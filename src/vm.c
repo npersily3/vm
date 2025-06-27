@@ -292,14 +292,19 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext) {
 
         } else {
 
+            ResetEvent(writingEndEvent);
+
             LeaveCriticalSection(&lockStandByList);
 
             // if there no victims, I need to start the pagetrimmer. While I'm waiting, I should release the lock
             // to avoid deadlocks
             LeaveCriticalSection(&lockPageTable);
 
+
+
+
             SetEvent(trimmingStartEvent);
-            ResetEvent(writingEndEvent);
+
 
 
             WaitForSingleObject(writingEndEvent, INFINITE);
