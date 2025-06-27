@@ -136,6 +136,9 @@ CreateSharedMemorySection(VOID) {
 
 VOID
 init_virtual_memory(VOID) {
+
+    initVA();
+
     ULONG_PTR numBytes;
     ULONG_PTR numDiskSlots;
 
@@ -329,7 +332,8 @@ VOID initVA (VOID) {
 
 
 ULONG64 getMaxFrameNumber(VOID) {
-    ULONG64 maxFrameNumber = 0;
+    ULONG64 maxFrameNumber;
+    maxFrameNumber = 0;
 
     for (int i = 0; i < NUMBER_OF_PHYSICAL_PAGES; ++i) {
         maxFrameNumber = max(maxFrameNumber, physical_page_numbers[i]);
