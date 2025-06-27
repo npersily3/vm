@@ -18,59 +18,7 @@ full_virtual_memory_test(VOID) {
 
 
 
-    BOOL allocated;
 
-    BOOL privilege;
-
-    HANDLE physical_page_handle;
-    ULONG_PTR virtual_address_size;
-    ULONG_PTR virtual_address_size_in_unsigned_chunks;
-
-
-    // Allocate the physical pages that we will be managing.
-    // First acquire privilege to do this since physical page control
-    // is typically something the operating system reserves the sole
-    // right to do.
-    privilege = GetPrivilege();
-
-    if (privilege == FALSE) {
-        printf("full_virtual_memory_test : could not get privilege\n");
-        return;
-    }
-
-#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
-    physical_page_handle = CreateSharedMemorySection();
-
-    if (physical_page_handle == NULL) {
-        printf("CreateFileMapping2 failed, error %#x\n", GetLastError());
-        return;
-    }
-#else
-    physical_page_handle = GetCurrentProcess();
-#endif
-
-    physical_page_count = NUMBER_OF_PHYSICAL_PAGES;
-    physical_page_numbers = (PULONG_PTR)malloc(physical_page_count * sizeof(ULONG_PTR));
-
-    if (physical_page_numbers == NULL) {
-        printf("full_virtual_memory_test : could not allocate array to hold physical page numbers\n");
-        return;
-    }
-
-    allocated = AllocateUserPhysicalPages(physical_page_handle,
-                                          &physical_page_count,
-                                          physical_page_numbers);
-
-    if (allocated == FALSE) {
-        printf("full_virtual_memory_test : could not allocate physical pages\n");
-        return;
-    }
-
-    if (physical_page_count != NUMBER_OF_PHYSICAL_PAGES) {
-        printf("full_virtual_memory_test : allocated only %llu pages out of %u pages requested\n",
-               physical_page_count,
-               NUMBER_OF_PHYSICAL_PAGES);
-    }
 
     init_virtual_memory();
 
@@ -82,55 +30,7 @@ full_virtual_memory_test(VOID) {
     //
     // We deliberately make this much larger than physical memory
     // to illustrate how we can manage the illusion.
-    virtual_address_size = 64 * physical_page_count * PAGE_SIZE;
 
-    // Round down to a PAGE_SIZE boundary
-    virtual_address_size &= ~(PAGE_SIZE - 1);
-
-    virtual_address_size_in_unsigned_chunks = virtual_address_size / sizeof(ULONG_PTR);
-
-#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
-    MEM_EXTENDED_PARAMETER parameter = { 0 };
-
-    // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
-    parameter.Type = MemExtendedParameterUserPhysicalHandle;
-    parameter.Handle = physical_page_handle;
-
-    vaStart = (PULONG_PTR)VirtualAlloc2(NULL,
-                                        NULL,
-                                        virtual_address_size,
-                                        MEM_RESERVE | MEM_PHYSICAL,
-                                        PAGE_READWRITE,
-                                        &parameter,
-                                        1);
-
-    transferVa = (PULONG_PTR)VirtualAlloc2(NULL,
-                                        NULL,
-                                        PAGE_SIZE*BATCH_SIZE,
-                                        MEM_RESERVE | MEM_PHYSICAL,
-                                        PAGE_READWRITE,
-                                        &parameter,
-                                        1);
-    transferVaRead = (PULONG_PTR)VirtualAlloc2(NULL,
-                                        NULL,
-                                        PAGE_SIZE,
-                                        MEM_RESERVE | MEM_PHYSICAL,
-                                        PAGE_READWRITE,
-                                        &parameter,
-                                        1);
-    transferVaWipePage = (PULONG_PTR)VirtualAlloc2(NULL,
-                                        NULL,
-                                        PAGE_SIZE,
-                                        MEM_RESERVE | MEM_PHYSICAL,
-                                        PAGE_READWRITE,
-                                        &parameter,
-                                        1);
-#else
-    vaStart = (PULONG_PTR) VirtualAlloc(NULL,
-                                       virtual_address_size,
-                                       MEM_RESERVE | MEM_PHYSICAL,
-                                       PAGE_READWRITE);
-#endif
 
 
 
@@ -164,6 +64,7 @@ DWORD testVM(LPVOID lpParam) {
 
     //this line is what put it all together
 
+    arbitrary_va = NULL;
       // Now perform random accesses
     for (i = 0; i < MB(1); i += 1) {
         // Randomly access different portions of the virtual address
@@ -178,21 +79,22 @@ DWORD testVM(LPVOID lpParam) {
         // the virtual address and this time, the CPU will see the
         // valid PTE and proceed to obtain the physical contents
         // (without faulting to the operating system again).
-
-        random_number = (unsigned) (GetTimeStampCounter() >> 4);
-        random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
-
-        // Write the virtual address into each page. If we need to
-        // debug anything, we'll be able to see these in the pages.
         page_faulted = FALSE;
 
-        // Ensure the write to the arbitrary virtual address doesn't
-        // straddle a PAGE_SIZE boundary just to keep things simple for now.
-        random_number &= ~0x7;
+
+        if (arbitrary_va == NULL) {
+            random_number = (unsigned) (GetTimeStampCounter() >> 4);
+            random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
+
+            // Write the virtual address into each page. If we need to
+            // debug anything, we'll be able to see these in the pages.
 
 
-        arbitrary_va = vaStart + random_number;
-
+            // Ensure the write to the arbitrary virtual address doesn't
+            // straddle a PAGE_SIZE boundary just to keep things simple for now.
+            random_number &= ~0x7;
+            arbitrary_va = vaStart + random_number;
+        }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
         } __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -200,10 +102,15 @@ DWORD testVM(LPVOID lpParam) {
         }
 
         if (page_faulted) {
-            if (pageFault(arbitrary_va) == REDO_FAULT) {
-                pageFault(arbitrary_va);
+            if (pageFault(arbitrary_va, lpParam) == REDO_FAULT) {
+             i--;
             }
+
+        } else {
+            arbitrary_va = NULL;
         }
+
+
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
@@ -211,31 +118,36 @@ DWORD testVM(LPVOID lpParam) {
     return 0;
 }
 
-BOOL pageFault(PULONG_PTR arbitrary_va) {
+BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
+
+    //nptodo add a check to see if the user code is in the accessible va range
 
     pte* currentPTE;
-
+    pte pteContents;
     currentPTE = va_to_pte(arbitrary_va);
 
 
     EnterCriticalSection(&lockPageTable);
-    // if the page can be rescued
-    if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
-        currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
-        if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
-            LeaveCriticalSection(&lockPageTable);
-            return REDO_FAULT;
-        }
-    } else {
-            if (mapPage(arbitrary_va, currentPTE) == REDO_FAULT) {
+
+    pteContents = *currentPTE;
+
+    if (pteContents.validFormat.valid != TRUE) {
+        // if the page can be rescued
+        if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
+            currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+            if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
+                LeaveCriticalSection(&lockPageTable);
                 return REDO_FAULT;
             }
-        }
-
+            } else {
+                // if this returns REDO FAULT, map_page has released the pte lock
+                if (mapPage(arbitrary_va, currentPTE, lpParam) == REDO_FAULT) {
+                    return REDO_FAULT;
+                }
+            }
+    }
     LeaveCriticalSection(&lockPageTable);
 
-    *arbitrary_va = (ULONG_PTR) arbitrary_va;
-    checkVa((PULONG64)arbitrary_va);
 
     return !REDO_FAULT;
 
@@ -306,16 +218,18 @@ BOOL zeroPage (pfn* page) {
 
 
 // caller holds pte lock
-BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
+BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext) {
 
     pfn* page;
     ULONG64 frameNumber;
     pte entryContents = *currentPTE;
+    PTHREAD_INFO threadInfo;
 
+    threadInfo = (PTHREAD_INFO)threadContext;
 
     // if it is not empty need locks around these type of checks otherwise blow up
     EnterCriticalSection(&lockFreeList);
-    if (headFreeList.length > 0) {
+    if (headFreeList.length != 0) {
 
 
         page = RemoveHeadList(&headFreeList);
@@ -326,7 +240,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
 
 
         if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-            modified_read(currentPTE, frameNumber);
+            modified_read(currentPTE, frameNumber, threadInfo->ThreadNumber);
         }
 
         if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
@@ -341,9 +255,10 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
 
         // standby is not empty
         EnterCriticalSection(&lockStandByList);
-        if (headStandByList.length > 0) {
+        if (headStandByList.length != 0) {
 
-
+            // nptodo when I split my pte locks, I might need to access different pte locks in this
+            //section, just fyi
             page = container_of(RemoveHeadList(&headStandByList), pfn, entry);
             LeaveCriticalSection(&lockStandByList);
 
@@ -353,8 +268,6 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
 
             page->pte->transitionFormat.contentsLocation = DISK;
 
-
-
             // maybe clear the page->
             page->pte->invalidFormat.diskIndex = page->diskIndex;
 
@@ -363,13 +276,10 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             // };
             // we dont htink this will ever be used
 
-
-
-
             frameNumber = getFrameNumber(page);
 
             if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-                modified_read(currentPTE, frameNumber);
+                modified_read(currentPTE, frameNumber, threadInfo->ThreadNumber);
             }
 
 
@@ -381,13 +291,16 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
             checkVa((PULONG64)arbitrary_va);
 
         } else {
+
             LeaveCriticalSection(&lockStandByList);
 
-            SetEvent(trimmingStartEvent);
-
-            ResetEvent(writingEndEvent);
-            // ask what to do from here
+            // if there no victims, I need to start the pagetrimmer. While I'm waiting, I should release the lock
+            // to avoid deadlocks
             LeaveCriticalSection(&lockPageTable);
+
+            SetEvent(trimmingStartEvent);
+            ResetEvent(writingEndEvent);
+
 
             WaitForSingleObject(writingEndEvent, INFINITE);
 
@@ -406,7 +319,6 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE) {
     InsertTailList( &headActiveList, &page->entry);
     LeaveCriticalSection(&lockActiveList);
 
-    LeaveCriticalSection(&lockPageTable);
 
     return !REDO_FAULT;
 }

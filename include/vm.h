@@ -9,9 +9,9 @@
 
 DWORD testVM(LPVOID lpParam);
 VOID full_virtual_memory_test(VOID);
-BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE);
+BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext);
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE);
-BOOL pageFault(PULONG_PTR arbitrary_va);
+BOOL pageFault(PULONG_PTR arbitrary_va,  LPVOID lpParam);
 BOOL zeroPage (pfn* page);
 
 extern HANDLE GlobalStartEvent;;

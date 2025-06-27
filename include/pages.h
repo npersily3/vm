@@ -21,7 +21,7 @@ extern CRITICAL_SECTION lockPageTable;
 //
 // Page management functions
 //
-VOID modified_read(pte* currentPTE, ULONG64 frameNumber);
+VOID modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber);
 DWORD page_trimmer(LPVOID lpParam);
 VOID checkVa(PULONG64 va);
 DWORD diskWriter(LPVOID lpParam);

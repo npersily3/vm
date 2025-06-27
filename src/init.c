@@ -30,7 +30,7 @@ pfn *pfnStart;
 pfn *endPFN;
 PULONG_PTR vaStart;
 PVOID transferVa;
-PVOID transferVaRead;
+PVOID transferVaToRead[NUMBER_OF_USER_THREADS];
 PVOID transferVaWipePage;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
@@ -214,7 +214,7 @@ init_virtual_memory(VOID) {
         memset(new_pfn, 0, sizeof(pfn));
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
-    //create transferVas and big va
+
 
 
 
@@ -225,6 +225,106 @@ init_virtual_memory(VOID) {
 
 
 
+}
+
+VOID initVA (VOID) {
+    BOOL allocated;
+
+    BOOL privilege;
+
+    HANDLE physical_page_handle;
+    ULONG_PTR virtual_address_size;
+    ULONG_PTR virtual_address_size_in_unsigned_chunks;
+
+
+    // Allocate the physical pages that we will be managing.
+    // First acquire privilege to do this since physical page control
+    // is typically something the operating system reserves the sole
+    // right to do.
+    privilege = GetPrivilege();
+
+    if (privilege == FALSE) {
+        printf("full_virtual_memory_test : could not get privilege\n");
+        return;
+    }
+
+#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+    physical_page_handle = CreateSharedMemorySection();
+
+    if (physical_page_handle == NULL) {
+        printf("CreateFileMapping2 failed, error %#x\n", GetLastError());
+        return;
+    }
+#else
+    physical_page_handle = GetCurrentProcess();
+#endif
+
+    physical_page_count = NUMBER_OF_PHYSICAL_PAGES;
+    physical_page_numbers = (PULONG_PTR)malloc(physical_page_count * sizeof(ULONG_PTR));
+
+    if (physical_page_numbers == NULL) {
+        printf("full_virtual_memory_test : could not allocate array to hold physical page numbers\n");
+        return;
+    }
+
+    allocated = AllocateUserPhysicalPages(physical_page_handle,
+                                          &physical_page_count,
+                                          physical_page_numbers);
+
+    if (allocated == FALSE) {
+        printf("full_virtual_memory_test : could not allocate physical pages\n");
+        return;
+    }
+
+    if (physical_page_count != NUMBER_OF_PHYSICAL_PAGES) {
+        printf("full_virtual_memory_test : allocated only %llu pages out of %u pages requested\n",
+               physical_page_count,
+               NUMBER_OF_PHYSICAL_PAGES);
+    }
+    #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+    MEM_EXTENDED_PARAMETER parameter = { 0 };
+
+    // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
+    parameter.Type = MemExtendedParameterUserPhysicalHandle;
+    parameter.Handle = physical_page_handle;
+
+    vaStart = (PULONG_PTR)VirtualAlloc2(NULL,
+                                        NULL,
+                                        VIRTUAL_ADDRESS_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
+
+    transferVa = (PULONG_PTR)VirtualAlloc2(NULL,
+                                        NULL,
+                                        PAGE_SIZE*BATCH_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
+    for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+        transferVaToRead[i] = (PULONG_PTR)VirtualAlloc2(NULL,
+                                            NULL,
+                                            PAGE_SIZE,
+                                            MEM_RESERVE | MEM_PHYSICAL,
+                                            PAGE_READWRITE,
+                                            &parameter,
+                                            1);
+    }
+    transferVaWipePage = (PULONG_PTR)VirtualAlloc2(NULL,
+                                        NULL,
+                                        PAGE_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
+#else
+    vaStart = (PULONG_PTR) VirtualAlloc(NULL,
+                                       virtual_address_size,
+                                       MEM_RESERVE | MEM_PHYSICAL,
+                                       PAGE_READWRITE);
+#endif
 }
 
 

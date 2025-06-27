@@ -4,21 +4,22 @@
 #include <windows.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "init.h"
 //
 // Configuration constants
 //
 #define PAGE_SIZE                   4096
 #define frame_number_size           40
 #define MB(x)                       ((x) * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE        10 * PAGE_SIZE //MB(16)
+#define VIRTUAL_ADDRESS_SIZE        MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
-#define NUMBER_OF_PHYSICAL_PAGES   5 //((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
-#define NUMBER_OF_DISK_DIVISIONS   5
+#define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
+#define NUMBER_OF_DISK_DIVISIONS   8
 #define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
 #define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / NUMBER_OF_DISK_DIVISIONS)
 #define EMPTY_PTE                  0xFFFFFFFFFF
-#define NUMBER_OF_THREADS 3
+
 #define AUTO_RESET              FALSE
 #define MANUAL_RESET            TRUE
 #define WAIT_FOR_ALL            TRUE
@@ -46,6 +47,15 @@
 
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
+
+
+
+#define NUMBER_OF_USER_THREADS 2
+#define NUMBER_OF_TRIMMING_THREADS 1
+#define NUMBER_OF_WRITING_THREADS 1
+
+#define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
+
 
 //
 // Data structures
@@ -133,13 +143,19 @@ extern pfn *pfnStart;
 extern pfn *endPFN;
 extern PULONG_PTR vaStart;
 extern PVOID transferVa;
-extern PVOID transferVaRead;
+extern PVOID transferVaToRead[NUMBER_OF_USER_THREADS];
 extern PVOID transferVaWipePage;
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
-extern HANDLE  workDoneThreadHandles[NUMBER_OF_THREADS];
+extern HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
 
 extern PULONG64* diskActiveVa;
+
+//thread init functions
+HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext);
+HANDLE createWritingThread(PTHREAD_INFO ThreadContext);
+HANDLE createUserThread(PTHREAD_INFO ThreadContext);
+
 
 //
 // Utility function declarations

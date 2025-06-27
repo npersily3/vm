@@ -9,23 +9,24 @@
 #include"macros.h"
 
 VOID
-modified_read(pte* currentPTE, ULONG64 frameNumber) {
+modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
     // Modified reading
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
 
     // MUPP(va, size, physical page)
-    if (MapUserPhysicalPages(transferVaRead, 1, &frameNumber) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaRead, frameNumber);
+    if (MapUserPhysicalPages(transferVaToRead[threadNumber], 1, &frameNumber) == FALSE) {
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaToRead[threadNumber], frameNumber);
         return;
     }
 
     // memcpy(va,va,size)
-    memcpy(transferVaRead, (PVOID) diskAddress, PAGE_SIZE);
 
-    if (MapUserPhysicalPages(transferVaRead, 1, NULL) == FALSE) {
-        printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaRead);
+    memcpy(transferVaToRead[threadNumber], (PVOID) diskAddress, PAGE_SIZE);
+
+    if (MapUserPhysicalPages(transferVaToRead[threadNumber], 1, NULL) == FALSE) {
+        printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaToRead[threadNumber]);
         return;
     }
 
@@ -72,20 +73,12 @@ page_trimmer(LPVOID lpParam) {
                 return 1;
             }
 
-
-
             page->pte->transitionFormat.mustBeZero = 0;
             page->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
-
-
-
 
             EnterCriticalSection(&lockModifiedList);
             InsertTailList(&headModifiedList, &page->entry);
             LeaveCriticalSection(&lockModifiedList);
-
-
-
         }
 
         LeaveCriticalSection(&lockPageTable);
@@ -153,7 +146,7 @@ DWORD diskWriter(LPVOID lpParam) {
             frameNumberArray[i] = frameNumber;
 
 
-            //nptodo break early from the forloop, add current back to modified, edit local batchsize
+
             diskIndex = get_free_disk_index();
             if (diskIndex == COULD_NOT_FIND_SLOT) {
                 localBatchSizeInPages = i;
@@ -167,9 +160,6 @@ DWORD diskWriter(LPVOID lpParam) {
                 break;
             }
 
-            if (doubleBreak) {
-                break;
-            }
 
             if (diskActiveVa[diskIndex] != NULL) {DebugBreak();}
             diskActiveVa[diskIndex] = va;
@@ -185,6 +175,11 @@ DWORD diskWriter(LPVOID lpParam) {
             page->diskIndex = diskIndex;
             page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
             page->pte->transitionFormat.frameNumber = frameNumber;
+        }
+        // breaks if i is zero
+        if (doubleBreak) {
+            LeaveCriticalSection(&lockPageTable);
+            continue;
         }
 
         // map to transfer va
