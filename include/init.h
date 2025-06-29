@@ -32,7 +32,7 @@ ULONG64 getMaxFrameNumber(VOID);
 VOID createEvents(VOID);
 VOID initCriticalSections(VOID);
 BOOL initVA (VOID);
-
+VOID initializePageTableLocks(VOID);
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 HANDLE CreateSharedMemorySection(VOID);

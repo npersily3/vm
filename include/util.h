@@ -50,13 +50,17 @@
 
 
 
-#define NUMBER_OF_USER_THREADS 8
+#define NUMBER_OF_USER_THREADS 2
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
+
 
 #define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
 
 
+#define NUMBER_OF_PAGE_TABLE_LOCKS 8
+#define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte)
+#define SIZE_OF_PAGE_TABLE_DIVISION PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS
 //
 // Data structures
 //
@@ -148,6 +152,7 @@ extern PVOID transferVaWipePage;
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
 extern HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
+extern CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
 
 extern PULONG64* diskActiveVa;
 
@@ -169,7 +174,7 @@ VOID pfnInbounds(pfn* trimmed);
 ULONG64 getFrameNumber(pfn* pfn);
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
 VOID removeFromMiddleOfList(pListHead head, LIST_ENTRY* entry) ;
-
+PCRITICAL_SECTION getPageTabgeleLock(pte* pte);
 
 
 #endif // UTIL_H

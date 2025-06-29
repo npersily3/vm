@@ -47,3 +47,7 @@ VOID removeFromMiddleOfList(pListHead head,LIST_ENTRY* entry) {
     nextEntry->Blink = prevEntry;
     head->length--;
 }
+//method that returns the index of the closet lock, takes advantage of truncation
+PCRITICAL_SECTION getPageTableLock(pte* pte) {
+    return &pageTableLocks[(ULONG64) pte  / (ULONG64) SIZE_OF_PAGE_TABLE_DIVISION)];
+}

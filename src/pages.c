@@ -44,8 +44,8 @@ page_trimmer(LPVOID lpParam) {
 
         pfn* page;
         PULONG64 va;
+        PCRITICAL_SECTION trimmedPageTableLock;
 
-        EnterCriticalSection(&lockPageTable);
 
         ULONG64 localBatchSizeInPages;
         ULONG64 localBatchSizeInBytes;
@@ -61,8 +61,9 @@ page_trimmer(LPVOID lpParam) {
             EnterCriticalSection(&lockActiveList);
             page = container_of(RemoveHeadList(&headActiveList), pfn, entry);
             LeaveCriticalSection(&lockActiveList);
+            trimmedPageTableLock = getPageTabgeleLock(page->pte);
 
-
+            EnterCriticalSection(trimmedPageTableLock);
             va = (PULONG64) pte_to_va(page->pte);
 
 
@@ -79,9 +80,11 @@ page_trimmer(LPVOID lpParam) {
             EnterCriticalSection(&lockModifiedList);
             InsertTailList(&headModifiedList, &page->entry);
             LeaveCriticalSection(&lockModifiedList);
-        }
 
-        LeaveCriticalSection(&lockPageTable);
+            LeaveCriticalSection(trimmedPageTableLock);
+
+        }
+        //nptodo ask if I need to do anything if the ptes become stale
 
         SetEvent(writingStartEvent);
 
@@ -98,8 +101,6 @@ DWORD diskWriter(LPVOID lpParam) {
         WaitForSingleObject(writingStartEvent, INFINITE);
 
 
-        //think about case where modified pagfe is rescued and there bsize -1 pgaes on the list
-       // ULONG64 localBatchSize
 
 
         pfn* page;
@@ -117,7 +118,8 @@ DWORD diskWriter(LPVOID lpParam) {
 
 
         EnterCriticalSection(&lockPageTable);
-        // add a head struct that has a len and a entry
+
+
         ULONG64 localBatchSizeInPages;
         ULONG64 localBatchSizeInBytes;
         doubleBreak = FALSE;
@@ -158,7 +160,7 @@ DWORD diskWriter(LPVOID lpParam) {
                 }
 
                 break;
-            }
+            }                 
 
 
             if (diskActiveVa[diskIndex] != NULL) {DebugBreak();}

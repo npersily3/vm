@@ -51,7 +51,7 @@ HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
  CRITICAL_SECTION lockDiskActive;
  CRITICAL_SECTION lockNumberOfSlots;
 CRITICAL_SECTION lockPageTable;
-
+CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
 
 HANDLE GlobalStartEvent;
 HANDLE trimmingStartEvent;
@@ -160,7 +160,7 @@ init_virtual_memory(VOID) {
     number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 1;
 
     // Initialize the page table
-    numBytes = VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte);
+    numBytes = PAGE_TABLE_SIZE_IN_BYTES;
     pageTable = (pte*)malloc(numBytes);
 
     ULONG64 length = numBytes / sizeof(pte);
@@ -463,6 +463,13 @@ VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockDiskActive);
     INITIALIZE_LOCK(lockNumberOfSlots);
     INITIALIZE_LOCK(lockPageTable);
+    initializePageTableLocks();
+
+}
+VOID initializePageTableLocks(VOID) {
+    for (int i = 0; i < NUMBER_OF_PAGE_TABLE_LOCKS; ++i) {
+        INITIALIZE_LOCK(pageTableLocks[i]);
+    }
 }
 
 HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext) {

@@ -118,6 +118,8 @@ DWORD testVM(LPVOID lpParam) {
     return 0;
 }
 
+
+
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
 
     //nptodo add a check to see if the user code is in the accessible va range
@@ -125,9 +127,14 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     pte* currentPTE;
     pte pteContents;
     currentPTE = va_to_pte(arbitrary_va);
+    PCRITICAL_SECTION currentPageTableLock;
+
+    currentPageTableLock = getPageTableLock(currentPTE);
 
 
-    EnterCriticalSection(&lockPageTable);
+
+
+    EnterCriticalSection(currentPageTableLock);
 
     pteContents = *currentPTE;
 
@@ -136,17 +143,17 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
         if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
             currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
             if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
-                LeaveCriticalSection(&lockPageTable);
+                LeaveCriticalSection(currentPageTableLock);
                 return REDO_FAULT;
             }
             } else {
                 // if this returns REDO FAULT, map_page has released the pte lock
-                if (mapPage(arbitrary_va, currentPTE, lpParam) == REDO_FAULT) {
+                if (mapPage(arbitrary_va, currentPTE, lpParam, currentPageTableLock) == REDO_FAULT) {
                     return REDO_FAULT;
                 }
             }
     }
-    LeaveCriticalSection(&lockPageTable);
+    LeaveCriticalSection(currentPageTableLock);
 
 
     return !REDO_FAULT;
@@ -218,12 +225,13 @@ BOOL zeroPage (pfn* page) {
 
 
 // caller holds pte lock
-BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext) {
+BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock) {
 
     pfn* page;
     ULONG64 frameNumber;
     pte entryContents = *currentPTE;
     PTHREAD_INFO threadInfo;
+    PCRITICAL_SECTION victimPageTableLock;
 
     threadInfo = (PTHREAD_INFO)threadContext;
 
@@ -233,6 +241,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext) {
 
 
         page = RemoveHeadList(&headFreeList);
+
         LeaveCriticalSection(&lockFreeList);
 
 
@@ -265,16 +274,23 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext) {
             if (!zeroPage(page)) {
                 DebugBreak();
             }
+            // Can never hold 2 pagetable locks at once
+            //so I release one to edit the victims, then I check if another thread edited the initial contents of the pte
+            victimPageTableLock = getPageTableLock(page->pte);
 
+            LeaveCriticalSection(currentPageTableLock);
+
+            EnterCriticalSection(victimPageTableLock);
             page->pte->transitionFormat.contentsLocation = DISK;
-
-            // maybe clear the page->
             page->pte->invalidFormat.diskIndex = page->diskIndex;
+            LeaveCriticalSection(victimPageTableLock);
 
-            // if (page->pte->invalidFormat.diskIndex != EMPTY_PTE) {
-            //     DebugBreak();
-            // };
-            // we dont htink this will ever be used
+            EnterCriticalSection(currentPageTableLock);
+
+
+            if (currentPTE->entireFormat != entryContents.entireFormat) {
+                return REDO_FAULT;
+            }
 
             frameNumber = getFrameNumber(page);
 
@@ -294,18 +310,13 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext) {
 
             ResetEvent(writingEndEvent);
 
-            LeaveCriticalSection(&lockStandByList);
+            LeaveCriticalSection(currentPageTableLock);
 
             // if there no victims, I need to start the pagetrimmer. While I'm waiting, I should release the lock
             // to avoid deadlocks
-            LeaveCriticalSection(&lockPageTable);
-
-
 
 
             SetEvent(trimmingStartEvent);
-
-
 
             WaitForSingleObject(writingEndEvent, INFINITE);
 
