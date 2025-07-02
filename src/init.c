@@ -29,9 +29,9 @@ pte *pageTable;
 pfn *pfnStart;
 pfn *endPFN;
 PULONG_PTR vaStart;
-PVOID transferVa;
-PVOID transferVaToRead[NUMBER_OF_USER_THREADS];
-PVOID transferVaWipePage;
+PULONG_PTR vaEnd;
+PVOID transferVaWriting;
+PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
 
@@ -44,14 +44,16 @@ ULONG64* number_of_open_slots;
 
 HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
 
- CRITICAL_SECTION lockFreeList;
- CRITICAL_SECTION lockActiveList;
- CRITICAL_SECTION lockModifiedList;
- CRITICAL_SECTION lockStandByList;
- CRITICAL_SECTION lockDiskActive;
- CRITICAL_SECTION lockNumberOfSlots;
-CRITICAL_SECTION lockPageTable;
+ PCRITICAL_SECTION lockFreeList;
+ PCRITICAL_SECTION lockActiveList;
+ PCRITICAL_SECTION lockModifiedList;
+ PCRITICAL_SECTION lockStandByList;
+ PCRITICAL_SECTION lockDiskActive;
+ PCRITICAL_SECTION lockNumberOfSlots;
+PCRITICAL_SECTION lockWritingTransferVa;
+
 CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
+
 
 HANDLE GlobalStartEvent;
 HANDLE trimmingStartEvent;
@@ -236,8 +238,7 @@ BOOL initVA (VOID) {
     BOOL privilege;
 
     HANDLE physical_page_handle;
-    ULONG_PTR virtual_address_size;
-    ULONG_PTR virtual_address_size_in_unsigned_chunks;
+
 
 
     // Allocate the physical pages that we will be managing.
@@ -248,7 +249,7 @@ BOOL initVA (VOID) {
 
     if (privilege == FALSE) {
         printf("full_virtual_memory_test : could not get privilege\n");
-        return;
+        return FALSE;
     }
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
@@ -256,7 +257,7 @@ BOOL initVA (VOID) {
 
     if (physical_page_handle == NULL) {
         printf("CreateFileMapping2 failed, error %#x\n", GetLastError());
-        return;
+        return FALSE;
     }
 #else
     physical_page_handle = GetCurrentProcess();
@@ -267,7 +268,7 @@ BOOL initVA (VOID) {
 
     if (physical_page_numbers == NULL) {
         printf("full_virtual_memory_test : could not allocate array to hold physical page numbers\n");
-        return;
+        return FALSE;
     }
 
     allocated = AllocateUserPhysicalPages(physical_page_handle,
@@ -276,7 +277,7 @@ BOOL initVA (VOID) {
 
     if (allocated == FALSE) {
         printf("full_virtual_memory_test : could not allocate physical pages\n");
-        return;
+        return FALSE;
     }
 
     if (physical_page_count != NUMBER_OF_PHYSICAL_PAGES) {
@@ -298,8 +299,9 @@ BOOL initVA (VOID) {
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
+    vaEnd = (PULONG64) ((ULONG64) vaStart + VIRTUAL_ADDRESS_SIZE);
 
-    transferVa = (PULONG_PTR)VirtualAlloc2(NULL,
+    transferVaWriting = (PULONG_PTR)VirtualAlloc2(NULL,
                                         NULL,
                                         PAGE_SIZE*BATCH_SIZE,
                                         MEM_RESERVE | MEM_PHYSICAL,
@@ -307,7 +309,7 @@ BOOL initVA (VOID) {
                                         &parameter,
                                         1);
     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
-        transferVaToRead[i] = (PULONG_PTR)VirtualAlloc2(NULL,
+        userThreadTransferVa[i] = (PULONG_PTR)VirtualAlloc2(NULL,
                                             NULL,
                                             PAGE_SIZE,
                                             MEM_RESERVE | MEM_PHYSICAL,
@@ -315,13 +317,7 @@ BOOL initVA (VOID) {
                                             &parameter,
                                             1);
     }
-    transferVaWipePage = (PULONG_PTR)VirtualAlloc2(NULL,
-                                        NULL,
-                                        PAGE_SIZE,
-                                        MEM_RESERVE | MEM_PHYSICAL,
-                                        PAGE_READWRITE,
-                                        &parameter,
-                                        1);
+
 #else
     vaStart = (PULONG_PTR) VirtualAlloc(NULL,
                                        virtual_address_size,
@@ -347,11 +343,12 @@ ULONG64 getMaxFrameNumber(VOID) {
 
 
 VOID createThreads(VOID) {
-    LPVOID ThreadParameter;
+
+
     PTHREAD_INFO ThreadContext;
     HANDLE Handle;
     BOOL ReturnValue;
-    LPTHREAD_START_ROUTINE ThreadFunction;
+
     THREAD_INFO ThreadInfo[NUMBER_OF_THREADS] = {0};
 
     THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS] = {0};
@@ -360,7 +357,7 @@ VOID createThreads(VOID) {
 
     ULONG maxThread = 0;
 
-    ThreadFunction = testVM;
+
 
     createEvents();
 
@@ -462,13 +459,13 @@ VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockStandByList);
     INITIALIZE_LOCK(lockDiskActive);
     INITIALIZE_LOCK(lockNumberOfSlots);
-    INITIALIZE_LOCK(lockPageTable);
+
     initializePageTableLocks();
 
 }
 VOID initializePageTableLocks(VOID) {
     for (int i = 0; i < NUMBER_OF_PAGE_TABLE_LOCKS; ++i) {
-        INITIALIZE_LOCK(pageTableLocks[i]);
+        INITIALIZE_LOCK_DIRECT(pageTableLocks[i]);
     }
 }
 

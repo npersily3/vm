@@ -9,6 +9,7 @@
 // Configuration constants
 //
 #define PAGE_SIZE                   4096
+// 52 bits is max that bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
 #define frame_number_size           40
 #define MB(x)                       ((x) * 1024 * 1024)
 #define VIRTUAL_ADDRESS_SIZE        MB(16)
@@ -57,22 +58,7 @@
 
 #define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
 
-
-#define NUMBER_OF_PAGE_TABLE_LOCKS 8
-#define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte)
-#define SIZE_OF_PAGE_TABLE_DIVISION PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS
-//
-// Data structures
-//
-#define COULD_NOT_FIND_SLOT (~0ULL)
-
-typedef struct {
-
-    LIST_ENTRY entry;
-    ULONG64 length;
-
-} listHead, *pListHead;
-
+#define MAX_FAULTS 0xFFFFFF
 typedef struct {
     ULONG64 valid: 1;
     ULONG64 transition: 2;
@@ -103,10 +89,29 @@ typedef struct {
     };
 } pte;
 
+#define NUMBER_OF_PAGE_TABLE_LOCKS 8
+#define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte))
+#define NUMBER_OF_PTES (PAGE_TABLE_SIZE_IN_BYTES / sizeof(pte))
+#define SIZE_OF_PAGE_TABLE_DIVISION PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS
+//
+// Data structures
+//
+#define COULD_NOT_FIND_SLOT (~0ULL)
+#define LIST_IS_EMPTY 0
+
+typedef struct {
+
+    LIST_ENTRY entry;
+    ULONG64 length;
+
+} listHead, *pListHead;
+
+
 typedef struct {
     LIST_ENTRY entry;
     pte *pte;
    ULONG64 diskIndex;
+    ULONG64:1, isBeingWritten;
 } pfn;
 
 typedef struct _THREAD_INFO {
@@ -146,12 +151,17 @@ extern pte *pageTable;
 extern pfn *pfnStart;
 extern pfn *endPFN;
 extern PULONG_PTR vaStart;
-extern PVOID transferVa;
-extern PVOID transferVaToRead[NUMBER_OF_USER_THREADS];
-extern PVOID transferVaWipePage;
+extern PULONG_PTR vaEnd;
+extern PVOID transferVaWriting;
+extern PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
+
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
 extern HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
+
+
+extern PCRITICAL_SECTION lockWritingTransferVa;
+extern CRITICAL_SECTION lockTransferReadingVa[NUMBER_OF_USER_THREADS];
 extern CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
 
 extern PULONG64* diskActiveVa;
@@ -160,6 +170,7 @@ extern PULONG64* diskActiveVa;
 HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext);
 HANDLE createWritingThread(PTHREAD_INFO ThreadContext);
 HANDLE createUserThread(PTHREAD_INFO ThreadContext);
+
 
 
 //
@@ -174,7 +185,8 @@ VOID pfnInbounds(pfn* trimmed);
 ULONG64 getFrameNumber(pfn* pfn);
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
 VOID removeFromMiddleOfList(pListHead head, LIST_ENTRY* entry) ;
-PCRITICAL_SECTION getPageTabgeleLock(pte* pte);
+PCRITICAL_SECTION getPageTableLock(pte* pte);
+BOOL isVaValid(ULONG64 va);
 
 
 #endif // UTIL_H

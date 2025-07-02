@@ -61,8 +61,8 @@ DWORD testVM(LPVOID lpParam) {
     unsigned i;
 
     BOOL page_faulted;
-
-    //this line is what put it all together
+    BOOL redo_fault;
+    ULONG64 counter;
 
     arbitrary_va = NULL;
       // Now perform random accesses
@@ -82,7 +82,7 @@ DWORD testVM(LPVOID lpParam) {
         page_faulted = FALSE;
 
 
-        if (arbitrary_va == NULL) {
+
             random_number = (unsigned) (GetTimeStampCounter() >> 4);
             random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
 
@@ -94,7 +94,7 @@ DWORD testVM(LPVOID lpParam) {
             // straddle a PAGE_SIZE boundary just to keep things simple for now.
             random_number &= ~0x7;
             arbitrary_va = vaStart + random_number;
-        }
+
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
         } __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -102,15 +102,19 @@ DWORD testVM(LPVOID lpParam) {
         }
 
         if (page_faulted) {
-            if (pageFault(arbitrary_va, lpParam) == REDO_FAULT) {
-             i--;
+
+            //continuously fault on the same va
+            redo_fault = REDO_FAULT;
+            counter = 0;
+            while (redo_fault) {
+                redo_fault = pageFault(arbitrary_va, lpParam);
+                counter += 1;
+                if (counter == MB(1)) {
+                    DebugBreak();
+                    printf("Fault overflow, at va %u", arbitrary_va);
+                }
             }
-
-        } else {
-            arbitrary_va = NULL;
         }
-
-
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
@@ -122,45 +126,49 @@ DWORD testVM(LPVOID lpParam) {
 
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
 
-    //nptodo add a check to see if the user code is in the accessible va range
+   if (isVaValid(arbitrary_va) == FALSE) {
+       DebugBreak();
+       printf("invalid va %p\n", arbitrary_va);
+   }
+
+    BOOL returnValue = !REDO_FAULT;
 
     pte* currentPTE;
     pte pteContents;
     currentPTE = va_to_pte(arbitrary_va);
     PCRITICAL_SECTION currentPageTableLock;
 
+
     currentPageTableLock = getPageTableLock(currentPTE);
-
-
-
 
     EnterCriticalSection(currentPageTableLock);
 
     pteContents = *currentPTE;
+
 
     if (pteContents.validFormat.valid != TRUE) {
         // if the page can be rescued
         if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
             currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
             if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
-                LeaveCriticalSection(currentPageTableLock);
-                return REDO_FAULT;
+                returnValue = REDO_FAULT;
             }
             } else {
                 // if this returns REDO FAULT, map_page has released the pte lock
                 if (mapPage(arbitrary_va, currentPTE, lpParam, currentPageTableLock) == REDO_FAULT) {
-                    return REDO_FAULT;
+                    returnValue = REDO_FAULT;
                 }
             }
     }
     LeaveCriticalSection(currentPageTableLock);
 
 
-    return !REDO_FAULT;
+    return returnValue;
 
 }
 
-// this function assumes a pagetable lock is being held
+// this function assumes the page table lock is held before being called and will be released for them when exiting
+// all other locks must be entered and left before returning
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     pfn* page;
     ULONG64 frameNumber;
@@ -170,21 +178,29 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         frameNumber = currentPTE->transitionFormat.frameNumber;
         page = getPFNfromFrameNumber(frameNumber);
 
-    //two different kinds of locks
-    if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
-        EnterCriticalSection(&lockStandByList);
+    // the stand by list lock is what protects the loop where I actually copy the contents to disk
+    //therefore, I must acquire the standbylist lock here in order to avoid a race condition
+    EnterCriticalSection(lockStandByList);
+    if (page->isBeingWritten == TRUE) {
+        page->isBeingWritten = FALSE;
+        LeaveCriticalSection(lockStandByList);
+        set_disk_space_free(page->diskIndex);
+
+    }
+    else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+
         removeFromMiddleOfList(&headStandByList,&page->entry);
-        LeaveCriticalSection(&lockStandByList);
+        LeaveCriticalSection(lockStandByList);
 
         set_disk_space_free(page->diskIndex);
 
     } else {
+        LeaveCriticalSection(lockStandByList);
 
-
-        EnterCriticalSection(&lockModifiedList);
+        EnterCriticalSection(lockModifiedList);
         removeFromMiddleOfList(&headModifiedList,&page->entry);
-        LeaveCriticalSection(&lockModifiedList);
+        LeaveCriticalSection(lockModifiedList);
     }
 
 
@@ -200,31 +216,41 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
     checkVa((PULONG64)arbitrary_va);
 
-    EnterCriticalSection(&lockActiveList);
+    EnterCriticalSection(lockActiveList);
     InsertTailList(&headActiveList, &page->entry);
-    LeaveCriticalSection(&lockActiveList);
+    LeaveCriticalSection(lockActiveList);
 
 
     return !REDO_FAULT;
 
 }
-BOOL zeroPage (pfn* page) {
+
+// returns true if succeeds, wipes a physical page
+//have an array of these transfers vas and locks, and try enter, and keep going down until you get one
+BOOL zeroPage (pfn* page, ULONG64 threadNumber) {
     ULONG64 frameNumber;
 
     frameNumber = getFrameNumber(page);
 
-    if (MapUserPhysicalPages(transferVaWipePage, 1, &frameNumber) == FALSE) {
+    if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, &frameNumber) == FALSE) {
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaWipePage, frameNumber);
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
         return FALSE;
     }
-    memset(transferVaWipePage, 0, PAGE_SIZE);
+    memset(userThreadTransferVa[threadNumber], 0, PAGE_SIZE);
+
+    if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, NULL) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
+        return FALSE;
+    }
 
     return TRUE;
 }
 
 
-// caller holds pte lock
+// this function assumes the page table lock is held before being called and will be released for them when exiting
+// all other locks must be entered and left before returning
 BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock) {
 
     pfn* page;
@@ -236,13 +262,13 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
     threadInfo = (PTHREAD_INFO)threadContext;
 
     // if it is not empty need locks around these type of checks otherwise blow up
-    EnterCriticalSection(&lockFreeList);
+    EnterCriticalSection(lockFreeList);
     if (headFreeList.length != 0) {
 
 
-        page = RemoveHeadList(&headFreeList);
+        page = container_of(RemoveHeadList(&headFreeList),pfn,entry);
 
-        LeaveCriticalSection(&lockFreeList);
+        LeaveCriticalSection(lockFreeList);
 
 
         frameNumber = getFrameNumber(page);
@@ -260,35 +286,57 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
         checkVa((PULONG64)arbitrary_va);
 
     } else {
-        LeaveCriticalSection(&lockFreeList);
+        LeaveCriticalSection(lockFreeList);
 
         // standby is not empty
-        EnterCriticalSection(&lockStandByList);
+        EnterCriticalSection(lockStandByList);
         if (headStandByList.length != 0) {
 
-            // nptodo when I split my pte locks, I might need to access different pte locks in this
-            //section, just fyi
-            page = container_of(RemoveHeadList(&headStandByList), pfn, entry);
-            LeaveCriticalSection(&lockStandByList);
 
-            if (!zeroPage(page)) {
-                DebugBreak();
-            }
-            // Can never hold 2 pagetable locks at once
-            //so I release one to edit the victims, then I check if another thread edited the initial contents of the pte
+            // while holding the standByLock peek into standby
+            page = container_of(headStandByList.entry.Flink, pfn, entry);
             victimPageTableLock = getPageTableLock(page->pte);
 
+
+            //be a good samaritan and dont hold 2 pte locks at once, later check to see if the contents have changed
             LeaveCriticalSection(currentPageTableLock);
 
-            EnterCriticalSection(victimPageTableLock);
+
+            // if you can get the standby lock, you can safely hold both locks without deadlocking
+            //otherwise redo the fault
+            if (TryEnterCriticalSection(victimPageTableLock) == FALSE) {
+                LeaveCriticalSection(lockStandByList);
+                EnterCriticalSection(currentPageTableLock);
+                return REDO_FAULT;
+            }
+
+            //   removeFromMiddleOfList(&headStandByList, &page->entry);
+            page = container_of(RemoveHeadList(&headStandByList), pfn, entry);
+
+
             page->pte->transitionFormat.contentsLocation = DISK;
             page->pte->invalidFormat.diskIndex = page->diskIndex;
-            LeaveCriticalSection(victimPageTableLock);
 
+            //now that I have recieved a page and edited its pte, a rescue can no longer happen,
+            //and I no longer need the pte or any page list, I can release both locks
+            LeaveCriticalSection(victimPageTableLock);
+            LeaveCriticalSection(lockStandByList);
+
+
+            if (!zeroPage(page, threadInfo->ThreadNumber)) {
+                DebugBreak();
+            }
+
+            // re-enter the faulting va's lock and see if things changed and map the page accordingly
+            //I make a copy instead of holding 2 pte locks because there is a rare chance of the contents being changed
+            // and a redo fault occuring, while the bottleneck of holding two locks is large //nptodo check in xperf
             EnterCriticalSection(currentPageTableLock);
 
 
             if (currentPTE->entireFormat != entryContents.entireFormat) {
+                EnterCriticalSection(lockFreeList);
+                InsertTailList(&headFreeList,&page->entry);
+                LeaveCriticalSection(lockFreeList);
                 return REDO_FAULT;
             }
 
@@ -308,18 +356,21 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
         } else {
 
-            ResetEvent(writingEndEvent);
+
+
 
             LeaveCriticalSection(currentPageTableLock);
+            // lock cant be released till here because the event could be reset
 
-            // if there no victims, I need to start the pagetrimmer. While I'm waiting, I should release the lock
-            // to avoid deadlocks
-
-
+            ResetEvent(writingEndEvent);
             SetEvent(trimmingStartEvent);
+
+            LeaveCriticalSection(lockStandByList);
 
             WaitForSingleObject(writingEndEvent, INFINITE);
 
+            EnterCriticalSection(currentPageTableLock);
+            //nptodo right contract in a comment
             return REDO_FAULT;
         }
     }
@@ -331,9 +382,9 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
     page->pte = currentPTE;
 
 
-    EnterCriticalSection(&lockActiveList);
+    EnterCriticalSection(lockActiveList);
     InsertTailList( &headActiveList, &page->entry);
-    LeaveCriticalSection(&lockActiveList);
+    LeaveCriticalSection(lockActiveList);
 
 
     return !REDO_FAULT;

@@ -49,5 +49,13 @@ VOID removeFromMiddleOfList(pListHead head,LIST_ENTRY* entry) {
 }
 //method that returns the index of the closet lock, takes advantage of truncation
 PCRITICAL_SECTION getPageTableLock(pte* pte) {
-    return &pageTableLocks[(ULONG64) pte  / (ULONG64) SIZE_OF_PAGE_TABLE_DIVISION)];
+
+    ULONG64 pageTableIndex = (pte - pageTable);
+    ULONG64 index = pageTableIndex / SIZE_OF_PAGE_TABLE_DIVISION;
+
+    return pageTableLocks + index;
+}
+BOOL isVaValid(ULONG64 va) {
+
+    return (va >= (ULONG64) vaStart) && (va <= (ULONG64) vaEnd);
 }

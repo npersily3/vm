@@ -62,8 +62,9 @@ PLIST_ENTRY Entry;
 Entry = ListHead->entry.Flink;
 Flink = Entry->Flink;
 
-        //check if empty
-        if (Entry == &ListHead->entry) {DebugBreak(); return NULL;}
+
+
+        if (Entry == &ListHead->entry) { return LIST_IS_EMPTY;}
 ListHead->entry.Flink = Flink;
 Flink->Blink = &ListHead->entry;
         ListHead->length--;

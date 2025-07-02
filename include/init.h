@@ -14,12 +14,24 @@
 
 
 #define SPIN_COUNTS                              1
-
-#if SPIN_COUNTS
 #define SPIN_COUNT                               0xFFFFFF
-#define INITIALIZE_LOCK(x)                       InitializeCriticalSectionAndSpinCount(&x, SPIN_COUNT)
+#if SPIN_COUNTS
+#define INITIALIZE_LOCK(x) \
+(x) = malloc(sizeof(CRITICAL_SECTION)); \
+InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)
 #else
-#define INITIALIZE_LOCK(x)                       InitializeCriticalSection(&x)
+#define INITIALIZE_LOCK(x) \
+(x) = malloc(sizeof(CRITICAL_SECTION)); \
+InitializeCriticalSection(x)
+#endif
+
+// this one does not malloc and is used for the array that is statically declared
+#if SPIN_COUNTS
+#define INITIALIZE_LOCK_DIRECT(x) \
+InitializeCriticalSectionAndSpinCount(&(x), SPIN_COUNT)
+#else
+#define INITIALIZE_LOCK_DIRECT(x) \
+InitializeCriticalSection(&(x))
 #endif
 
 //
@@ -33,6 +45,7 @@ VOID createEvents(VOID);
 VOID initCriticalSections(VOID);
 BOOL initVA (VOID);
 VOID initializePageTableLocks(VOID);
+
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 HANDLE CreateSharedMemorySection(VOID);

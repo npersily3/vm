@@ -11,13 +11,12 @@ extern HANDLE writingEndEvent;
 extern HANDLE userStartEvent;
 extern HANDLE userEndEvent;
 
-extern CRITICAL_SECTION lockFreeList;
-extern CRITICAL_SECTION lockActiveList;
-extern CRITICAL_SECTION lockModifiedList;
-extern CRITICAL_SECTION lockStandByList;
-extern CRITICAL_SECTION lockDiskActive;
-extern CRITICAL_SECTION lockNumberOfSlots;
-extern CRITICAL_SECTION lockPageTable;
+extern  PCRITICAL_SECTION lockFreeList;
+extern  PCRITICAL_SECTION lockActiveList;
+extern PCRITICAL_SECTION lockModifiedList;
+extern PCRITICAL_SECTION lockStandByList;
+extern PCRITICAL_SECTION lockDiskActive;
+extern PCRITICAL_SECTION lockNumberOfSlots;
 //
 // Page management functions
 //

@@ -12,14 +12,14 @@ most_free_disk_portion(VOID) {
     ULONG64 max = 0;
     ULONG64 index = 0;
 
-    EnterCriticalSection(&lockNumberOfSlots);
+    EnterCriticalSection(lockNumberOfSlots);
     for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
         if (max <= number_of_open_slots[i]) {
             max = number_of_open_slots[i];
             index = i;
         }
     }
-    LeaveCriticalSection(&lockNumberOfSlots);
+    LeaveCriticalSection(lockNumberOfSlots);
 
     return index;
 }
@@ -50,17 +50,17 @@ get_free_disk_index(VOID) {
     }
 
     //ask if they should go in the loop
-    EnterCriticalSection(&lockDiskActive);
+    EnterCriticalSection(lockDiskActive);
     while (start < end) {
         if (*start == FALSE) {
             *start = TRUE;
             number_of_open_slots[freePortion] -= 1;
-            LeaveCriticalSection(&lockDiskActive);
+            LeaveCriticalSection(lockDiskActive);
             return start - diskActive;
         }
         start++;
     }
-    LeaveCriticalSection(&lockDiskActive);
+    LeaveCriticalSection(lockDiskActive);
 
     printf("couldn't find free page");
     DebugBreak();
@@ -70,8 +70,8 @@ get_free_disk_index(VOID) {
 VOID
 set_disk_space_free(ULONG64 diskIndex) {
 
-    ULONG64 diskPage = diskIndex * PAGE_SIZE + (ULONG64) diskStart;
-    memset((PVOID)diskPage, 0, PAGE_SIZE);
+    // ULONG64 diskPage = diskIndex * PAGE_SIZE + (ULONG64) diskStart;
+    // memset((PVOID)diskPage, 0, PAGE_SIZE);
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
@@ -90,18 +90,18 @@ set_disk_space_free(ULONG64 diskIndex) {
 
 
 
-    EnterCriticalSection(&lockNumberOfSlots);
+    EnterCriticalSection(lockNumberOfSlots);
     number_of_open_slots[diskIndexSection] += 1;
-    LeaveCriticalSection(&lockNumberOfSlots);
+    LeaveCriticalSection(lockNumberOfSlots);
 
     if (diskActive[diskIndex] == FALSE) {
         DebugBreak();
     }
-    EnterCriticalSection(&lockDiskActive);
+    EnterCriticalSection(lockDiskActive);
     diskActive[diskIndex] = FALSE;
-    LeaveCriticalSection(&lockDiskActive);
+    LeaveCriticalSection(lockDiskActive);
 
 
 
-    SetEvent(&writingStartEvent);
+    SetEvent(writingStartEvent);
 }
