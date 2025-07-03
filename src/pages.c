@@ -85,8 +85,9 @@ page_trimmer(LPVOID lpParam) {
 
             // unmap everpage, ask how I can string these together
             if (MapUserPhysicalPages(va, 1, NULL) == FALSE) {
+
+                printf("full_virtual_memory_test : could not unmap VA, page trimmer %p\n", transferVaWriting);
                 DebugBreak();
-                printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
                 return 1;
             }
 
@@ -177,6 +178,7 @@ DWORD diskWriter(LPVOID lpParam) {
             if (TryEnterCriticalSection(writingPageTableLock) == FALSE) {
 
                 if (counter == MB(1)) {
+                    printf("tried to rewrite the page 1mb");
                     DebugBreak();
                 }
                 i--;
@@ -246,8 +248,9 @@ DWORD diskWriter(LPVOID lpParam) {
 
         if (MapUserPhysicalPages(transferVaWriting, localBatchSizeInPages, frameNumberArray) == FALSE) {
             DWORD error = GetLastError();
+
+            printf("write, could not map transfer va full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaWriting, frameNumber);
             DebugBreak();
-            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaWriting, frameNumber);
             return 1;
         }
 
@@ -257,8 +260,9 @@ DWORD diskWriter(LPVOID lpParam) {
         }
 
         if (MapUserPhysicalPages(transferVaWriting, localBatchSizeInPages, NULL) == FALSE) {
+
+            printf("could not unmap transfer va in writefull_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
             DebugBreak();
-            printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
             return 1;
         }
 
@@ -314,6 +318,7 @@ checkVa(PULONG64 va) {
     va = (PULONG64) ((ULONG64)va & ~(PAGE_SIZE - 1));
     for (int i = 0; i < PAGE_SIZE / 8; ++i) {
         if (!(*va == 0 || *va == (ULONG64) va)) {
+            printf("checkva was wrong");
             DebugBreak();
         }
         va += 1;

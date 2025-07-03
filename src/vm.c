@@ -66,7 +66,10 @@ DWORD testVM(LPVOID lpParam) {
 
     arbitrary_va = NULL;
       // Now perform random accesses
-    while (TRUE) {
+    for (int i = 0; i < MB(1); ++i) {
+
+
+    // while (TRUE) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
@@ -110,8 +113,8 @@ DWORD testVM(LPVOID lpParam) {
                 redo_fault = pageFault(arbitrary_va, lpParam);
                 counter += 1;
                 if (counter == MB(1)) {
-                    DebugBreak();
                     printf("Fault overflow, at va %u", arbitrary_va);
+                    DebugBreak();
                 }
             }
         }
@@ -127,8 +130,9 @@ DWORD testVM(LPVOID lpParam) {
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
 
    if (isVaValid(arbitrary_va) == FALSE) {
-       DebugBreak();
+
        printf("invalid va %p\n", arbitrary_va);
+       DebugBreak();
    }
 
     BOOL returnValue = !REDO_FAULT;
@@ -201,8 +205,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
 
     if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
+
+        printf("full_virtual_memory_test : could not map VA %p to page %llX, in rescue page\n", arbitrary_va, frameNumber);
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
         return FALSE;
     }
 
@@ -230,15 +235,17 @@ BOOL zeroPage (pfn* page, ULONG64 threadNumber) {
     frameNumber = getFrameNumber(page);
 
     if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, &frameNumber) == FALSE) {
+
+        printf("full_virtual_memory_test : could not map VA %p to page %llX, in zero page\n", userThreadTransferVa[threadNumber], frameNumber);
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
         return FALSE;
     }
     memset(userThreadTransferVa[threadNumber], 0, PAGE_SIZE);
 
     if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, NULL) == FALSE) {
+
+        printf("full_virtual_memory_test : could not unmap VA %p to page %llX, in zero page\n", userThreadTransferVa[threadNumber], frameNumber);
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
         return FALSE;
     }
 
@@ -276,8 +283,9 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
         }
 
         if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+
+            printf("full_virtual_memory_test : could not map VA %p to page %llX, in mapPage->couldnt map free page\n", arbitrary_va, frameNumber);
             DebugBreak();
-            printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
             return FALSE;
         }
         checkVa((PULONG64)arbitrary_va);
@@ -321,6 +329,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
 
             if (!zeroPage(page, threadInfo->ThreadNumber)) {
+                printf("zeroPageFailed");
                 DebugBreak();
             }
 
@@ -345,8 +354,9 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
 
             if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
+
+                printf("full_virtual_memory_test : could not map VA %p to page %llX, in mapPage trying to map a standby\n", arbitrary_va, frameNumber);
                 DebugBreak();
-                printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
                 return FALSE;
             }
             checkVa((PULONG64)arbitrary_va);

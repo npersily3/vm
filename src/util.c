@@ -29,6 +29,7 @@ init_memory(ULONG64 numBytes) {
 VOID
 pfnInbounds(pfn* trimmed) {
     if (trimmed < pfnStart || trimmed >= endPFN) {
+        printf("pfnOOB");
         DebugBreak();
     }
 }
