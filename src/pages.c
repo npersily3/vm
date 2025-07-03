@@ -158,9 +158,14 @@ DWORD diskWriter(LPVOID lpParam) {
             newPageEntry = headModifiedList.entry.Flink;
             // similar to mapPage, tryEnter page table, if I can then procceed, otherwise i-- and continue, release locks before hand
 
-            // i dont think I should always doublebreak
+            //nptodo i dont think I should always doublebreak
             if (newPageEntry == &headModifiedList.entry) {
-                doubleBreak = TRUE;
+                if (i == 0) {
+                    doubleBreak = TRUE;
+                }
+                localBatchSizeInPages = i;
+                localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
+                LeaveCriticalSection(lockModifiedList);
                 break;
             }
             counter = 0;
@@ -192,7 +197,7 @@ DWORD diskWriter(LPVOID lpParam) {
             frameNumberArray[i] = frameNumber;
 
 
-
+            //nptodo put finding a disk slot not on the pte lock and do it at the beinnign
             diskIndex = get_free_disk_index();
             if (diskIndex == COULD_NOT_FIND_SLOT) {
                 localBatchSizeInPages = i;
@@ -208,7 +213,7 @@ DWORD diskWriter(LPVOID lpParam) {
                 LeaveCriticalSection(writingPageTableLock);
 
                 break;
-            }                 
+            }
 
 
             if (diskActiveVa[diskIndex] != NULL) {DebugBreak();}
@@ -246,30 +251,37 @@ DWORD diskWriter(LPVOID lpParam) {
             return 1;
         }
 
-
-        // Here I acquire the standBy lock, so it cannot be rescued and mess up the standby list data.
-        ////then I iterate throught the pages see if they have been rescued, copy their contents to disk if they haven't
-        ///been rescued, add them to the standByList, and I set their status to no longer being written
-        EnterCriticalSection(lockStandByList);
         for (int i = 0; i < localBatchSizeInPages; ++i) {
-            if (pfnArray[i]->isBeingWritten == FALSE) {
-                continue;
-            }
             // copy from transfer to disk
             memcpy(diskAddressArray[i], (PVOID) ((ULONG64) transferVaWriting + i * PAGE_SIZE) , PAGE_SIZE);
-            InsertTailList(&headStandByList, &pfnArray[i]->entry);
-            pfnArray[i]->isBeingWritten = FALSE;
         }
-        LeaveCriticalSection(lockStandByList);
-
-
-        // unmap transfer and set things to zero
-        memset(transferVaWriting, 0, localBatchSizeInBytes);
 
         if (MapUserPhysicalPages(transferVaWriting, localBatchSizeInPages, NULL) == FALSE) {
             DebugBreak();
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
             return 1;
+        }
+
+
+
+        for (int i = 0; i < localBatchSizeInPages; ++i) {
+            page = pfnArray[i];
+
+            writingPageTableLock = getPageTableLock(page->pte);
+            EnterCriticalSection(writingPageTableLock);
+
+            //if it has been rescued, free up the disk space and do not put it on the standby list
+            if(pfnArray[i]->isBeingWritten == FALSE) {
+                set_disk_space_free(page->diskIndex);
+            } else {
+                EnterCriticalSection(lockStandByList);
+                InsertTailList(&headStandByList, &pfnArray[i]->entry);
+                LeaveCriticalSection(lockStandByList);
+                pfnArray[i]->isBeingWritten = FALSE;
+            }
+            // need to hold pte lock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
+            //make sure pte then list lock
+            LeaveCriticalSection(writingPageTableLock);
         }
 
         // this needs to be in a lock to avoid

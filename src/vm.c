@@ -66,7 +66,7 @@ DWORD testVM(LPVOID lpParam) {
 
     arbitrary_va = NULL;
       // Now perform random accesses
-    for (i = 0; i < MB(1); i += 1) {
+    while (TRUE) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
@@ -117,9 +117,9 @@ DWORD testVM(LPVOID lpParam) {
         }
     }
 
-    printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
-    SetEvent(userEndEvent);
-    return 0;
+    // printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
+    // SetEvent(userEndEvent);
+    // return 0;
 }
 
 
@@ -179,24 +179,20 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         page = getPFNfromFrameNumber(frameNumber);
 
 
-    // the stand by list lock is what protects the loop where I actually copy the contents to disk
-    //therefore, I must acquire the standbylist lock here in order to avoid a race condition
-    EnterCriticalSection(lockStandByList);
+
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
-        LeaveCriticalSection(lockStandByList);
-        set_disk_space_free(page->diskIndex);
 
     }
     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
+        EnterCriticalSection(lockStandByList);
         removeFromMiddleOfList(&headStandByList,&page->entry);
         LeaveCriticalSection(lockStandByList);
 
         set_disk_space_free(page->diskIndex);
 
     } else {
-        LeaveCriticalSection(lockStandByList);
 
         EnterCriticalSection(lockModifiedList);
         removeFromMiddleOfList(&headModifiedList,&page->entry);
@@ -213,6 +209,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
 
     currentPTE->validFormat.valid = 1;
+
 
     checkVa((PULONG64)arbitrary_va);
 
