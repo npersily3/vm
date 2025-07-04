@@ -46,7 +46,6 @@ get_free_disk_index(VOID) {
     // this will make it go over 1 so it can find the transfer slot
     if(number_of_open_slots[freePortion] == 0) {
         return COULD_NOT_FIND_SLOT;
-
     }
 
     //ask if they should go in the loop
@@ -54,7 +53,11 @@ get_free_disk_index(VOID) {
     while (start < end) {
         if (*start == FALSE) {
             *start = TRUE;
+
+            EnterCriticalSection(lockNumberOfSlots);
             number_of_open_slots[freePortion] -= 1;
+            LeaveCriticalSection(lockNumberOfSlots);
+
             LeaveCriticalSection(lockDiskActive);
             return start - diskActive;
         }
@@ -78,7 +81,8 @@ set_disk_space_free(ULONG64 diskIndex) {
     // there is truncation when stuff cant go in easily
 
     if (diskActiveVa[diskIndex] == NULL) {DebugBreak();}
-    diskActiveVa[diskIndex] = NULL;
+    if ( ((ULONG64) diskActiveVa[diskIndex] & 0x1)) { DebugBreak();}
+    diskActiveVa[diskIndex] = (PULONG64) ((ULONG64) diskActiveVa[diskIndex] | 0x1);
 
 
 

@@ -221,11 +221,6 @@ init_virtual_memory(VOID) {
     }
 
 
-
-
-
-
-
     createThreads();
 
 

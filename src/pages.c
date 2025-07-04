@@ -8,12 +8,17 @@
 #include <string.h>
 #include"macros.h"
 
+//nptodo, ideally you release locks before copying
+
 VOID
 modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
     // Modified reading
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
+    if (diskActive[diskIndex] == FALSE) {
+        DebugBreak(); // Reading from free disk slot
+    }
 
     // MUPP(va, size, physical page)
     if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, &frameNumber) == FALSE) {
@@ -197,8 +202,11 @@ DWORD diskWriter(LPVOID lpParam) {
             frameNumberArray[i] = frameNumber;
 
 
+
             //nptodo put finding a disk slot not on the pte lock and do it at the beinnign
             diskIndex = get_free_disk_index();
+
+
             if (diskIndex == COULD_NOT_FIND_SLOT) {
                 localBatchSizeInPages = i;
                 localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
@@ -215,10 +223,11 @@ DWORD diskWriter(LPVOID lpParam) {
                 break;
             }
 
-
-            if (diskActiveVa[diskIndex] != NULL) {DebugBreak();}
-            diskActiveVa[diskIndex] = va;
-
+            if (diskActiveVa[diskIndex] == NULL || ((ULONG64)diskActiveVa[diskIndex] & 0x1)) {
+                diskActiveVa[diskIndex] = va;
+            } else {
+                DebugBreak();
+            }
 
 
             // modified writing

@@ -55,6 +55,7 @@ DWORD testVM(LPVOID lpParam) {
     WaitForSingleObject(userStartEvent, INFINITE);
 
 
+   // DebugBreak();
 
     PULONG_PTR arbitrary_va;
     unsigned random_number;
@@ -153,7 +154,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
             if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
-            } else {
+        } else {
                 // if this returns REDO FAULT, map_page has released the pte lock
                 if (mapPage(arbitrary_va, currentPTE, lpParam, currentPageTableLock) == REDO_FAULT) {
                     returnValue = REDO_FAULT;
