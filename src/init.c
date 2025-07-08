@@ -151,6 +151,8 @@ init_virtual_memory(VOID) {
 
     numDiskSlots = DISK_SIZE_IN_PAGES;
     diskActive = (boolean*)init_memory(numDiskSlots);
+    diskActive[0] = TRUE;
+
     diskActiveVa = init_memory(numDiskSlots * sizeof(ULONG64));
 
 
@@ -159,22 +161,14 @@ init_virtual_memory(VOID) {
     for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
         number_of_open_slots[i] = DISK_DIVISION_SIZE_IN_PAGES;
     }
-    number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 1;
+    number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 2;
+    number_of_open_slots[0] -= 1;
 
     // Initialize the page table
     numBytes = PAGE_TABLE_SIZE_IN_BYTES;
-    pageTable = (pte*)malloc(numBytes);
+    pageTable = (pte*)init_memory(numBytes);
 
-    ULONG64 length = numBytes / sizeof(pte);
-    for (int i = 0; i < length; i++) {
-        pageTable[i].entireFormat = 0;
-        pageTable[i].invalidFormat.diskIndex = EMPTY_PTE;
 
-    }
-
-    // Initialize the PFN array which will manage the free and active list
-    //numBytes = NUMBER_OF_PHYSICAL_PAGES * sizeof(pfn);
-   // pfnStart = (pfn*)init_memory(numBytes);
     ULONG64 max = getMaxFrameNumber();
     max += 1;
     pfnStart = VirtualAlloc(NULL,sizeof(pfn)*max,MEM_RESERVE,PAGE_READWRITE);

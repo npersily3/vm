@@ -16,6 +16,8 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
+    //checkIfPageIsZero(diskAddress);
+
     if (diskActive[diskIndex] == FALSE) {
         DebugBreak(); // Reading from free disk slot
     }
@@ -55,10 +57,6 @@ page_trimmer(LPVOID lpParam) {
 
         doubleBreak = FALSE;
         WaitForSingleObject(trimmingStartEvent, INFINITE);
-
-
-
-
 
         localBatchSizeInPages = min(BATCH_SIZE,headActiveList.length);
         localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
@@ -114,6 +112,7 @@ page_trimmer(LPVOID lpParam) {
     }
 }
 
+
 //modified to standBy
 DWORD diskWriter(LPVOID lpParam) {
 
@@ -124,6 +123,7 @@ DWORD diskWriter(LPVOID lpParam) {
     ULONG64 diskAddressArray[BATCH_SIZE];
     ULONG64 frameNumberArray[BATCH_SIZE];
     pfn* pfnArray[BATCH_SIZE];
+    PULONG64 vaArray[BATCH_SIZE];
     ULONG64 diskByteAddress;
     boolean doubleBreak;
     PCRITICAL_SECTION writingPageTableLock;
@@ -142,18 +142,7 @@ DWORD diskWriter(LPVOID lpParam) {
         counter = 0;
         WaitForSingleObject(writingStartEvent, INFINITE);
 
-
-
-        EnterCriticalSection(lockModifiedList);
-        localBatchSizeInPages = min(BATCH_SIZE, headModifiedList.length);
-
-        localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
-
-        if (localBatchSizeInPages == 0) {
-            LeaveCriticalSection(lockModifiedList);
-            continue;
-        }
-        LeaveCriticalSection(lockModifiedList);
+        localBatchSizeInPages = BATCH_SIZE;
 
 
         for (int i = 0; i < localBatchSizeInPages; ++i) {
@@ -163,7 +152,7 @@ DWORD diskWriter(LPVOID lpParam) {
             newPageEntry = headModifiedList.entry.Flink;
             // similar to mapPage, tryEnter page table, if I can then procceed, otherwise i-- and continue, release locks before hand
 
-            //nptodo i dont think I should always doublebreak
+
             if (newPageEntry == &headModifiedList.entry) {
                 if (i == 0) {
                     doubleBreak = TRUE;
@@ -195,6 +184,7 @@ DWORD diskWriter(LPVOID lpParam) {
             LeaveCriticalSection(lockModifiedList);
 
             ULONG64 va = (ULONG64) pte_to_va(page->pte);
+            vaArray[i] = va;
 
             pfnArray[i] = page;
 
@@ -222,12 +212,12 @@ DWORD diskWriter(LPVOID lpParam) {
 
                 break;
             }
-
-            if (diskActiveVa[diskIndex] == NULL || ((ULONG64)diskActiveVa[diskIndex] & 0x1)) {
-                diskActiveVa[diskIndex] = va;
-            } else {
-                DebugBreak();
-            }
+            //
+            // if (diskActiveVa[diskIndex] == NULL || ((ULONG64)diskActiveVa[diskIndex] & 0x1)) {
+            //     diskActiveVa[diskIndex] = va;
+            // } else {
+            //     DebugBreak();
+            // }
 
 
             // modified writing
@@ -235,12 +225,10 @@ DWORD diskWriter(LPVOID lpParam) {
             diskAddressArray[i] = diskByteAddress;
 
 
-            //nptodo ask how I should do this ordering
+
             page->isBeingWritten = TRUE;
             page->diskIndex = diskIndex;
             page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
-      //      page->pte->transitionFormat.frameNumber = frameNumber;
-
 
             LeaveCriticalSection(writingPageTableLock);
         }
@@ -262,7 +250,10 @@ DWORD diskWriter(LPVOID lpParam) {
 
         for (int i = 0; i < localBatchSizeInPages; ++i) {
             // copy from transfer to disk
+
             memcpy(diskAddressArray[i], (PVOID) ((ULONG64) transferVaWriting + i * PAGE_SIZE) , PAGE_SIZE);
+
+       //     ASSERT(checkVa( (PULONG64)((ULONG64)transferVaWriting + i * PAGE_SIZE), vaArray[i]));
         }
 
         if (MapUserPhysicalPages(transferVaWriting, localBatchSizeInPages, NULL) == FALSE) {
@@ -276,6 +267,7 @@ DWORD diskWriter(LPVOID lpParam) {
         for (int i = 0; i < localBatchSizeInPages; ++i) {
             page = pfnArray[i];
 
+
             writingPageTableLock = getPageTableLock(page->pte);
             EnterCriticalSection(writingPageTableLock);
 
@@ -283,10 +275,14 @@ DWORD diskWriter(LPVOID lpParam) {
             if(pfnArray[i]->isBeingWritten == FALSE) {
                 set_disk_space_free(page->diskIndex);
             } else {
+                //check if disk page is empty
+                //checkIfPageIsZero(diskAddressArray[i]);
+
+                pfnArray[i]->isBeingWritten = FALSE;
                 EnterCriticalSection(lockStandByList);
                 InsertTailList(&headStandByList, &pfnArray[i]->entry);
                 LeaveCriticalSection(lockStandByList);
-                pfnArray[i]->isBeingWritten = FALSE;
+
             }
             // need to hold pte lock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
             //make sure pte then list lock
@@ -318,13 +314,19 @@ ULONG64 modifiedLongerThanBatch() {
     return i;
 }
 
-VOID
-checkVa(PULONG64 va) {
-    va = (PULONG64) ((ULONG64)va & ~(PAGE_SIZE - 1));
+
+BOOL
+checkVa(PULONG64 start,PULONG64 va) {
+    ULONG64 base;
+
+    base = ((ULONG64)va >> 12);
+
     for (int i = 0; i < PAGE_SIZE / 8; ++i) {
-        if (!(*va == 0 || *va == (ULONG64) va)) {
+        if (!(*start == 0 || ((*start) >> 12) == base)) {
+            return false;
             DebugBreak();
         }
-        va += 1;
+        start += 1;
     }
+    return true;
 }

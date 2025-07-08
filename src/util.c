@@ -59,3 +59,14 @@ BOOL isVaValid(ULONG64 va) {
 
     return (va >= (ULONG64) vaStart) && (va <= (ULONG64) vaEnd);
 }
+VOID checkIfPageIsZero(PULONG64 startLocation) {
+    ULONG64 startAddress = startLocation;
+    ULONG64 endAddress = startLocation + PAGE_SIZE;
+
+    while (startAddress < endAddress) {
+        if (*(PULONG64)startAddress != 0) {
+            return;
+        }
+    }
+    DebugBreak();
+}

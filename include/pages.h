@@ -22,7 +22,7 @@ extern PCRITICAL_SECTION lockNumberOfSlots;
 //
 VOID modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber);
 DWORD page_trimmer(LPVOID lpParam);
-VOID checkVa(PULONG64 va);
+BOOL checkVa(PULONG64 start, PULONG64 va);
 DWORD diskWriter(LPVOID lpParam);
 ULONG64 modifiedLongerThanBatch();
 

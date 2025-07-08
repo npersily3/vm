@@ -38,7 +38,7 @@ get_free_disk_index(VOID) {
 
     // accounts for extra slot case
     if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES + 1;
+        end = start + DISK_DIVISION_SIZE_IN_PAGES + 2;
     } else {
         end = start + DISK_DIVISION_SIZE_IN_PAGES;
     }
@@ -49,6 +49,7 @@ get_free_disk_index(VOID) {
     }
 
     //ask if they should go in the loop
+    //nptodo make diskActive and numOpenSlots only one lock
     EnterCriticalSection(lockDiskActive);
     while (start < end) {
         if (*start == FALSE) {
@@ -73,16 +74,14 @@ get_free_disk_index(VOID) {
 VOID
 set_disk_space_free(ULONG64 diskIndex) {
 
-    // ULONG64 diskPage = diskIndex * PAGE_SIZE + (ULONG64) diskStart;
-    // memset((PVOID)diskPage, 0, PAGE_SIZE);
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
     // there is truncation when stuff cant go in easily
 
-    if (diskActiveVa[diskIndex] == NULL) {DebugBreak();}
-    if ( ((ULONG64) diskActiveVa[diskIndex] & 0x1)) { DebugBreak();}
-    diskActiveVa[diskIndex] = (PULONG64) ((ULONG64) diskActiveVa[diskIndex] | 0x1);
+    //if (diskActiveVa[diskIndex] == NULL) {DebugBreak();}
+   // if ( ((ULONG64) diskActiveVa[diskIndex] & 0x1)) { DebugBreak();}
+    //diskActiveVa[diskIndex] = (PULONG64) ((ULONG64) diskActiveVa[diskIndex] | 0x1);
 
 
 
@@ -93,6 +92,7 @@ set_disk_space_free(ULONG64 diskIndex) {
     }
 
 
+    EnterCriticalSection(lockDiskActive);
 
     EnterCriticalSection(lockNumberOfSlots);
     number_of_open_slots[diskIndexSection] += 1;
@@ -101,7 +101,8 @@ set_disk_space_free(ULONG64 diskIndex) {
     if (diskActive[diskIndex] == FALSE) {
         DebugBreak();
     }
-    EnterCriticalSection(lockDiskActive);
+
+
     diskActive[diskIndex] = FALSE;
     LeaveCriticalSection(lockDiskActive);
 

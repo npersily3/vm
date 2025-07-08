@@ -67,7 +67,7 @@ DWORD testVM(LPVOID lpParam) {
 
     arbitrary_va = NULL;
       // Now perform random accesses
-    while (TRUE) {
+    while (true) {//for (int i = 0; i < MB(1); i++) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
@@ -107,7 +107,7 @@ DWORD testVM(LPVOID lpParam) {
             //continuously fault on the same va
             redo_fault = REDO_FAULT;
             counter = 0;
-            while (redo_fault) {
+            while (redo_fault == REDO_FAULT) {
                 redo_fault = pageFault(arbitrary_va, lpParam);
                 counter += 1;
                 if (counter == MB(1)) {
@@ -115,6 +115,7 @@ DWORD testVM(LPVOID lpParam) {
                     printf("Fault overflow, at va %u", arbitrary_va);
                 }
             }
+           // *arbitrary_va = (ULONG_PTR) arbitrary_va;
         }
     }
 
@@ -124,7 +125,8 @@ DWORD testVM(LPVOID lpParam) {
 }
 
 
-
+//nptodo remove 2nd transition bit, and check the pfn diskIndex to see what list it is on, then pass into rescue what list it is
+//then you will need to reset diskIndex after you map it
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
 
    if (isVaValid(arbitrary_va) == FALSE) {
@@ -161,6 +163,11 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
                 }
             }
     }
+
+    if (returnValue == !REDO_FAULT) {
+        *arbitrary_va = (ULONG_PTR) arbitrary_va;
+    }
+
     LeaveCriticalSection(currentPageTableLock);
 
 
@@ -170,11 +177,14 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
 
 // this function assumes the page table lock is held before being called and will be released for them when exiting
 // all other locks must be entered and left before returning
+
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     pfn* page;
     ULONG64 frameNumber;
+    ULONG64 pageStart;
     pte entryContents = *currentPTE;
 
+    pageStart = arbitrary_va & ~(PAGE_SIZE - 1);
 
         frameNumber = currentPTE->transitionFormat.frameNumber;
         page = getPFNfromFrameNumber(frameNumber);
@@ -212,7 +222,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     currentPTE->validFormat.valid = 1;
 
 
-    checkVa((PULONG64)arbitrary_va);
+//    ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));
 
     EnterCriticalSection(lockActiveList);
     InsertTailList(&headActiveList, &page->entry);
@@ -256,8 +266,10 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
     pte entryContents = *currentPTE;
     PTHREAD_INFO threadInfo;
     PCRITICAL_SECTION victimPageTableLock;
+    ULONG64 pageStart;
 
     threadInfo = (PTHREAD_INFO)threadContext;
+    pageStart = arbitrary_va & ~(PAGE_SIZE - 1);
 
     // if it is not empty need locks around these type of checks otherwise blow up
     EnterCriticalSection(lockFreeList);
@@ -281,12 +293,13 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
             printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
             return FALSE;
         }
-        checkVa((PULONG64)arbitrary_va);
+     //   ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));
 
     } else {
         LeaveCriticalSection(lockFreeList);
 
         // standby is not empty
+        //nptodo make it so that this condition is based off the standBy density
         EnterCriticalSection(lockStandByList);
         if (headStandByList.length != 0) {
 
@@ -312,8 +325,10 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
             page = container_of(RemoveHeadList(&headStandByList), pfn, entry);
 
 
+
             page->pte->transitionFormat.contentsLocation = DISK;
             page->pte->invalidFormat.diskIndex = page->diskIndex;
+
 
             //now that I have recieved a page and edited its pte, a rescue can no longer happen,
             //and I no longer need the pte or any page list, I can release both locks
@@ -350,7 +365,10 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
                 printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
                 return FALSE;
             }
-            checkVa((PULONG64)arbitrary_va);
+
+
+         //   ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));
+
 
         } else {
 
@@ -363,6 +381,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
             ResetEvent(writingEndEvent);
             SetEvent(trimmingStartEvent);
 
+            //nptodo ask landy about thread scheduling
             LeaveCriticalSection(lockStandByList);
 
             WaitForSingleObject(writingEndEvent, INFINITE);
@@ -378,6 +397,9 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
     currentPTE->validFormat.frameNumber = frameNumber;
     currentPTE->validFormat.valid = 1;
     page->pte = currentPTE;
+
+    *(PULONG64)arbitrary_va = (ULONG_PTR) arbitrary_va;
+
 
 
     EnterCriticalSection(lockActiveList);

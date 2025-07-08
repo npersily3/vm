@@ -16,10 +16,10 @@
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 #define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
 #define NUMBER_OF_DISK_DIVISIONS   8
-#define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + PAGE_SIZE)
+#define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
 #define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / NUMBER_OF_DISK_DIVISIONS)
-#define EMPTY_PTE                  0xFFFFFFFFFF
+#define EMPTY_PTE                  0
 
 #define AUTO_RESET              FALSE
 #define MANUAL_RESET            TRUE
@@ -39,7 +39,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -186,6 +186,7 @@ ULONG64 getFrameNumber(pfn* pfn);
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
 VOID removeFromMiddleOfList(pListHead head, LIST_ENTRY* entry) ;
 PCRITICAL_SECTION getPageTableLock(pte* pte);
+VOID checkIfPageIsZero(PULONG64 startLocation);
 BOOL isVaValid(ULONG64 va);
 
 
