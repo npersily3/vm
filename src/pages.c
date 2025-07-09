@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include"macros.h"
+#include "vm.h"
 
 //nptodo, ideally you release locks before copying
 
@@ -35,6 +36,28 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
     }
 
     set_disk_space_free(diskIndex);
+}
+DWORD zeroingThread (LPVOID lpParam) {
+
+    PTHREAD_INFO thread_info;
+    pfn* page;
+
+    thread_info = (PTHREAD_INFO) lpParam;
+
+    while (true) {
+        if (headToBeZeroedList.length > 0) {
+            acquireLock(&lockToBeZeroedList);
+            page = container_of(RemoveHeadList(&headToBeZeroedList), pfn, entry);
+            releaseLock(&lockToBeZeroedList);
+            if (!zeroPage(page, NUMBER_OF_THREADS)) {
+                DebugBreak();
+            }
+
+            EnterCriticalSection(lockFreeList);
+            InsertTailList(&headFreeList, &page->entry);
+            LeaveCriticalSection(lockFreeList);
+        }
+    }
 }
 
 DWORD

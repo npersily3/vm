@@ -2,8 +2,6 @@
 #include "pages.h"
 #include "disk.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <intrin.h>
 #include "vm.h"
 #include "macros.h"
 
@@ -238,18 +236,25 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 // returns true if succeeds, wipes a physical page
 //have an array of these transfers vas and locks, and try enter, and keep going down until you get one
 BOOL zeroPage (pfn* page, ULONG64 threadNumber) {
+
+    PVOID transferVa;
     ULONG64 frameNumber;
 
+    if (threadNumber == NUMBER_OF_THREADS) {
+        transferVa = zeroThreadTransferVa;
+    } else {
+        transferVa = userThreadTransferVa[threadNumber];
+    }
     frameNumber = getFrameNumber(page);
 
-    if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, &frameNumber) == FALSE) {
+    if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
         return FALSE;
     }
     memset(userThreadTransferVa[threadNumber], 0, PAGE_SIZE);
 
-    if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, NULL) == FALSE) {
+    if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
         return FALSE;
@@ -269,7 +274,9 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
     PTHREAD_INFO threadInfo;
     PCRITICAL_SECTION victimPageTableLock;
     ULONG64 pageStart;
+    BOOL isPageZeroed;
 
+    isPageZeroed = FALSE;
     threadInfo = (PTHREAD_INFO)threadContext;
     pageStart = arbitrary_va & ~(PAGE_SIZE - 1);
 
@@ -342,6 +349,7 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
                 if (!zeroPage(page, threadInfo->ThreadNumber)) {
                     DebugBreak();
                 }
+                isPageZeroed = TRUE;
                 //add flag saying that I zeroed
             }
         //nptodo think about adding a zeroing thread that zeros a page and then adds it the free list
@@ -354,9 +362,12 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
 
             if (currentPTE->entireFormat != entryContents.entireFormat) {
-                EnterCriticalSection(lockFreeList);
-                InsertTailList(&headFreeList,&page->entry);
-                LeaveCriticalSection(lockFreeList);
+                if (isPageZeroed == FALSE) {
+                    acquireLock(&lockToBeZeroedList);
+                    InsertTailList(&headToBeZeroedList, &page->entry);
+                    releaseLock(&lockToBeZeroedList);
+
+                }
                 return REDO_FAULT;
             }
 

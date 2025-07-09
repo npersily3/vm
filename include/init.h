@@ -3,6 +3,7 @@
 
 #include "util.h"
 
+
 //
 // Configuration for multiple VA support
 //
@@ -46,6 +47,10 @@ VOID initCriticalSections(VOID);
 BOOL initVA (VOID);
 VOID initializePageTableLocks(VOID);
 
+
+VOID init_list_head(pListHead head);
+
+HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext);
 
 #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
 HANDLE CreateSharedMemorySection(VOID);

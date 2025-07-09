@@ -62,11 +62,12 @@
 
 
 #define NUMBER_OF_USER_THREADS 2
+#define NUMBER_OF_ZEROING_THREADS 1
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
 
 
-#define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
+#define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_ZEROING_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
 
 #define MAX_FAULTS 0xFFFFFF
 typedef struct {
@@ -155,7 +156,7 @@ extern listHead headFreeList;
 extern listHead headActiveList;
 extern listHead headModifiedList;
 extern listHead headStandByList;
-
+extern listHead headToBeZeroedList;
 
 extern pte *pageTable;
 extern pfn *pfnStart;
@@ -164,6 +165,7 @@ extern PULONG_PTR vaStart;
 extern PULONG_PTR vaEnd;
 extern PVOID transferVaWriting;
 extern PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
+extern  PVOID zeroThreadTransferVa;
 
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
@@ -203,6 +205,8 @@ BOOL tryAcquireLock(PULONG64 lock);
 void releaseLock(PULONG64 lock);
 void acquireLock(PULONG64 lock);
 
+
 extern ULONG64 lockModList;
+extern ULONG64 lockToBeZeroedList;
 
 #endif // UTIL_H

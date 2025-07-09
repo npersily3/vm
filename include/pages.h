@@ -24,6 +24,7 @@ VOID modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber);
 DWORD page_trimmer(LPVOID lpParam);
 BOOL checkVa(PULONG64 start, PULONG64 va);
 DWORD diskWriter(LPVOID lpParam);
+DWORD zeroingThread (LPVOID lpParam);
 ULONG64 modifiedLongerThanBatch();
 
 #endif // PAGES_H

@@ -24,6 +24,7 @@ listHead headFreeList;
 listHead headActiveList;
 listHead headModifiedList;
 listHead headStandByList;
+listHead headToBeZeroedList;
 
 pte *pageTable;
 pfn *pfnStart;
@@ -32,6 +33,7 @@ PULONG_PTR vaStart;
 PULONG_PTR vaEnd;
 PVOID transferVaWriting;
 PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
+PVOID zeroThreadTransferVa;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
 
@@ -53,7 +55,7 @@ HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
 PCRITICAL_SECTION lockWritingTransferVa;
 
 ULONG64 lockModList;
-
+ULONG64 lockToBeZeroedList;
 CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
 
 
@@ -201,22 +203,11 @@ init_virtual_memory(VOID) {
 
 
 
-    // Initialize the free and active list as empty
-    headFreeList.entry.Flink = &headFreeList.entry;
-    headFreeList.entry.Blink = &headFreeList.entry;
-    headFreeList.length = 0;
-
-    headActiveList.entry.Flink = &headActiveList.entry;
-    headActiveList.entry.Blink = &headActiveList.entry;
-    headActiveList.length = 0;
-
-    headModifiedList.entry.Flink = &headModifiedList.entry;
-    headModifiedList.entry.Blink = &headModifiedList.entry;
-    headModifiedList.length = 0;
-
-    headStandByList.entry.Flink = &headStandByList.entry;
-    headStandByList.entry.Blink = &headStandByList.entry;
-    headStandByList.length = 0;
+    init_list_head(&headToBeZeroedList);
+    init_list_head(&headStandByList);
+    init_list_head(&headModifiedList);
+    init_list_head(&headFreeList);
+    init_list_head(&headActiveList);
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
@@ -245,6 +236,13 @@ init_virtual_memory(VOID) {
 
 
 }
+VOID init_list_head(pListHead head) {
+    head->entry.Flink = &head->entry;
+    head->entry.Blink = &head->entry;
+    head->length = 0;
+}
+
+
 
 BOOL initVA (VOID) {
     BOOL allocated;
@@ -322,6 +320,13 @@ BOOL initVA (VOID) {
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
+    zeroThreadTransferVa = VirtualAlloc2(NULL,
+                                        NULL,
+                                        PAGE_SIZE,
+                                        MEM_RESERVE | MEM_PHYSICAL,
+                                        PAGE_READWRITE,
+                                        &parameter,
+                                        1);
     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
         userThreadTransferVa[i] = (PULONG_PTR)VirtualAlloc2(NULL,
                                             NULL,
@@ -368,6 +373,7 @@ VOID createThreads(VOID) {
     THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS] = {0};
     THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS] = {0};
     THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS] = {0};
+    THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
 
     ULONG maxThread = 0;
 
@@ -390,7 +396,7 @@ VOID createThreads(VOID) {
             return;
         }
 
-        Handle = createUserThread(ThreadContext);
+        Handle = createNewThread(testVM, ThreadContext);
 
         if (Handle == NULL) {
             ReturnValue = GetLastError ();
@@ -417,7 +423,7 @@ VOID createThreads(VOID) {
             return;
         }
 
-        Handle = createTrimmingThread(ThreadContext);
+        Handle = createNewThread(page_trimmer, ThreadContext);
 
         if (Handle == NULL) {
             ReturnValue = GetLastError ();
@@ -443,7 +449,34 @@ VOID createThreads(VOID) {
             return;
         }
 
-        Handle = createWritingThread(ThreadContext);
+        Handle = createNewThread(diskWriter,ThreadContext);
+
+        if (Handle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create thread %x\n", ReturnValue);
+            return;
+        }
+
+        ThreadContext->ThreadHandle = Handle;
+        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+
+        maxThread++;
+    }
+
+    for (int i = 0; i < NUMBER_OF_WRITING_THREADS; ++i) {
+        ThreadContext = &WriterThreadInfo[i];
+        ThreadContext->ThreadNumber = maxThread;
+        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
+                                                     AUTO_RESET,
+                                                     FALSE,
+                                                     NULL);
+        if (ThreadContext->WorkDoneHandle == NULL) {
+            ReturnValue = GetLastError ();
+            printf ("could not create work event %x\n", ReturnValue);
+            return;
+        }
+
+        Handle = createNewThread(zeroingThread,ThreadContext);
 
         if (Handle == NULL) {
             ReturnValue = GetLastError ();
@@ -475,6 +508,7 @@ VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockNumberOfSlots);
 
     lockModList = LOCK_FREE;
+    lockToBeZeroedList = LOCK_FREE;
 
     initializePageTableLocks();
 
@@ -485,27 +519,12 @@ VOID initializePageTableLocks(VOID) {
     }
 }
 
-HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext) {
-    return CreateThread(DEFAULT_SECURITY,
-                               DEFAULT_STACK_SIZE,
-                               page_trimmer,
-                               ThreadContext,
-                               DEFAULT_CREATION_FLAGS,
-                               &ThreadContext->ThreadId);
-}
-HANDLE createWritingThread(PTHREAD_INFO ThreadContext) {
-    return CreateThread(DEFAULT_SECURITY,
-                           DEFAULT_STACK_SIZE,
-                           diskWriter,
-                           ThreadContext,
-                           DEFAULT_CREATION_FLAGS,
-                           &ThreadContext->ThreadId);
-}
 
-HANDLE createUserThread(PTHREAD_INFO ThreadContext) {
+
+HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext) {
     return CreateThread(DEFAULT_SECURITY,
                            DEFAULT_STACK_SIZE,
-                           testVM,
+                           ThreadFunction,
                            ThreadContext,
                            DEFAULT_CREATION_FLAGS,
                            &ThreadContext->ThreadId);

@@ -97,6 +97,8 @@ ULONG64 get_free_disk_index(VOID) {
     } else {
         end = start + DISK_DIVISION_SIZE_IN_PAGES;
     }
+
+    //for every ULONG in the section
     for (; start < end; start++) {
         if (*start != FULL_DISK_SPACE) {
             bitOffset = get_free_disk_bit(start);
@@ -104,7 +106,7 @@ ULONG64 get_free_disk_index(VOID) {
             if (bitOffset == 64) {
                 continue;
             }
-            return 8 * ((ULONG64) start - (ULONG64)diskActive) + bitOffset;
+            return 64 * ((ULONG64) start - (ULONG64)diskActive) + bitOffset;
         }
     }
 
@@ -114,15 +116,18 @@ ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
     ULONG64 oldDiskSlotContents;
     ULONG64 newDiskSlotContents;
     ULONG64 oldDiskSlotComparator;
+    ULONG64 modifiedDiskSlotContents;
 
     ULONG64 i;
     ULONG64 newBit;
 
     oldDiskSlotContents = *diskSlot;
+    modifiedDiskSlotContents = oldDiskSlotContents;
+
 
     for (i = 0; i < 64; i++) {
-        if ((oldDiskSlotContents & 1) == DISK_ACTIVE) {
-            oldDiskSlotContents >>= 1;
+        if ((modifiedDiskSlotContents & 1) == DISK_ACTIVE) {
+            modifiedDiskSlotContents >>= 1;
         } else {
             newBit = 1 << i;
             newDiskSlotContents = oldDiskSlotContents | newBit;
