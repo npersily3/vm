@@ -34,6 +34,16 @@
 #define ROUND_UP_TO_PAGE(addr) (((ULONG_PTR)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
 
+
+#define LOCK_FREE 0
+#define LOCK_HELD 1
+
+#define DISK_ACTIVE 1
+#define VARIABLE_DID_NOT_CHANGE 0
+#define DISK_FREE 0
+
+#define FULL_DISK_SPACE ~0ULL
+
 // List operation constants
 #define REMOVE_FREE_PAGE           FALSE
 #define REMOVE_ACTIVE_PAGE         TRUE
@@ -189,5 +199,10 @@ PCRITICAL_SECTION getPageTableLock(pte* pte);
 VOID checkIfPageIsZero(PULONG64 startLocation);
 BOOL isVaValid(ULONG64 va);
 
+BOOL tryAcquireLock(PULONG64 lock);
+void releaseLock(PULONG64 lock);
+void acquireLock(PULONG64 lock);
+
+extern ULONG64 lockModList;
 
 #endif // UTIL_H

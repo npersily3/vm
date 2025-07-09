@@ -16,11 +16,8 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
-    //checkIfPageIsZero(diskAddress);
 
-    if (diskActive[diskIndex] == FALSE) {
-        DebugBreak(); // Reading from free disk slot
-    }
+
 
     // MUPP(va, size, physical page)
     if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, &frameNumber) == FALSE) {
@@ -41,6 +38,7 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
 }
 
 DWORD
+//nptodo search for mapUserPP scatter in order to batch unmap. look at race
 page_trimmer(LPVOID lpParam) {
 
     pfn* page;
@@ -96,9 +94,11 @@ page_trimmer(LPVOID lpParam) {
             page->pte->transitionFormat.mustBeZero = 0;
             page->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
 
-            EnterCriticalSection(lockModifiedList);
+          //  EnterCriticalSection(lockModifiedList);
+            acquireLock(&lockModList);
             InsertTailList(&headModifiedList, &page->entry);
-            LeaveCriticalSection(lockModifiedList);
+            releaseLock(&lockModList);
+            //LeaveCriticalSection(lockModifiedList);
 
             LeaveCriticalSection(trimmedPageTableLock);
 
@@ -148,7 +148,8 @@ DWORD diskWriter(LPVOID lpParam) {
         for (int i = 0; i < localBatchSizeInPages; ++i) {
 
 
-            EnterCriticalSection(lockModifiedList);
+          //  EnterCriticalSection(lockModifiedList);
+              acquireLock(&lockModList);
             newPageEntry = headModifiedList.entry.Flink;
             // similar to mapPage, tryEnter page table, if I can then procceed, otherwise i-- and continue, release locks before hand
 
@@ -159,7 +160,8 @@ DWORD diskWriter(LPVOID lpParam) {
                 }
                 localBatchSizeInPages = i;
                 localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
-                LeaveCriticalSection(lockModifiedList);
+              //  LeaveCriticalSection(lockModifiedList);
+                releaseLock(&lockModList);
                 break;
             }
             counter = 0;
@@ -175,13 +177,15 @@ DWORD diskWriter(LPVOID lpParam) {
                 }
                 i--;
                 counter++;
-                LeaveCriticalSection(lockModifiedList);
+                ///LeaveCriticalSection(lockModifiedList);
+                releaseLock(&lockModList);
                 continue;
             }
             counter = 0;
             removeFromMiddleOfList(&headModifiedList, newPageEntry);
 
-            LeaveCriticalSection(lockModifiedList);
+            //LeaveCriticalSection(lockModifiedList);
+            releaseLock(&lockModList);
 
             ULONG64 va = (ULONG64) pte_to_va(page->pte);
             vaArray[i] = va;
@@ -201,9 +205,11 @@ DWORD diskWriter(LPVOID lpParam) {
                 localBatchSizeInPages = i;
                 localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
 
-                EnterCriticalSection(lockModifiedList);
+ //               EnterCriticalSection(lockModifiedList);
+                acquireLock(&lockModList);
                 InsertTailList(&headModifiedList, &page->entry);
-                LeaveCriticalSection(lockModifiedList);
+                releaseLock(&lockModList);
+                //LeaveCriticalSection(lockModifiedList);
 
                 if (i == 0) {
                     doubleBreak = TRUE;

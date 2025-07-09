@@ -59,6 +59,41 @@ BOOL isVaValid(ULONG64 va) {
 
     return (va >= (ULONG64) vaStart) && (va <= (ULONG64) vaEnd);
 }
+
+void acquireLock(PULONG64 lock) {
+    ULONG64 oldValue;
+
+    oldValue = *lock;
+
+    while (TRUE) {
+
+        if (oldValue == LOCK_FREE) {
+            oldValue =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
+            if (oldValue == LOCK_FREE) {
+                break;
+            }
+        }
+
+
+
+    }
+}
+void releaseLock(PULONG64 lock) {
+    InterlockedExchange(lock, LOCK_FREE);
+}
+BOOL tryAcquireLock(PULONG64 lock) {
+
+    ULONG64 oldValue;
+
+    oldValue =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
+
+    if (oldValue == 0) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+
 VOID checkIfPageIsZero(PULONG64 startLocation) {
     ULONG64 startAddress = startLocation;
     ULONG64 endAddress = startLocation + PAGE_SIZE;

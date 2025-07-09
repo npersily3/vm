@@ -38,7 +38,7 @@ PULONG_PTR physical_page_numbers;
 // Disk-related globals
 PVOID diskStart;
 ULONG64 diskEnd;
-boolean* diskActive;
+PULONG64 diskActive;
 PULONG64* diskActiveVa;
 ULONG64* number_of_open_slots;
 
@@ -51,6 +51,8 @@ HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
  PCRITICAL_SECTION lockDiskActive;
  PCRITICAL_SECTION lockNumberOfSlots;
 PCRITICAL_SECTION lockWritingTransferVa;
+
+ULONG64 lockModList;
 
 CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
 
@@ -149,9 +151,32 @@ init_virtual_memory(VOID) {
     diskStart = init_memory(numBytes);
     diskEnd = (ULONG64) diskStart + numBytes;
 
-    numDiskSlots = DISK_SIZE_IN_PAGES;
-    diskActive = (boolean*)init_memory(numDiskSlots);
-    diskActive[0] = TRUE;
+
+
+#if DISK_SIZE_IN_PAGES % 64 != 0
+
+    numDiskSlots = DISK_SIZE_IN_PAGES / 64 + 1;
+
+#else
+
+    numDiskSlots = DISK_SIZE_IN_PAGES / 64;
+
+#endif
+
+
+    diskActive = (PULONG64)init_memory(numDiskSlots);
+    diskActive[0] = (DISK_ACTIVE << 63);
+
+    //makes it so that the out of bounds portion that exists in our diskMeta data is never accessed
+#if DISK_SIZE_IN_PAGES % 64 != 0
+    ULONG64 leftoverBits;
+    leftoverBits = 64 - DISK_SIZE_IN_PAGES % 64;
+
+    diskActive[numDiskSlots - 1] = ((1 << leftoverBits + 1) - 1);
+
+
+#endif
+
 
     diskActiveVa = init_memory(numDiskSlots * sizeof(ULONG64));
 
@@ -448,6 +473,8 @@ VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockStandByList);
     INITIALIZE_LOCK(lockDiskActive);
     INITIALIZE_LOCK(lockNumberOfSlots);
+
+    lockModList = LOCK_FREE;
 
     initializePageTableLocks();
 

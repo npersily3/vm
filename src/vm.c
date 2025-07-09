@@ -205,9 +205,11 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
     } else {
 
-        EnterCriticalSection(lockModifiedList);
+       // EnterCriticalSection(lockModifiedList);
+        acquireLock(&lockModList);
         removeFromMiddleOfList(&headModifiedList,&page->entry);
-        LeaveCriticalSection(lockModifiedList);
+        releaseLock(&lockModList);
+        //  LeaveCriticalSection(lockModifiedList);
     }
 
 
@@ -336,9 +338,14 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
             LeaveCriticalSection(lockStandByList);
 
 
-            if (!zeroPage(page, threadInfo->ThreadNumber)) {
-                DebugBreak();
+            if (entryContents.invalidFormat.diskIndex == EMPTY_PTE) {
+                if (!zeroPage(page, threadInfo->ThreadNumber)) {
+                    DebugBreak();
+                }
+                //add flag saying that I zeroed
             }
+        //nptodo think about adding a zeroing thread that zeros a page and then adds it the free list
+
 
             // re-enter the faulting va's lock and see if things changed and map the page accordingly
             //I make a copy instead of holding 2 pte locks because there is a rare chance of the contents being changed

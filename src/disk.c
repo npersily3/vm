@@ -23,9 +23,10 @@ most_free_disk_portion(VOID) {
 
     return index;
 }
-
+#if 0
 ULONG64
 get_free_disk_index(VOID) {
+
     // get the subsection of the diskSlots array that you will be searching through
     ULONG64 freePortion;
     boolean* start;
@@ -69,20 +70,94 @@ get_free_disk_index(VOID) {
     printf("couldn't find free page");
     DebugBreak();
     return -1;
+
+//while havent found space, if current bitmap != fffff => search every bit method that uses bitwise to find a bit until you get a zero bit (on local bitmap. once you find it do interlock compare exchange to set it active.
 }
+#endif
+#if 1
+
+ULONG64 get_free_disk_index(VOID) {
+    ULONG64 freePortion;
+    PULONG64 start;
+    PULONG64 end;
+    ULONG64 bitOffset;
+
+    freePortion = most_free_disk_portion();
+
+    start = diskActive + freePortion * DISK_DIVISION_SIZE_IN_PAGES;
+
+    if(number_of_open_slots[freePortion] == 0) {
+        return COULD_NOT_FIND_SLOT;
+    }
+
+
+    // accounts for extra slot case
+    if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
+        end = start + DISK_DIVISION_SIZE_IN_PAGES + 2;
+    } else {
+        end = start + DISK_DIVISION_SIZE_IN_PAGES;
+    }
+    for (; start < end; start++) {
+        if (*start != FULL_DISK_SPACE) {
+            bitOffset = get_free_disk_bit(start);
+
+            if (bitOffset == 64) {
+                continue;
+            }
+            return 8 * ((ULONG64) start - (ULONG64)diskActive) + bitOffset;
+        }
+    }
+
+    return COULD_NOT_FIND_SLOT;
+}
+ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
+    ULONG64 oldDiskSlotContents;
+    ULONG64 newDiskSlotContents;
+    ULONG64 oldDiskSlotComparator;
+
+    ULONG64 i;
+    ULONG64 newBit;
+
+    oldDiskSlotContents = *diskSlot;
+
+    for (i = 0; i < 64; i++) {
+        if ((oldDiskSlotContents & 1) == DISK_ACTIVE) {
+            oldDiskSlotContents >>= 1;
+        } else {
+            newBit = 1 << i;
+            newDiskSlotContents = oldDiskSlotContents | newBit;
+
+            oldDiskSlotComparator = InterlockedCompareExchange64(diskSlot, newDiskSlotContents,oldDiskSlotContents);
+
+            if (oldDiskSlotComparator == LOCK_FREE) {
+                return i;
+            }
+        }
+    }
+    return i;
+
+
+}
+
+
+#endif
 
 VOID
 set_disk_space_free(ULONG64 diskIndex) {
+
+    ULONG64 diskMetaDataIndex;
+
+    ULONG64 newDiskSlotContents;
+    PULONG64 diskMetaDateAddress;
+    ULONG64 oldDiskSlotContents;
+
+    ULONG64 bitOffset;
+    ULONG64 diskHasChanged;
 
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
     // there is truncation when stuff cant go in easily
-
-    //if (diskActiveVa[diskIndex] == NULL) {DebugBreak();}
-   // if ( ((ULONG64) diskActiveVa[diskIndex] & 0x1)) { DebugBreak();}
-    //diskActiveVa[diskIndex] = (PULONG64) ((ULONG64) diskActiveVa[diskIndex] | 0x1);
-
 
 
     diskIndexSection = diskIndex / DISK_DIVISION_SIZE_IN_PAGES;
@@ -92,21 +167,31 @@ set_disk_space_free(ULONG64 diskIndex) {
     }
 
 
-    EnterCriticalSection(lockDiskActive);
+    // round down to the nearest ULONG64
+    diskMetaDataIndex = (diskIndex >> 64);
+
+    diskMetaDateAddress = diskActive + diskMetaDataIndex;
+
+    oldDiskSlotContents = *diskMetaDateAddress;
+
+
+    bitOffset = diskIndex - diskMetaDataIndex * 64;
+
+    newDiskSlotContents = oldDiskSlotContents | (1 << bitOffset);
+
+    while (true) {
+        diskHasChanged = InterlockedCompareExchange64(diskMetaDateAddress, newDiskSlotContents, oldDiskSlotContents);
+
+        if (diskHasChanged == VARIABLE_DID_NOT_CHANGE) {
+            break;
+        }
+    }
+
 
     EnterCriticalSection(lockNumberOfSlots);
     number_of_open_slots[diskIndexSection] += 1;
     LeaveCriticalSection(lockNumberOfSlots);
 
-    if (diskActive[diskIndex] == FALSE) {
-        DebugBreak();
-    }
-
-
-    diskActive[diskIndex] = FALSE;
-    LeaveCriticalSection(lockDiskActive);
-
-
-
+   //nptodo change everything to atomic interlocked operations and conditionally set the event
     SetEvent(writingStartEvent);
 }

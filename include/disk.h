@@ -8,7 +8,7 @@
 //
 extern PVOID diskStart;
 extern ULONG64 diskEnd;
-extern boolean* diskActive;
+extern PULONG64 diskActive;
 extern ULONG64* number_of_open_slots;
 
 //
@@ -19,5 +19,6 @@ ULONG64 get_free_disk_index(VOID);
 VOID wipePage (ULONG64 diskIndex);
 VOID set_disk_space_free(ULONG64 diskIndex);
 pfn* standByToDisk();
+ULONG64 get_free_disk_bit(PULONG64 diskSlot);
 
 #endif // DISK_H
