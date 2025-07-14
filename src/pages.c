@@ -117,6 +117,7 @@ page_trimmer(LPVOID lpParam) {
             return 0;
         }
 
+        //while modified + standby = some fraction of total pages
         for (int i = 0; i < BATCH_SIZE; ++i) {
 
 
@@ -163,6 +164,7 @@ page_trimmer(LPVOID lpParam) {
         if (doubleBreak) {
             continue;
         }
+
         //nptodo what happens if a va is accessed here. It is still connected, but it is about to be disconnected.
         if (MapUserPhysicalPagesScatter(virtualAddresses, localBatchSizeInPages, NULL) == FALSE) {
             DebugBreak();
@@ -234,7 +236,7 @@ DWORD diskWriter(LPVOID lpParam) {
 //        WaitForSingleObject(writingStartEvent, INFINITE);
         returnEvent = WaitForMultipleObjects(2,events, FALSE, INFINITE);
 
-        //if the system shutdown event was signled, exit
+        //if the system shutdown event was signaled, exit
         if (returnEvent - WAIT_OBJECT_0 == 1) {
             return 0;
         }
@@ -242,6 +244,7 @@ DWORD diskWriter(LPVOID lpParam) {
 
         localBatchSizeInPages = BATCH_SIZE;
 
+        ASSERT(diskActive[0] % 2 == 1)
 
         for (int i = 0; i < localBatchSizeInPages; ++i) {
 

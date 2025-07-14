@@ -191,19 +191,38 @@ set_disk_space_free(ULONG64 diskIndex) {
     oldDiskSlotContents = *diskMetaDateAddress;
 
 
-    bitOffset = diskIndex & (~64);
-    newDiskSlotContents = oldDiskSlotContents & ~(1 << bitOffset);
+    bitOffset = diskIndex & (63);
+    newDiskSlotContents = oldDiskSlotContents & ~((ULONG64)1 << bitOffset);
 
+    //T1
+        //oldDiskSlotContents 1111
+        //NewDiskSlotContents 1110
+    //T2
+        //oldDiskSlotContents 1111
+        //new diskSlotsContents 1101
+
+
+
+
+    ASSERT(FALSE)
     while (true) {
-        diskHasChanged = InterlockedCompareExchange64((PLONG64) diskMetaDateAddress, (LONG64) newDiskSlotContents, (LONG64) oldDiskSlotContents);
+        diskHasChanged = InterlockedCompareExchange64((PLONG64) diskMetaDateAddress,
+            (LONG64) newDiskSlotContents,
+            (LONG64) oldDiskSlotContents);
 
+        //t1
+        //diskhasChanged = 1111
         if (diskHasChanged == oldDiskSlotContents) {
             break;
         }
+        oldDiskSlotContents = diskHasChanged;
     }
 
 
+    //if the disk previously had zero slots
     if (InterlockedIncrement64((PLONG64) &number_of_open_slots[diskIndexSection]) == 1) {
         SetEvent(writingStartEvent);
     }
 }
+
+

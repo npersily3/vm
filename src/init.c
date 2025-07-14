@@ -166,13 +166,13 @@ init_virtual_memory(VOID) {
 
 #else
 
-    numDiskSlots = DISK_SIZE_IN_PAGES / 64;
+    numEntries = DISK_SIZE_IN_PAGES / 64;
 
 #endif
 
 
 
-    diskActive = (PULONG64)init_memory(numEntries*8);
+    diskActive = (PULONG64)init_memory(numEntries * sizeof(ULONG64));
 
     //make the first slot in valid
     diskActive[0] = DISK_ACTIVE;
@@ -202,6 +202,7 @@ init_virtual_memory(VOID) {
     diskActiveVa = init_memory(numEntries * sizeof(ULONG64));
 
 
+
     numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
     number_of_open_slots = (ULONG64*)malloc(numBytes);
 
@@ -210,11 +211,12 @@ init_virtual_memory(VOID) {
         return;
     }
 
+    //TODO if you switch back to more regions, change this back
     for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
-        number_of_open_slots[i] = DISK_DIVISION_SIZE_IN_PAGES;
+        number_of_open_slots[i] = DISK_SIZE_IN_PAGES - 1;
     }
-    number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 2;
-    number_of_open_slots[0] -= 1;
+    // number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 2;
+    // number_of_open_slots[0] -= 1;
 
     // Initialize the page table
     numBytes = PAGE_TABLE_SIZE_IN_BYTES;
@@ -451,8 +453,8 @@ VOID createThreads(VOID) {
         }
 
         ThreadContext->ThreadHandle = Handle;
-        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
-        userThreadHandles[i] = ThreadContext->WorkDoneHandle;
+
+        userThreadHandles[i] = Handle;
 
         maxThread++;
     }
@@ -480,8 +482,8 @@ VOID createThreads(VOID) {
         }
 
         ThreadContext->ThreadHandle = Handle;
-        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
-        systemThreadHandles[maxThread-threadHandleArrayOffset] = ThreadContext->WorkDoneHandle;
+
+        systemThreadHandles[maxThread-threadHandleArrayOffset] =Handle;
 
         maxThread++;
     }
@@ -507,8 +509,8 @@ VOID createThreads(VOID) {
         }
 
         ThreadContext->ThreadHandle = Handle;
-        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
-        systemThreadHandles[maxThread-threadHandleArrayOffset] = ThreadContext->WorkDoneHandle;
+
+        systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
 
         maxThread++;
     }
@@ -535,8 +537,8 @@ VOID createThreads(VOID) {
         }
 
         ThreadContext->ThreadHandle = Handle;
-        workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
-        systemThreadHandles[maxThread-threadHandleArrayOffset] = ThreadContext->WorkDoneHandle;
+
+        systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
 
         maxThread++;
     }

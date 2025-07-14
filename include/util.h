@@ -49,7 +49,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else

@@ -78,9 +78,6 @@ void acquireLock(PULONG64 lock) {
         if (oldValueComparator == LOCK_FREE) {
             break;
         }
-
-
-
     }
 }
 void releaseLock(PULONG64 lock) {
