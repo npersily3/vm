@@ -73,7 +73,7 @@ VOID createEvents(VOID);
 VOID initCriticalSections(VOID);
 BOOL initVA (VOID);
 VOID initializePageTableLocks(VOID);
-
+VOID init_pfns(VOID);
 HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext);
 VOID init_list_head(pListHead head);
 

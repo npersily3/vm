@@ -102,6 +102,7 @@ ULONG64 get_free_disk_index(VOID) {
     //for every ULONG in the section
     for (; start < end; start++) {
         if (*start != FULL_DISK_SPACE) {
+
             bitOffset = get_free_disk_bit(start);
 
             if (bitOffset == 64) {
@@ -190,8 +191,7 @@ set_disk_space_free(ULONG64 diskIndex) {
     oldDiskSlotContents = *diskMetaDateAddress;
 
 
-    bitOffset = diskIndex & ~64;
-
+    bitOffset = diskIndex & (~64);
     newDiskSlotContents = oldDiskSlotContents & ~(1 << bitOffset);
 
     while (true) {

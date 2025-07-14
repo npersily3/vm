@@ -46,6 +46,8 @@ PULONG64* diskActiveVa;
 ULONG64* number_of_open_slots;
 
 HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
+HANDLE userThreadHandles[NUMBER_OF_USER_THREADS];
+HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
 
  PCRITICAL_SECTION lockFreeList;
  PCRITICAL_SECTION lockActiveList;
@@ -67,6 +69,7 @@ HANDLE writingEndEvent;
 HANDLE userStartEvent;
 HANDLE userEndEvent;
 HANDLE zeroingStartEvent;
+HANDLE systemShutdownEvent;
 
 BOOL
 GetPrivilege(VOID) {
@@ -218,6 +221,16 @@ init_virtual_memory(VOID) {
     pageTable = (pte*)init_memory(numBytes);
 
 
+    init_pfns();
+
+
+    createThreads();
+
+
+
+}
+VOID init_pfns(VOID) {
+
     ULONG64 max = getMaxFrameNumber();
     max += 1;
     pfnStart = VirtualAlloc(NULL,sizeof(pfn)*max,MEM_RESERVE,PAGE_READWRITE);
@@ -256,12 +269,6 @@ init_virtual_memory(VOID) {
         memset(new_pfn, 0, sizeof(pfn));
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
-
-
-    createThreads();
-
-
-
 }
 VOID init_list_head(pListHead head) {
     head->entry.Flink = &head->entry;
@@ -414,6 +421,7 @@ VOID createThreads(VOID) {
     THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
 
     ULONG maxThread = 0;
+    ULONG threadHandleArrayOffset;
 
 
 
@@ -444,9 +452,11 @@ VOID createThreads(VOID) {
 
         ThreadContext->ThreadHandle = Handle;
         workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+        userThreadHandles[i] = ThreadContext->WorkDoneHandle;
 
         maxThread++;
     }
+    threadHandleArrayOffset = maxThread;
 
     for (int i = 0; i < NUMBER_OF_TRIMMING_THREADS; ++i) {
         ThreadContext = &TrimmerThreadInfo[i];
@@ -471,6 +481,7 @@ VOID createThreads(VOID) {
 
         ThreadContext->ThreadHandle = Handle;
         workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+        systemThreadHandles[maxThread-threadHandleArrayOffset] = ThreadContext->WorkDoneHandle;
 
         maxThread++;
     }
@@ -497,12 +508,13 @@ VOID createThreads(VOID) {
 
         ThreadContext->ThreadHandle = Handle;
         workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+        systemThreadHandles[maxThread-threadHandleArrayOffset] = ThreadContext->WorkDoneHandle;
 
         maxThread++;
     }
 
-    for (int i = 0; i < NUMBER_OF_WRITING_THREADS; ++i) {
-        ThreadContext = &WriterThreadInfo[i];
+    for (int i = 0; i < NUMBER_OF_ZEROING_THREADS; ++i) {
+        ThreadContext = &ZeroIngThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
         ThreadContext->WorkDoneHandle = CreateEvent (NULL,
                                                      AUTO_RESET,
@@ -524,6 +536,7 @@ VOID createThreads(VOID) {
 
         ThreadContext->ThreadHandle = Handle;
         workDoneThreadHandles[maxThread] = ThreadContext->WorkDoneHandle;
+        systemThreadHandles[maxThread-threadHandleArrayOffset] = ThreadContext->WorkDoneHandle;
 
         maxThread++;
     }
@@ -537,6 +550,7 @@ VOID createEvents(VOID) {
     writingEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
     userEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
     zeroingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
+    systemShutdownEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
 }
 VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockFreeList);

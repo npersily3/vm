@@ -68,6 +68,8 @@
 
 
 #define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_ZEROING_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
+#define NUMBER_OF_SYSTEM_THREADS (NUMBER_OF_THREADS-NUMBER_OF_USER_THREADS)
+
 
 #define MAX_FAULTS 0xFFFFFF
 typedef struct {
@@ -145,6 +147,9 @@ extern  PVOID zeroThreadTransferVa;
 extern ULONG_PTR physical_page_count;
 extern PULONG_PTR physical_page_numbers;
 extern HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
+extern HANDLE userThreadHandles[NUMBER_OF_USER_THREADS];
+extern HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
+
 
 
 extern PCRITICAL_SECTION lockWritingTransferVa;

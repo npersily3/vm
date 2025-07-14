@@ -40,25 +40,22 @@ full_virtual_memory_test(VOID) {
 
     SetEvent(userStartEvent);
 
-    // for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
-    //     WaitForSingleObject(workDoneThreadHandles[i], INFINITE);
-    // }
-    //WaitForSingleObject(userEndEvent, INFINITE);
+     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+         WaitForSingleObject(userThreadHandles[i], INFINITE);
+     }
+    SetEvent(systemShutdownEvent);
+
+    for (int i = 0; i < NUMBER_OF_SYSTEM_THREADS; ++i) {
+        WaitForSingleObject(systemThreadHandles[i], INFINITE);
+    }
+    ResetEvent(systemShutdownEvent);
 
     // Now that we're done with our memory we can be a good
     // citizen and free it.
     VirtualFree(vaStart, 0, MEM_RELEASE);
     return;
 }
-//in fvmt
-    //wait for both user threads to finish ()
-    //then broadcast to other system threads
-//then change all other system threads to a waitformultiple with a system exit and their usual event
-//if the event is the system exit
-//return 0
 
-//back in fvmt
-    //wait for all handles and return zero
 
 //nptodo fix batchwriting to hold pagetable lock while unmapping
 
@@ -294,14 +291,14 @@ BOOL zeroMultiplePages (PULONG64 frameNumbers, ULONG64 batchSize) {
 
 
 
-    if (MapUserPhysicalPages(zeroThreadTransferVa, 1, frameNumbers) == FALSE) {
+    if (MapUserPhysicalPages(zeroThreadTransferVa, batchSize, frameNumbers) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", zeroThreadTransferVa, frameNumbers[0]);
         return FALSE;
     }
     memset(zeroThreadTransferVa, 0, PAGE_SIZE);
 
-    if (MapUserPhysicalPages(zeroThreadTransferVa, 1, NULL) == FALSE) {
+    if (MapUserPhysicalPages(zeroThreadTransferVa, batchSize, NULL) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n",  zeroThreadTransferVa, frameNumbers[0]);
         return FALSE;
@@ -342,6 +339,8 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
         if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
             modified_read(currentPTE, frameNumber, threadInfo->ThreadNumber);
+        } else {
+            zeroOnePage(page, threadInfo->ThreadNumber);
         }
 
         if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
@@ -408,20 +407,20 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
 
             if (currentPTE->entireFormat != entryContents.entireFormat) {
-                if (isPageZeroed == FALSE) {
-                    acquireLock(&lockToBeZeroedList);
-                    InsertTailList(&headToBeZeroedList, &page->entry);
-                    releaseLock(&lockToBeZeroedList);
-
-                    if (headToBeZeroedList.length == BATCH_SIZE ) {
-                        SetEvent(zeroingStartEvent);
-                    }
-
-                } else {
+                // if (isPageZeroed == FALSE) {
+                //     acquireLock(&lockToBeZeroedList);
+                //     InsertTailList(&headToBeZeroedList, &page->entry);
+                //     releaseLock(&lockToBeZeroedList);
+                //
+                //     if (headToBeZeroedList.length == BATCH_SIZE ) {
+                //         SetEvent(zeroingStartEvent);
+                //     }
+                //
+                // } else {
                     EnterCriticalSection(lockFreeList);
                     InsertTailList(&headFreeList, &page->entry);
                     LeaveCriticalSection(lockFreeList);
-                }
+                //}
                 return REDO_FAULT;
             }
 

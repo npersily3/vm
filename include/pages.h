@@ -11,6 +11,7 @@ extern HANDLE writingEndEvent;
 extern HANDLE userStartEvent;
 extern HANDLE userEndEvent;
 extern HANDLE zeroingStartEvent;
+extern HANDLE systemShutdownEvent;
 extern  PCRITICAL_SECTION lockFreeList;
 extern  PCRITICAL_SECTION lockActiveList;
 extern PCRITICAL_SECTION lockModifiedList;

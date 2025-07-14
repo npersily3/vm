@@ -46,9 +46,21 @@ DWORD zeroingThread (LPVOID lpParam) {
 
     thread_info = (PTHREAD_INFO) lpParam;
 
+    HANDLE* events[2];
+    DWORD returnEvent;
+    events[0] = zeroingStartEvent;
+    events[1] = systemShutdownEvent;
+
+
     while (true) {
 
-        WaitForSingleObject(zeroingStartEvent, INFINITE);
+        returnEvent = WaitForMultipleObjects(2,events, FALSE, INFINITE);
+
+        //if the system shutdown event was signaled, exit
+        if (returnEvent - WAIT_OBJECT_0 == 1) {
+            return 0;
+        }
+
 //nptodo If you ever expand to more threads of this type, there is a race condition where batch size could change
         for (int i = 0; i < BATCH_SIZE; ++i) {
             acquireLock(&lockToBeZeroedList);
@@ -58,12 +70,13 @@ DWORD zeroingThread (LPVOID lpParam) {
         }
         zeroMultiplePages(frameNumbers, BATCH_SIZE);
 
+        EnterCriticalSection(lockFreeList);
         for (int i = 0; i < BATCH_SIZE; ++i) {
-            EnterCriticalSection(lockFreeList);
-            InsertTailList(&headFreeList, &page[i]->entry);
-            LeaveCriticalSection(lockFreeList);
-        }
 
+            InsertTailList(&headFreeList, &page[i]->entry);
+
+        }
+        LeaveCriticalSection(lockFreeList);
     }
 }
 
@@ -75,20 +88,34 @@ page_trimmer(LPVOID lpParam) {
     ULONG64 virtualAddresses[BATCH_SIZE];
     PULONG64 va;
     PCRITICAL_SECTION trimmedPageTableLock;
+    PCRITICAL_SECTION nextPageTableLock;
     PLIST_ENTRY trimmedEntry;
     boolean doubleBreak;
 
     ULONG64 localBatchSizeInPages;
     ULONG64 localBatchSizeInBytes;
 
+    pfn* nextPage;
+
+
+    HANDLE events[2];
+    DWORD returnEvent;
+    events[0] = trimmingStartEvent;
+    events[1] = systemShutdownEvent;
+
+
     while (TRUE) {
 
 
         localBatchSizeInPages = BATCH_SIZE;
         doubleBreak = FALSE;
-        WaitForSingleObject(trimmingStartEvent, INFINITE);
 
+        returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
+        //if the system shutdown event was signaled, exit
+        if (returnEvent - WAIT_OBJECT_0 == 1) {
+            return 0;
+        }
 
         for (int i = 0; i < BATCH_SIZE; ++i) {
 
@@ -121,13 +148,23 @@ page_trimmer(LPVOID lpParam) {
             pages[i]->pte->transitionFormat.mustBeZero = 0;
             pages[i]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
 
+            // EnterCriticalSection(lockActiveList);
+            //
+            // nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
+            //
+            // nextPageTableLock = getPageTableLock(nextPage->pte);
+            //
+            // if (nextPageTableLock != trimmedPageTableLock) {
+            //
+            // }
+
             LeaveCriticalSection(trimmedPageTableLock);
         }
         if (doubleBreak) {
             continue;
         }
         //nptodo what happens if a va is accessed here. It is still connected, but it is about to be disconnected.
-        if (MapUserPhysicalPagesScatter(virtualAddresses, 1, NULL) == FALSE) {
+        if (MapUserPhysicalPagesScatter(virtualAddresses, localBatchSizeInPages, NULL) == FALSE) {
             DebugBreak();
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
             return 1;
@@ -135,7 +172,7 @@ page_trimmer(LPVOID lpParam) {
 
 
 
-        for (int i = 0; i < BATCH_SIZE; ++i) {
+        for (int i = 0; i < localBatchSizeInPages; ++i) {
             trimmedPageTableLock = getPageTableLock(pages[i]->pte);
 
             EnterCriticalSection(trimmedPageTableLock);
@@ -184,12 +221,24 @@ DWORD diskWriter(LPVOID lpParam) {
 
     PLIST_ENTRY newPageEntry;
 
+    HANDLE* events[2];
+    DWORD returnEvent;
+    events[0] = writingStartEvent;
+    events[1] = systemShutdownEvent;
+
     while (TRUE) {
 
 
         doubleBreak = FALSE;
         counter = 0;
-        WaitForSingleObject(writingStartEvent, INFINITE);
+//        WaitForSingleObject(writingStartEvent, INFINITE);
+        returnEvent = WaitForMultipleObjects(2,events, FALSE, INFINITE);
+
+        //if the system shutdown event was signled, exit
+        if (returnEvent - WAIT_OBJECT_0 == 1) {
+            return 0;
+        }
+
 
         localBatchSizeInPages = BATCH_SIZE;
 
