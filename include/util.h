@@ -15,10 +15,10 @@
 #define VIRTUAL_ADDRESS_SIZE        MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 #define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
-#define NUMBER_OF_DISK_DIVISIONS   8
+#define NUMBER_OF_DISK_DIVISIONS   1
 #define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
-#define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / NUMBER_OF_DISK_DIVISIONS)
+#define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / (NUMBER_OF_DISK_DIVISIONS) )
 #define EMPTY_PTE                  0
 
 #define AUTO_RESET              FALSE
@@ -49,7 +49,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -110,12 +110,7 @@ typedef struct {
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
 
-typedef struct {
 
-    LIST_ENTRY entry;
-    ULONG64 length;
-
-} listHead, *pListHead;
 
 
 typedef struct {
@@ -123,30 +118,10 @@ typedef struct {
     pte *pte;
    ULONG64 diskIndex;
     ULONG64:1, isBeingWritten;
+    ULONG64:1, isBeingTrimmed;
 } pfn;
 
-typedef struct _THREAD_INFO {
 
-    ULONG ThreadNumber;
-
-    ULONG ThreadId;
-    HANDLE ThreadHandle;
-
-    volatile ULONG ThreadCounter;
-
-    HANDLE WorkDoneHandle;
-
-#if 1
-
-    // // way faster, now everything consumes 1 cache line
-    // What effect would consuming extra space here have ?
-    //
-
-    volatile UCHAR Pad[32];
-
-#endif
-
-} THREAD_INFO, *PTHREAD_INFO;
 
 
 //

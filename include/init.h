@@ -1,13 +1,9 @@
 #ifndef INIT_H
 #define INIT_H
 
-#include "util.h"
 
+#include <windows.h>
 
-//
-// Configuration for multiple VA support
-//
-#define SUPPORT_MULTIPLE_VA_TO_SAME_PAGE 1
 
 #define EVENT_START_ON TRUE
 #define EVENT_START_OFF FALSE
@@ -35,6 +31,37 @@ InitializeCriticalSectionAndSpinCount(&(x), SPIN_COUNT)
 InitializeCriticalSection(&(x))
 #endif
 
+
+typedef struct _THREAD_INFO {
+
+    ULONG ThreadNumber;
+
+    ULONG ThreadId;
+    HANDLE ThreadHandle;
+
+    volatile ULONG ThreadCounter;
+
+    HANDLE WorkDoneHandle;
+
+#if 1
+
+    // // way faster, now everything consumes 1 cache line
+    // What effect would consuming extra space here have ?
+    //
+
+    volatile UCHAR Pad[32];
+
+#endif
+
+} THREAD_INFO, *PTHREAD_INFO;
+
+typedef struct {
+
+    LIST_ENTRY entry;
+    ULONG64 length;
+
+} listHead, *pListHead;
+
 //
 // Initialization functions
 //
@@ -47,13 +74,12 @@ VOID initCriticalSections(VOID);
 BOOL initVA (VOID);
 VOID initializePageTableLocks(VOID);
 
-
+HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext);
 VOID init_list_head(pListHead head);
 
-HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext);
 
-#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+
 HANDLE CreateSharedMemorySection(VOID);
-#endif
+
 
 #endif // INIT_H

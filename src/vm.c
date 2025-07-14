@@ -40,13 +40,29 @@ full_virtual_memory_test(VOID) {
 
     SetEvent(userStartEvent);
 
-    WaitForSingleObject(userEndEvent, INFINITE);
+    // for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+    //     WaitForSingleObject(workDoneThreadHandles[i], INFINITE);
+    // }
+    //WaitForSingleObject(userEndEvent, INFINITE);
 
     // Now that we're done with our memory we can be a good
     // citizen and free it.
     VirtualFree(vaStart, 0, MEM_RELEASE);
     return;
 }
+//in fvmt
+    //wait for both user threads to finish ()
+    //then broadcast to other system threads
+//then change all other system threads to a waitformultiple with a system exit and their usual event
+//if the event is the system exit
+//return 0
+
+//back in fvmt
+    //wait for all handles and return zero
+
+//nptodo fix batchwriting to hold pagetable lock while unmapping
+
+
 
 DWORD testVM(LPVOID lpParam) {
 
@@ -58,14 +74,19 @@ DWORD testVM(LPVOID lpParam) {
     PULONG_PTR arbitrary_va;
     unsigned random_number;
     unsigned i;
+    PTHREAD_INFO thread_info;
 
     BOOL page_faulted;
     BOOL redo_fault;
+    BOOL redo_try_same_address;
     ULONG64 counter;
 
+    thread_info = (PTHREAD_INFO)lpParam;
     arbitrary_va = NULL;
+    redo_try_same_address = FALSE;
       // Now perform random accesses
-    while (true) {//for (int i = 0; i < MB(1); i++) {
+    //while (true) {
+        for (i = 0; i < MB(1); i++) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
@@ -82,18 +103,19 @@ DWORD testVM(LPVOID lpParam) {
 
 
 
-            random_number = (unsigned) (GetTimeStampCounter() >> 4);
-            random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
+            if (!redo_try_same_address) {
+                random_number = (unsigned) (GetTimeStampCounter() >> 4);
+                random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
 
-            // Write the virtual address into each page. If we need to
-            // debug anything, we'll be able to see these in the pages.
+                // Write the virtual address into each page. If we need to
+                // debug anything, we'll be able to see these in the pages.
 
 
-            // Ensure the write to the arbitrary virtual address doesn't
-            // straddle a PAGE_SIZE boundary just to keep things simple for now.
-            random_number &= ~0x7;
-            arbitrary_va = vaStart + random_number;
-
+                // Ensure the write to the arbitrary virtual address doesn't
+                // straddle a PAGE_SIZE boundary just to keep things simple for now.
+                random_number &= ~0x7;
+                arbitrary_va = vaStart + random_number;
+            }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
         } __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -113,13 +135,17 @@ DWORD testVM(LPVOID lpParam) {
                     printf("Fault overflow, at va %u", arbitrary_va);
                 }
             }
+            redo_try_same_address = TRUE;
            // *arbitrary_va = (ULONG_PTR) arbitrary_va;
+        } else {
+            redo_try_same_address = FALSE;
         }
     }
 
-    // printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
-    // SetEvent(userEndEvent);
-    // return 0;
+    printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
+   // SetEvent(thread_info->WorkDoneHandle);
+    SetEvent(userEndEvent);
+    return 0;
 }
 
 
@@ -188,6 +214,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         page = getPFNfromFrameNumber(frameNumber);
 
 
+    if (page->isBeingTrimmed == TRUE) {
+        page->isBeingTrimmed = FALSE;
+    }
 
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
@@ -235,16 +264,14 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
 // returns true if succeeds, wipes a physical page
 //have an array of these transfers vas and locks, and try enter, and keep going down until you get one
-BOOL zeroPage (pfn* page, ULONG64 threadNumber) {
+BOOL zeroOnePage (pfn* page, ULONG64 threadNumber) {
 
     PVOID transferVa;
     ULONG64 frameNumber;
 
-    if (threadNumber == NUMBER_OF_THREADS) {
-        transferVa = zeroThreadTransferVa;
-    } else {
-        transferVa = userThreadTransferVa[threadNumber];
-    }
+
+    transferVa = userThreadTransferVa[threadNumber];
+
     frameNumber = getFrameNumber(page);
 
     if (MapUserPhysicalPages(transferVa, 1, &frameNumber) == FALSE) {
@@ -252,11 +279,31 @@ BOOL zeroPage (pfn* page, ULONG64 threadNumber) {
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
         return FALSE;
     }
-    memset(userThreadTransferVa[threadNumber], 0, PAGE_SIZE);
+    memset(transferVa, 0, PAGE_SIZE);
 
     if (MapUserPhysicalPages(transferVa, 1, NULL) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL zeroMultiplePages (PULONG64 frameNumbers, ULONG64 batchSize) {
+
+
+
+    if (MapUserPhysicalPages(zeroThreadTransferVa, 1, frameNumbers) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", zeroThreadTransferVa, frameNumbers[0]);
+        return FALSE;
+    }
+    memset(zeroThreadTransferVa, 0, PAGE_SIZE);
+
+    if (MapUserPhysicalPages(zeroThreadTransferVa, 1, NULL) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n",  zeroThreadTransferVa, frameNumbers[0]);
         return FALSE;
     }
 
@@ -346,13 +393,12 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
 
 
             if (entryContents.invalidFormat.diskIndex == EMPTY_PTE) {
-                if (!zeroPage(page, threadInfo->ThreadNumber)) {
+                if (!zeroOnePage(page, threadInfo->ThreadNumber)) {
                     DebugBreak();
                 }
                 isPageZeroed = TRUE;
                 //add flag saying that I zeroed
             }
-        //nptodo think about adding a zeroing thread that zeros a page and then adds it the free list
 
 
             // re-enter the faulting va's lock and see if things changed and map the page accordingly
@@ -367,6 +413,14 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
                     InsertTailList(&headToBeZeroedList, &page->entry);
                     releaseLock(&lockToBeZeroedList);
 
+                    if (headToBeZeroedList.length == BATCH_SIZE ) {
+                        SetEvent(zeroingStartEvent);
+                    }
+
+                } else {
+                    EnterCriticalSection(lockFreeList);
+                    InsertTailList(&headFreeList, &page->entry);
+                    LeaveCriticalSection(lockFreeList);
                 }
                 return REDO_FAULT;
             }
@@ -399,13 +453,13 @@ BOOL mapPage(ULONG64 arbitrary_va,pte* currentPTE, LPVOID threadContext, PCRITIC
             ResetEvent(writingEndEvent);
             SetEvent(trimmingStartEvent);
 
-            //nptodo ask landy about thread scheduling
+
             LeaveCriticalSection(lockStandByList);
 
             WaitForSingleObject(writingEndEvent, INFINITE);
 
             EnterCriticalSection(currentPageTableLock);
-            //nptodo right contract in a comment
+
             return REDO_FAULT;
         }
     }
@@ -459,3 +513,8 @@ main(int argc, char **argv) {
 
 
 }
+
+
+
+//nptodo change how arbitrary va is changed
+//nptodo make sure free list locks are acquired correctly

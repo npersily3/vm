@@ -9,6 +9,7 @@
 extern PVOID diskStart;
 extern ULONG64 diskEnd;
 extern PULONG64 diskActive;
+extern PULONG64 diskActiveEnd;
 extern ULONG64* number_of_open_slots;
 
 //

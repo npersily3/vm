@@ -22,6 +22,12 @@ PVOID
 init_memory(ULONG64 numBytes) {
     PVOID new;
     new = malloc(numBytes);
+
+    if (new == NULL) {
+        printf("malloc failed\n");
+        exit(1);
+    }
+
     memset(new, 0, numBytes);
     return new;
 }
@@ -61,17 +67,16 @@ BOOL isVaValid(ULONG64 va) {
 }
 
 void acquireLock(PULONG64 lock) {
-    ULONG64 oldValue;
 
-    oldValue = *lock;
+    ULONG64 oldValueComparator;
+
 
     while (TRUE) {
 
-        if (oldValue == LOCK_FREE) {
-            oldValue =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
-            if (oldValue == LOCK_FREE) {
-                break;
-            }
+        oldValueComparator =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
+
+        if (oldValueComparator == LOCK_FREE) {
+            break;
         }
 
 
@@ -79,6 +84,7 @@ void acquireLock(PULONG64 lock) {
     }
 }
 void releaseLock(PULONG64 lock) {
+
     InterlockedExchange(lock, LOCK_FREE);
 }
 BOOL tryAcquireLock(PULONG64 lock) {
@@ -87,7 +93,7 @@ BOOL tryAcquireLock(PULONG64 lock) {
 
     oldValue =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
 
-    if (oldValue == 0) {
+    if (oldValue == LOCK_FREE) {
         return FALSE;
     }
     return TRUE;

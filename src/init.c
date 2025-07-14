@@ -13,9 +13,9 @@
 
 
 
-#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+
 #pragma comment(lib, "onecore.lib")
-#endif
+
 
 //
 // Global variable definitions
@@ -41,6 +41,7 @@ PULONG_PTR physical_page_numbers;
 PVOID diskStart;
 ULONG64 diskEnd;
 PULONG64 diskActive;
+PULONG64 diskActiveEnd;
 PULONG64* diskActiveVa;
 ULONG64* number_of_open_slots;
 
@@ -65,6 +66,7 @@ HANDLE writingStartEvent;
 HANDLE writingEndEvent;
 HANDLE userStartEvent;
 HANDLE userEndEvent;
+HANDLE zeroingStartEvent;
 
 BOOL
 GetPrivilege(VOID) {
@@ -116,7 +118,7 @@ GetPrivilege(VOID) {
     return TRUE;
 }
 
-#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+
 HANDLE
 CreateSharedMemorySection(VOID) {
     HANDLE section;
@@ -138,7 +140,7 @@ CreateSharedMemorySection(VOID) {
 
     return section;
 }
-#endif
+
 
 VOID
 init_virtual_memory(VOID) {
@@ -146,7 +148,7 @@ init_virtual_memory(VOID) {
     initVA();
 
     ULONG_PTR numBytes;
-    ULONG_PTR numDiskSlots;
+    ULONG_PTR numEntries;
 
     // Initialize disk structures
     numBytes = DISK_SIZE_IN_BYTES;
@@ -157,7 +159,7 @@ init_virtual_memory(VOID) {
 
 #if DISK_SIZE_IN_PAGES % 64 != 0
 
-    numDiskSlots = DISK_SIZE_IN_PAGES / 64 + 1;
+    numEntries = DISK_SIZE_IN_PAGES / 64 + 1;
 
 #else
 
@@ -166,25 +168,45 @@ init_virtual_memory(VOID) {
 #endif
 
 
-    diskActive = (PULONG64)init_memory(numDiskSlots);
-    diskActive[0] = (DISK_ACTIVE << 63);
+
+    diskActive = (PULONG64)init_memory(numEntries*8);
+
+    //make the first slot in valid
+    diskActive[0] = DISK_ACTIVE;
 
     //makes it so that the out of bounds portion that exists in our diskMeta data is never accessed
 #if DISK_SIZE_IN_PAGES % 64 != 0
-    ULONG64 leftoverBits;
-    leftoverBits = 64 - DISK_SIZE_IN_PAGES % 64;
+    ULONG64 number_of_usable_bits;
+    ULONG64 bitMask;
+    bitMask = MAXULONG64;
 
-    diskActive[numDiskSlots - 1] = ((1 << leftoverBits + 1) - 1);
+    number_of_usable_bits = (DISK_SIZE_IN_PAGES % 64) - 1;
+
+    bitMask &= (1 << (1 + number_of_usable_bits)) - 1;
+
+
+
+    diskActive[numEntries - 1] = ~bitMask;
+
 
 
 #endif
+    diskActiveEnd = (PULONG64)((ULONG64) diskActive + numEntries);
 
 
-    diskActiveVa = init_memory(numDiskSlots * sizeof(ULONG64));
+
+
+    diskActiveVa = init_memory(numEntries * sizeof(ULONG64));
 
 
     numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
     number_of_open_slots = (ULONG64*)malloc(numBytes);
+
+    if (number_of_open_slots == NULL) {
+        printf("Failed to allocate memory for number_of_open_slots\n");
+        return;
+    }
+
     for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
         number_of_open_slots[i] = DISK_DIVISION_SIZE_IN_PAGES;
     }
@@ -199,6 +221,11 @@ init_virtual_memory(VOID) {
     ULONG64 max = getMaxFrameNumber();
     max += 1;
     pfnStart = VirtualAlloc(NULL,sizeof(pfn)*max,MEM_RESERVE,PAGE_READWRITE);
+
+    if (pfnStart == NULL) {
+        printf("Failed to reserve memory for PFN database\n");
+        return;
+    }
     endPFN = pfnStart + max;
 
 
@@ -264,16 +291,13 @@ BOOL initVA (VOID) {
         return FALSE;
     }
 
-#if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+
     physical_page_handle = CreateSharedMemorySection();
 
     if (physical_page_handle == NULL) {
         printf("CreateFileMapping2 failed, error %#x\n", GetLastError());
         return FALSE;
     }
-#else
-    physical_page_handle = GetCurrentProcess();
-#endif
 
     physical_page_count = NUMBER_OF_PHYSICAL_PAGES;
     physical_page_numbers = (PULONG_PTR)malloc(physical_page_count * sizeof(ULONG_PTR));
@@ -297,7 +321,7 @@ BOOL initVA (VOID) {
                physical_page_count,
                NUMBER_OF_PHYSICAL_PAGES);
     }
-    #if SUPPORT_MULTIPLE_VA_TO_SAME_PAGE
+
     MEM_EXTENDED_PARAMETER parameter = { 0 };
 
     // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
@@ -311,6 +335,11 @@ BOOL initVA (VOID) {
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
+    if (vaStart == NULL) {
+        printf("Failed to allocate virtual address space\n");
+        return FALSE;
+    }
+
     vaEnd = (PULONG64) ((ULONG64) vaStart + VIRTUAL_ADDRESS_SIZE);
 
     transferVaWriting = (PULONG_PTR)VirtualAlloc2(NULL,
@@ -320,6 +349,11 @@ BOOL initVA (VOID) {
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
+    if (transferVaWriting == NULL) {
+        printf("Failed to allocate transfer VA for writing\n");
+        return FALSE;
+    }
+
     zeroThreadTransferVa = VirtualAlloc2(NULL,
                                         NULL,
                                         PAGE_SIZE,
@@ -327,6 +361,11 @@ BOOL initVA (VOID) {
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
+    if (zeroThreadTransferVa == NULL) {
+        printf("Failed to allocate zero thread transfer VA\n");
+        return FALSE;
+    }
+
     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
         userThreadTransferVa[i] = (PULONG_PTR)VirtualAlloc2(NULL,
                                             NULL,
@@ -335,14 +374,13 @@ BOOL initVA (VOID) {
                                             PAGE_READWRITE,
                                             &parameter,
                                             1);
+        if (userThreadTransferVa[i] == NULL) {
+            printf("Failed to allocate user thread transfer VA %d\n", i);
+            return FALSE;
+        }
     }
 
-#else
-    vaStart = (PULONG_PTR) VirtualAlloc(NULL,
-                                       virtual_address_size,
-                                       MEM_RESERVE | MEM_PHYSICAL,
-                                       PAGE_READWRITE);
-#endif
+
     return TRUE;
 }
 
@@ -498,6 +536,7 @@ VOID createEvents(VOID) {
     trimmingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     writingEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
     userEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
+    zeroingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
 }
 VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockFreeList);

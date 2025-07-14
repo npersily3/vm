@@ -40,31 +40,39 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
 DWORD zeroingThread (LPVOID lpParam) {
 
     PTHREAD_INFO thread_info;
-    pfn* page;
+    pfn* page[BATCH_SIZE];
+    ULONG64 frameNumbers[BATCH_SIZE];
+
 
     thread_info = (PTHREAD_INFO) lpParam;
 
     while (true) {
-        if (headToBeZeroedList.length > 0) {
-            acquireLock(&lockToBeZeroedList);
-            page = container_of(RemoveHeadList(&headToBeZeroedList), pfn, entry);
-            releaseLock(&lockToBeZeroedList);
-            if (!zeroPage(page, NUMBER_OF_THREADS)) {
-                DebugBreak();
-            }
 
+        WaitForSingleObject(zeroingStartEvent, INFINITE);
+//nptodo If you ever expand to more threads of this type, there is a race condition where batch size could change
+        for (int i = 0; i < BATCH_SIZE; ++i) {
+            acquireLock(&lockToBeZeroedList);
+            page[i] = container_of(RemoveHeadList(&headToBeZeroedList), pfn, entry);
+            releaseLock(&lockToBeZeroedList);
+            frameNumbers[i] = getFrameNumber(page[i]);
+        }
+        zeroMultiplePages(frameNumbers, BATCH_SIZE);
+
+        for (int i = 0; i < BATCH_SIZE; ++i) {
             EnterCriticalSection(lockFreeList);
-            InsertTailList(&headFreeList, &page->entry);
+            InsertTailList(&headFreeList, &page[i]->entry);
             LeaveCriticalSection(lockFreeList);
         }
+
     }
 }
 
 DWORD
-//nptodo search for mapUserPP scatter in order to batch unmap. look at race
+
 page_trimmer(LPVOID lpParam) {
 
-    pfn* page;
+    pfn* pages[BATCH_SIZE];
+    ULONG64 virtualAddresses[BATCH_SIZE];
     PULONG64 va;
     PCRITICAL_SECTION trimmedPageTableLock;
     PLIST_ENTRY trimmedEntry;
@@ -76,62 +84,80 @@ page_trimmer(LPVOID lpParam) {
     while (TRUE) {
 
 
+        localBatchSizeInPages = BATCH_SIZE;
         doubleBreak = FALSE;
         WaitForSingleObject(trimmingStartEvent, INFINITE);
 
-        localBatchSizeInPages = min(BATCH_SIZE,headActiveList.length);
-        localBatchSizeInBytes = localBatchSizeInPages * PAGE_SIZE;
 
 
-        for (int i = 0; i < localBatchSizeInPages; ++i) {
+        for (int i = 0; i < BATCH_SIZE; ++i) {
 
 
             EnterCriticalSection(lockActiveList);
-            trimmedEntry = RemoveHeadList(&headActiveList);
+            trimmedEntry = headActiveList.entry.Flink;
 
-            if (trimmedEntry == LIST_IS_EMPTY) {
+            if (trimmedEntry == &headActiveList.entry) {
+
                 LeaveCriticalSection(lockActiveList);
 
                 if (i == 0) {
                     doubleBreak = TRUE;
                 }
+                localBatchSizeInPages = i;
                 break;
             }
+            ASSERT(trimmedEntry != &headActiveList.entry);
 
-            page = container_of(trimmedEntry, pfn, entry);
+            pages[i] = container_of(trimmedEntry, pfn, entry);
+            removeFromMiddleOfList(&headActiveList, trimmedEntry);
             LeaveCriticalSection(lockActiveList);
 
-            trimmedPageTableLock = getPageTableLock(page->pte);
+            trimmedPageTableLock = getPageTableLock(pages[i]->pte);
 
             EnterCriticalSection(trimmedPageTableLock);
-            va = (PULONG64) pte_to_va(page->pte);
 
-
-            // unmap everpage, ask how I can string these together
-            if (MapUserPhysicalPages(va, 1, NULL) == FALSE) {
-                DebugBreak();
-                printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
-                return 1;
-            }
-
-            page->pte->transitionFormat.mustBeZero = 0;
-            page->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
-
-          //  EnterCriticalSection(lockModifiedList);
-            acquireLock(&lockModList);
-            InsertTailList(&headModifiedList, &page->entry);
-            releaseLock(&lockModList);
-            //LeaveCriticalSection(lockModifiedList);
+            virtualAddresses[i] = (ULONG64) pte_to_va(pages[i]->pte);
+            pages[i]->isBeingTrimmed = TRUE;
+            pages[i]->pte->transitionFormat.mustBeZero = 0;
+            pages[i]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
 
             LeaveCriticalSection(trimmedPageTableLock);
-
         }
         if (doubleBreak) {
             continue;
         }
+        //nptodo what happens if a va is accessed here. It is still connected, but it is about to be disconnected.
+        if (MapUserPhysicalPagesScatter(virtualAddresses, 1, NULL) == FALSE) {
+            DebugBreak();
+            printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
+            return 1;
+        }
+
+
+
+        for (int i = 0; i < BATCH_SIZE; ++i) {
+            trimmedPageTableLock = getPageTableLock(pages[i]->pte);
+
+            EnterCriticalSection(trimmedPageTableLock);
+            if (pages[i]->isBeingTrimmed == FALSE) {
+
+
+            } else {
+                pages[i]->isBeingTrimmed = FALSE;
+                //  EnterCriticalSection(lockModifiedList);
+                acquireLock(&lockModList);
+
+            ASSERT(&pages[i]->entry != &headActiveList.entry)
+
+                InsertTailList(&headModifiedList, &pages[i]->entry);
+                releaseLock(&lockModList);
+                //LeaveCriticalSection(lockModifiedList);
+
+            }
+            LeaveCriticalSection(trimmedPageTableLock);
+        }
 
         SetEvent(writingStartEvent);
-
     }
 }
 
@@ -175,7 +201,7 @@ DWORD diskWriter(LPVOID lpParam) {
               acquireLock(&lockModList);
             newPageEntry = headModifiedList.entry.Flink;
             // similar to mapPage, tryEnter page table, if I can then procceed, otherwise i-- and continue, release locks before hand
-
+            ASSERT(newPageEntry != &headActiveList.entry);
 
             if (newPageEntry == &headModifiedList.entry) {
                 if (i == 0) {

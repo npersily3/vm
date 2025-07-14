@@ -31,7 +31,8 @@ typedef struct _THREAD_INFO {
     // What effect would consuming extra space here have ?
     //
 
-    volatile UCHAR Pad[32];
+
+    //volatile UCHAR Pad[32];
 
 #endif
 
@@ -114,7 +115,8 @@ UseThreads (
     HANDLE Handle;
     ULONG StartTime;
     ULONG EndTime;
-    THREAD_INFO ThreadInfo[MAXIMUM_NUMBER_OF_THREADS] = {0};
+    DECLSPEC_ALIGN (64)
+	THREAD_INFO ThreadInfo[MAXIMUM_NUMBER_OF_THREADS] = {0};
 	
     GlobalThreadCounter = 0;
 

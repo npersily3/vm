@@ -10,7 +10,7 @@ extern HANDLE writingStartEvent;
 extern HANDLE writingEndEvent;
 extern HANDLE userStartEvent;
 extern HANDLE userEndEvent;
-
+extern HANDLE zeroingStartEvent;
 extern  PCRITICAL_SECTION lockFreeList;
 extern  PCRITICAL_SECTION lockActiveList;
 extern PCRITICAL_SECTION lockModifiedList;

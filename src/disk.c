@@ -81,10 +81,12 @@ ULONG64 get_free_disk_index(VOID) {
     PULONG64 start;
     PULONG64 end;
     ULONG64 bitOffset;
+    ULONG64 returnValue;
 
     freePortion = most_free_disk_portion();
 
-    start = diskActive + freePortion * DISK_DIVISION_SIZE_IN_PAGES;
+
+    start = diskActive + freePortion * (DISK_DIVISION_SIZE_IN_PAGES/64);
 
     if(number_of_open_slots[freePortion] == 0) {
         return COULD_NOT_FIND_SLOT;
@@ -92,10 +94,9 @@ ULONG64 get_free_disk_index(VOID) {
 
 
     // accounts for extra slot case
+    end = start + DISK_DIVISION_SIZE_IN_PAGES/64;
     if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES + 2;
-    } else {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES;
+        end += 1;
     }
 
     //for every ULONG in the section
@@ -106,7 +107,12 @@ ULONG64 get_free_disk_index(VOID) {
             if (bitOffset == 64) {
                 continue;
             }
-            return 64 * ((ULONG64) start - (ULONG64)diskActive) + bitOffset;
+
+            InterlockedDecrement64(&number_of_open_slots[freePortion]);
+            returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
+            //nptodo change names
+            ASSERT(returnValue < 0xfc2 && returnValue != 0);
+            return returnValue;
         }
     }
 
@@ -129,19 +135,23 @@ ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
         if ((modifiedDiskSlotContents & 1) == DISK_ACTIVE) {
             modifiedDiskSlotContents >>= 1;
         } else {
-            newBit = 1 << i;
+            newBit = ((ULONG64) 1) << i;
             newDiskSlotContents = oldDiskSlotContents | newBit;
 
-            oldDiskSlotComparator = InterlockedCompareExchange64(diskSlot, newDiskSlotContents,oldDiskSlotContents);
+            oldDiskSlotComparator = InterlockedCompareExchange64(diskSlot,
+                newDiskSlotContents,
+                oldDiskSlotContents);
 
-            if (oldDiskSlotComparator == LOCK_FREE) {
+            if (oldDiskSlotComparator == oldDiskSlotContents) {
                 return i;
+            } else {
+                oldDiskSlotContents = oldDiskSlotComparator;
+                modifiedDiskSlotContents = oldDiskSlotContents;
+                i = MAXULONG64;
             }
         }
     }
     return i;
-
-
 }
 
 
@@ -151,7 +161,6 @@ VOID
 set_disk_space_free(ULONG64 diskIndex) {
 
     ULONG64 diskMetaDataIndex;
-
     ULONG64 newDiskSlotContents;
     PULONG64 diskMetaDateAddress;
     ULONG64 oldDiskSlotContents;
@@ -159,6 +168,7 @@ set_disk_space_free(ULONG64 diskIndex) {
     ULONG64 bitOffset;
     ULONG64 diskHasChanged;
 
+    DWORD isEventSet;
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
@@ -173,30 +183,27 @@ set_disk_space_free(ULONG64 diskIndex) {
 
 
     // round down to the nearest ULONG64
-    diskMetaDataIndex = (diskIndex >> 64);
+    diskMetaDataIndex = (diskIndex >> 6);
 
     diskMetaDateAddress = diskActive + diskMetaDataIndex;
 
     oldDiskSlotContents = *diskMetaDateAddress;
 
 
-    bitOffset = diskIndex - diskMetaDataIndex * 64;
+    bitOffset = diskIndex & ~64;
 
-    newDiskSlotContents = oldDiskSlotContents | (1 << bitOffset);
+    newDiskSlotContents = oldDiskSlotContents & ~(1 << bitOffset);
 
     while (true) {
-        diskHasChanged = InterlockedCompareExchange64(diskMetaDateAddress, newDiskSlotContents, oldDiskSlotContents);
+        diskHasChanged = InterlockedCompareExchange64((PLONG64) diskMetaDateAddress, (LONG64) newDiskSlotContents, (LONG64) oldDiskSlotContents);
 
-        if (diskHasChanged == VARIABLE_DID_NOT_CHANGE) {
+        if (diskHasChanged == oldDiskSlotContents) {
             break;
         }
     }
 
 
-    EnterCriticalSection(lockNumberOfSlots);
-    number_of_open_slots[diskIndexSection] += 1;
-    LeaveCriticalSection(lockNumberOfSlots);
-
-   //nptodo change everything to atomic interlocked operations and conditionally set the event
-    SetEvent(writingStartEvent);
+    if (InterlockedIncrement64((PLONG64) &number_of_open_slots[diskIndexSection]) == 1) {
+        SetEvent(writingStartEvent);
+    }
 }
