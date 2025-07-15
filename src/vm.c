@@ -210,11 +210,6 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         frameNumber = currentPTE->transitionFormat.frameNumber;
         page = getPFNfromFrameNumber(frameNumber);
 
-
-    if (page->isBeingTrimmed == TRUE) {
-        page->isBeingTrimmed = FALSE;
-    }
-
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
 

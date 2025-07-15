@@ -61,6 +61,8 @@ DWORD zeroingThread (LPVOID lpParam) {
             return 0;
         }
 
+
+
 //nptodo If you ever expand to more threads of this type, there is a race condition where batch size could change
         for (int i = 0; i < BATCH_SIZE; ++i) {
             acquireLock(&lockToBeZeroedList);
@@ -72,9 +74,7 @@ DWORD zeroingThread (LPVOID lpParam) {
 
         EnterCriticalSection(lockFreeList);
         for (int i = 0; i < BATCH_SIZE; ++i) {
-
             InsertTailList(&headFreeList, &page[i]->entry);
-
         }
         LeaveCriticalSection(lockFreeList);
     }
@@ -91,8 +91,9 @@ page_trimmer(LPVOID lpParam) {
     PCRITICAL_SECTION nextPageTableLock;
     PLIST_ENTRY trimmedEntry;
     boolean doubleBreak;
+    boolean onAStreak;
 
-    ULONG64 localBatchSizeInPages;
+    ULONG64 BatchIndex;
     ULONG64 localBatchSizeInBytes;
 
     pfn* nextPage;
@@ -107,8 +108,9 @@ page_trimmer(LPVOID lpParam) {
     while (TRUE) {
 
 
-        localBatchSizeInPages = BATCH_SIZE;
+        BatchIndex = 0;
         doubleBreak = FALSE;
+        onAStreak = FALSE;
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
@@ -117,9 +119,8 @@ page_trimmer(LPVOID lpParam) {
             return 0;
         }
 
-        //while modified + standby = some fraction of total pages
-        for (int i = 0; i < BATCH_SIZE; ++i) {
-
+        // while there is still stuff to trim and the arrays are not at capacity
+        while (headModifiedList.length < NUMBER_OF_PHYSICAL_PAGES / 4 && BatchIndex < BATCH_SIZE) {
 
             EnterCriticalSection(lockActiveList);
             trimmedEntry = headActiveList.entry.Flink;
@@ -128,73 +129,82 @@ page_trimmer(LPVOID lpParam) {
 
                 LeaveCriticalSection(lockActiveList);
 
-                if (i == 0) {
+                if (BatchIndex == 0) {
                     doubleBreak = TRUE;
                 }
-                localBatchSizeInPages = i;
                 break;
             }
             ASSERT(trimmedEntry != &headActiveList.entry);
 
-            pages[i] = container_of(trimmedEntry, pfn, entry);
+            pages[BatchIndex] = container_of(trimmedEntry, pfn, entry);
             removeFromMiddleOfList(&headActiveList, trimmedEntry);
             LeaveCriticalSection(lockActiveList);
 
-            trimmedPageTableLock = getPageTableLock(pages[i]->pte);
+            //make onAstreak one variable and set trimmedpte lock to null
+            if (onAStreak == FALSE) {
+                onAStreak = TRUE;
 
-            EnterCriticalSection(trimmedPageTableLock);
+                trimmedPageTableLock = getPageTableLock(pages[BatchIndex]->pte);
+                EnterCriticalSection(trimmedPageTableLock);
+            }
 
-            virtualAddresses[i] = (ULONG64) pte_to_va(pages[i]->pte);
-            pages[i]->isBeingTrimmed = TRUE;
-            pages[i]->pte->transitionFormat.mustBeZero = 0;
-            pages[i]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
+            virtualAddresses[BatchIndex] = (ULONG64) pte_to_va(pages[BatchIndex]->pte);
+            pages[BatchIndex]->isBeingTrimmed = TRUE;
+            pages[BatchIndex]->pte->transitionFormat.mustBeZero = 0;
+            pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
+            BatchIndex++;
 
-            // EnterCriticalSection(lockActiveList);
-            //
-            // nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
-            //
-            // nextPageTableLock = getPageTableLock(nextPage->pte);
-            //
-            // if (nextPageTableLock != trimmedPageTableLock) {
-            //
-            // }
+            EnterCriticalSection(lockActiveList);
+            nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
+            LeaveCriticalSection(lockActiveList);
 
-            LeaveCriticalSection(trimmedPageTableLock);
+            nextPageTableLock = getPageTableLock(nextPage->pte);
+
+            if (nextPageTableLock != trimmedPageTableLock) {
+
+                if (MapUserPhysicalPagesScatter(virtualAddresses, BatchIndex, NULL) == FALSE) {
+                    DebugBreak();
+                    printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
+                    return 1;
+                }
+
+                acquireLock(&lockModList);
+                for (int i = 0; i < BatchIndex; ++i) {
+                    ASSERT(&pages[i]->entry != &headActiveList.entry)
+                    InsertTailList(&headModifiedList, &pages[i]->entry);
+
+                }
+                releaseLock(&lockModList);
+                LeaveCriticalSection(trimmedPageTableLock);
+                onAStreak = FALSE;
+                BatchIndex = 0;
+            }
         }
-        if (doubleBreak) {
+        if (doubleBreak == TRUE) {
+            SetEvent(writingStartEvent);
             continue;
         }
-
-        //nptodo what happens if a va is accessed here. It is still connected, but it is about to be disconnected.
-        if (MapUserPhysicalPagesScatter(virtualAddresses, localBatchSizeInPages, NULL) == FALSE) {
+        if (BatchIndex == 0) {
+            SetEvent(writingStartEvent);
+            continue;
+        }
+        //unmaps the final batch, batch index was incremented at the end of the loop assuming there would be another loop
+        //so I dont have to handle the size
+        if (MapUserPhysicalPagesScatter(virtualAddresses, BatchIndex, NULL) == FALSE) {
             DebugBreak();
             printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
             return 1;
         }
 
-
-
-        for (int i = 0; i < localBatchSizeInPages; ++i) {
-            trimmedPageTableLock = getPageTableLock(pages[i]->pte);
-
-            EnterCriticalSection(trimmedPageTableLock);
-            if (pages[i]->isBeingTrimmed == FALSE) {
-
-
-            } else {
-                pages[i]->isBeingTrimmed = FALSE;
-                //  EnterCriticalSection(lockModifiedList);
-                acquireLock(&lockModList);
-
+        acquireLock(&lockModList);
+        for (int i = 0; i < BatchIndex; ++i) {
             ASSERT(&pages[i]->entry != &headActiveList.entry)
+            InsertTailList(&headModifiedList, &pages[i]->entry);
 
-                InsertTailList(&headModifiedList, &pages[i]->entry);
-                releaseLock(&lockModList);
-                //LeaveCriticalSection(lockModifiedList);
-
-            }
-            LeaveCriticalSection(trimmedPageTableLock);
         }
+        releaseLock(&lockModList);
+
+        LeaveCriticalSection(trimmedPageTableLock);
 
         SetEvent(writingStartEvent);
     }
