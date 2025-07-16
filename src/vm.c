@@ -17,6 +17,9 @@ full_virtual_memory_test(VOID) {
 
 
 
+    ULONG64 start, end;
+
+
 
     init_virtual_memory();
 
@@ -38,6 +41,8 @@ full_virtual_memory_test(VOID) {
     }
 
 
+
+    start = GetTickCount64();
     SetEvent(userStartEvent);
 
      for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
@@ -50,9 +55,13 @@ full_virtual_memory_test(VOID) {
     }
     ResetEvent(systemShutdownEvent);
 
+    end = GetTickCount64();
     // Now that we're done with our memory we can be a good
     // citizen and free it.
     VirtualFree(vaStart, 0, MEM_RELEASE);
+
+    printf("Elapsed time: %llu ms\n", end - start);
+
     return;
 }
 
@@ -133,6 +142,7 @@ DWORD testVM(LPVOID lpParam) {
                 }
             }
             redo_try_same_address = TRUE;
+            i--;
            // *arbitrary_va = (ULONG_PTR) arbitrary_va;
         } else {
             redo_try_same_address = FALSE;
@@ -170,15 +180,17 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     pteContents = *currentPTE;
 
 
+    //if the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
         // if the page can be rescued
         if (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST ||
             currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+
             if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
         } else {
-                // if this returns REDO FAULT, map_page has released the pte lock
+
                 if (mapPage(arbitrary_va, currentPTE, lpParam, currentPageTableLock) == REDO_FAULT) {
                     returnValue = REDO_FAULT;
                 }
@@ -210,9 +222,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
         frameNumber = currentPTE->transitionFormat.frameNumber;
         page = getPFNfromFrameNumber(frameNumber);
 
+    //if there is a write in progress
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
-
     }
     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 

@@ -91,7 +91,7 @@ page_trimmer(LPVOID lpParam) {
     PCRITICAL_SECTION nextPageTableLock;
     PLIST_ENTRY trimmedEntry;
     boolean doubleBreak;
-    boolean onAStreak;
+
 
     ULONG64 BatchIndex;
     ULONG64 localBatchSizeInBytes;
@@ -110,7 +110,7 @@ page_trimmer(LPVOID lpParam) {
 
         BatchIndex = 0;
         doubleBreak = FALSE;
-        onAStreak = FALSE;
+        trimmedPageTableLock = NULL;
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
@@ -140,16 +140,15 @@ page_trimmer(LPVOID lpParam) {
             removeFromMiddleOfList(&headActiveList, trimmedEntry);
             LeaveCriticalSection(lockActiveList);
 
-            //make onAstreak one variable and set trimmedpte lock to null
-            if (onAStreak == FALSE) {
-                onAStreak = TRUE;
+            // if we are not on a streak
+            if (trimmedPageTableLock == NULL) {
 
                 trimmedPageTableLock = getPageTableLock(pages[BatchIndex]->pte);
                 EnterCriticalSection(trimmedPageTableLock);
             }
 
             virtualAddresses[BatchIndex] = (ULONG64) pte_to_va(pages[BatchIndex]->pte);
-            pages[BatchIndex]->isBeingTrimmed = TRUE;
+
             pages[BatchIndex]->pte->transitionFormat.mustBeZero = 0;
             pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
             BatchIndex++;
@@ -160,6 +159,7 @@ page_trimmer(LPVOID lpParam) {
 
             nextPageTableLock = getPageTableLock(nextPage->pte);
 
+            //if the next page is in a different pte region
             if (nextPageTableLock != trimmedPageTableLock) {
 
                 if (MapUserPhysicalPagesScatter(virtualAddresses, BatchIndex, NULL) == FALSE) {
@@ -176,7 +176,7 @@ page_trimmer(LPVOID lpParam) {
                 }
                 releaseLock(&lockModList);
                 LeaveCriticalSection(trimmedPageTableLock);
-                onAStreak = FALSE;
+                trimmedPageTableLock = NULL;
                 BatchIndex = 0;
             }
         }

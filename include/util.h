@@ -11,6 +11,7 @@
 #define PAGE_SIZE                   4096
 // 52 bits is max that bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
 #define frame_number_size           40
+#define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
 #define VIRTUAL_ADDRESS_SIZE        MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
@@ -61,7 +62,7 @@
 
 
 
-#define NUMBER_OF_USER_THREADS 2
+#define NUMBER_OF_USER_THREADS 8
 #define NUMBER_OF_ZEROING_THREADS 1
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
@@ -102,10 +103,13 @@ typedef struct {
     };
 } pte;
 
-#define NUMBER_OF_PAGE_TABLE_LOCKS 8
+
 #define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte))
 #define NUMBER_OF_PTES (PAGE_TABLE_SIZE_IN_BYTES / sizeof(pte))
-#define SIZE_OF_PAGE_TABLE_DIVISION PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS
+#define NUMBER_OF_PAGE_TABLE_LOCKS 8
+#define SIZE_OF_PAGE_TABLE_DIVISION (PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS)
+
+
 //
 // Data structures
 //
