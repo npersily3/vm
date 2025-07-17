@@ -1,16 +1,9 @@
 #ifndef DISK_H
 #define DISK_H
 
-#include "util.h"
+#include "../variables/structures.h"
 
 //
-// Disk-related global variables (declared here, defined in init.c)
-//
-extern PVOID diskStart;
-extern ULONG64 diskEnd;
-extern PULONG64 diskActive;
-extern PULONG64 diskActiveEnd;
-extern ULONG64* number_of_open_slots;
 
 //
 // Disk operation functions

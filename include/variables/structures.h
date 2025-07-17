@@ -1,10 +1,15 @@
-#ifndef UTIL_H
-#define UTIL_H
+//
+// Created by nrper on 7/16/2025.
+//
+
+#ifndef STRUCTURES_H
+#define STRUCTURES_H
+
 
 #include <windows.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "init.h"
+
 //
 // Configuration constants
 //
@@ -30,11 +35,8 @@
 #define DEFAULT_STACK_SIZE      0
 #define DEFAULT_CREATION_FLAGS  0
 
-
 #define ROUND_DOWN_TO_PAGE(addr) ((ULONG_PTR)(addr) & ~(PAGE_SIZE - 1))
 #define ROUND_UP_TO_PAGE(addr) (((ULONG_PTR)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
-
-
 
 #define LOCK_FREE 0
 #define LOCK_HELD 1
@@ -60,19 +62,51 @@
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
 
-
-
-#define NUMBER_OF_USER_THREADS 8
+#define NUMBER_OF_USER_THREADS 2
 #define NUMBER_OF_ZEROING_THREADS 1
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
 
-
 #define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_ZEROING_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
 #define NUMBER_OF_SYSTEM_THREADS (NUMBER_OF_THREADS-NUMBER_OF_USER_THREADS)
 
-
 #define MAX_FAULTS 0xFFFFFF
+#define BATCH_SIZE 5
+
+#define COULD_NOT_FIND_SLOT (~0ULL)
+#define LIST_IS_EMPTY 0
+
+#define REDO_FAULT TRUE
+//
+// Thread configuration
+//
+#define EVENT_START_ON TRUE
+#define EVENT_START_OFF FALSE
+
+#define SPIN_COUNTS                              1
+#define SPIN_COUNT                               0xFFFFFF
+#if SPIN_COUNTS
+#define INITIALIZE_LOCK(x) \
+(x) = malloc(sizeof(CRITICAL_SECTION)); \
+InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)
+#else
+#define INITIALIZE_LOCK(x) \
+(x) = malloc(sizeof(CRITICAL_SECTION)); \
+InitializeCriticalSection(x)
+#endif
+
+// this one does not malloc and is used for the array that is statically declared
+#if SPIN_COUNTS
+#define INITIALIZE_LOCK_DIRECT(x) \
+InitializeCriticalSectionAndSpinCount(&(x), SPIN_COUNT)
+#else
+#define INITIALIZE_LOCK_DIRECT(x) \
+InitializeCriticalSection(&(x))
+#endif
+
+//
+// PTE format definitions
+//
 typedef struct {
     ULONG64 valid: 1;
     ULONG64 transition: 2;
@@ -84,10 +118,12 @@ typedef struct {
     ULONG64 transition: 2;
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
+
 #define DISK 0
 #define UNASSIGNED 1
 #define MODIFIED_LIST 2
 #define STAND_BY_LIST 3
+
 typedef struct {
     ULONG64 mustBeZero: 1;
     ULONG64 contentsLocation: 2;
@@ -103,94 +139,50 @@ typedef struct {
     };
 } pte;
 
-
+//
+// Page table configuration
+//
 #define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte))
 #define NUMBER_OF_PTES (PAGE_TABLE_SIZE_IN_BYTES / sizeof(pte))
 #define NUMBER_OF_PAGE_TABLE_LOCKS 8
 #define SIZE_OF_PAGE_TABLE_DIVISION (PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS)
 
+//
+// Thread information structure
+//
+typedef struct _THREAD_INFO {
+    ULONG ThreadNumber;
+    ULONG ThreadId;
+    HANDLE ThreadHandle;
+    volatile ULONG ThreadCounter;
+    HANDLE WorkDoneHandle;
+
+#if 1
+    // way faster, now everything consumes 1 cache line
+    // What effect would consuming extra space here have ?
+    volatile UCHAR Pad[32];
+#endif
+} THREAD_INFO, *PTHREAD_INFO;
 
 //
-// Data structures
+// List head structure
 //
-#define COULD_NOT_FIND_SLOT (~0ULL)
-#define LIST_IS_EMPTY 0
+typedef struct {
+    LIST_ENTRY entry;
+    ULONG64 length;
+} listHead, *pListHead;
 
-
-
-
+//
+// PFN (Page Frame Number) structure
+//
 typedef struct {
     LIST_ENTRY entry;
     pte *pte;
-   ULONG64 diskIndex;
+    ULONG64 diskIndex;
     ULONG64:1, isBeingWritten;
     ULONG64:1, isBeingTrimmed;
 } pfn;
 
 
 
-
-//
-// Global variables (declared here, defined in init.c)
-//
-extern listHead headFreeList;
-extern listHead headActiveList;
-extern listHead headModifiedList;
-extern listHead headStandByList;
-extern listHead headToBeZeroedList;
-
-extern pte *pageTable;
-extern pfn *pfnStart;
-extern pfn *endPFN;
-extern PULONG_PTR vaStart;
-extern PULONG_PTR vaEnd;
-extern PVOID transferVaWriting;
-extern PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
-extern  PVOID zeroThreadTransferVa;
-
-extern ULONG_PTR physical_page_count;
-extern PULONG_PTR physical_page_numbers;
-extern HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
-extern HANDLE userThreadHandles[NUMBER_OF_USER_THREADS];
-extern HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
-
-
-
-extern PCRITICAL_SECTION lockWritingTransferVa;
-extern CRITICAL_SECTION lockTransferReadingVa[NUMBER_OF_USER_THREADS];
-extern CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
-
-extern PULONG64* diskActiveVa;
-
-//thread init functions
-HANDLE createTrimmingThread(PTHREAD_INFO ThreadContext);
-HANDLE createWritingThread(PTHREAD_INFO ThreadContext);
-HANDLE createUserThread(PTHREAD_INFO ThreadContext);
-
-
-
-//
-// Utility function declarations
-//
-
-
-pte* va_to_pte(PVOID va);
-PVOID pte_to_va(pte* pte);
-PVOID init_memory(ULONG64 numBytes);
-VOID pfnInbounds(pfn* trimmed);
-ULONG64 getFrameNumber(pfn* pfn);
-pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
-VOID removeFromMiddleOfList(pListHead head, LIST_ENTRY* entry) ;
-PCRITICAL_SECTION getPageTableLock(pte* pte);
-VOID checkIfPageIsZero(PULONG64 startLocation);
-BOOL isVaValid(ULONG64 va);
-
-BOOL tryAcquireLock(PULONG64 lock);
-void releaseLock(PULONG64 lock);
-void acquireLock(PULONG64 lock);
-
-
-extern ULONG64 lockModList;
-extern ULONG64 lockToBeZeroedList;
-
-#endif // UTIL_H
+#endif //STRUCTURES_H

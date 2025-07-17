@@ -1,13 +1,17 @@
 //
 // Created by nrper on 6/16/2025.
 //
-#include "init.h"
-#include "disk.h"
-#include "vm.h"
+
+
+#include "../../include/variables/structures.h"
+#include "../../include/variables/globals.h"
+#include "../../include/initialization/init.h"
+#include "../../include/variables/macros.h"
+#include "../../include/initialization/init_threads.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "macros.h"
-#include "pages.h"
+
 
 #pragma comment(lib, "advapi32.lib")
 
@@ -70,6 +74,10 @@ HANDLE userStartEvent;
 HANDLE userEndEvent;
 HANDLE zeroingStartEvent;
 HANDLE systemShutdownEvent;
+
+
+
+HANDLE physical_page_handle;
 
 BOOL
 GetPrivilege(VOID) {
@@ -148,18 +156,40 @@ CreateSharedMemorySection(VOID) {
 VOID
 init_virtual_memory(VOID) {
 
+    getPhysicalPages();
     initVA();
+    init_pfns();
+    init_pageTable();
+    init_disk();
+   initThreads();
 
-    ULONG_PTR numBytes;
-    ULONG_PTR numEntries;
+}
+VOID init_pageTable(VOID) {
+    ULONG64 numBytes;
+    // Initialize the page table
+    numBytes = PAGE_TABLE_SIZE_IN_BYTES;
+    pageTable = (pte*)init_memory(numBytes);
 
+
+}
+
+VOID init_disk(VOID) {
+    ULONG64 numBytes;
     // Initialize disk structures
     numBytes = DISK_SIZE_IN_BYTES;
     diskStart = init_memory(numBytes);
     diskEnd = (ULONG64) diskStart + numBytes;
 
+    init_disk_active();
+    init_num_open_slots();
+}
+
+VOID init_disk_active(VOID) {
+
+    ULONG64 numEntries;
 
 
+// depending on our disk size check if our bits will go in evenly
 #if DISK_SIZE_IN_PAGES % 64 != 0
 
     numEntries = DISK_SIZE_IN_PAGES / 64 + 1;
@@ -178,6 +208,7 @@ init_virtual_memory(VOID) {
     diskActive[0] = DISK_ACTIVE;
 
     //makes it so that the out of bounds portion that exists in our diskMeta data is never accessed
+
 #if DISK_SIZE_IN_PAGES % 64 != 0
     ULONG64 number_of_usable_bits;
     ULONG64 bitMask;
@@ -191,8 +222,6 @@ init_virtual_memory(VOID) {
 
     diskActive[numEntries - 1] = ~bitMask;
 
-
-
 #endif
     diskActiveEnd = (PULONG64)((ULONG64) diskActive + numEntries);
 
@@ -201,7 +230,11 @@ init_virtual_memory(VOID) {
 
     diskActiveVa = init_memory(numEntries * sizeof(ULONG64));
 
+}
 
+
+VOID init_num_open_slots(VOID) {
+    ULONG64 numBytes;
 
     numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
     number_of_open_slots = (ULONG64*)malloc(numBytes);
@@ -217,20 +250,10 @@ init_virtual_memory(VOID) {
     }
     // number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 2;
     // number_of_open_slots[0] -= 1;
-
-    // Initialize the page table
-    numBytes = PAGE_TABLE_SIZE_IN_BYTES;
-    pageTable = (pte*)init_memory(numBytes);
-
-
-    init_pfns();
-
-
-    createThreads();
-
-
-
 }
+
+
+
 VOID init_pfns(VOID) {
 
     ULONG64 max = getMaxFrameNumber();
@@ -243,13 +266,13 @@ VOID init_pfns(VOID) {
     }
     endPFN = pfnStart + max;
 
+    init_lists();
+
+    init_free_list();
 
 
-    init_list_head(&headToBeZeroedList);
-    init_list_head(&headStandByList);
-    init_list_head(&headModifiedList);
-    init_list_head(&headFreeList);
-    init_list_head(&headActiveList);
+}
+VOID init_free_list(VOID) {
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
@@ -269,25 +292,27 @@ VOID init_pfns(VOID) {
 
         // Now initialize the pfn structure
         memset(new_pfn, 0, sizeof(pfn));
+
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
+}
+VOID init_lists(VOID) {
+
+    init_list_head(&headToBeZeroedList);
+    init_list_head(&headStandByList);
+    init_list_head(&headModifiedList);
+    init_list_head(&headFreeList);
+    init_list_head(&headActiveList);
 }
 VOID init_list_head(pListHead head) {
     head->entry.Flink = &head->entry;
     head->entry.Blink = &head->entry;
     head->length = 0;
 }
+BOOL getPhysicalPages (VOID) {
 
-
-
-BOOL initVA (VOID) {
     BOOL allocated;
-
     BOOL privilege;
-
-    HANDLE physical_page_handle;
-
-
 
     // Allocate the physical pages that we will be managing.
     // First acquire privilege to do this since physical page control
@@ -330,6 +355,13 @@ BOOL initVA (VOID) {
                physical_page_count,
                NUMBER_OF_PHYSICAL_PAGES);
     }
+
+    return TRUE;
+}
+
+
+
+BOOL initVA () {
 
     MEM_EXTENDED_PARAMETER parameter = { 0 };
 
@@ -406,181 +438,16 @@ ULONG64 getMaxFrameNumber(VOID) {
     return maxFrameNumber;
 }
 
+PVOID init_memory(ULONG64 numBytes) {
+    PVOID new;
+    new = malloc(numBytes);
 
-
-VOID createThreads(VOID) {
-
-
-    PTHREAD_INFO ThreadContext;
-    HANDLE Handle;
-    BOOL ReturnValue;
-
-    THREAD_INFO ThreadInfo[NUMBER_OF_THREADS] = {0};
-
-    THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS] = {0};
-    THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS] = {0};
-    THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS] = {0};
-    THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
-
-    ULONG maxThread = 0;
-    ULONG threadHandleArrayOffset;
-
-
-
-    createEvents();
-
-    initCriticalSections();
-
-    for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
-        ThreadContext = &UserThreadInfo[i];
-        ThreadContext->ThreadNumber = maxThread;
-        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
-                                                     AUTO_RESET,
-                                                     FALSE,
-                                                     NULL);
-        if (ThreadContext->WorkDoneHandle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create work event %x\n", ReturnValue);
-            return;
-        }
-
-        Handle = createNewThread(testVM, ThreadContext);
-
-        if (Handle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create thread %x\n", ReturnValue);
-            return;
-        }
-
-        ThreadContext->ThreadHandle = Handle;
-
-        userThreadHandles[i] = Handle;
-
-        maxThread++;
-    }
-    threadHandleArrayOffset = maxThread;
-
-    for (int i = 0; i < NUMBER_OF_TRIMMING_THREADS; ++i) {
-        ThreadContext = &TrimmerThreadInfo[i];
-        ThreadContext->ThreadNumber = maxThread;
-        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
-                                                     AUTO_RESET,
-                                                     FALSE,
-                                                     NULL);
-        if (ThreadContext->WorkDoneHandle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create work event %x\n", ReturnValue);
-            return;
-        }
-
-        Handle = createNewThread(page_trimmer, ThreadContext);
-
-        if (Handle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create thread %x\n", ReturnValue);
-            return;
-        }
-
-        ThreadContext->ThreadHandle = Handle;
-
-        systemThreadHandles[maxThread-threadHandleArrayOffset] =Handle;
-
-        maxThread++;
-    }
-    for (int i = 0; i < NUMBER_OF_WRITING_THREADS; ++i) {
-        ThreadContext = &WriterThreadInfo[i];
-        ThreadContext->ThreadNumber = maxThread;
-        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
-                                                     AUTO_RESET,
-                                                     FALSE,
-                                                     NULL);
-        if (ThreadContext->WorkDoneHandle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create work event %x\n", ReturnValue);
-            return;
-        }
-
-        Handle = createNewThread(diskWriter,ThreadContext);
-
-        if (Handle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create thread %x\n", ReturnValue);
-            return;
-        }
-
-        ThreadContext->ThreadHandle = Handle;
-
-        systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
-
-        maxThread++;
+    if (new == NULL) {
+        printf("malloc failed\n");
+        exit(1);
     }
 
-    for (int i = 0; i < NUMBER_OF_ZEROING_THREADS; ++i) {
-        ThreadContext = &ZeroIngThreadInfo[i];
-        ThreadContext->ThreadNumber = maxThread;
-        ThreadContext->WorkDoneHandle = CreateEvent (NULL,
-                                                     AUTO_RESET,
-                                                     FALSE,
-                                                     NULL);
-        if (ThreadContext->WorkDoneHandle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create work event %x\n", ReturnValue);
-            return;
-        }
-
-        Handle = createNewThread(zeroingThread,ThreadContext);
-
-        if (Handle == NULL) {
-            ReturnValue = GetLastError ();
-            printf ("could not create thread %x\n", ReturnValue);
-            return;
-        }
-
-        ThreadContext->ThreadHandle = Handle;
-
-        systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
-
-        maxThread++;
-    }
-
-}
-VOID createEvents(VOID) {
-
-    userStartEvent = CreateEvent (NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
-    writingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
-    trimmingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
-    writingEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
-    userEndEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
-    zeroingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
-    systemShutdownEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
-}
-VOID initCriticalSections(VOID) {
-    INITIALIZE_LOCK(lockFreeList);
-    INITIALIZE_LOCK(lockActiveList);
-    INITIALIZE_LOCK(lockModifiedList);
-    INITIALIZE_LOCK(lockStandByList);
-    INITIALIZE_LOCK(lockDiskActive);
-    INITIALIZE_LOCK(lockNumberOfSlots);
-
-    lockModList = LOCK_FREE;
-    lockToBeZeroedList = LOCK_FREE;
-
-    initializePageTableLocks();
-
-}
-VOID initializePageTableLocks(VOID) {
-    for (int i = 0; i < NUMBER_OF_PAGE_TABLE_LOCKS; ++i) {
-        INITIALIZE_LOCK_DIRECT(pageTableLocks[i]);
-    }
+    memset(new, 0, numBytes);
+    return new;
 }
 
-
-
-HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext) {
-    return CreateThread(DEFAULT_SECURITY,
-                           DEFAULT_STACK_SIZE,
-                           ThreadFunction,
-                           ThreadContext,
-                           DEFAULT_CREATION_FLAGS,
-                           &ThreadContext->ThreadId);
-}

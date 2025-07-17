@@ -19,18 +19,7 @@ pte_to_va(pte* pte) {
 }
 
 PVOID
-init_memory(ULONG64 numBytes) {
-    PVOID new;
-    new = malloc(numBytes);
 
-    if (new == NULL) {
-        printf("malloc failed\n");
-        exit(1);
-    }
-
-    memset(new, 0, numBytes);
-    return new;
-}
 
 VOID
 pfnInbounds(pfn* trimmed) {

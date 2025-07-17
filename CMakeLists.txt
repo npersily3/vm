@@ -30,21 +30,51 @@ include_directories(include)
 
 # Source files
 set(SOURCES
-        src/util.c
-        src/disk.c
-        src/init.c
-        src/pages.c
-        src/vm.c
+        src/utils/util.c
+        src/disk/disk.c
+        src/initialization/init.c
+        src/vm/vm.c
+        src/initialization/init_threads.c
+        include/initialization/init_threads.h
+        src/threads/user_thread.c
+        include/threads/user_thread.h
+        src/threads/trimmer_thread.c
+        include/threads/trimmer_thread.h
+        src/threads/writer_thread.c
+        include/threads/writer_thread.h
+        src/threads/zero_thread.c
+        include/threads/zero_thread.h
+        src/utils/pte_utils.c
+        src/utils/page_utils.c
+        include/utils/page_utils.h
+        src/utils/thread_utils.c
+        include/utils/thread_utils.h
 )
 
 # Header files (for IDE support)
 set(HEADERS
-        include/util.h
-        include/disk.h
-        include/init.h
-        include/pages.h
+        include/disk/disk.h
+        include/initialization/init.h
         include/vm.h
-        include/macros.h
+        include/variables/macros.h
+        include/variables/structures.h
+        include/variables/globals.h
+        src/initialization/init_threads.c
+        include/initialization/init_threads.h
+        src/threads/user_thread.c
+        include/threads/user_thread.h
+        src/threads/trimmer_thread.c
+        include/threads/trimmer_thread.h
+        src/threads/writer_thread.c
+        include/threads/writer_thread.h
+        src/threads/zero_thread.c
+        include/threads/zero_thread.h
+        src/utils/pte_utils.c
+        include/utils/pte_utils.h
+        src/utils/page_utils.c
+        include/utils/page_utils.h
+        src/utils/thread_utils.c
+        include/utils/thread_utils.h
 )
 
 # Create the executable

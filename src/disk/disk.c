@@ -1,10 +1,10 @@
 //
 // Created by nrper on 6/16/2025.
 //
-#include "disk.h"
-#include "util.h"
-#include "pages.h"
+#include "../../include/disk/disk.h"
 
+#include "variables/structures.h"
+#include "variables/globals.h"
 #include <stdio.h>
 
 ULONG64

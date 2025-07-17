@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
-#include "util.h"
+#include "structures.h"
 
 FORCEINLINE
         VOID
