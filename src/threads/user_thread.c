@@ -144,7 +144,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     // if it is not empty need locks around these type of checks otherwise blow up
     EnterCriticalSection(lockFreeList);
     if (headFreeList.length != 0) {
-        mapPageFromFreeList(arbitrary_va, threadInfo);
+        mapPageFromFreeList(arbitrary_va, threadInfo, &frameNumber);
     } else {
         LeaveCriticalSection(lockFreeList);
 
@@ -152,7 +152,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
         EnterCriticalSection(lockStandByList);
         if (headStandByList.length != 0) {
-            if (mapPageFromStandByList(arbitrary_va, currentPageTableLock, (PTHREAD_INFO) threadContext) == REDO_FAULT) {
+            if (mapPageFromStandByList(arbitrary_va, currentPageTableLock, (PTHREAD_INFO) threadContext, &frameNumber) == REDO_FAULT) {
                 return REDO_FAULT;
             }
         } else {
@@ -179,6 +179,8 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
     currentPTE->validFormat.frameNumber = frameNumber;
     currentPTE->validFormat.valid = 1;
+
+    page = getPFNfromFrameNumber(frameNumber);
     page->pte = currentPTE;
 
     *(PULONG64)arbitrary_va = (ULONG_PTR) arbitrary_va;
@@ -192,11 +194,11 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
     return !REDO_FAULT;
 }
-BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
+BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
 
     pte* currentPTE;
     pfn* page;
-    ULONG64 frameNumber;
+
 
 
 
@@ -207,28 +209,28 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
     LeaveCriticalSection(lockFreeList);
 
 
-    frameNumber = getFrameNumber(page);
+    *frameNumber = getFrameNumber(page);
 
 
 
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, frameNumber, threadInfo->ThreadNumber);
+        modified_read(currentPTE, *frameNumber, threadInfo->ThreadNumber);
     } else {
         zeroOnePage(page, threadInfo->ThreadNumber);
     }
 
-    if (MapUserPhysicalPages(arbitrary_va, 1, &frameNumber) == FALSE) {
+    if (MapUserPhysicalPages(arbitrary_va, 1, frameNumber) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
         return FALSE;
     }
     //   ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));
 }
-BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo) {
+BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
     pte* currentPTE;
     pfn* page;
     pte entryContents;
-    ULONG64 frameNumber;
+
     BOOL isPageZeroed;
 
 
@@ -279,16 +281,16 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
         return REDO_FAULT;
     }
 
-    frameNumber = getFrameNumber(page);
+    *frameNumber = getFrameNumber(page);
 
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, frameNumber, threadInfo->ThreadNumber);
+        modified_read(currentPTE, *frameNumber, threadInfo->ThreadNumber);
     }
 
 
-    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
+    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, frameNumber) == FALSE) {
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, *frameNumber);
         return FALSE;
     }
 

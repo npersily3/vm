@@ -14,18 +14,13 @@
 
 DWORD diskWriter (LPVOID threadContext) {
 
-    BOOL doubleBreak;
-    ULONG64 counter;
+
     ULONG64 localBatchSize;
-    ULONG64 i;
-    PCRITICAL_SECTION writingPageTableLock;
+
 
     ULONG64 diskAddressArray[BATCH_SIZE];
     ULONG64 frameNumberArray[BATCH_SIZE];
     pfn* pfnArray[BATCH_SIZE];
-    ULONG64 frameNumber;
-
-    pfn* page;
 
     HANDLE* events[2];
     DWORD returnEvent;
@@ -33,9 +28,8 @@ DWORD diskWriter (LPVOID threadContext) {
     events[1] = systemShutdownEvent;
 
     while (TRUE) {
-        doubleBreak = FALSE;
-        counter = 0;
-        i = 0;
+
+
 
         returnEvent = WaitForMultipleObjects(2,events, FALSE, INFINITE);
 
@@ -70,7 +64,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
 
     for (int i = 0; i < localBatchSize; ++i) {
 
-        page = &pfnArray[i];
+        page = pfnArray[i];
 
 
         writingPageTableLock = getPageTableLock(page->pte);
@@ -98,7 +92,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
 
 VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray) {
     if (MapUserPhysicalPages(transferVaWriting, localBatchSize, frameNumberArray) == FALSE) {
-        DWORD error = GetLastError();
+
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaWriting, frameNumberArray[0]);
         return ;
@@ -107,7 +101,7 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
     for (int i = 0; i < localBatchSize; ++i) {
         // copy from transfer to disk
 
-        memcpy(diskAddressArray[i], (PVOID) ((ULONG64) transferVaWriting + i * PAGE_SIZE) , PAGE_SIZE);
+        memcpy((PVOID)diskAddressArray[i], (PVOID) ((ULONG64) transferVaWriting + i * PAGE_SIZE) , PAGE_SIZE);
 
         //     ASSERT(checkVa( (PULONG64)((ULONG64)transferVaWriting + i * PAGE_SIZE), vaArray[i]));
     }
@@ -138,6 +132,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
 
     counter = 0;
     i = 0;
+    doubleBreak = FALSE;
 
     for (; i < localBatchSize; i++) {
 
@@ -193,11 +188,12 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
 
             break;
         }
-
+        LeaveCriticalSection(writingPageTableLock);
     }
     if (doubleBreak == TRUE) {
         return FALSE;
     }
+
 
     *localBatchSizePointer = localBatchSize;
     return TRUE;
@@ -232,11 +228,14 @@ BOOL getDiskSlotAndUpdatePage (pfn* page, PULONG64 diskAddressArray, ULONG64 ind
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
     page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
+
+    return TRUE;
 }
 
 
 pfn* getPageFromModifiedList(VOID) {
 
+    pfn* page;
     PLIST_ENTRY newPageEntry;
     //  EnterCriticalSection(lockModifiedList);
     acquireLock(&lockModList);
@@ -250,5 +249,7 @@ pfn* getPageFromModifiedList(VOID) {
         return NULL;
     }
 
-    return container_of(newPageEntry, pfn, entry);
+    page = container_of(newPageEntry, pfn, entry);
+
+    return page;
 }

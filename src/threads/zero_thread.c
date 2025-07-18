@@ -9,6 +9,10 @@
 
 #include "../../include/variables/globals.h"
 #include "../../include/variables/structures.h"
+#include "../../include/variables/macros.h"
+
+#include "utils/page_utils.h"
+#include "utils/thread_utils.h"
 
 DWORD zeroingThread (LPVOID threadContext) {
 

@@ -30,51 +30,35 @@ include_directories(include)
 
 # Source files
 set(SOURCES
-        src/utils/util.c
         src/disk/disk.c
         src/initialization/init.c
-        src/vm/vm.c
         src/initialization/init_threads.c
-        include/initialization/init_threads.h
-        src/threads/user_thread.c
-        include/threads/user_thread.h
         src/threads/trimmer_thread.c
-        include/threads/trimmer_thread.h
+        src/threads/user_thread.c
         src/threads/writer_thread.c
-        include/threads/writer_thread.h
         src/threads/zero_thread.c
-        include/threads/zero_thread.h
-        src/utils/pte_utils.c
         src/utils/page_utils.c
-        include/utils/page_utils.h
+        src/utils/pte_utils.c
         src/utils/thread_utils.c
-        include/utils/thread_utils.h
+        src/vm/vm.c
 )
 
 # Header files (for IDE support)
 set(HEADERS
         include/disk/disk.h
         include/initialization/init.h
-        include/vm.h
+        include/initialization/init_threads.h
+        include/threads/trimmer_thread.h
+        include/threads/user_thread.h
+        include/threads/writer_thread.h
+        include/threads/zero_thread.h
+        include/utils/page_utils.h
+        include/utils/pte_utils.h
+        include/utils/thread_utils.h
+        include/variables/globals.h
         include/variables/macros.h
         include/variables/structures.h
-        include/variables/globals.h
-        src/initialization/init_threads.c
-        include/initialization/init_threads.h
-        src/threads/user_thread.c
-        include/threads/user_thread.h
-        src/threads/trimmer_thread.c
-        include/threads/trimmer_thread.h
-        src/threads/writer_thread.c
-        include/threads/writer_thread.h
-        src/threads/zero_thread.c
-        include/threads/zero_thread.h
-        src/utils/pte_utils.c
-        include/utils/pte_utils.h
-        src/utils/page_utils.c
-        include/utils/page_utils.h
-        src/utils/thread_utils.c
-        include/utils/thread_utils.h
+        include/vm.h
 )
 
 # Create the executable

@@ -54,12 +54,13 @@ DWORD page_trimmer(LPVOID threadContext) {
             // if we are not on a streak
             if (trimmedPageTableLock == NULL) {
 
-                trimmedPageTableLock = getPageTableLock(pages[BatchIndex]->pte);
+                trimmedPageTableLock = getPageTableLock(page->pte);
                 EnterCriticalSection(trimmedPageTableLock);
             }
 
 
-            virtualAddresses[BatchIndex] = (ULONG64) pte_to_va(pages[BatchIndex]->pte);
+            virtualAddresses[BatchIndex] = (ULONG64) pte_to_va(page->pte);
+            pages[BatchIndex] = page;
             pages[BatchIndex]->pte->transitionFormat.mustBeZero = 0;
             pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
             BatchIndex++;
@@ -134,20 +135,20 @@ BOOL isNextPageInSameRegion(PCRITICAL_SECTION trimmedPageTableLock) {
 }
 VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
 
-    if (MapUserPhysicalPagesScatter(virtualAddresses, batchSize, NULL) == FALSE) {
+    if (MapUserPhysicalPagesScatter((PVOID)virtualAddresses, batchSize, NULL) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
         return;
     }
 }
 
-VOID addBatchToModifiedList (pfn* pages, ULONG64 batchSize) {
+VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize) {
 
     pfn* page;
 
     acquireLock(&lockModList);
     for (int i = 0; i < batchSize; ++i) {
-        page = &pages[i];
+        page = pages[i];
 
         InsertTailList(&headModifiedList, &page->entry);
 
