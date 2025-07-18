@@ -25,6 +25,7 @@ extern listHead headToBeZeroedList;
 extern pte *pageTable;
 extern pfn *pfnStart;
 extern pfn *endPFN;
+extern PTE_REGION* allRegionsStart;
 
 //
 // Virtual address space

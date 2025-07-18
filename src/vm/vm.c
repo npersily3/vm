@@ -71,12 +71,13 @@ DWORD testVM(LPVOID lpParam) {
     BOOL redo_try_same_address;
     ULONG64 counter;
 
+    i = 0;
     thread_info = (PTHREAD_INFO)lpParam;
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
       // Now perform random accesses
-    //while (true) {
-        for (i = 0; i < MB(1); i++) {
+    while (true) {
+      //  for (; i < MB(1); i++) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //

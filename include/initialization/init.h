@@ -26,6 +26,7 @@ VOID init_num_open_slots(VOID);
 VOID init_disk_active(VOID);
 PVOID init_memory(ULONG64 numBytes);
 VOID init_pageTable(VOID);
+VOID init_pte_regions(VOID);
 VOID init_disk(VOID);
 HANDLE CreateSharedMemorySection(VOID);
 

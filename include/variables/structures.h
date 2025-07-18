@@ -20,7 +20,7 @@
 #define MB(x)                       ((x) * 1024 * 1024)
 #define VIRTUAL_ADDRESS_SIZE        MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
-#define NUMBER_OF_PHYSICAL_PAGES   ((VIRTUAL_ADDRESS_SIZE / PAGE_SIZE) / 64)
+#define NUMBER_OF_PHYSICAL_PAGES  MB(8)/PAGE_SIZE
 #define NUMBER_OF_DISK_DIVISIONS   1
 #define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
@@ -62,7 +62,7 @@
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
 
-#define NUMBER_OF_USER_THREADS 2
+#define NUMBER_OF_USER_THREADS 8
 #define NUMBER_OF_ZEROING_THREADS 1
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
@@ -182,6 +182,19 @@ typedef struct {
     ULONG64:1, isBeingWritten;
     ULONG64:1, isBeingTrimmed;
 } pfn;
+
+//
+//PTE_REGION  a section of 64 ptes
+//
+#define NUMBER_OF_AGES 8
+
+typedef struct {
+    LIST_ENTRY entry;
+    ULONG64 ageBitMaps[NUMBER_OF_AGES];
+    ULONG64:6, numActive;
+
+
+} PTE_REGION;
 
 
 
