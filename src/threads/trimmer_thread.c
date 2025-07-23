@@ -21,6 +21,7 @@ DWORD page_trimmer(LPVOID threadContext) {
     pfn* page;
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
+    PTE_REGION* region;
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -54,7 +55,8 @@ DWORD page_trimmer(LPVOID threadContext) {
             // if we are not on a streak
             if (trimmedPageTableLock == NULL) {
 
-                trimmedPageTableLock = getPageTableLock(page->pte);
+                region = getPTERegion(page->pte);
+                trimmedPageTableLock = &region->lock;
                 EnterCriticalSection(trimmedPageTableLock);
             }
 
@@ -65,7 +67,7 @@ DWORD page_trimmer(LPVOID threadContext) {
             pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
             BatchIndex++;
 
-            if (isNextPageInSameRegion(trimmedPageTableLock) == FALSE) {
+            if (isNextPageInSameRegion(region) == FALSE) {
                 unmapBatch(virtualAddresses, BatchIndex);
                 addBatchToModifiedList(pages, BatchIndex);
 
@@ -120,18 +122,18 @@ pfn* getActivePage(VOID) {
     return page;
 }
 
-BOOL isNextPageInSameRegion(PCRITICAL_SECTION trimmedPageTableLock) {
+BOOL isNextPageInSameRegion(PTE_REGION* region) {
 
     pfn* nextPage;
-    PCRITICAL_SECTION nextPageTableLock;
+    PTE_REGION* nextRegion;
 
     EnterCriticalSection(lockActiveList);
     nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
     LeaveCriticalSection(lockActiveList);
 
-    nextPageTableLock = getPageTableLock(nextPage->pte);
+     nextRegion = getPTERegion(nextPage->pte);
 
-    return nextPageTableLock == trimmedPageTableLock;
+    return nextRegion == region;
 }
 VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
 

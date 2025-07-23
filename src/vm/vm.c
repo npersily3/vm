@@ -9,6 +9,7 @@
 #include "vm.h"
 #include "../../include/variables/macros.h"
 #include "threads/user_thread.h"
+#include "utils/statistics_utils.h"
 
 // Timestamp counter for random number generation
 static __inline unsigned __int64 GetTimeStampCounter(void) {
@@ -76,8 +77,8 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
       // Now perform random accesses
-    while (true) {
-      //  for (; i < MB(1); i++) {
+   // while (true) {
+       for (; i < KB(125); i++) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
@@ -94,7 +95,7 @@ DWORD testVM(LPVOID lpParam) {
 
 
 
-            if (!redo_try_same_address) {
+            if (redo_try_same_address == FALSE) {
                 random_number = (unsigned) (GetTimeStampCounter() >> 4);
                 random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
 
@@ -109,6 +110,7 @@ DWORD testVM(LPVOID lpParam) {
             }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
+
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             page_faulted = TRUE;
         }
@@ -130,6 +132,7 @@ DWORD testVM(LPVOID lpParam) {
             i--;
            // *arbitrary_va = (ULONG_PTR) arbitrary_va;
         } else {
+          //  recordAccess(arbitrary_va);
             redo_try_same_address = FALSE;
         }
     }

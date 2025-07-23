@@ -124,8 +124,12 @@ VOID initCriticalSections(VOID) {
 
 }
 VOID initializePageTableLocks(VOID) {
-    for (int i = 0; i < NUMBER_OF_PAGE_TABLE_LOCKS; ++i) {
-        INITIALIZE_LOCK_DIRECT(pageTableLocks[i]);
+    PTE_REGION* p;
+
+    p = pteRegionsBase;
+    for (int i = 0; i < NUMBER_OF_PTE_REGIONS; ++i) {
+        INITIALIZE_LOCK_DIRECT(p->lock);
+        p++;
     }
 }
 

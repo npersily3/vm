@@ -23,6 +23,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     pte* currentPTE;
     pte pteContents;
     PCRITICAL_SECTION currentPageTableLock;
+    PTE_REGION* region;
 
     currentPTE = va_to_pte(arbitrary_va);
 
@@ -33,7 +34,8 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     }
 
     returnValue = !REDO_FAULT;
-    currentPageTableLock = getPageTableLock(currentPTE);
+    region = getPTERegion(currentPTE);
+    currentPageTableLock = &region->lock;
 
     EnterCriticalSection(currentPageTableLock);
     pteContents = *currentPTE;
@@ -306,9 +308,14 @@ pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock) {
 
     pfn* page;
     PCRITICAL_SECTION victimPageTableLock;
+    PTE_REGION* victimRegion;
 
     page = container_of(headStandByList.entry.Flink, pfn, entry);
-    victimPageTableLock = getPageTableLock(page->pte);
+
+    victimRegion = getPTERegion(page->pte);
+
+
+    victimPageTableLock = &victimRegion->lock;
 
 
     //be a good samaritan and dont hold 2 pte locks at once, later check to see if the contents have changed

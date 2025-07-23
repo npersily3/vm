@@ -9,7 +9,7 @@
 
 DWORD page_trimmer(LPVOID threadContext);
 pfn* getActivePage(VOID);
-BOOL isNextPageInSameRegion(PCRITICAL_SECTION trimmedPageTableLock);
+BOOL isNextPageInSameRegion(PTE_REGION* nextRegion);
 VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize);
 VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize);
 

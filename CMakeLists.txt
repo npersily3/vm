@@ -41,6 +41,10 @@ set(SOURCES
         src/utils/pte_utils.c
         src/utils/thread_utils.c
         src/vm/vm.c
+        src/threads/statistics.c
+        include/threads/statistics.h
+        src/utils/statistics_utils.c
+        include/utils/statistics_utils.h
 )
 
 # Header files (for IDE support)
@@ -59,6 +63,10 @@ set(HEADERS
         include/variables/macros.h
         include/variables/structures.h
         include/vm.h
+        src/threads/statistics.c
+        include/threads/statistics.h
+        src/utils/statistics_utils.c
+        include/utils/statistics_utils.h
 )
 
 # Create the executable

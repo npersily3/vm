@@ -40,7 +40,7 @@ PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
 PVOID zeroThreadTransferVa;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
-PTE_REGION* allRegionsStart;
+PTE_REGION* pteRegionsBase;
 
 // Disk-related globals
 PVOID diskStart;
@@ -170,9 +170,9 @@ VOID init_pte_regions(VOID) {
     ULONG64 numRegions;
 
     //nptodo add the case where NUMPTES is not divisible by 64
-    numRegions = NUMBER_OF_PTES/64;
 
-    allRegionsStart = (PTE_REGION*) init_memory(numRegions * sizeof(PTE_REGION));
+
+    pteRegionsBase = (PTE_REGION*) init_memory(NUMBER_OF_PTE_REGIONS * sizeof(PTE_REGION));
 
 
 }
@@ -183,6 +183,7 @@ VOID init_pageTable(VOID) {
     numBytes = PAGE_TABLE_SIZE_IN_BYTES;
     pageTable = (pte*)init_memory(numBytes);
 
+    init_pte_regions();
 
 }
 

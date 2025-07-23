@@ -20,7 +20,7 @@
 #define MB(x)                       ((x) * 1024 * 1024)
 #define VIRTUAL_ADDRESS_SIZE        MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
-#define NUMBER_OF_PHYSICAL_PAGES  MB(8)/PAGE_SIZE
+#define NUMBER_OF_PHYSICAL_PAGES 64// MB(8)/PAGE_SIZE
 #define NUMBER_OF_DISK_DIVISIONS   1
 #define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
@@ -144,7 +144,7 @@ typedef struct {
 //
 #define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte))
 #define NUMBER_OF_PTES (PAGE_TABLE_SIZE_IN_BYTES / sizeof(pte))
-#define NUMBER_OF_PAGE_TABLE_LOCKS 8
+#define NUMBER_OF_PAGE_TABLE_LOCKS NUMBER_OF_PTES
 #define SIZE_OF_PAGE_TABLE_DIVISION (PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS)
 
 //
@@ -183,18 +183,38 @@ typedef struct {
     ULONG64:1, isBeingTrimmed;
 } pfn;
 
+
+
+
+#define NUMBER_OF_TIME_STAMPS 16
+
+
+typedef struct {
+    ULONG64 timeStamps[NUMBER_OF_TIME_STAMPS];
+    ULONG64:4, currentStamp;
+    ULONG64:4, numValidStamps;
+
+
+    double volatility;
+    double drift;
+
+} stochastic_data;
+
 //
 //PTE_REGION  a section of 64 ptes
 //
 #define NUMBER_OF_AGES 8
+#define NUMBER_OF_PTES_PER_REGION 64
+#define NUMBER_OF_PTE_REGIONS (NUMBER_OF_PTES/NUMBER_OF_PTES_PER_REGION)
 
 typedef struct {
     LIST_ENTRY entry;
-    ULONG64 ageBitMaps[NUMBER_OF_AGES];
-    ULONG64:6, numActive;
+    stochastic_data statistics;
+    CRITICAL_SECTION lock;
 
 
 } PTE_REGION;
+
 
 
 

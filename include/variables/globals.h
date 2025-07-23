@@ -25,7 +25,7 @@ extern listHead headToBeZeroedList;
 extern pte *pageTable;
 extern pfn *pfnStart;
 extern pfn *endPFN;
-extern PTE_REGION* allRegionsStart;
+extern PTE_REGION* pteRegionsBase;
 
 //
 // Virtual address space
@@ -70,7 +70,7 @@ extern HANDLE userStartEvent;
 extern HANDLE userEndEvent;
 extern HANDLE zeroingStartEvent;
 extern HANDLE systemShutdownEvent;
-
+extern HANDLE statisticsStartEvent;
 //
 // Critical sections
 //

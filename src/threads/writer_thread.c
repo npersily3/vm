@@ -61,13 +61,15 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
 
     pfn* page;
     PCRITICAL_SECTION writingPageTableLock;
+    PTE_REGION* region;
 
     for (int i = 0; i < localBatchSize; ++i) {
 
         page = pfnArray[i];
 
 
-        writingPageTableLock = getPageTableLock(page->pte);
+        region = getPTERegion(page->pte);
+        writingPageTableLock = &region->lock;
         EnterCriticalSection(writingPageTableLock);
 
         //if it has been rescued, free up the disk space and do not put it on the standby list
@@ -123,6 +125,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
     pfn* page;
     ULONG64 localBatchSize;
     PCRITICAL_SECTION writingPageTableLock;
+    PTE_REGION* region;
 
     ULONG64 frameNumber;
     BOOL doubleBreak;
@@ -147,7 +150,8 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             break;
         }
 
-        writingPageTableLock = getPageTableLock(page->pte);
+        region = getPTERegion(page->pte);
+        writingPageTableLock = &region->lock;
 
         // if the pte is being worked on, release your locks and back up
         if (TryEnterCriticalSection(writingPageTableLock) == FALSE) {
