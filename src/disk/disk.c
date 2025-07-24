@@ -50,7 +50,7 @@ get_free_disk_index(VOID) {
     }
 
     //ask if they should go in the loop
-    //nptodo make diskActive and numOpenSlots only one lock
+    //nptodo make diskActive and numOpenSlots only one sharedLock
     EnterCriticalSection(lockDiskActive);
     while (start < end) {
         if (*start == FALSE) {

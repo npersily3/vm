@@ -307,6 +307,7 @@ VOID init_free_list(VOID) {
         // Now initialize the pfn structure
         memset(new_pfn, 0, sizeof(pfn));
 
+        InitializeCriticalSection(&new_pfn->lock);
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
 }

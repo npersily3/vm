@@ -18,9 +18,9 @@
 #define frame_number_size           40
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE        MB(16)
+#define VIRTUAL_ADDRESS_SIZE        MB(2)//MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
-#define NUMBER_OF_PHYSICAL_PAGES 64// MB(8)/PAGE_SIZE
+#define NUMBER_OF_PHYSICAL_PAGES MB(1)/PAGE_SIZE
 #define NUMBER_OF_DISK_DIVISIONS   1
 #define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
@@ -62,16 +62,17 @@
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
 
-#define NUMBER_OF_USER_THREADS 8
+#define NUMBER_OF_USER_THREADS 2
 #define NUMBER_OF_ZEROING_THREADS 1
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
+//#define NUMBER_OF_SCHEDULING_THREADS 1
 
-#define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_ZEROING_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS)
+#define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_ZEROING_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS )//+)// NUMBER_OF_SCHEDULING_THREADS)
 #define NUMBER_OF_SYSTEM_THREADS (NUMBER_OF_THREADS-NUMBER_OF_USER_THREADS)
 
 #define MAX_FAULTS 0xFFFFFF
-#define BATCH_SIZE 5
+#define BATCH_SIZE (NUMBER_OF_PHYSICAL_PAGES / 4)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
@@ -144,7 +145,7 @@ typedef struct {
 //
 #define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte))
 #define NUMBER_OF_PTES (PAGE_TABLE_SIZE_IN_BYTES / sizeof(pte))
-#define NUMBER_OF_PAGE_TABLE_LOCKS NUMBER_OF_PTES
+#define NUMBER_OF_PAGE_TABLE_LOCKS NUMBER_OF_PTES / 8
 #define SIZE_OF_PAGE_TABLE_DIVISION (PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS)
 
 //
@@ -170,6 +171,9 @@ typedef struct _THREAD_INFO {
 typedef struct {
     LIST_ENTRY entry;
     ULONG64 length;
+    SRWLOCK sharedLock;
+    CRITICAL_SECTION lock;
+    boolean lockExclusive;
 } listHead, *pListHead;
 
 //
@@ -179,15 +183,21 @@ typedef struct {
     LIST_ENTRY entry;
     pte *pte;
     ULONG64 diskIndex;
-    ULONG64:1, isBeingWritten;
-    ULONG64:1, isBeingTrimmed;
+    ULONG64 isBeingWritten: 1;
+    ULONG64 isBeingTrimmed: 1;
+    CRITICAL_SECTION lock;
 } pfn;
 
 
 
 
 #define NUMBER_OF_TIME_STAMPS 16
+#define BASELINE_HAZARD (1)
+#define LOG_BASELINE_HAZARD (0)
 
+#define DRIFT_COEFFICENT .33
+#define VOLATILITY_COEFFICENT .33
+#define RECENT_ACCESS_COEFFICIENT -0.0000001
 
 typedef struct {
     ULONG64 timeStamps[NUMBER_OF_TIME_STAMPS];
@@ -206,12 +216,14 @@ typedef struct {
 #define NUMBER_OF_AGES 8
 #define NUMBER_OF_PTES_PER_REGION 64
 #define NUMBER_OF_PTE_REGIONS (NUMBER_OF_PTES/NUMBER_OF_PTES_PER_REGION)
+#define LENGTH_OF_PREDICTION 10
 
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
     CRITICAL_SECTION lock;
 
+    ULONG64:1, accessed;
 
 } PTE_REGION;
 

@@ -49,11 +49,11 @@ DWORD zeroingThread (LPVOID threadContext) {
         }
         zeroMultiplePages(frameNumbers, BATCH_SIZE);
 
-        EnterCriticalSection(lockFreeList);
+        AcquireSRWLockExclusive(&headFreeList.sharedLock);
         for (int i = 0; i < BATCH_SIZE; ++i) {
             InsertTailList(&headFreeList, &page[i]->entry);
         }
-        LeaveCriticalSection(lockFreeList);
+        ReleaseSRWLockExclusive(&headFreeList.sharedLock);
     }
 }
 

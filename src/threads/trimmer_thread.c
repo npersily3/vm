@@ -104,21 +104,11 @@ pfn* getActivePage(VOID) {
     PLIST_ENTRY trimmedEntry;
     pfn* page;
 
-    EnterCriticalSection(lockActiveList);
-    trimmedEntry = headActiveList.entry.Flink;
+    page = RemoveFromHeadofPageList(&headActiveList);
 
-    if (trimmedEntry == &headActiveList.entry) {
-
-        LeaveCriticalSection(lockActiveList);
-
+    if (page == LIST_IS_EMPTY) {
         return NULL;
     }
-    ASSERT(trimmedEntry != &headActiveList.entry);
-
-    page = container_of(trimmedEntry, pfn, entry);
-    removeFromMiddleOfList(&headActiveList, trimmedEntry);
-    LeaveCriticalSection(lockActiveList);
-
     return page;
 }
 
@@ -127,9 +117,9 @@ BOOL isNextPageInSameRegion(PTE_REGION* region) {
     pfn* nextPage;
     PTE_REGION* nextRegion;
 
-    EnterCriticalSection(lockActiveList);
+    AcquireSRWLockExclusive(&headActiveList.sharedLock);
     nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
-    LeaveCriticalSection(lockActiveList);
+    ReleaseSRWLockExclusive(&headActiveList.sharedLock);
 
      nextRegion = getPTERegion(nextPage->pte);
 
@@ -148,12 +138,15 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize) {
 
     pfn* page;
 
-    acquireLock(&lockModList);
+
+//    AcquireSRWLockExclusive(&headModifiedList.sharedLock);
+
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
 
-        InsertTailList(&headModifiedList, &page->entry);
+        addPageToTail(&headModifiedList, page);
+    //    InsertTailList(&headModifiedList, &page->entry);
 
     }
-    releaseLock(&lockModList);
+  //  ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
 }

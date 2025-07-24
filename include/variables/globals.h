@@ -74,10 +74,7 @@ extern HANDLE statisticsStartEvent;
 //
 // Critical sections
 //
-extern PCRITICAL_SECTION lockFreeList;
-extern PCRITICAL_SECTION lockActiveList;
-extern PCRITICAL_SECTION lockModifiedList;
-extern PCRITICAL_SECTION lockStandByList;
+
 extern PCRITICAL_SECTION lockDiskActive;
 extern PCRITICAL_SECTION lockNumberOfSlots;
 extern PCRITICAL_SECTION lockWritingTransferVa;
@@ -87,7 +84,7 @@ extern CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
 //
 // Interlocked locks
 //
-extern ULONG64 lockModList;
+
 extern ULONG64 lockToBeZeroedList;
 
 //

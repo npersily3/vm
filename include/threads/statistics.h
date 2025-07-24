@@ -5,4 +5,8 @@
 #ifndef STATISTICS_H
 #define STATISTICS_H
 
+#include <windows.h>
+
+DWORD recordProbability(LPVOID lpParameter);
+
 #endif //STATISTICS_H

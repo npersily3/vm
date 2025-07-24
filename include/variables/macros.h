@@ -65,6 +65,8 @@ Flink = Entry->Flink;
 
 
         if (Entry == &ListHead->entry) { return LIST_IS_EMPTY;}
+
+
 ListHead->entry.Flink = Flink;
 Flink->Blink = &ListHead->entry;
         ListHead->length--;

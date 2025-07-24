@@ -34,12 +34,16 @@ full_virtual_memory_test(VOID) {
 
     SetEvent(userStartEvent);
 
-     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+    int i;
+    i = 0;
+
+     for (; i < NUMBER_OF_USER_THREADS; ++i) {
          WaitForSingleObject(userThreadHandles[i], INFINITE);
      }
     SetEvent(systemShutdownEvent);
 
-    for (int i = 0; i < NUMBER_OF_SYSTEM_THREADS; ++i) {
+    i = 0;
+    for (; i < NUMBER_OF_SYSTEM_THREADS; ++i) {
         WaitForSingleObject(systemThreadHandles[i], INFINITE);
     }
     ResetEvent(systemShutdownEvent);
@@ -77,8 +81,8 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
       // Now perform random accesses
-   // while (true) {
-       for (; i < KB(125); i++) {
+    //while (true) {
+       for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
@@ -132,7 +136,7 @@ DWORD testVM(LPVOID lpParam) {
             i--;
            // *arbitrary_va = (ULONG_PTR) arbitrary_va;
         } else {
-          //  recordAccess(arbitrary_va);
+           //recordAccess(arbitrary_va);
             redo_try_same_address = FALSE;
         }
     }

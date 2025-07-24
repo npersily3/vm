@@ -13,6 +13,7 @@
 #include "../../include/threads/writer_thread.h"
 #include "../../include/threads/zero_thread.h"
 #include "../../include/vm.h"
+#include "threads/statistics.h"
 
 
 
@@ -34,6 +35,7 @@ VOID createThreads(VOID) {
     THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS] = {0};
     THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS] = {0};
     THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
+   // THREAD_INFO SchedulerThreadInfo[NUMBER_OF_SCHEDULING_THREADS] = {0};
 
     ULONG maxThread = 0;
     ULONG threadHandleArrayOffset;
@@ -97,6 +99,20 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    //
+    // for (int i = 0; i < NUMBER_OF_SCHEDULING_THREADS; ++i) {
+    //     ThreadContext = &SchedulerThreadInfo[i];
+    //     ThreadContext->ThreadNumber = maxThread;
+    //
+    //
+    //     Handle = createNewThread(recordProbability,ThreadContext);
+    //
+    //     ThreadContext->ThreadHandle = Handle;
+    //
+    //     systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
+    //
+    //     maxThread++;
+    // }
 
 }
 VOID createEvents(VOID) {
@@ -110,19 +126,30 @@ VOID createEvents(VOID) {
     systemShutdownEvent = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
 }
 VOID initCriticalSections(VOID) {
-    INITIALIZE_LOCK(lockFreeList);
-    INITIALIZE_LOCK(lockActiveList);
-    INITIALIZE_LOCK(lockModifiedList);
-    INITIALIZE_LOCK(lockStandByList);
+
+
+    InitializeSRWLock(&headActiveList.sharedLock);
+    InitializeCriticalSection(&headActiveList.lock);
+
+    InitializeSRWLock(&headFreeList.sharedLock);
+    InitializeCriticalSection(&headFreeList.lock);
+
+    InitializeSRWLock(&headModifiedList.sharedLock);
+    InitializeCriticalSection(&headModifiedList.lock);
+
+    InitializeSRWLock(&headStandByList.sharedLock);
+    InitializeCriticalSection(&headStandByList.lock);
+
     INITIALIZE_LOCK(lockDiskActive);
     INITIALIZE_LOCK(lockNumberOfSlots);
 
-    lockModList = LOCK_FREE;
+//    lockModList = LOCK_FREE;
     lockToBeZeroedList = LOCK_FREE;
 
     initializePageTableLocks();
 
 }
+
 VOID initializePageTableLocks(VOID) {
     PTE_REGION* p;
 

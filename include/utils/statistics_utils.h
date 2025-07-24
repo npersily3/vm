@@ -8,10 +8,18 @@
 #include "variables/globals.h"
 
 VOID recordAccess(ULONG64 va);
-PULONG64 calculateDeltaAccessTimes(PULONG64 changeInTimestamps, PULONG64 actualTimes, ULONG64 currentIndex);
+PULONG64 calculateDeltaAccessTimes(double* changeInTimestamps, PULONG64 actualTimes, ULONG64 currentIndex);
 double lnApproximation(double x);
-double calculateVolatilityandDrift(PTE_REGION* region);
-double mean(PULONG64 numbers, ULONG64 number_of_entries);
-double variance(PULONG64 numbers, ULONG64 number_of_entries, double mean);
-double getSlope(PULONG64 intervals, ULONG64 count);
+double calculateVolatility(double* timeIntervals, double average);
+double calculateDrift(double* timeIntervals, double average);
+double calculateMostRecentAccessTime(double mostRecentTime);
+double mean(double* numbers, ULONG64 number_of_entries);
+double variance(double* numbers, ULONG64 number_of_entries, double mean);
+double getSlope(double* intervals, ULONG64 count);
+double hazardRate (PTE_REGION* region) ;
+double likelihoodOfAccess(PTE_REGION* region) ;
+
+
+
+
 #endif //STATISTICS_UTILS_H
