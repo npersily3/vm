@@ -10,9 +10,9 @@
 VOID pfnInbounds(pfn* trimmed);
 ULONG64 getFrameNumber(pfn* pfn);
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
-VOID removeFromMiddleOfList(pListHead head,pfn* page);
-pfn* RemoveFromHeadofPageList(pListHead head);
-VOID addPageToTail(pListHead head, pfn* page);
+VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo);
+pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo);
+VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo);
 
 
 #endif //PAGE_UTILS_H

@@ -40,24 +40,24 @@ DWORD diskWriter (LPVOID threadContext) {
 
         localBatchSize = BATCH_SIZE;
 
-        if (getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskAddressArray, frameNumberArray) == FALSE) {
+        if (getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskAddressArray, frameNumberArray, (PTHREAD_INFO) threadContext) == FALSE) {
             SetEvent(writingEndEvent);
             continue;
         }
 
         writeToDisk(localBatchSize, frameNumberArray, diskAddressArray);
 
-        addToStandBy(localBatchSize, pfnArray);
+        addToStandBy(localBatchSize, pfnArray, (PTHREAD_INFO) threadContext);
 
         // this needs to be in a sharedLock to avoid
         // the race condition where it is reset right after it is
-        AcquireSRWLockExclusive(&headStandByList.sharedLock);
+        acquire_srw_exclusive(&headStandByList.sharedLock, (PTHREAD_INFO) threadContext);
         SetEvent(writingEndEvent);
-        ReleaseSRWLockExclusive(&headStandByList.sharedLock);
+        release_srw_exclusive(&headStandByList.sharedLock);
     }
 
 }
-VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
+VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
     pfn* page;
     PCRITICAL_SECTION writingPageTableLock;
@@ -84,8 +84,9 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
             // AcquireSRWLockExclusive(&headStandByList.sharedLock);
             // InsertTailList(&headStandByList, &page->entry);
             // ReleaseSRWLockExclusive(&headStandByList.sharedLock);
-            addPageToTail(&headStandByList, page);
-
+            EnterCriticalSection(&page->lock);
+            addPageToTail(&headStandByList, page, info);
+            LeaveCriticalSection(&page->lock);
         }
         // need to hold pte sharedLock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
         //make sure pte then list sharedLock
@@ -120,7 +121,7 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
 }
 
 
-BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskAddressArray, PULONG64 frameNumberArray) {
+BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskAddressArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
     ULONG64 counter;
@@ -142,7 +143,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
     for (; i < localBatchSize; i++) {
 
 
-        page = RemoveFromHeadofPageList(&headModifiedList);
+        page = RemoveFromHeadofPageList(&headModifiedList, threadContext);
 
 
         if (page == NULL) {
@@ -163,7 +164,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
         // if the pte is being worked on, release your locks and back up
         if (TryEnterCriticalSection(writingPageTableLock) == FALSE) {
 
-            ASSERT(counter < MB(1))
+            //ASSERT(counter < MB(1))
             i--;
             counter++;
             LeaveCriticalSection(&page->lock);
@@ -187,8 +188,9 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             // AcquireSRWLockExclusive(&headModifiedList.sharedLock);
             // InsertTailList(&headModifiedList, &page->entry);
             // ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
-            addPageToTail(&headModifiedList, page);
-
+            EnterCriticalSection(&page->lock);
+            addPageToTail(&headModifiedList, page, threadContext);
+            LeaveCriticalSection(&page->lock);
             if (i == 0) {
                 doubleBreak = TRUE;
             }

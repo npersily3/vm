@@ -35,3 +35,17 @@ BOOL tryAcquireLock(PULONG64 lock) {
     }
     return TRUE;
 }
+
+VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
+    AcquireSRWLockExclusive(&lock->sharedLock);
+#if DBG
+    lock->threadId = info->ThreadId;
+#endif
+}
+VOID release_srw_exclusive(sharedLock* lock) {
+    ReleaseSRWLockExclusive(&lock->sharedLock);
+
+#if DBG
+    lock->threadId = 0;
+#endif
+}

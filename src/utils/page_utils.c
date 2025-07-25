@@ -4,6 +4,7 @@
 
 #include "../../include/utils/page_utils.h"
 #include "../../include/variables/globals.h"
+#include "utils/thread_utils.h"
 
 VOID
 pfnInbounds(pfn* trimmed) {
@@ -19,9 +20,9 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
     return pfnStart + frameNumber;
 }
 
-VOID removeFromMiddleOfList(pListHead head,pfn* page) {
+VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
-    AcquireSRWLockShared(&head->sharedLock);
+    AcquireSRWLockShared(&head->sharedLock.sharedLock);
 
     pfn* Flink;
     pfn* Blink;
@@ -32,7 +33,7 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page) {
 
 
     for (int i = 0; i < 5; ++i) {
-        EnterCriticalSection(&page->lock);
+
         Flink = container_of(page->entry.Flink, pfn, entry.Flink);
         Blink = container_of(page->entry.Blink, pfn, entry.Blink);
 
@@ -43,13 +44,13 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page) {
             }
             LeaveCriticalSection(&Flink->lock);
         }
-        LeaveCriticalSection(&page->lock);
+
     }
 
 
     if (obtainedLocks == FALSE) {
         ReleaseSRWLockShared(&head->sharedLock);
-        AcquireSRWLockExclusive(&head->sharedLock);
+        acquire_srw_exclusive(&head->sharedLock, threadInfo);
 
     }
 
@@ -60,42 +61,22 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page) {
     InterlockedDecrement64(&head->length);
 
     if (obtainedLocks == TRUE) {
-        LeaveCriticalSection(&page->lock);
+
         LeaveCriticalSection(&Flink->lock);
         LeaveCriticalSection(&Blink->lock);
 
-        ReleaseSRWLockShared(&head->sharedLock);
+        ReleaseSRWLockShared(&head->sharedLock.sharedLock);
     } else {
-        ReleaseSRWLockExclusive(&head->sharedLock);
+        release_srw_exclusive(&head->sharedLock);
     }
 
 }
 
 
-pfn* RemoveFromHeadofPageList(pListHead head) {
+pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
 
-
-    if (ReadULong64NoFence(&head->length) == 0) {
-        return LIST_IS_EMPTY;
-    }
-    if (ReadULong64NoFence(&head->length) == 1) {
-
-
-        InterlockedDecrement64(&head->length);
-
-        AcquireSRWLockExclusive(&head->sharedLock);
-
-        pfn* page;
-        page = container_of(head->entry.Flink,pfn, entry);
-        head->entry.Flink = & head->entry;
-        head->entry.Blink = & head->entry;
-        ReleaseSRWLockExclusive(&head->sharedLock);
-
-        return  page;
-    }
-
-    AcquireSRWLockShared(&head->sharedLock);
+    AcquireSRWLockShared(&head->sharedLock.sharedLock);
 
     pfn* currentHeadPage;
     pfn* nextHeadPage;
@@ -106,40 +87,46 @@ pfn* RemoveFromHeadofPageList(pListHead head) {
 
 
     for (int i = 0; i < 5; ++i) {
-        EnterCriticalSection(&head->lock);
+        EnterCriticalSection(&head->pageLock);
         currentHeadPage = container_of(head->entry.Flink, pfn, entry);
          nextHeadPage = container_of(currentHeadPage->entry.Flink, pfn, entry);
 
+        if (&nextHeadPage->entry == &head->entry) {
+            nextHeadPage = NULL;
+        }
+
+
         if (TryEnterCriticalSection(&currentHeadPage->lock) == TRUE) {
-            if (TryEnterCriticalSection(&nextHeadPage->lock) == TRUE) {
+            if (nextHeadPage != NULL) {
+                if (TryEnterCriticalSection(&nextHeadPage->lock) == TRUE) {
+                    obtainedLocks = TRUE;
+                    break;
+                }
+            } else {
                 obtainedLocks = TRUE;
                 break;
             }
+
             LeaveCriticalSection(&currentHeadPage->lock);
         }
-        LeaveCriticalSection(&head->lock);
+        LeaveCriticalSection(&head->pageLock);
     }
 
 
     if (obtainedLocks == FALSE) {
-        ReleaseSRWLockShared(&head->sharedLock);
-        AcquireSRWLockExclusive(&head->sharedLock);
+        ReleaseSRWLockShared(&head->sharedLock.sharedLock);
+        acquire_srw_exclusive(&head->sharedLock, threadInfo);
 
         if (ReadULong64NoFence(&head->length) == 0) {
-            ReleaseSRWLockExclusive(&head->sharedLock);
+            release_srw_exclusive(&head->sharedLock);
             return LIST_IS_EMPTY;
         }
 
     }
 
     LIST_ENTRY* ListHead = &head->entry;
-    LIST_ENTRY*    Entry = ListHead->Flink;
+    LIST_ENTRY* Entry = ListHead->Flink;
     LIST_ENTRY* Flink = Entry->Flink;
-
-
-
-
-
 
 
     ListHead->Flink = Flink;
@@ -152,27 +139,35 @@ pfn* RemoveFromHeadofPageList(pListHead head) {
 
 
     if (obtainedLocks == TRUE) {
-        LeaveCriticalSection(&head->lock);
-        LeaveCriticalSection(&currentHeadPage->lock);
+
+        if (Entry == ListHead) {
+            LeaveCriticalSection(&head->pageLock);
+            ReleaseSRWLockShared(&head->sharedLock);
+            return LIST_IS_EMPTY;
+        }
+
+        LeaveCriticalSection(&head->pageLock);
+
         LeaveCriticalSection(&nextHeadPage->lock);
 
-        ReleaseSRWLockShared(&head->sharedLock);
+        ReleaseSRWLockShared(&head->sharedLock.sharedLock);
     } else {
-        ReleaseSRWLockExclusive(&head->sharedLock);
+        release_srw_exclusive(&head->sharedLock);
     }
+
 
     return container_of(Entry, pfn, entry);
 
 }
 
-VOID addPageToTail(pListHead head, pfn* page) {
+VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     boolean obtainedLocks = FALSE;
 
     pfn* nextPage;
-    AcquireSRWLockShared(&head->sharedLock);
+    AcquireSRWLockShared(&head->sharedLock.sharedLock);
 
     if (head->length == 0) {
-        EnterCriticalSection(&head->lock);
+        EnterCriticalSection(&head->pageLock);
         EnterCriticalSection(&page->lock);
 
         head->entry.Blink = &page->entry;
@@ -182,30 +177,29 @@ VOID addPageToTail(pListHead head, pfn* page) {
         page->entry.Flink = &page->entry;
 
         LeaveCriticalSection(&page->lock);
-        LeaveCriticalSection(&head->lock);
-        ReleaseSRWLockExclusive(&head->sharedLock);
+        LeaveCriticalSection(&head->pageLock);
+        ReleaseSRWLockShared(&head->sharedLock.sharedLock);
 
         return;
     }
 
 
     for (int i = 0; i < 5; ++i) {
-        EnterCriticalSection(&head->lock);
-        nextPage = container_of(head->entry.Blink, pfn, entry);
+        if (TryEnterCriticalSection(&head->pageLock) == TRUE) {
+            nextPage = container_of(head->entry.Blink, pfn, entry);
 
-        if (TryEnterCriticalSection(&page->lock) == TRUE) {
             if (TryEnterCriticalSection(&nextPage->lock) == TRUE) {
                 obtainedLocks = TRUE;
                 break;
             }
-            LeaveCriticalSection(&page->lock);
         }
-        LeaveCriticalSection(&head->lock);
+
+        LeaveCriticalSection(&head->pageLock);
     }
 
     if (obtainedLocks == FALSE) {
-        ReleaseSRWLockShared(&head->sharedLock);
-        AcquireSRWLockExclusive(&head->sharedLock);
+        ReleaseSRWLockShared(&head->sharedLock.sharedLock);
+        acquire_srw_exclusive(&head->sharedLock, threadInfo);
         //check if zero again
         nextPage = container_of(head->entry.Blink, pfn, entry);
     }
@@ -221,11 +215,10 @@ VOID addPageToTail(pListHead head, pfn* page) {
     if (obtainedLocks == TRUE) {
 
         LeaveCriticalSection(&nextPage->lock);
-        LeaveCriticalSection(&page->lock);
-        LeaveCriticalSection(&head->lock);
+        LeaveCriticalSection(&head->pageLock);
 
-        ReleaseSRWLockShared(&head->sharedLock);
+        ReleaseSRWLockShared(&head->sharedLock.sharedLock);
     } else {
-        ReleaseSRWLockExclusive(&head->sharedLock);
+        release_srw_exclusive(&head->sharedLock);
     }
 }

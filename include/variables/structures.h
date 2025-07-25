@@ -52,7 +52,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -168,13 +168,7 @@ typedef struct _THREAD_INFO {
 //
 // List head structure
 //
-typedef struct {
-    LIST_ENTRY entry;
-    ULONG64 length;
-    SRWLOCK sharedLock;
-    CRITICAL_SECTION lock;
-    boolean lockExclusive;
-} listHead, *pListHead;
+
 
 //
 // PFN (Page Frame Number) structure
@@ -227,7 +221,19 @@ typedef struct {
 
 } PTE_REGION;
 
+typedef  struct {
+    SRWLOCK sharedLock;
+#if DBG
+    ULONG64 threadId;
+#endif
+} sharedLock;
 
+typedef struct {
+    LIST_ENTRY entry;
+    ULONG64 length;
+    sharedLock sharedLock;
+    CRITICAL_SECTION pageLock;
 
+} listHead, *pListHead;
 
 #endif //STRUCTURES_H

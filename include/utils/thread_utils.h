@@ -11,6 +11,8 @@ void acquireLock(PULONG64 lock);
 void releaseLock(PULONG64 lock);
 BOOL tryAcquireLock(PULONG64 lock);
 
+VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info);
+VOID release_srw_exclusive(sharedLock* lock);
 
 
 #endif //THREAD_UTILS_H

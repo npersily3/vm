@@ -127,19 +127,6 @@ VOID createEvents(VOID) {
 }
 VOID initCriticalSections(VOID) {
 
-
-    InitializeSRWLock(&headActiveList.sharedLock);
-    InitializeCriticalSection(&headActiveList.lock);
-
-    InitializeSRWLock(&headFreeList.sharedLock);
-    InitializeCriticalSection(&headFreeList.lock);
-
-    InitializeSRWLock(&headModifiedList.sharedLock);
-    InitializeCriticalSection(&headModifiedList.lock);
-
-    InitializeSRWLock(&headStandByList.sharedLock);
-    InitializeCriticalSection(&headStandByList.lock);
-
     INITIALIZE_LOCK(lockDiskActive);
     INITIALIZE_LOCK(lockNumberOfSlots);
 

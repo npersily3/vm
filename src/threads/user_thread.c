@@ -45,7 +45,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
 
         if (isRescue(currentPTE)) {
 
-            if (rescue_page(arbitrary_va, currentPTE) == REDO_FAULT) {
+            if (rescue_page(arbitrary_va, currentPTE, (PTHREAD_INFO) lpParam) == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
             } else {
@@ -75,7 +75,7 @@ BOOL isRescue(pte* currentPTE) {
 // this function deals with the case where a pages content is still on a physical page as opposed to a completely new
 //page or a disk read
 // this function determines where the page is and rescues it after it has been trimmed, written, or in between
-BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
+BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo) {
     pfn* page;
     ULONG64 frameNumber;
     ULONG64 pageStart;
@@ -86,13 +86,19 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     frameNumber = currentPTE->transitionFormat.frameNumber;
     page = getPFNfromFrameNumber(frameNumber);
 
+    EnterCriticalSection(&page->lock);
+
+    if ((currentPTE->transitionFormat.contentsLocation != MODIFIED_LIST)  &&
+        (currentPTE->transitionFormat.contentsLocation != STAND_BY_LIST )) {
+        return REDO_FAULT;
+    }
     //if there is a write in progress
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
     }
     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
-        removeFromMiddleOfList(&headStandByList, page);
+        removeFromMiddleOfList(&headStandByList, page, threadInfo);
 
         set_disk_space_free(page->diskIndex);
 
@@ -100,11 +106,11 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
 
         // EnterCriticalSection(lockModifiedList);
 
-        removeFromMiddleOfList(&headModifiedList,page);
+        removeFromMiddleOfList(&headModifiedList,page, threadInfo);
 
         //  LeaveCriticalSection(lockModifiedList);
     }
-
+    LeaveCriticalSection(&page->lock);
 
     if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
         DebugBreak();
@@ -120,7 +126,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE) {
     // AcquireSRWLockExclusive(&headActiveList.sharedLock);
     // InsertTailList(&headActiveList, &page->entry);
     // ReleaseSRWLockExclusive(&headActiveList.sharedLock);
-    addPageToTail(&headActiveList, page);
+    EnterCriticalSection(&page->lock);
+    addPageToTail(&headActiveList, page, threadInfo);
+    LeaveCriticalSection(&page->lock);
 
     return !REDO_FAULT;
 
@@ -139,24 +147,11 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     ULONG64 pageStart;
 
     threadInfo = (PTHREAD_INFO)threadContext;
-    pageStart = arbitrary_va & ~(PAGE_SIZE - 1);
 
-    // if it is not empty need locks around these type of checks otherwise blow up
-    AcquireSRWLockExclusive(&headFreeList.sharedLock);
-    if (headFreeList.length != 0) {
-        mapPageFromFreeList(arbitrary_va, threadInfo, &frameNumber);
-    } else {
-        ReleaseSRWLockExclusive(&headFreeList.sharedLock);
 
-        // standby is not empty
 
-        AcquireSRWLockExclusive(&headStandByList.sharedLock);
-        if (headStandByList.length != 0) {
-            if (mapPageFromStandByList(arbitrary_va, currentPageTableLock, (PTHREAD_INFO) threadContext, &frameNumber) == REDO_FAULT) {
-                return REDO_FAULT;
-            }
-        } else {
-
+    if ( mapPageFromFreeList(arbitrary_va, threadInfo, &frameNumber) == REDO_FAULT) {
+        if (mapPageFromStandByList(arbitrary_va, currentPageTableLock, (PTHREAD_INFO) threadContext, &frameNumber) == REDO_FAULT) {
 
             LeaveCriticalSection(currentPageTableLock);
             // sharedLock cant be released till here because the event could be reset
@@ -165,15 +160,18 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
             SetEvent(trimmingStartEvent);
 
 
-           ReleaseSRWLockExclusive(&headStandByList.sharedLock);
+
 
             WaitForSingleObject(writingEndEvent, INFINITE);
 
             EnterCriticalSection(currentPageTableLock);
 
+
+
             return REDO_FAULT;
         }
     }
+
     if (((double) (headStandByList.length + headFreeList.length) / ((double) NUMBER_OF_PHYSICAL_PAGES )) < .5) {
         SetEvent(trimmingStartEvent);
     }
@@ -193,7 +191,9 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     // AcquireSRWLockExclusive(&headActiveList.sharedLock);
     // InsertTailList( &headActiveList, &page->entry);
     // ReleaseSRWLockExclusive(&headActiveList.sharedLock);
-    addPageToTail(&headActiveList, page);
+    EnterCriticalSection(&page->lock);
+    addPageToTail(&headActiveList, page, threadInfo);
+    LeaveCriticalSection(&page->lock);
 
     return !REDO_FAULT;
 }
@@ -204,12 +204,15 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 
 
 
-
     currentPTE = va_to_pte(arbitrary_va);
 
-    page = container_of(RemoveHeadList(&headFreeList),pfn,entry);
 
-    ReleaseSRWLockExclusive(&headFreeList.sharedLock);
+    page = RemoveFromHeadofPageList(&headFreeList, threadInfo);
+    LeaveCriticalSection(&page->lock);
+
+    if (page == LIST_IS_EMPTY) {
+        return REDO_FAULT;
+    }
 
 
     *frameNumber = getFrameNumber(page);
@@ -227,6 +230,7 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
         return FALSE;
     }
+    return !REDO_FAULT;
     //   ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));
 }
 BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
@@ -244,11 +248,12 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
 
 
 
-    page = getVictimFromStandByList(currentPageTableLock);
+    page = getVictimFromStandByList(currentPageTableLock, threadInfo);
 
     if (page == NULL) {
         return REDO_FAULT;
     }
+
 
 
     if (entryContents.invalidFormat.diskIndex == EMPTY_PTE) {
@@ -260,29 +265,6 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
     }
 
 
-    // re-enter the faulting va's sharedLock and see if things changed and map the page accordingly
-    //I make a copy instead of holding 2 pte locks because there is a rare chance of the contents being changed
-    // and a redo fault occuring, while the bottleneck of holding two locks is large //nptodo check in xperf
-    EnterCriticalSection(currentPageTableLock);
-
-
-    if (currentPTE->entireFormat != entryContents.entireFormat) {
-        // if (isPageZeroed == FALSE) {
-        //     acquireLock(&lockToBeZeroedList);
-        //     InsertTailList(&headToBeZeroedList, &page->entry);
-        //     releaseLock(&lockToBeZeroedList);
-        //
-        //     if (headToBeZeroedList.length == BATCH_SIZE ) {
-        //         SetEvent(zeroingStartEvent);
-        //     }
-        //
-        // } else {
-            AcquireSRWLockExclusive(&headFreeList.sharedLock);
-            InsertTailList(&headFreeList, &page->entry);
-            ReleaseSRWLockExclusive(&headFreeList.sharedLock);
-        //}
-        return REDO_FAULT;
-    }
 
     *frameNumber = getFrameNumber(page);
 
@@ -305,42 +287,25 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
 }
 
 // gets a page off of standby and returns it
-pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock) {
+pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo) {
 
     pfn* page;
-    PCRITICAL_SECTION victimPageTableLock;
-    PTE_REGION* victimRegion;
-
-    page = container_of(headStandByList.entry.Flink, pfn, entry);
-
-    victimRegion = getPTERegion(page->pte);
 
 
-    victimPageTableLock = &victimRegion->lock;
+    page = RemoveFromHeadofPageList(&headStandByList, threadInfo);
 
-
-    //be a good samaritan and dont hold 2 pte locks at once, later check to see if the contents have changed
-    LeaveCriticalSection(currentPageTableLock);
-
-
-    // if you can get the standby sharedLock, you can safely hold both locks without deadlocking
-    //otherwise redo the fault
-    if (TryEnterCriticalSection(victimPageTableLock) == FALSE) {
-        ReleaseSRWLockExclusive(&headStandByList.sharedLock);
-        EnterCriticalSection(currentPageTableLock);
+    if (page == LIST_IS_EMPTY) {
         return NULL;
     }
-
-    //   removeFromMiddleOfList(&headStandByList, &page->entry);
-    page = container_of(RemoveHeadList(&headStandByList), pfn, entry);
 
 
 
     page->pte->transitionFormat.contentsLocation = DISK;
     page->pte->invalidFormat.diskIndex = page->diskIndex;
 
-    LeaveCriticalSection(victimPageTableLock);
-    ReleaseSRWLockExclusive(&headStandByList.sharedLock);
+    LeaveCriticalSection(&page->lock);
+
+
 
     return page;
 }
