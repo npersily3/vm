@@ -101,7 +101,7 @@ DWORD page_trimmer(LPVOID threadContext) {
 
 pfn* getActivePage(PTHREAD_INFO threadContext) {
 
-    PLIST_ENTRY trimmedEntry;
+
     pfn* page;
 
     page = RemoveFromHeadofPageList(&headActiveList, threadContext);

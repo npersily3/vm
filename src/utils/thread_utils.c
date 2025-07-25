@@ -49,3 +49,15 @@ VOID release_srw_exclusive(sharedLock* lock) {
     lock->threadId = 0;
 #endif
 }
+
+VOID acquire_srw_shared(sharedLock* lock) {
+    AcquireSRWLockShared(&lock->sharedLock);
+#if DBG
+    // Note: Multiple threads can hold shared locks, so we can't set threadId
+    // You might want to use a different debug mechanism for shared locks
+#endif
+}
+
+VOID release_srw_shared(sharedLock* lock) {
+    ReleaseSRWLockShared(&lock->sharedLock);
+}
