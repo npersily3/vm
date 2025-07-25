@@ -204,7 +204,7 @@ set_disk_space_free(ULONG64 diskIndex) {
 
 
 
-    ASSERT(FALSE)
+    //dASSERT(FALSE)
     while (true) {
         diskHasChanged = InterlockedCompareExchange64((PLONG64) diskMetaDateAddress,
             (LONG64) newDiskSlotContents,

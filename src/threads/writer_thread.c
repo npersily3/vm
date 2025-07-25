@@ -146,7 +146,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
         page = RemoveFromHeadofPageList(&headModifiedList, threadContext);
 
 
-        if (page == NULL) {
+        if (page == LIST_IS_EMPTY) {
             if (i == 0) {
                 doubleBreak = TRUE;
             }

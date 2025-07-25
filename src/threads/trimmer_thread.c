@@ -105,12 +105,12 @@ pfn* getActivePage(PTHREAD_INFO threadContext) {
     pfn* page;
 
     page = RemoveFromHeadofPageList(&headActiveList, threadContext);
-    LeaveCriticalSection(&page->lock);
 
 
     if (page == LIST_IS_EMPTY) {
         return NULL;
     }
+    LeaveCriticalSection(&page->lock);
     return page;
 }
 

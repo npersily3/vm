@@ -43,11 +43,13 @@ VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
 #endif
 }
 VOID release_srw_exclusive(sharedLock* lock) {
-    ReleaseSRWLockExclusive(&lock->sharedLock);
 
 #if DBG
     lock->threadId = 0;
 #endif
+
+    ReleaseSRWLockExclusive(&lock->sharedLock);
+
 }
 
 VOID acquire_srw_shared(sharedLock* lock) {

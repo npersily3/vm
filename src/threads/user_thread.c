@@ -208,11 +208,13 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 
 
     page = RemoveFromHeadofPageList(&headFreeList, threadInfo);
-    LeaveCriticalSection(&page->lock);
-
     if (page == LIST_IS_EMPTY) {
+
         return REDO_FAULT;
     }
+
+
+    LeaveCriticalSection(&page->lock);
 
 
     *frameNumber = getFrameNumber(page);
