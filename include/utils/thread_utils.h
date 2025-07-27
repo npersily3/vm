@@ -18,4 +18,8 @@ VOID acquire_srw_shared(sharedLock* lock);
 VOID release_srw_shared(sharedLock* lock);
 
 
+
+VOID enterPageLock(pfn* page, PTHREAD_INFO info);
+VOID leavePageLock(pfn* page, PTHREAD_INFO info);
+
 #endif //THREAD_UTILS_H

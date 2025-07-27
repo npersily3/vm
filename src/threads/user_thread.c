@@ -110,7 +110,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
 
         //  LeaveCriticalSection(lockModifiedList);
     }
-    LeaveCriticalSection(&page->lock);
+    leavePageLock(page, threadInfo);
 
     if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
         DebugBreak();
@@ -126,9 +126,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     // AcquireSRWLockExclusive(&headActiveList.sharedLock);
     // InsertTailList(&headActiveList, &page->entry);
     // ReleaseSRWLockExclusive(&headActiveList.sharedLock);
-    EnterCriticalSection(&page->lock);
+    enterPageLock(page, threadInfo);
     addPageToTail(&headActiveList, page, threadInfo);
-    LeaveCriticalSection(&page->lock);
+    leavePageLock(page, threadInfo);
 
     return !REDO_FAULT;
 
@@ -191,9 +191,9 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     // AcquireSRWLockExclusive(&headActiveList.sharedLock);
     // InsertTailList( &headActiveList, &page->entry);
     // ReleaseSRWLockExclusive(&headActiveList.sharedLock);
-    EnterCriticalSection(&page->lock);
+    enterPageLock(page, threadInfo);
     addPageToTail(&headActiveList, page, threadInfo);
-    LeaveCriticalSection(&page->lock);
+    leavePageLock(page, threadContext);
 
     return !REDO_FAULT;
 }
@@ -214,7 +214,7 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
     }
 
 
-    LeaveCriticalSection(&page->lock);
+    leavePageLock(page, threadInfo);
 
 
     *frameNumber = getFrameNumber(page);
@@ -305,7 +305,7 @@ pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock, PTHREAD_I
     page->pte->transitionFormat.contentsLocation = DISK;
     page->pte->invalidFormat.diskIndex = page->diskIndex;
 
-    LeaveCriticalSection(&page->lock);
+    leavePageLock(page, threadInfo);
 
 
 

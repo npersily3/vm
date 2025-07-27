@@ -110,7 +110,7 @@ pfn* getActivePage(PTHREAD_INFO threadContext) {
     if (page == LIST_IS_EMPTY) {
         return NULL;
     }
-    LeaveCriticalSection(&page->lock);
+    leavePageLock(page, threadContext);
     return page;
 }
 
@@ -147,9 +147,9 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
 
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
-        EnterCriticalSection(&page->lock);
+        enterPageLock(page, threadContext);
         addPageToTail(&headModifiedList, page, threadContext);
-        LeaveCriticalSection(&page->lock);
+        leavePageLock(page, threadContext);
     //    InsertTailList(&headModifiedList, &page->entry);
 
     }

@@ -22,6 +22,8 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
 
 VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
+
+
     acquire_srw_shared(&head->sharedLock);
 
     pfn* Flink;
@@ -34,8 +36,8 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
     for (int i = 0; i < 5; ++i) {
 
-        Flink = container_of(page->entry.Flink, pfn, entry.Flink);
-        Blink = container_of(page->entry.Blink, pfn, entry.Blink);
+        Flink = container_of(page->entry.Flink, pfn, entry);
+        Blink = container_of(page->entry.Blink, pfn, entry);
 
         if (TryEnterCriticalSection(&Flink->lock) == TRUE) {
             if (Flink == Blink) {
@@ -47,7 +49,7 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
                 obtainedLocks = TRUE;
                 break;
             }
-            LeaveCriticalSection(&Flink->lock);
+            leavePageLock(Flink, threadInfo);
         }
 
     }
@@ -72,9 +74,9 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
     if (obtainedLocks == TRUE) {
 
-        LeaveCriticalSection(&Flink->lock);
+        leavePageLock(Flink, threadInfo);
         if (Blink != NULL) {
-            LeaveCriticalSection(&Blink->lock);
+            leavePageLock(Blink, threadInfo);
         }
 
         release_srw_shared(&head->sharedLock);
@@ -99,7 +101,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
 
     for (int i = 0; i < 5; ++i) {
-        EnterCriticalSection(&head->pageLock);
+        enterPageLock(&head->page, threadInfo);
         currentHeadPage = container_of(head->entry.Flink, pfn, entry);
          nextHeadPage = container_of(currentHeadPage->entry.Flink, pfn, entry);
 
@@ -125,28 +127,52 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
                 break;
             }
 
-            LeaveCriticalSection(&currentHeadPage->lock);
+            leavePageLock(currentHeadPage, threadInfo);
         }
-        LeaveCriticalSection(&head->pageLock);
+        leavePageLock(&head->page, threadInfo);
     }
 
 
     if (obtainedLocks == FALSE) {
+
+        currentHeadPage = container_of(head->entry.Flink, pfn, entry);
+
         release_srw_shared(&head->sharedLock);
 
-        acquire_srw_exclusive(&head->sharedLock, threadInfo);
+        while (TRUE) {
+
+            if (&currentHeadPage->entry == &head->entry) {
+                return LIST_IS_EMPTY;
+            }
+
+            enterPageLock(currentHeadPage, threadInfo);
+
+            acquire_srw_exclusive(&head->sharedLock, threadInfo);
+
+
+            if (&currentHeadPage->entry == head->entry.Flink) {
+                break;
+            }
+
+            currentHeadPage = container_of(head->entry.Flink, pfn, entry);
+
+
+
+            release_srw_exclusive(&head->sharedLock);
+            leavePageLock(currentHeadPage, threadInfo);
+        }
 
         if (ReadULong64NoFence(&head->length) == 0) {
             release_srw_exclusive(&head->sharedLock);
 
-            ASSERT((ULONG64)head->pageLock.OwningThread != threadInfo->ThreadId);
+            ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
 
             return LIST_IS_EMPTY;
         }
 
     }
     if (&currentHeadPage == NULL) {
-        LeaveCriticalSection(&head->pageLock);
+        leavePageLock(&head->page, threadInfo);
         release_srw_shared(&head->sharedLock);
 
         return LIST_IS_EMPTY;
@@ -169,15 +195,15 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
     if (obtainedLocks == TRUE) {
 
         if (Entry == ListHead) {
-            LeaveCriticalSection(&head->pageLock);
+            leavePageLock(&head->page, threadInfo);
             release_srw_shared(&head->sharedLock);
 
-            ASSERT((ULONG64)head->pageLock.OwningThread != threadInfo->ThreadId);
+            ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
 
             return LIST_IS_EMPTY;
         }
 
-        LeaveCriticalSection(&head->pageLock);
+       leavePageLock(&head->page, threadInfo);
 
         if (nextHeadPage != NULL) {
             LeaveCriticalSection(&nextHeadPage->lock);
@@ -189,7 +215,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
     }
 
 
-    ASSERT((ULONG64)head->pageLock.OwningThread != threadInfo->ThreadId);
+    ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
 
     return container_of(Entry, pfn, entry);
 
@@ -205,7 +231,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
 
 
     for (int i = 0; i < 5; ++i) {
-        if (TryEnterCriticalSection(&head->pageLock) == TRUE) {
+        if (TryEnterCriticalSection(&head->page.lock) == TRUE) {
             nextPage = container_of(head->entry.Blink, pfn, entry);
 
             if ((PVOID)nextPage == (PVOID)head) {
@@ -220,7 +246,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
                 obtainedLocks = TRUE;
                 break;
             }
-            LeaveCriticalSection(&head->pageLock);
+            leavePageLock(&head->page, threadInfo);
         }
 
 
@@ -257,7 +283,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     if (obtainedLocks == TRUE) {
 
 
-        LeaveCriticalSection(&head->pageLock);
+        leavePageLock(&head->page, threadInfo);
 
         if (nextPage != NULL) {
             LeaveCriticalSection(&nextPage->lock);

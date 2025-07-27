@@ -324,7 +324,7 @@ VOID init_list_head(pListHead head) {
     head->entry.Blink = &head->entry;
     head->length = 0;
     InitializeSRWLock(&head->sharedLock.sharedLock);
-    InitializeCriticalSection(&head->pageLock);
+    InitializeCriticalSection(&head->page.lock);
 }
 BOOL getPhysicalPages (VOID) {
 

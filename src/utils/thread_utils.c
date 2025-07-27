@@ -63,3 +63,23 @@ VOID acquire_srw_shared(sharedLock* lock) {
 VOID release_srw_shared(sharedLock* lock) {
     ReleaseSRWLockShared(&lock->sharedLock);
 }
+VOID enterPageLock(pfn* page, PTHREAD_INFO info) {
+
+    ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
+
+    ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
+    EnterCriticalSection(&page->lock);
+    ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
+
+    ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+}
+VOID leavePageLock(pfn* page, PTHREAD_INFO info) {
+
+    ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+    ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
+
+    LeaveCriticalSection(&page->lock);
+
+
+
+}

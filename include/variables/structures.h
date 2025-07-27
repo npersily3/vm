@@ -18,9 +18,13 @@
 #define frame_number_size           40
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE        MB(2)//MB(16)
+#define VIRTUAL_ADDRESS_SIZE       128*PAGE_SIZE
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
-#define NUMBER_OF_PHYSICAL_PAGES MB(1)/PAGE_SIZE
+
+
+#define NUMBER_OF_PHYSICAL_PAGES 64
+
+
 #define NUMBER_OF_DISK_DIVISIONS   1
 #define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
 #define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
@@ -232,7 +236,8 @@ typedef struct {
     LIST_ENTRY entry;
     ULONG64 length;
     sharedLock sharedLock;
-    CRITICAL_SECTION pageLock;
+
+    pfn page;
 
 } listHead, *pListHead;
 

@@ -84,9 +84,9 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
             // AcquireSRWLockExclusive(&headStandByList.sharedLock);
             // InsertTailList(&headStandByList, &page->entry);
             // ReleaseSRWLockExclusive(&headStandByList.sharedLock);
-            EnterCriticalSection(&page->lock);
+            enterPageLock(page, info);
             addPageToTail(&headStandByList, page, info);
-            LeaveCriticalSection(&page->lock);
+            leavePageLock(page, info);
         }
         // need to hold pte sharedLock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
         //make sure pte then list sharedLock
@@ -154,9 +154,6 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             break;
         }
 
-        //nptodo, what happens here
-        EnterCriticalSection(&page->lock);
-
 
         region = getPTERegion(page->pte);
         writingPageTableLock = &region->lock;
@@ -167,7 +164,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             //ASSERT(counter < MB(1))
             i--;
             counter++;
-            LeaveCriticalSection(&page->lock);
+            leavePageLock(page, threadContext);
             continue;
         }
         counter = 0;
@@ -175,7 +172,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
         // now that you have access to both the pte and modified list sharedLock you can finally completely remove it from
         // the list and then release the modified list sharedLock
 
-       LeaveCriticalSection(&page->lock);
+        leavePageLock(page, threadContext);
 
         pfnArray[i] = page;
 
@@ -188,9 +185,9 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             // AcquireSRWLockExclusive(&headModifiedList.sharedLock);
             // InsertTailList(&headModifiedList, &page->entry);
             // ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
-            EnterCriticalSection(&page->lock);
+            enterPageLock(page, threadContext);
             addPageToTail(&headModifiedList, page, threadContext);
-            LeaveCriticalSection(&page->lock);
+            leavePageLock(page, threadContext);
             if (i == 0) {
                 doubleBreak = TRUE;
             }

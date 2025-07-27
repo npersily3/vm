@@ -26,6 +26,10 @@ full_virtual_memory_test(VOID) {
     ULONG64 start, end;
 
 
+    CRITICAL_SECTION cs;
+    InitializeCriticalSection(&cs);
+    EnterCriticalSection(&cs);
+  
 
     init_virtual_memory();
 
@@ -36,6 +40,8 @@ full_virtual_memory_test(VOID) {
 
     int i;
     i = 0;
+
+
 
      for (; i < NUMBER_OF_USER_THREADS; ++i) {
          WaitForSingleObject(userThreadHandles[i], INFINITE);
