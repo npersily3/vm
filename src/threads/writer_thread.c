@@ -179,6 +179,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
         frameNumber = getFrameNumber(page);
         frameNumberArray[i] = frameNumber;
 
+        //nptodo go pte lock free and use the pagelock
         if (getDiskSlotAndUpdatePage(page, diskAddressArray, i) == FALSE) {
             localBatchSize = i;
 

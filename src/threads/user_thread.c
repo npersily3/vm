@@ -86,10 +86,11 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     frameNumber = currentPTE->transitionFormat.frameNumber;
     page = getPFNfromFrameNumber(frameNumber);
 
-    EnterCriticalSection(&page->lock);
+    enterPageLock(page, threadInfo);
 
     if ((currentPTE->transitionFormat.contentsLocation != MODIFIED_LIST)  &&
         (currentPTE->transitionFormat.contentsLocation != STAND_BY_LIST )) {
+        leavePageLock(page, threadInfo);
         return REDO_FAULT;
     }
     //if there is a write in progress

@@ -53,15 +53,25 @@ VOID release_srw_exclusive(sharedLock* lock) {
 }
 
 VOID acquire_srw_shared(sharedLock* lock) {
+
+    #if useSharedLock
     AcquireSRWLockShared(&lock->sharedLock);
-#if DBG
+#else
+    AcquireSRWLockExclusive(&lock->sharedLock);
+#endif
+    #if DBG
     // Note: Multiple threads can hold shared locks, so we can't set threadId
     // You might want to use a different debug mechanism for shared locks
 #endif
 }
 
 VOID release_srw_shared(sharedLock* lock) {
+
+#if useSharedLock
     ReleaseSRWLockShared(&lock->sharedLock);
+#else
+    ReleaseSRWLockExclusive(&lock->sharedLock);
+#endif
 }
 VOID enterPageLock(pfn* page, PTHREAD_INFO info) {
 

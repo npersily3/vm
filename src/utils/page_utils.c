@@ -20,11 +20,13 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
     return pfnStart + frameNumber;
 }
 
+
+
+// Called with page's pageLock held
 VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
 
 
-    acquire_srw_shared(&head->sharedLock);
 
     pfn* Flink;
     pfn* Blink;
@@ -33,14 +35,17 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
     obtainedPageLocks = FALSE;
     boolean holdingSharedLock = TRUE;
 
-
+#if useSharedLock
+    acquire_srw_shared(&head->sharedLock);
 
     for (int i = 0; i < 5; ++i) {
 
+        // reaching into the neighbors is safe because we have the pagelock
         Flink = container_of(page->entry.Flink, pfn, entry);
         Blink = container_of(page->entry.Blink, pfn, entry);
 
         if (TryEnterCriticalSection(&Flink->lock) == TRUE) {
+            // set blink to null if there is only one page prevents double acquisitions
             if (Flink == Blink) {
                 Blink = NULL;
                 obtainedPageLocks = TRUE;
@@ -55,12 +60,18 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
     }
 
-
+#endif
     if (obtainedPageLocks == FALSE) {
+
+#if useSharedLock
         release_srw_shared(&head->sharedLock);
+#endif
         holdingSharedLock = FALSE;
 
+
         acquire_srw_exclusive(&head->sharedLock, threadInfo);
+        // we need to recalculate these because they could have changed inbetween the locks
+        // another thread that acquires exclusively could have changed our page
         Flink = container_of(page->entry.Flink, pfn, entry);
         Blink = container_of(page->entry.Blink, pfn, entry);
     }
@@ -88,14 +99,14 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
     } else {
         release_srw_exclusive(&head->sharedLock);
     }
-
+    // we must still hold the pagelock other wise a concurrent operation on the same page would corrupt data
 }
 
 
 pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
 
-    acquire_srw_shared(&head->sharedLock);
+
 
     pfn* pageToRemove;
     pfn* flinkOfPageToRemove;
@@ -106,49 +117,60 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
     obtainedPageLocks = FALSE;
 
 
+#if useSharedLock
+    acquire_srw_shared(&head->sharedLock);
+
 
     for (int i = 0; i < 5; ++i) {
+
         enterPageLock(&head->page, threadInfo);
         pageToRemove = container_of(head->entry.Flink, pfn, entry);
-         flinkOfPageToRemove = container_of(pageToRemove->entry.Flink, pfn, entry);
-
-        if (&flinkOfPageToRemove->entry == &head->entry) {
-            flinkOfPageToRemove = NULL;
-        }
 
         if (&pageToRemove->entry == &head->entry) {
-            pageToRemove = NULL;
+
+            leavePageLock(&head->page, threadInfo);
+            release_srw_shared(&head->sharedLock);
+            return LIST_IS_EMPTY;
+        }
+
+        if (TryEnterCriticalSection(&pageToRemove->lock) == FALSE) {
+            leavePageLock(&head->page, threadInfo);
+            continue;
+        }
+
+        // this is safe only because I hold the neighbors pagelock
+        flinkOfPageToRemove = container_of(pageToRemove->entry.Flink, pfn, entry);
+
+        // if the list has one entry do not double acquire the listhead pagelock
+        if (&flinkOfPageToRemove->entry == &head->entry) {
+            flinkOfPageToRemove = NULL;
             obtainedPageLocks = TRUE;
             break;
         }
 
 
-        if (TryEnterCriticalSection(&pageToRemove->lock) == TRUE) {
-            if (flinkOfPageToRemove != NULL) {
-                if (TryEnterCriticalSection(&flinkOfPageToRemove->lock) == TRUE) {
-                    obtainedPageLocks = TRUE;
-                    break;
-                }
-            } else {
-                obtainedPageLocks = TRUE;
-                break;
-            }
-
-            leavePageLock(pageToRemove, threadInfo);
+        if (TryEnterCriticalSection(&flinkOfPageToRemove->lock) == TRUE) {
+            obtainedPageLocks = TRUE;
+            break;
         }
+
+        leavePageLock(pageToRemove, threadInfo);
         leavePageLock(&head->page, threadInfo);
     }
-
+#endif
 
     if (obtainedPageLocks == FALSE) {
 
-        pageToRemove = container_of(head->entry.Flink, pfn, entry);
-
+#if usedSharedLock
         release_srw_shared(&head->sharedLock);
+#endif
+
         holdingSharedLock = FALSE;
 
         // keep trying to acquire the page lock then the list lock exclusive to maintain our order
         while (TRUE) {
+
+            pageToRemove = container_of(head->entry.Flink, pfn, entry);
 
             if (&pageToRemove->entry == &head->entry) {
                 return LIST_IS_EMPTY;
@@ -158,46 +180,22 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
             acquire_srw_exclusive(&head->sharedLock, threadInfo);
 
-
             if (&pageToRemove->entry == head->entry.Flink) {
                 break;
             }
-
-            pageToRemove = container_of(head->entry.Flink, pfn, entry);
-
-
-
+//fggf
             release_srw_exclusive(&head->sharedLock);
             leavePageLock(pageToRemove, threadInfo);
         }
 
-        if (ReadULong64NoFence(&head->length) == 0) {
-            release_srw_exclusive(&head->sharedLock);
-
-            ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
-
-            return LIST_IS_EMPTY;
-        }
         flinkOfPageToRemove = container_of(pageToRemove->entry.Flink, pfn, entry);
 
-        // nptodo do I need this check if i am now longer going to acquire the page lock
         if (&flinkOfPageToRemove->entry == &head->entry) {
            flinkOfPageToRemove = NULL;
         }
-
     }
-    if (pageToRemove == NULL) {
 
-
-        leavePageLock(&head->page, threadInfo);
-
-        if (holdingSharedLock == TRUE) {
-            release_srw_shared(&head->sharedLock);
-        }   else {
-            release_srw_exclusive(&head->sharedLock);
-        }
-        return LIST_IS_EMPTY;
-    }
+    ASSERT(pageToRemove != NULL);
 
 
 
@@ -215,22 +213,13 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
     }
 
 
-
-
     InterlockedDecrement64(&head->length);
 
 
 
     if (obtainedPageLocks == TRUE) {
 
-        if (Entry == ListHead) {
-            leavePageLock(&head->page, threadInfo);
-            release_srw_shared(&head->sharedLock);
-
-            ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
-
-            return LIST_IS_EMPTY;
-        }
+        ASSERT(Entry != ListHead)
 
        leavePageLock(&head->page, threadInfo);
 
@@ -246,51 +235,60 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
     ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
 
-    return container_of(Entry, pfn, entry);
+    // leave with page lock held
+#if DBG
+    pageToRemove->entry.Blink = 0;
+    pageToRemove->entry.Flink = 0;
+#endif
+    return pageToRemove;
 
 }
 
+// page lock is held
 VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     boolean obtainedPageLocks = FALSE;
     boolean holdingSharedLock = TRUE;
 
     pfn* nextPage;
+#if useSharedLock
+
     acquire_srw_shared(&head->sharedLock);
 
 
-
-
     for (int i = 0; i < 5; ++i) {
-        if (TryEnterCriticalSection(&head->page.lock) == TRUE) {
-            nextPage = container_of(head->entry.Blink, pfn, entry);
+        enterPageLock(&head->page, threadInfo);
 
-            if ((PVOID)nextPage == (PVOID)head) {
-                nextPage = NULL;
+        // this page is fine because we hold the heads pseudo page lock and the srw lock shared
+        nextPage = container_of(head->entry.Blink, pfn, entry);
 
-                obtainedPageLocks = TRUE;
-                break;
-            }
-
-
-            if (TryEnterCriticalSection(&nextPage->lock) == TRUE) {
-                obtainedPageLocks = TRUE;
-                break;
-            }
-            leavePageLock(&head->page, threadInfo);
+        if (&nextPage->entry == &head->entry) {
+            nextPage = NULL;
+            obtainedPageLocks = TRUE;
+            break;
         }
 
 
+        if (TryEnterCriticalSection(&nextPage->lock) == TRUE) {
+            obtainedPageLocks = TRUE;
+            break;
+        }
+        leavePageLock(&head->page, threadInfo);
+
     }
+#endif
 
     if (obtainedPageLocks == FALSE) {
+
+#if useSharedLock
         release_srw_shared(&head->sharedLock);
+#endif
         holdingSharedLock = FALSE;
 
         acquire_srw_exclusive(&head->sharedLock, threadInfo);
         //check if zero again
         nextPage = container_of(head->entry.Blink, pfn, entry);
 
-        if ((PVOID) nextPage == (PVOID) head) {
+        if (&nextPage->entry == &head->entry) {
             nextPage = NULL;
         }
     }
@@ -318,7 +316,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
         leavePageLock(&head->page, threadInfo);
 
         if (nextPage != NULL) {
-            LeaveCriticalSection(&nextPage->lock);
+           leavePageLock(nextPage, threadInfo);
         }
 
         release_srw_shared(&head->sharedLock);
