@@ -87,8 +87,14 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
       // Now perform random accesses
-    //while (true) {
-       for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+
+#if DBG
+    while (TRUE) {
+#else
+    for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+#endif
+
+
         // Randomly access different portions of the virtual address
         // space we obtained above.
         //
