@@ -19,13 +19,7 @@ pte_to_va(pte* pte) {
     return (PVOID)((index * PAGE_SIZE) + (ULONG_PTR) vaStart);
 }
 
-PCRITICAL_SECTION getPageTableLock(pte* pte) {
 
-    ULONG64 pageTableIndex = (pte - pageTable);
-    ULONG64 index = pageTableIndex / SIZE_OF_PAGE_TABLE_DIVISION;
-
-    return pageTableLocks + index;
-}
 BOOL isVaValid(ULONG64 va) {
 
     return (va >= (ULONG64) vaStart) && (va <= (ULONG64) vaEnd);

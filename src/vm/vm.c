@@ -61,6 +61,11 @@ full_virtual_memory_test(VOID) {
 
     printf("Elapsed time: %llu ms\n", end - start);
 
+    printf("StandBy length %I64x \n", headStandByList.length);
+    printf("Modified length %I64x \n", headModifiedList.length);
+    printf("Free length %I64x \n", headFreeList.length);
+    printf("Active length %I64x \n", headActiveList.length);
+
     return;
 }
 
@@ -92,9 +97,9 @@ DWORD testVM(LPVOID lpParam) {
     while (TRUE) {
 #else
 
-
-    //for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
-while (TRUE) {
+//MB(1)/NUMBER_OF_USER_THREADS
+  for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+//while (TRUE) {
         #endif
 
 
@@ -116,6 +121,14 @@ while (TRUE) {
 
             if (redo_try_same_address == FALSE) {
                 random_number = (unsigned) (GetTimeStampCounter() >> 4);
+#if 1
+                random_number += KB(256)*(thread_info->ThreadNumber + 2);
+                random_number <<= 18;
+                random_number |= (rand() & (KB(256) -1));
+#else
+            //    random_number += KB(256)*(thread_info->ThreadNumber + 2);
+#endif
+
                 random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
 
                 // Write the virtual address into each page. If we need to
@@ -126,6 +139,8 @@ while (TRUE) {
                 // straddle a PAGE_SIZE boundary just to keep things simple for now.
                 random_number &= ~0x7;
                 arbitrary_va = vaStart + random_number;
+               // printf("arbitrary_va %p\n", arbitrary_va);
+
             }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;

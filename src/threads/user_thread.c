@@ -78,21 +78,40 @@ BOOL isRescue(pte* currentPTE) {
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo) {
     pfn* page;
     ULONG64 frameNumber;
-    ULONG64 pageStart;
-    pte entryContents = *currentPTE;
 
-    pageStart = arbitrary_va & ~(PAGE_SIZE - 1);
+    pte entryContents;
+    entryContents.entireFormat = ReadULong64NoFence(currentPTE);
 
-    frameNumber = currentPTE->transitionFormat.frameNumber;
+
+
+    if ((entryContents.transitionFormat.contentsLocation != MODIFIED_LIST)  &&
+        (entryContents.transitionFormat.contentsLocation != STAND_BY_LIST )) {
+
+        return REDO_FAULT;
+    }
+
+    frameNumber = entryContents.transitionFormat.frameNumber;
     page = getPFNfromFrameNumber(frameNumber);
+
+    if (page->pte->entireFormat != entryContents.entireFormat) {
+        return REDO_FAULT;
+    }
+
 
     enterPageLock(page, threadInfo);
 
-    if ((currentPTE->transitionFormat.contentsLocation != MODIFIED_LIST)  &&
-        (currentPTE->transitionFormat.contentsLocation != STAND_BY_LIST )) {
+    if (page->pte != currentPTE) {
         leavePageLock(page, threadInfo);
         return REDO_FAULT;
     }
+
+    if ((currentPTE->transitionFormat.contentsLocation != MODIFIED_LIST)  &&
+        (currentPTE->transitionFormat.contentsLocation != STAND_BY_LIST )) {
+
+        leavePageLock(page, threadInfo);
+        return REDO_FAULT;
+    }
+    ASSERT(currentPTE->transitionFormat.frameNumber == frameNumber);
     //if there is a write in progress
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;

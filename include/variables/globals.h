@@ -79,7 +79,7 @@ extern PCRITICAL_SECTION lockDiskActive;
 extern PCRITICAL_SECTION lockNumberOfSlots;
 extern PCRITICAL_SECTION lockWritingTransferVa;
 extern CRITICAL_SECTION lockTransferReadingVa[NUMBER_OF_USER_THREADS];
-extern CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
+
 
 //
 // Interlocked locks

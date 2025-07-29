@@ -18,11 +18,12 @@
 #define frame_number_size           40
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE       MB(16)
+#define GB(x)                       ((x) * 1024 * 1024 * 1024)
+#define VIRTUAL_ADDRESS_SIZE       GB(1)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
 
-#define NUMBER_OF_PHYSICAL_PAGES MB(8)/PAGE_SIZE
+#define NUMBER_OF_PHYSICAL_PAGES MB(512)/PAGE_SIZE
 
 
 #define NUMBER_OF_DISK_DIVISIONS   1

@@ -64,7 +64,7 @@ PCRITICAL_SECTION lockWritingTransferVa;
 
 ULONG64 lockModList;
 ULONG64 lockToBeZeroedList;
-CRITICAL_SECTION pageTableLocks[NUMBER_OF_PAGE_TABLE_LOCKS];
+
 
 
 HANDLE GlobalStartEvent;
@@ -402,8 +402,9 @@ BOOL initVA () {
                                         &parameter,
                                         1);
     if (vaStart == NULL) {
-        printf("Failed to allocate virtual address space\n");
-        return FALSE;
+        printf("Failed to allocate virtual address space: size %I64x \n ", VIRTUAL_ADDRESS_SIZE);
+        DebugBreak();
+        exit(1);
     }
 
     vaEnd = (PULONG64) ((ULONG64) vaStart + VIRTUAL_ADDRESS_SIZE);
