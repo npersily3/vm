@@ -120,6 +120,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     }
 
     currentPTE->validFormat.valid = 1;
+    currentPTE->validFormat.transition = UNASSIGNED;
 
 
     //    ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));

@@ -58,6 +58,8 @@ DWORD page_trimmer(LPVOID threadContext) {
                 region = getPTERegion(page->pte);
                 trimmedPageTableLock = &region->lock;
                 EnterCriticalSection(trimmedPageTableLock);
+            } else {
+                ASSERT(region == getPTERegion(page->pte))
             }
 
 
@@ -122,10 +124,14 @@ BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
     lock = &headActiveList.sharedLock;
 
     acquire_srw_exclusive(lock, info);
+    if (headActiveList.length == 0) {
+        release_srw_exclusive(lock);
+        return FALSE;
+    }
     nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
     release_srw_exclusive(lock);
 
-     nextRegion = getPTERegion(nextPage->pte);
+    nextRegion = getPTERegion(nextPage->pte);
 
     return nextRegion == region;
 }

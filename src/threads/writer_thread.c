@@ -63,6 +63,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
     PCRITICAL_SECTION writingPageTableLock;
     PTE_REGION* region;
 
+    //nptodo make it so the page lock protects this
     for (int i = 0; i < localBatchSize; ++i) {
 
         page = pfnArray[i];
@@ -143,6 +144,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
     for (; i < localBatchSize; i++) {
 
 
+        // exit with pagelock
         page = RemoveFromHeadofPageList(&headModifiedList, threadContext);
 
 
@@ -163,6 +165,7 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
 
             //ASSERT(counter < MB(1))
             i--;
+            addPageToTail(&headModifiedList, page, threadContext);
             counter++;
             leavePageLock(page, threadContext);
             continue;

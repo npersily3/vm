@@ -18,7 +18,7 @@
 #define frame_number_size           40
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE       128*PAGE_SIZE
+#define VIRTUAL_ADDRESS_SIZE       MB(16)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
 
@@ -240,5 +240,7 @@ typedef struct {
     pfn page;
 
 } listHead, *pListHead;
+
+#define useSharedLock 1
 
 #endif //STRUCTURES_H
