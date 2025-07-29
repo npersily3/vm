@@ -120,7 +120,7 @@ VOID release_srw_exclusive(sharedLock* lock) {
 #if DBG
 
     validateList(container_of(lock, listHead, sharedLock));
-    lock->threadId = 0;
+    lock->threadId = -1;
 #endif
 
     ReleaseSRWLockExclusive(&lock->sharedLock);
@@ -129,8 +129,15 @@ VOID release_srw_exclusive(sharedLock* lock) {
 
 VOID acquire_srw_shared(sharedLock* lock) {
 
-    #if useSharedLock
+#if useSharedLock
+
     AcquireSRWLockShared(&lock->sharedLock);
+
+    #if DBG
+        InterlockedIncrement(&lock->numHeldShared);
+    #endif
+
+
 #else
     AcquireSRWLockExclusive(&lock->sharedLock);
 
@@ -142,6 +149,7 @@ VOID release_srw_shared(sharedLock* lock) {
 
 #if useSharedLock
     ReleaseSRWLockShared(&lock->sharedLock);
+    InterlockedDecrement(&lock->numHeldShared);
 #else
     ReleaseSRWLockExclusive(&lock->sharedLock);
 #endif

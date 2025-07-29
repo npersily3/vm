@@ -228,7 +228,8 @@ typedef struct {
 typedef  struct {
     SRWLOCK sharedLock;
 #if DBG
-    ULONG64 threadId;
+    LONG64 threadId;
+    LONG64 numHeldShared;
 #endif
 } sharedLock;
 
