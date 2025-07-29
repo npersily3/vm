@@ -24,4 +24,14 @@ VOID release_srw_shared(sharedLock* lock);
 VOID enterPageLock(pfn* page, PTHREAD_INFO info);
 VOID leavePageLock(pfn* page, PTHREAD_INFO info);
 
+#if DBG
+
+VOID debug_acquire_srw_shared(sharedLock* lock, const char* fileName, int lineNumber);
+VOID debug_release_srw_shared(sharedLock* lock, const char* fileName, int lineNumber);
+VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info);
+VOID debug_release_srw_exclusive(sharedLock* lock);
+
+#endif
+
+
 #endif //THREAD_UTILS_H

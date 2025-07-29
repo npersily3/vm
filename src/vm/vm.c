@@ -91,8 +91,11 @@ DWORD testVM(LPVOID lpParam) {
 #if DBG
     while (TRUE) {
 #else
-    for (; i < MB(1)/NUMBER_OF_USER_THREADS;) {
-#endif
+
+
+    //for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+while (TRUE) {
+        #endif
 
 
         // Randomly access different portions of the virtual address
@@ -151,7 +154,7 @@ DWORD testVM(LPVOID lpParam) {
            //recordAccess(arbitrary_va);
             redo_try_same_address = FALSE;
         }
-        i++;
+
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);

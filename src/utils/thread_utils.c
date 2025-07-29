@@ -4,8 +4,44 @@
 
 #include "../../include/utils/thread_utils.h"
 
+#include <stdio.h>
+
 #include "../../include/variables/structures.h"
 #include "variables/globals.h"
+
+#if DBG
+        BOOLEAN
+RemoveEntryList(
+        __in PLIST_ENTRY Entry
+)
+{
+    PLIST_ENTRY Blink;
+    PLIST_ENTRY Flink;
+
+    Flink = Entry->Flink;
+    Blink = Entry->Blink;
+    Blink->Flink = Flink;
+    Flink->Blink = Blink;
+    return (BOOLEAN)(Flink == Blink);
+}
+
+
+
+        VOID
+InsertTailListDebug(
+        __inout PLIST_ENTRY ListHead,
+        __inout __drv_aliasesMem PLIST_ENTRY Entry
+)
+{
+    PLIST_ENTRY Blink;
+
+    Blink = ListHead->Blink;
+    Entry->Flink = ListHead;
+    Entry->Blink = Blink;
+    Blink->Flink = Entry;
+    ListHead->Blink = Entry;
+}
+#endif
 
 VOID validateList(pListHead head) {
     LIST_ENTRY* currentEntry;
@@ -106,54 +142,106 @@ BOOL tryAcquireLock(PULONG64 lock) {
     return TRUE;
 }
 
-VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
-    AcquireSRWLockExclusive(&lock->sharedLock);
-
-#if DBG
-
-    validateList(container_of(lock, listHead, sharedLock));
-    lock->threadId = info->ThreadId;
-#endif
-}
-VOID release_srw_exclusive(sharedLock* lock) {
-
-#if DBG
-
-    validateList(container_of(lock, listHead, sharedLock));
-    lock->threadId = -1;
-#endif
-
-    ReleaseSRWLockExclusive(&lock->sharedLock);
-
-}
-
 VOID acquire_srw_shared(sharedLock* lock) {
-
-#if useSharedLock
-
-    AcquireSRWLockShared(&lock->sharedLock);
-
-    #if DBG
-        InterlockedIncrement(&lock->numHeldShared);
-    #endif
-
-
+#if DBG
+    debug_acquire_srw_shared(lock, "unknown", 0);
 #else
-    AcquireSRWLockExclusive(&lock->sharedLock);
-
+    AcquireSRWLockShared(&lock->sharedLock);
 #endif
-
 }
 
 VOID release_srw_shared(sharedLock* lock) {
-
-#if useSharedLock
+#if DBG
+    debug_release_srw_shared(lock, "unknown", 0);
+#else
     ReleaseSRWLockShared(&lock->sharedLock);
-    InterlockedDecrement(&lock->numHeldShared);
+#endif
+}
+
+VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
+#if DBG
+    debug_acquire_srw_exclusive(lock, info);
+#else
+    AcquireSRWLockExclusive(&lock->sharedLock);
+#endif
+}
+
+VOID release_srw_exclusive(sharedLock* lock) {
+#if DBG
+    debug_release_srw_exclusive(lock);
 #else
     ReleaseSRWLockExclusive(&lock->sharedLock);
 #endif
 }
+
+// Debug-only implementation functions
+#if DBG
+
+VOID debug_acquire_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
+    SHARED_HOLDER_DEBUG* holder = malloc(sizeof(SHARED_HOLDER_DEBUG));
+
+    if (holder) {
+        holder->threadId = GetCurrentThreadId();
+        holder->acquireTime = GetTickCount64();
+        holder->fileName = fileName;
+        holder->lineNumber = lineNumber;
+    }
+
+    AcquireSRWLockShared(&lock->sharedLock);
+
+    if (holder) {
+        EnterCriticalSection(&lock->debugLock);
+        InsertTailListDebug(&lock->sharedHolders, &holder->entry);
+        LeaveCriticalSection(&lock->debugLock);
+    }
+
+    InterlockedIncrement(&lock->numHeldShared);
+}
+
+VOID debug_release_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
+    ULONG64 currentThreadId = GetCurrentThreadId();
+    SHARED_HOLDER_DEBUG* holder = NULL;
+    PLIST_ENTRY entry;
+
+    EnterCriticalSection(&lock->debugLock);
+
+    // Find this thread's entry
+    for (entry = lock->sharedHolders.Flink;
+         entry != &lock->sharedHolders;
+         entry = entry->Flink) {
+
+        holder = CONTAINING_RECORD(entry, SHARED_HOLDER_DEBUG, entry);
+        if (holder->threadId == currentThreadId) {
+            RemoveEntryList(&holder->entry);
+            break;
+        }
+        holder = NULL;
+    }
+
+    LeaveCriticalSection(&lock->debugLock);
+
+    if (!holder) {
+        printf("ERROR: Thread %llu releasing shared lock it doesn't hold! %s:%d\n",
+               currentThreadId, fileName, lineNumber);
+        DebugBreak();
+    } else {
+        free(holder);
+    }
+
+    ReleaseSRWLockShared(&lock->sharedLock);
+    InterlockedDecrement(&lock->numHeldShared);
+}
+
+VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
+    AcquireSRWLockExclusive(&lock->sharedLock);
+    lock->threadId = info->ThreadId;
+}
+
+VOID debug_release_srw_exclusive(sharedLock* lock) {
+    lock->threadId = -1;
+    ReleaseSRWLockExclusive(&lock->sharedLock);
+}
+#endif
 
 
 VOID enterPageLock(pfn* page, PTHREAD_INFO info) {

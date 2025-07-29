@@ -324,8 +324,15 @@ VOID init_list_head(pListHead head) {
     head->entry.Blink = &head->entry;
     head->length = 0;
     InitializeSRWLock(&head->sharedLock.sharedLock);
-    head->sharedLock.numHeldShared = 0;
+
     InitializeCriticalSection(&head->page.lock);
+
+#if DBG
+    head->sharedLock.numHeldShared = 0;
+    head->sharedLock.threadId = -1;
+    InitializeListHead(&head->sharedLock.sharedHolders);
+    InitializeCriticalSection(&head->sharedLock.debugLock);
+#endif
 }
 BOOL getPhysicalPages (VOID) {
 

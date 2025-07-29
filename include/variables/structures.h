@@ -22,7 +22,7 @@
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
 
-#define NUMBER_OF_PHYSICAL_PAGES 64
+#define NUMBER_OF_PHYSICAL_PAGES MB(8)/PAGE_SIZE
 
 
 #define NUMBER_OF_DISK_DIVISIONS   1
@@ -56,7 +56,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -66,7 +66,7 @@
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
 
-#define NUMBER_OF_USER_THREADS 2
+#define NUMBER_OF_USER_THREADS 8
 #define NUMBER_OF_ZEROING_THREADS 1
 #define NUMBER_OF_TRIMMING_THREADS 1
 #define NUMBER_OF_WRITING_THREADS 1
@@ -224,14 +224,27 @@ typedef struct {
     ULONG64:1, accessed;
 
 } PTE_REGION;
-
-typedef  struct {
+typedef struct {
     SRWLOCK sharedLock;
 #if DBG
     LONG64 threadId;
     LONG64 numHeldShared;
+
+    // Debug tracking list
+    LIST_ENTRY sharedHolders;
+    CRITICAL_SECTION debugLock;
 #endif
 } sharedLock;
+
+#if DBG
+typedef struct _SHARED_HOLDER_DEBUG {
+    LIST_ENTRY entry;
+    ULONG64 threadId;
+    ULONG64 acquireTime;
+    const char* fileName;
+    int lineNumber;
+} SHARED_HOLDER_DEBUG;
+#endif
 
 typedef struct {
     LIST_ENTRY entry;
@@ -241,6 +254,7 @@ typedef struct {
     pfn page;
 
 } listHead, *pListHead;
+
 
 #define useSharedLock 1
 

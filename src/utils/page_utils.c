@@ -35,7 +35,7 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
     obtainedPageLocks = FALSE;
     boolean holdingSharedLock = TRUE;
 
-#if useSharedLock
+
     acquire_srw_shared(&head->sharedLock);
 
     for (int i = 0; i < 5; ++i) {
@@ -60,12 +60,12 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
     }
 
-#endif
+
     if (obtainedPageLocks == FALSE) {
 
-#if useSharedLock
+
         release_srw_shared(&head->sharedLock);
-#endif
+
         holdingSharedLock = FALSE;
 
 
@@ -77,7 +77,7 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
     }
 
 #if DBG
-    validateList(head);
+ //   validateList(head);
     ASSERT(Flink->entry.Blink == &page->entry)
     ASSERT(Blink->entry.Flink == &page->entry)
 #endif
@@ -103,7 +103,7 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
 
 #if DBG
-    validateList(head);
+  //  validateList(head);
 #endif
 
 
@@ -136,7 +136,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
     obtainedPageLocks = FALSE;
 
 
-#if useSharedLock
+
     acquire_srw_shared(&head->sharedLock);
 
 
@@ -176,13 +176,13 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
         leavePageLock(pageToRemove, threadInfo);
         leavePageLock(&head->page, threadInfo);
     }
-#endif
+
 
     if (obtainedPageLocks == FALSE) {
 
-#if usedShareLock
+
         release_srw_shared(&head->sharedLock);
-#endif
+
 
         holdingSharedLock = FALSE;
 
@@ -218,7 +218,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
 
 #if DBG
-    validateList(head);
+   // validateList(head);
 #endif
 
     LIST_ENTRY* ListHead = &head->entry;
@@ -239,7 +239,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
 
 #if DBG
-    validateList(head);
+   // validateList(head);
 #endif
 
     if (obtainedPageLocks == TRUE) {
@@ -272,7 +272,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     boolean holdingSharedLock = TRUE;
 
     pfn* nextPage;
-#if useSharedLock
+
 
     acquire_srw_shared(&head->sharedLock);
 
@@ -297,13 +297,13 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
         leavePageLock(&head->page, threadInfo);
 
     }
-#endif
+
 
     if (obtainedPageLocks == FALSE) {
 
-#if useSharedLock
+
         release_srw_shared(&head->sharedLock);
-#endif
+
         holdingSharedLock = FALSE;
 
         acquire_srw_exclusive(&head->sharedLock, threadInfo);
@@ -318,7 +318,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
 
 
 #if DBG
-    validateList(head);
+   // validateList(head);
 #endif
 
     if (nextPage == NULL) {
@@ -331,9 +331,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
         page->entry.Flink = &head->entry;
         page->entry.Blink = &head->entry;
     } else {
-#if !useSharedLock
-        ASSERT(head->length != 0);
-#endif
+
 
         head->entry.Blink = &page->entry;
         nextPage->entry.Flink = &page->entry;
@@ -345,7 +343,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     InterlockedIncrement64(&head->length);
 
 #if DBG
-    validateList(head);
+  //  validateList(head);
 #endif
 
 
