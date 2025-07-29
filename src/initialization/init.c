@@ -40,6 +40,7 @@ PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
 PVOID zeroThreadTransferVa;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
+PTE_REGION* pteRegionsBase;
 
 // Disk-related globals
 PVOID diskStart;
@@ -164,12 +165,25 @@ init_virtual_memory(VOID) {
    initThreads();
 
 }
+VOID init_pte_regions(VOID) {
+
+    ULONG64 numRegions;
+
+    //nptodo add the case where NUMPTES is not divisible by 64
+
+
+    pteRegionsBase = (PTE_REGION*) init_memory(NUMBER_OF_PTE_REGIONS * sizeof(PTE_REGION));
+
+
+}
+
 VOID init_pageTable(VOID) {
     ULONG64 numBytes;
     // Initialize the page table
     numBytes = PAGE_TABLE_SIZE_IN_BYTES;
     pageTable = (pte*)init_memory(numBytes);
 
+    init_pte_regions();
 
 }
 
@@ -293,6 +307,7 @@ VOID init_free_list(VOID) {
         // Now initialize the pfn structure
         memset(new_pfn, 0, sizeof(pfn));
 
+        InitializeCriticalSection(&new_pfn->lock);
         InsertTailList(&headFreeList, &new_pfn->entry);
     }
 }
@@ -308,6 +323,16 @@ VOID init_list_head(pListHead head) {
     head->entry.Flink = &head->entry;
     head->entry.Blink = &head->entry;
     head->length = 0;
+    InitializeSRWLock(&head->sharedLock.sharedLock);
+
+    InitializeCriticalSection(&head->page.lock);
+
+#if DBG
+    head->sharedLock.numHeldShared = 0;
+    head->sharedLock.threadId = -1;
+    InitializeListHead(&head->sharedLock.sharedHolders);
+    InitializeCriticalSection(&head->sharedLock.debugLock);
+#endif
 }
 BOOL getPhysicalPages (VOID) {
 

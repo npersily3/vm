@@ -12,12 +12,12 @@
 FORCEINLINE
         VOID
 InitializeListHead(
-        __out pListHead ListHead
+        __out PLIST_ENTRY ListHead
 )
 {
-ListHead->entry.Flink = &ListHead->entry;
-ListHead->entry.Blink = &ListHead->entry;
-ListHead->length = 0;
+ListHead->Flink = ListHead;
+ListHead->Blink = ListHead;
+
 }
 
 __checkReturn
@@ -65,6 +65,8 @@ Flink = Entry->Flink;
 
 
         if (Entry == &ListHead->entry) { return LIST_IS_EMPTY;}
+
+
 ListHead->entry.Flink = Flink;
 Flink->Blink = &ListHead->entry;
         ListHead->length--;

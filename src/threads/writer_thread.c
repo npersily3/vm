@@ -40,34 +40,37 @@ DWORD diskWriter (LPVOID threadContext) {
 
         localBatchSize = BATCH_SIZE;
 
-        if (getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskAddressArray, frameNumberArray) == FALSE) {
+        if (getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskAddressArray, frameNumberArray, (PTHREAD_INFO) threadContext) == FALSE) {
             SetEvent(writingEndEvent);
             continue;
         }
 
         writeToDisk(localBatchSize, frameNumberArray, diskAddressArray);
 
-        addToStandBy(localBatchSize, pfnArray);
+        addToStandBy(localBatchSize, pfnArray, (PTHREAD_INFO) threadContext);
 
-        // this needs to be in a lock to avoid
+        // this needs to be in a sharedLock to avoid
         // the race condition where it is reset right after it is
-        EnterCriticalSection(lockStandByList);
+        acquire_srw_exclusive(&headStandByList.sharedLock, (PTHREAD_INFO) threadContext);
         SetEvent(writingEndEvent);
-        LeaveCriticalSection(lockStandByList);
+        release_srw_exclusive(&headStandByList.sharedLock);
     }
 
 }
-VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
+VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
     pfn* page;
     PCRITICAL_SECTION writingPageTableLock;
+    PTE_REGION* region;
 
+    //nptodo make it so the page lock protects this
     for (int i = 0; i < localBatchSize; ++i) {
 
         page = pfnArray[i];
 
 
-        writingPageTableLock = getPageTableLock(page->pte);
+        region = getPTERegion(page->pte);
+        writingPageTableLock = &region->lock;
         EnterCriticalSection(writingPageTableLock);
 
         //if it has been rescued, free up the disk space and do not put it on the standby list
@@ -78,13 +81,16 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray) {
             //checkIfPageIsZero(diskAddressArray[i]);
 
             page->isBeingWritten = FALSE;
-            EnterCriticalSection(lockStandByList);
-            InsertTailList(&headStandByList, &page->entry);
-            LeaveCriticalSection(lockStandByList);
 
+            // AcquireSRWLockExclusive(&headStandByList.sharedLock);
+            // InsertTailList(&headStandByList, &page->entry);
+            // ReleaseSRWLockExclusive(&headStandByList.sharedLock);
+            enterPageLock(page, info);
+            addPageToTail(&headStandByList, page, info);
+            leavePageLock(page, info);
         }
-        // need to hold pte lock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
-        //make sure pte then list lock
+        // need to hold pte sharedLock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
+        //make sure pte then list sharedLock
         LeaveCriticalSection(writingPageTableLock);
     }
 }
@@ -116,13 +122,14 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
 }
 
 
-BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskAddressArray, PULONG64 frameNumberArray) {
+BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskAddressArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
     ULONG64 counter;
     pfn* page;
     ULONG64 localBatchSize;
     PCRITICAL_SECTION writingPageTableLock;
+    PTE_REGION* region;
 
     ULONG64 frameNumber;
     BOOL doubleBreak;
@@ -136,10 +143,12 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
 
     for (; i < localBatchSize; i++) {
 
-        // if page is valid, the mod list lock is still
-        page = getPageFromModifiedList();
 
-        if (page == NULL) {
+        // exit with pagelock
+        page = RemoveFromHeadofPageList(&headModifiedList, threadContext);
+
+
+        if (page == LIST_IS_EMPTY) {
             if (i == 0) {
                 doubleBreak = TRUE;
             }
@@ -147,40 +156,42 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             break;
         }
 
-        writingPageTableLock = getPageTableLock(page->pte);
+
+        region = getPTERegion(page->pte);
+        writingPageTableLock = &region->lock;
 
         // if the pte is being worked on, release your locks and back up
         if (TryEnterCriticalSection(writingPageTableLock) == FALSE) {
 
-            ASSERT(counter < MB(1))
+            //ASSERT(counter < MB(1))
             i--;
+            addPageToTail(&headModifiedList, page, threadContext);
             counter++;
-            ///LeaveCriticalSection(lockModifiedList);
-            releaseLock(&lockModList);
+            leavePageLock(page, threadContext);
             continue;
         }
         counter = 0;
 
-        // now that you have access to both the pte and modified list lock you can finally completely remove it from
-        // the list and then release the modified list lock
+        // now that you have access to both the pte and modified list sharedLock you can finally completely remove it from
+        // the list and then release the modified list sharedLock
 
-        removeFromMiddleOfList(&headModifiedList, &page->entry);
-
-        //LeaveCriticalSection(lockModifiedList);
-        releaseLock(&lockModList);
+        leavePageLock(page, threadContext);
 
         pfnArray[i] = page;
 
         frameNumber = getFrameNumber(page);
         frameNumberArray[i] = frameNumber;
 
+        //nptodo go pte lock free and use the pagelock
         if (getDiskSlotAndUpdatePage(page, diskAddressArray, i) == FALSE) {
             localBatchSize = i;
 
-            acquireLock(&lockModList);
-            InsertTailList(&headModifiedList, &page->entry);
-            releaseLock(&lockModList);
-
+            // AcquireSRWLockExclusive(&headModifiedList.sharedLock);
+            // InsertTailList(&headModifiedList, &page->entry);
+            // ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
+            enterPageLock(page, threadContext);
+            addPageToTail(&headModifiedList, page, threadContext);
+            leavePageLock(page, threadContext);
             if (i == 0) {
                 doubleBreak = TRUE;
             }
@@ -232,24 +243,3 @@ BOOL getDiskSlotAndUpdatePage (pfn* page, PULONG64 diskAddressArray, ULONG64 ind
     return TRUE;
 }
 
-
-pfn* getPageFromModifiedList(VOID) {
-
-    pfn* page;
-    PLIST_ENTRY newPageEntry;
-    //  EnterCriticalSection(lockModifiedList);
-    acquireLock(&lockModList);
-    newPageEntry = headModifiedList.entry.Flink;
-    // similar to mapPage, tryEnter page table, if I can then procceed, otherwise i-- and continue, release locks before hand
-    ASSERT(newPageEntry != &headActiveList.entry);
-
-    if (newPageEntry == &headModifiedList.entry) {
-
-        releaseLock(&lockModList);
-        return NULL;
-    }
-
-    page = container_of(newPageEntry, pfn, entry);
-
-    return page;
-}

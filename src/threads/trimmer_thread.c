@@ -21,6 +21,7 @@ DWORD page_trimmer(LPVOID threadContext) {
     pfn* page;
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
+    PTE_REGION* region;
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -42,7 +43,7 @@ DWORD page_trimmer(LPVOID threadContext) {
 
         // while there is still stuff to trim and the arrays are not at capacity
         while (headModifiedList.length < NUMBER_OF_PHYSICAL_PAGES / 4 && BatchIndex < BATCH_SIZE) {
-            page = getActivePage();
+            page = getActivePage((PTHREAD_INFO) threadContext);
 
             if (page == NULL) {
                 if (BatchIndex == 0) {
@@ -54,8 +55,11 @@ DWORD page_trimmer(LPVOID threadContext) {
             // if we are not on a streak
             if (trimmedPageTableLock == NULL) {
 
-                trimmedPageTableLock = getPageTableLock(page->pte);
+                region = getPTERegion(page->pte);
+                trimmedPageTableLock = &region->lock;
                 EnterCriticalSection(trimmedPageTableLock);
+            } else {
+                ASSERT(region == getPTERegion(page->pte))
             }
 
 
@@ -65,9 +69,9 @@ DWORD page_trimmer(LPVOID threadContext) {
             pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
             BatchIndex++;
 
-            if (isNextPageInSameRegion(trimmedPageTableLock) == FALSE) {
+            if (isNextPageInSameRegion(region, (PTHREAD_INFO) threadContext) == FALSE) {
                 unmapBatch(virtualAddresses, BatchIndex);
-                addBatchToModifiedList(pages, BatchIndex);
+                addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
 
                 LeaveCriticalSection(trimmedPageTableLock);
                 trimmedPageTableLock = NULL;
@@ -86,7 +90,7 @@ DWORD page_trimmer(LPVOID threadContext) {
 
 
         unmapBatch(virtualAddresses, BatchIndex);
-        addBatchToModifiedList(pages, BatchIndex);
+        addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
 
         LeaveCriticalSection(trimmedPageTableLock);
 
@@ -97,41 +101,39 @@ DWORD page_trimmer(LPVOID threadContext) {
     }
 }
 
-pfn* getActivePage(VOID) {
+pfn* getActivePage(PTHREAD_INFO threadContext) {
 
-    PLIST_ENTRY trimmedEntry;
+
     pfn* page;
 
-    EnterCriticalSection(lockActiveList);
-    trimmedEntry = headActiveList.entry.Flink;
+    page = RemoveFromHeadofPageList(&headActiveList, threadContext);
 
-    if (trimmedEntry == &headActiveList.entry) {
 
-        LeaveCriticalSection(lockActiveList);
-
+    if (page == LIST_IS_EMPTY) {
         return NULL;
     }
-    ASSERT(trimmedEntry != &headActiveList.entry);
-
-    page = container_of(trimmedEntry, pfn, entry);
-    removeFromMiddleOfList(&headActiveList, trimmedEntry);
-    LeaveCriticalSection(lockActiveList);
-
+    leavePageLock(page, threadContext);
     return page;
 }
 
-BOOL isNextPageInSameRegion(PCRITICAL_SECTION trimmedPageTableLock) {
+BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
 
     pfn* nextPage;
-    PCRITICAL_SECTION nextPageTableLock;
+    PTE_REGION* nextRegion;
+    sharedLock* lock;
+    lock = &headActiveList.sharedLock;
 
-    EnterCriticalSection(lockActiveList);
+    acquire_srw_exclusive(lock, info);
+    if (headActiveList.length == 0) {
+        release_srw_exclusive(lock);
+        return FALSE;
+    }
     nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
-    LeaveCriticalSection(lockActiveList);
+    release_srw_exclusive(lock);
 
-    nextPageTableLock = getPageTableLock(nextPage->pte);
+    nextRegion = getPTERegion(nextPage->pte);
 
-    return nextPageTableLock == trimmedPageTableLock;
+    return nextRegion == region;
 }
 VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
 
@@ -142,16 +144,20 @@ VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
     }
 }
 
-VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize) {
+VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO threadContext) {
 
     pfn* page;
 
-    acquireLock(&lockModList);
+
+//    AcquireSRWLockExclusive(&headModifiedList.sharedLock);
+
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
-
-        InsertTailList(&headModifiedList, &page->entry);
+        enterPageLock(page, threadContext);
+        addPageToTail(&headModifiedList, page, threadContext);
+        leavePageLock(page, threadContext);
+    //    InsertTailList(&headModifiedList, &page->entry);
 
     }
-    releaseLock(&lockModList);
+  //  ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
 }

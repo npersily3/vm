@@ -7,7 +7,7 @@
 #include "../../include/utils/pte_utils.h"
 
 pte*
-va_to_pte(PVOID va) {
+va_to_pte(ULONG64 va) {
     ULONG64 index = ((ULONG_PTR)va - (ULONG_PTR) vaStart)/PAGE_SIZE;
     pte* pte = pageTable + index;
     return pte;
@@ -29,4 +29,9 @@ PCRITICAL_SECTION getPageTableLock(pte* pte) {
 BOOL isVaValid(ULONG64 va) {
 
     return (va >= (ULONG64) vaStart) && (va <= (ULONG64) vaEnd);
+}
+PTE_REGION* getPTERegion(pte* pte) {
+    ULONG64 pageTableIndex = (pte - pageTable);
+    ULONG64 index = pageTableIndex / NUMBER_OF_PTES_PER_REGION;
+    return  pteRegionsBase + index;
 }
