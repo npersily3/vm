@@ -9,6 +9,7 @@
 #include "vm.h"
 #include "../../include/variables/macros.h"
 #include "threads/user_thread.h"
+#include "utils/random_utils.h"
 #include "utils/statistics_utils.h"
 
 // Timestamp counter for random number generation
@@ -91,6 +92,8 @@ DWORD testVM(LPVOID lpParam) {
     thread_info = (PTHREAD_INFO)lpParam;
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
+
+    InitializeThreadRNG(&thread_info->rng);
       // Now perform random accesses
 
 #if DBG
@@ -98,8 +101,8 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
-  for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
-//while (TRUE) {
+ // for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+while (TRUE) {
         #endif
 
 
@@ -120,8 +123,8 @@ DWORD testVM(LPVOID lpParam) {
 
 
             if (redo_try_same_address == FALSE) {
-                random_number = (unsigned) (GetTimeStampCounter() >> 4);
-#if 1
+                random_number = GetNextRandom(&thread_info->rng);
+#if 0
                 random_number += KB(256)*(thread_info->ThreadNumber + 2);
                 random_number <<= 18;
                 random_number |= (rand() & (KB(256) -1));

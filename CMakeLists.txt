@@ -45,6 +45,7 @@ set(SOURCES
         include/threads/statistics.h
         src/utils/statistics_utils.c
         include/utils/statistics_utils.h
+        src/utils/random_utils.c
 )
 
 # Header files (for IDE support)
@@ -67,6 +68,8 @@ set(HEADERS
         include/threads/statistics.h
         src/utils/statistics_utils.c
         include/utils/statistics_utils.h
+        src/utils/random_utils.c
+        include/utils/random_utils.h
 )
 
 # Create the executable

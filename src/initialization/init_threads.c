@@ -14,6 +14,7 @@
 #include "../../include/threads/zero_thread.h"
 #include "../../include/vm.h"
 #include "threads/statistics.h"
+#include "utils/random_utils.h"
 
 
 
@@ -50,6 +51,7 @@ VOID createThreads(VOID) {
 
         Handle = createNewThread(testVM, ThreadContext);
         ThreadContext->ThreadHandle = Handle;
+
 
         userThreadHandles[i] = Handle;
 

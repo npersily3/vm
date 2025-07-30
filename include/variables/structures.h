@@ -156,18 +156,20 @@ typedef struct {
 //
 // Thread information structure
 //
-typedef struct _THREAD_INFO {
+
+typedef struct {
+    ULONG64 state;
+    ULONG64 counter;
+} THREAD_RNG_STATE;
+
+
+typedef struct  __declspec(align(64))  {
     ULONG ThreadNumber;
     ULONG ThreadId;
     HANDLE ThreadHandle;
-    volatile ULONG ThreadCounter;
-    HANDLE WorkDoneHandle;
+    THREAD_RNG_STATE rng;
 
-#if 1
-    // way faster, now everything consumes 1 cache line
-    // What effect would consuming extra space here have ?
-    volatile UCHAR Pad[32];
-#endif
+
 } THREAD_INFO, *PTHREAD_INFO;
 
 //
