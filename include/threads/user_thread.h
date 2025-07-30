@@ -15,7 +15,7 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock , PTHREAD_INFO threadInfo);
 BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo, PULONG64 frameNumber);
 BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock);
-VOID modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber);
+VOID modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext);
 BOOL zeroOnePage (pfn* page, ULONG64 threadNumber);
 
 

@@ -243,7 +243,7 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 
 
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, *frameNumber, threadInfo->ThreadNumber);
+        modified_read(currentPTE, *frameNumber, threadInfo);
     } else {
         zeroOnePage(page, threadInfo->ThreadNumber);
     }
@@ -292,7 +292,7 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
     *frameNumber = getFrameNumber(page);
 
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, *frameNumber, threadInfo->ThreadNumber);
+        modified_read(currentPTE, *frameNumber, threadInfo);
     }
 
 
@@ -334,28 +334,37 @@ pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock, PTHREAD_I
 }
 
 VOID
-modified_read(pte* currentPTE, ULONG64 frameNumber, ULONG64 threadNumber) {
+modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) {
     // Modified reading
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
 
 
-
+    PVOID currentTransferVa = userThreadTransferVa[threadContext->ThreadNumber];
+    PVOID transferVaLocation = (PVOID) ((ULONG64) currentTransferVa + PAGE_SIZE  * threadContext->TransferVaIndex);
 
     // MUPP(va, size, physical page)
-    if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, &frameNumber) == FALSE) {
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", userThreadTransferVa[threadNumber], frameNumber);
+    if (MapUserPhysicalPages(transferVaLocation, 1, &frameNumber) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaLocation, frameNumber);
         return;
     }
 
     // memcpy(va,va,size)
 
-    memcpy(userThreadTransferVa[threadNumber], (PVOID) diskAddress, PAGE_SIZE);
+    memcpy(transferVaLocation, (PVOID) diskAddress, PAGE_SIZE);
 
-    if (MapUserPhysicalPages(userThreadTransferVa[threadNumber], 1, NULL) == FALSE) {
-        printf("full_virtual_memory_test : could not unmap VA %p\n", userThreadTransferVa[threadNumber]);
-        return;
+    threadContext->TransferVaIndex += 1;
+    threadContext->TransferVaIndex %= SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES;
+
+    if (threadContext->TransferVaIndex == 0) {
+        if (MapUserPhysicalPages(userThreadTransferVa[threadContext->ThreadNumber], SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES * PAGE_SIZE, NULL) == FALSE) {
+            DebugBreak();
+            printf("full_virtual_memory_test : could not unmap VA %p\n", userThreadTransferVa[threadContext->ThreadNumber]);
+            return;
+        }
     }
+
 
     set_disk_space_free(diskIndex);
 }

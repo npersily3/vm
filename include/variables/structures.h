@@ -101,6 +101,8 @@ InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)
 InitializeCriticalSection(x)
 #endif
 
+#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (8)
+
 // this one does not malloc and is used for the array that is statically declared
 #if SPIN_COUNTS
 #define INITIALIZE_LOCK_DIRECT(x) \
@@ -166,6 +168,7 @@ typedef struct {
 typedef struct  __declspec(align(64))  {
     ULONG ThreadNumber;
     ULONG ThreadId;
+    ULONG64 TransferVaIndex;
     HANDLE ThreadHandle;
     THREAD_RNG_STATE rng;
 

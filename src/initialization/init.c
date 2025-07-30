@@ -436,7 +436,7 @@ BOOL initVA () {
     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
         userThreadTransferVa[i] = (PULONG_PTR)VirtualAlloc2(NULL,
                                             NULL,
-                                            PAGE_SIZE,
+                                            SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES * PAGE_SIZE,
                                             MEM_RESERVE | MEM_PHYSICAL,
                                             PAGE_READWRITE,
                                             &parameter,

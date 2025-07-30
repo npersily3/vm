@@ -36,6 +36,8 @@ extern PVOID transferVaWriting;
 extern PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
 extern PVOID zeroThreadTransferVa;
 
+
+
 //
 // Physical memory information
 //
@@ -94,5 +96,7 @@ extern THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS];
 extern THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS];
 extern THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS];
 extern THREAD_INFO ZeroingThreadInfo[NUMBER_OF_ZEROING_THREADS];
+
+extern volatile LONG64 transferVaReadPage;
 
 #endif //GLOBALS_H
