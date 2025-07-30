@@ -46,6 +46,7 @@ set(SOURCES
         src/utils/statistics_utils.c
         include/utils/statistics_utils.h
         src/utils/random_utils.c
+        src/debug.c
 )
 
 # Header files (for IDE support)

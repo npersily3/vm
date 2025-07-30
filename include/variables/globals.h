@@ -13,11 +13,19 @@ extern HANDLE physical_page_handle;
 //
 // Page list heads
 //
-extern listHead headFreeList;
+
 extern listHead headActiveList;
 extern listHead headModifiedList;
 extern listHead headStandByList;
 extern listHead headToBeZeroedList;
+
+//Free list
+
+extern listHead headFreeLists[NUMBER_OF_FREE_LISTS];
+extern volatile LONG freeListAddIndex;
+extern volatile LONG freeListRemoveIndex;
+extern volatile LONG freeListLength;
+
 
 //
 // Page table and PFN database

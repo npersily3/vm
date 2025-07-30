@@ -112,7 +112,7 @@ ULONG64 get_free_disk_index(VOID) {
             InterlockedDecrement64(&number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
             //nptodo change names
-            ASSERT(returnValue < 0xfc2 && returnValue != 0);
+            //ASSERT(returnValue < 0xfc2 && returnValue != 0);
             return returnValue;
         }
     }

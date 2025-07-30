@@ -16,7 +16,7 @@ pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock , PTHREAD_
 BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo, PULONG64 frameNumber);
 BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock);
 VOID modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext);
-BOOL zeroOnePage (pfn* page, ULONG64 threadNumber);
-
+BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadInfo);
+pfn* getPageFromFreeList(PTHREAD_INFO threadContext);
 
 #endif //USER_THREAD_H

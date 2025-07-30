@@ -13,6 +13,8 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber);
 VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo);
 pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo);
 VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo);
+pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo);
+pfn* RemoveFromHeadWithListLockHeld(pListHead head, PTHREAD_INFO threadInfo) ;
 
 
 #endif //PAGE_UTILS_H

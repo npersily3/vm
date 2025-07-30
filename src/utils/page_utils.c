@@ -20,7 +20,40 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
     return pfnStart + frameNumber;
 }
 
+pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo) {
 
+    acquire_srw_shared(&headToRemove->sharedLock);
+    enterPageLock(&headToRemove->page, threadInfo);
+
+    ULONG64 number_of_pages_removed = 0;
+    pfn* page;
+
+    for (; number_of_pages_removed < NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY; number_of_pages_removed++) {
+
+        page = container_of(headToRemove->entry.Flink, pfn, entry);
+
+        if (&page->entry == &headToRemove->entry) {
+            break;
+        }
+
+        enterPageLock(page, threadInfo);
+    }
+
+    if (number_of_pages_removed == 0) {
+        return LIST_IS_EMPTY;
+    }
+
+    InterlockedAdd64(&headToRemove->length, -1* (number_of_pages_removed));
+
+    release_srw_shared(&headToRemove->sharedLock);
+    leavePageLock(&headToRemove->page, threadInfo);
+
+    headToAdd->entry.Flink = headToRemove->entry.Flink;
+    headToAdd->entry.Blink = page->entry.Blink;
+    headToAdd->length = number_of_pages_removed;
+
+    return SUCCESS;
+}
 
 // Called with page's pageLock held
 VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
@@ -361,4 +394,152 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     } else {
         release_srw_exclusive(&head->sharedLock);
     }
+}
+
+
+
+
+// this assumes the heads pagelock is held, and will exit with it held
+pfn* RemoveFromHeadWithListLockHeld(pListHead head, PTHREAD_INFO threadInfo) {
+
+
+
+
+    pfn* pageToRemove;
+    pfn* flinkOfPageToRemove;
+    boolean obtainedPageLocks;
+    boolean holdingSharedLock;
+
+    holdingSharedLock = TRUE;
+    obtainedPageLocks = FALSE;
+
+
+
+    acquire_srw_shared(&head->sharedLock);
+
+
+    for (int i = 0; i < 5; ++i) {
+
+
+        pageToRemove = container_of(head->entry.Flink, pfn, entry);
+
+        if (&pageToRemove->entry == &head->entry) {
+
+
+            release_srw_shared(&head->sharedLock);
+            return LIST_IS_EMPTY;
+        }
+
+        if (TryEnterCriticalSection(&pageToRemove->lock) == FALSE) {
+
+            continue;
+        }
+
+        // this is safe only because I hold the neighbors pagelock
+        flinkOfPageToRemove = container_of(pageToRemove->entry.Flink, pfn, entry);
+
+        // if the list has one entry do not double acquire the listhead pagelock
+        if (&flinkOfPageToRemove->entry == &head->entry) {
+            flinkOfPageToRemove = NULL;
+            obtainedPageLocks = TRUE;
+            break;
+        }
+
+
+        if (TryEnterCriticalSection(&flinkOfPageToRemove->lock) == TRUE) {
+            obtainedPageLocks = TRUE;
+            break;
+        }
+
+        leavePageLock(pageToRemove, threadInfo);
+
+    }
+
+
+    if (obtainedPageLocks == FALSE) {
+
+
+        release_srw_shared(&head->sharedLock);
+
+
+        holdingSharedLock = FALSE;
+
+        // keep trying to acquire the page lock then the list lock exclusive to maintain our order
+        while (TRUE) {
+
+            pageToRemove = container_of(head->entry.Flink, pfn, entry);
+
+            if (&pageToRemove->entry == &head->entry) {
+                return LIST_IS_EMPTY;
+            }
+
+            enterPageLock(pageToRemove, threadInfo);
+
+            acquire_srw_exclusive(&head->sharedLock, threadInfo);
+
+            if (&pageToRemove->entry == head->entry.Flink) {
+                break;
+            }
+//fggf
+            release_srw_exclusive(&head->sharedLock);
+            leavePageLock(pageToRemove, threadInfo);
+        }
+
+        flinkOfPageToRemove = container_of(pageToRemove->entry.Flink, pfn, entry);
+
+        if (&flinkOfPageToRemove->entry == &head->entry) {
+           flinkOfPageToRemove = NULL;
+        }
+    }
+
+    ASSERT(pageToRemove != NULL);
+
+
+#if DBG
+   // validateList(head);
+#endif
+
+    LIST_ENTRY* ListHead = &head->entry;
+    LIST_ENTRY* Entry = &pageToRemove->entry;
+
+    if (flinkOfPageToRemove == NULL) {
+        ListHead->Flink = ListHead;
+        ListHead->Blink = ListHead;
+    } else {
+        LIST_ENTRY* Flink = &flinkOfPageToRemove->entry;
+
+        ListHead->Flink = Flink;
+        Flink->Blink = ListHead;
+    }
+
+
+    InterlockedDecrement64(&head->length);
+
+
+#if DBG
+   // validateList(head);
+#endif
+
+    if (obtainedPageLocks == TRUE) {
+
+        ASSERT(Entry != ListHead)
+
+
+
+        if (flinkOfPageToRemove != NULL) {
+            LeaveCriticalSection(&flinkOfPageToRemove->lock);
+        }
+
+        release_srw_shared(&head->sharedLock);
+    } else {
+        release_srw_exclusive(&head->sharedLock);
+    }
+
+
+    ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
+
+    // leave with page lock held
+
+    return pageToRemove;
+
 }

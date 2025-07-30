@@ -47,6 +47,7 @@ VOID createThreads(VOID) {
     for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
         ThreadContext = &UserThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
+        ThreadContext->TransferVaIndex = 0;
 
 
         Handle = createNewThread(testVM, ThreadContext);

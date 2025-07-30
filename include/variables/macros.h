@@ -100,7 +100,7 @@ InsertTailList(
 {
 
         if (Entry == &headModifiedList.entry || Entry == &headActiveList.entry
-                || Entry == &headFreeList.entry || Entry == &headStandByList.entry) {DebugBreak(); return;}
+               || Entry == &headStandByList.entry) {DebugBreak(); return;}
 PLIST_ENTRY Blink;
 
 

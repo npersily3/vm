@@ -24,7 +24,11 @@
 //
 // Global variable definitions
 //
-listHead headFreeList;
+listHead headFreeLists[NUMBER_OF_FREE_LISTS];
+ volatile LONG freeListAddIndex;
+ volatile LONG freeListRemoveIndex;
+volatile LONG freeListLength;
+
 listHead headActiveList;
 listHead headModifiedList;
 listHead headStandByList;
@@ -288,6 +292,13 @@ VOID init_pfns(VOID) {
 }
 VOID init_free_list(VOID) {
 
+    for (int i = 0; i < NUMBER_OF_FREE_LISTS; ++i) {
+        init_list_head(&headFreeLists[i]);
+    }
+    freeListAddIndex = 0;
+    freeListRemoveIndex = 0;
+    freeListLength = 0;
+
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
 
@@ -308,7 +319,10 @@ VOID init_free_list(VOID) {
         memset(new_pfn, 0, sizeof(pfn));
 
         InitializeCriticalSection(&new_pfn->lock);
-        InsertTailList(&headFreeList, &new_pfn->entry);
+        InsertTailList(&headFreeLists[freeListAddIndex], &new_pfn->entry);
+
+        freeListAddIndex++;
+        freeListAddIndex %= NUMBER_OF_FREE_LISTS;
     }
 }
 VOID init_lists(VOID) {
@@ -316,7 +330,6 @@ VOID init_lists(VOID) {
     init_list_head(&headToBeZeroedList);
     init_list_head(&headStandByList);
     init_list_head(&headModifiedList);
-    init_list_head(&headFreeList);
     init_list_head(&headActiveList);
 }
 VOID init_list_head(pListHead head) {

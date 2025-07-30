@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define SUCCESS 10
+
 //
 // Configuration constants
 //
@@ -101,7 +103,12 @@ InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)
 InitializeCriticalSection(x)
 #endif
 
-#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (8)
+#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (128)
+#define STAND_BY_TRIM_THRESHOLD (NUMBER_OF_PHYSICAL_PAGES / 10)
+#define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY (NUMBER_OF_PHYSICAL_PAGES / 4)
+#define NUMBER_OF_FREE_LISTS 8
+
+
 
 // this one does not malloc and is used for the array that is statically declared
 #if SPIN_COUNTS

@@ -49,11 +49,11 @@ DWORD zeroingThread (LPVOID threadContext) {
         }
         zeroMultiplePages(frameNumbers, BATCH_SIZE);
 
-        acquire_srw_exclusive(&headFreeList.sharedLock, thread_info);
-        for (int i = 0; i < BATCH_SIZE; ++i) {
-            InsertTailList(&headFreeList, &page[i]->entry);
-        }
-        release_srw_exclusive(&headFreeList.sharedLock);
+        // acquire_srw_exclusive(&headFreeList.sharedLock, thread_info);
+        // for (int i = 0; i < BATCH_SIZE; ++i) {
+        //     InsertTailList(&headFreeList, &page[i]->entry);
+        // }
+        // release_srw_exclusive(&headFreeList.sharedLock);
     }
 }
 
