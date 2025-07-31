@@ -43,7 +43,8 @@ pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
         return LIST_IS_EMPTY;
     }
 
-    InterlockedAdd64(&headToRemove->length, -1* (number_of_pages_removed));
+    InterlockedAdd64(&headToRemove->length,
+        -1* (number_of_pages_removed));
 
     release_srw_shared(&headToRemove->sharedLock);
     leavePageLock(&headToRemove->page, threadInfo);
