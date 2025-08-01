@@ -42,13 +42,11 @@ set(SOURCES
         src/utils/thread_utils.c
         src/vm/vm.c
         src/threads/statistics.c
-        include/threads/statistics.h
         src/utils/statistics_utils.c
-        include/utils/statistics_utils.h
         src/utils/random_utils.c
         src/debug.c
         src/threads/user_free.c
-        include/threads/user_free.h
+
 )
 
 # Header files (for IDE support)
@@ -67,13 +65,9 @@ set(HEADERS
         include/variables/macros.h
         include/variables/structures.h
         include/vm.h
-        src/threads/statistics.c
         include/threads/statistics.h
-        src/utils/statistics_utils.c
         include/utils/statistics_utils.h
-        src/utils/random_utils.c
         include/utils/random_utils.h
-        src/threads/user_free.c
         include/threads/user_free.h
 )
 

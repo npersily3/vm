@@ -20,7 +20,7 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
     PTE_REGION* region;
     PCRITICAL_SECTION currentPageTableLock;
     BOOL returnValue;
-    BOOL wasOnPage;
+    boolean wasOnPage;
     pfn* page;
     ULONG64 freeListIndex;
 
@@ -43,10 +43,9 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
         unmapActivePage(currentPTE, threadInfo, page);
         wasOnPage = TRUE;
     } else if (isRescue(currentPTE)) {
-      if (unmapRescuePage(currentPTE, threadInfo, page) == REDO_FREE) {
+        // sets wasOnPage
+      if (unmapRescuePage(currentPTE, threadInfo, page, &wasOnPage) == REDO_FREE) {
           return REDO_FREE;
-      } else {
-          wasOnPage = TRUE;
       }
     } else {
         unmapDiskFormatPTE(currentPTE, threadInfo);
@@ -55,6 +54,7 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
 
     if (wasOnPage) {
         zeroOnePage(page, threadInfo);
+
         freeListIndex = InterlockedIncrement(&freeListAddIndex);
         freeListIndex %= NUMBER_OF_FREE_LISTS;
         addPageToTail(&headFreeLists[freeListIndex], page, threadInfo);
@@ -62,8 +62,14 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
         InterlockedIncrement(&freeListLength);
     }
 
+
+    //TODO change it to a new pte format that signals that it has been freed
+    currentPTE->entireFormat = EMPTY_PTE;
+
+
     return !REDO_FREE;
 }
+
 
 VOID unmapActivePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
     PVOID va;
@@ -78,6 +84,7 @@ VOID unmapActivePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
     page = getPFNfromFrameNumber(frameNumber);
 
     enterPageLock(page, threadInfo);
+    removeFromMiddleOfList(&headActiveList, page, threadInfo);
 
     if (MapUserPhysicalPages(va, 1, NULL) == FALSE) {
         DebugBreak();
@@ -89,7 +96,7 @@ VOID unmapActivePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
     return;
 }
 
-BOOL unmapRescuePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
+BOOL unmapRescuePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page, boolean* addToFreeList) {
 
 
     ULONG64 frameNumber;
@@ -130,15 +137,18 @@ BOOL unmapRescuePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
         page->isBeingFreed = TRUE;
+        leavePageLock(page, threadInfo);
+        *addToFreeList = FALSE;
     }
     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
         removeFromMiddleOfList(&headStandByList, page, threadInfo);
-
         set_disk_space_free(page->diskIndex);
+        *addToFreeList = TRUE;
 
     } else {
         removeFromMiddleOfList(&headModifiedList,page, threadInfo);
+        *addToFreeList = TRUE;
     }
 
 

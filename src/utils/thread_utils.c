@@ -65,7 +65,7 @@ VOID validateList(pListHead head) {
         ASSERT(currentEntry != &headModifiedList.entry &&
                currentEntry != &headStandByList.entry &&
                currentEntry != &headActiveList.entry &&
-               currentEntry != &headFreeList.entry &&
+              // currentEntry != &headFreeList.entry &&
                currentEntry != &headToBeZeroedList.entry);
 
         // Validate bidirectional linking

@@ -28,6 +28,7 @@ pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
     ULONG64 number_of_pages_removed = 0;
     pfn* page;
 
+    // lock all the pages you can up until the threshold
     for (; number_of_pages_removed < NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY; number_of_pages_removed++) {
 
         page = container_of(headToRemove->entry.Flink, pfn, entry);
@@ -49,6 +50,8 @@ pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
     release_srw_shared(&headToRemove->sharedLock);
     leavePageLock(&headToRemove->page, threadInfo);
 
+    // i can edit the flinks and blinks here because all the pages have been lock
+    //
     headToAdd->entry.Flink = headToRemove->entry.Flink;
     headToAdd->entry.Blink = page->entry.Blink;
     headToAdd->length = number_of_pages_removed;

@@ -134,7 +134,7 @@ VOID initCriticalSections(VOID) {
     INITIALIZE_LOCK(lockNumberOfSlots);
 
 //    lockModList = LOCK_FREE;
-    lockToBeZeroedList = LOCK_FREE;
+//    lockToBeZeroedList = LOCK_FREE;
 
     initializePageTableLocks();
 

@@ -116,7 +116,7 @@ ListHead->entry.Blink = Entry;
 
 FORCEINLINE
         VOID
-InsertHeadLAist(
+InsertHeadList(
         __inout pListHead ListHead,
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )

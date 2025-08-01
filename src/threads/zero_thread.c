@@ -40,13 +40,13 @@ DWORD zeroingThread (LPVOID threadContext) {
 
 
 
-        //nptodo If you ever expand to more threads of this type, there is a race condition where batch size could change
-        for (int i = 0; i < BATCH_SIZE; ++i) {
-            acquireLock(&lockToBeZeroedList);
-            page[i] = container_of(RemoveHeadList(&headToBeZeroedList), pfn, entry);
-            releaseLock(&lockToBeZeroedList);
-            frameNumbers[i] = getFrameNumber(page[i]);
-        }
+        // //nptodo If you ever expand to more threads of this type, there is a race condition where batch size could change
+        // for (int i = 0; i < BATCH_SIZE; ++i) {
+        //     acquireLock(&lockToBeZeroedList);
+        //     page[i] = container_of(RemoveHeadList(&headToBeZeroedList), pfn, entry);
+        //     releaseLock(&lockToBeZeroedList);
+        //     frameNumbers[i] = getFrameNumber(page[i]);
+        // }
         zeroMultiplePages(frameNumbers, BATCH_SIZE);
 
         // acquire_srw_exclusive(&headFreeList.sharedLock, thread_info);

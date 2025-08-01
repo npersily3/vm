@@ -28,6 +28,7 @@ listHead headFreeLists[NUMBER_OF_FREE_LISTS];
  volatile LONG freeListAddIndex;
  volatile LONG freeListRemoveIndex;
 volatile LONG freeListLength;
+volatile boolean standByPruningInProgress;
 
 listHead headActiveList;
 listHead headModifiedList;
@@ -331,6 +332,8 @@ VOID init_lists(VOID) {
     init_list_head(&headStandByList);
     init_list_head(&headModifiedList);
     init_list_head(&headActiveList);
+
+    standByPruningInProgress = false;
 }
 VOID init_list_head(pListHead head) {
     head->entry.Flink = &head->entry;

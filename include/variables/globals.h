@@ -34,6 +34,7 @@ extern pte *pageTable;
 extern pfn *pfnStart;
 extern pfn *endPFN;
 extern PTE_REGION* pteRegionsBase;
+extern volatile boolean standByPruningInProgress;
 
 //
 // Virtual address space
@@ -91,11 +92,6 @@ extern PCRITICAL_SECTION lockWritingTransferVa;
 extern CRITICAL_SECTION lockTransferReadingVa[NUMBER_OF_USER_THREADS];
 
 
-//
-// Interlocked locks
-//
-
-extern ULONG64 lockToBeZeroedList;
 
 //
 // Arrays of thread info

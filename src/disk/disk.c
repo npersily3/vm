@@ -23,58 +23,8 @@ most_free_disk_portion(VOID) {
 
     return index;
 }
-#if 0
-ULONG64
-get_free_disk_index(VOID) {
-
-    // get the subsection of the diskSlots array that you will be searching through
-    ULONG64 freePortion;
-    boolean* start;
-    boolean* end;
-
-    freePortion = most_free_disk_portion();
-
-    start = diskActive + freePortion * DISK_DIVISION_SIZE_IN_PAGES;
 
 
-    // accounts for extra slot case
-    if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES + 2;
-    } else {
-        end = start + DISK_DIVISION_SIZE_IN_PAGES;
-    }
-
-    // this will make it go over 1 so it can find the transfer slot
-    if(number_of_open_slots[freePortion] == 0) {
-        return COULD_NOT_FIND_SLOT;
-    }
-
-    //ask if they should go in the loop
-    //nptodo make diskActive and numOpenSlots only one sharedLock
-    EnterCriticalSection(lockDiskActive);
-    while (start < end) {
-        if (*start == FALSE) {
-            *start = TRUE;
-
-            EnterCriticalSection(lockNumberOfSlots);
-            number_of_open_slots[freePortion] -= 1;
-            LeaveCriticalSection(lockNumberOfSlots);
-
-            LeaveCriticalSection(lockDiskActive);
-            return start - diskActive;
-        }
-        start++;
-    }
-    LeaveCriticalSection(lockDiskActive);
-
-    printf("couldn't find free page");
-    DebugBreak();
-    return -1;
-
-//while havent found space, if current bitmap != fffff => search every bit method that uses bitwise to find a bit until you get a zero bit (on local bitmap. once you find it do interlock compare exchange to set it active.
-}
-#endif
-#if 1
 
 ULONG64 get_free_disk_index(VOID) {
     ULONG64 freePortion;
@@ -111,8 +61,7 @@ ULONG64 get_free_disk_index(VOID) {
 
             InterlockedDecrement64(&number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
-            //nptodo change names
-            //ASSERT(returnValue < 0xfc2 && returnValue != 0);
+
             return returnValue;
         }
     }
@@ -156,7 +105,6 @@ ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
 }
 
 
-#endif
 
 VOID
 set_disk_space_free(ULONG64 diskIndex) {

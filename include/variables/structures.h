@@ -21,11 +21,11 @@
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
 #define GB(x)                       ((x) * 1024 * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE       MB(16)
+#define VIRTUAL_ADDRESS_SIZE      GB(1)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
 
-#define NUMBER_OF_PHYSICAL_PAGES  64//MB(512)/PAGE_SIZE
+#define NUMBER_OF_PHYSICAL_PAGES  MB(512)/PAGE_SIZE
 
 
 #define NUMBER_OF_DISK_DIVISIONS   1
@@ -59,7 +59,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else

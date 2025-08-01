@@ -10,6 +10,7 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
+#include "threads/user_thread.h"
 
 
 DWORD diskWriter (LPVOID threadContext) {
@@ -76,6 +77,10 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
         //if it has been rescued, free up the disk space and do not put it on the standby list
         if(page->isBeingWritten == FALSE) {
             set_disk_space_free(page->diskIndex);
+            if (page->isBeingFreed == TRUE) {
+                page->isBeingFreed = FALSE;
+                addPageToFreeList(page, info);
+            }
         } else {
             //check if disk page is empty
             //checkIfPageIsZero(diskAddressArray[i]);
