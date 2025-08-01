@@ -24,7 +24,7 @@ extern listHead headToBeZeroedList;
 extern listHead headFreeLists[NUMBER_OF_FREE_LISTS];
 extern volatile LONG freeListAddIndex;
 extern volatile LONG freeListRemoveIndex;
-extern volatile LONG freeListLength;
+extern volatile ULONG64 freeListLength;
 
 
 //

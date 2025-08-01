@@ -20,41 +20,85 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
     return pfnStart + frameNumber;
 }
 
+volatile ULONG64 prunecount;
+volatile ULONG64 pagesremoved;
 pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo) {
+
+    pfn* firstPage;
+    pfn* lastPage;
 
     acquire_srw_shared(&headToRemove->sharedLock);
     enterPageLock(&headToRemove->page, threadInfo);
 
+#if DBG
+
+    validateList(headToRemove);
+
+#endif
+
     ULONG64 number_of_pages_removed = 0;
     pfn* page;
 
+    InterlockedIncrement(&prunecount);
+
+    page = container_of(headToRemove->entry.Flink, pfn, entry);
     // lock all the pages you can up until the threshold
     for (; number_of_pages_removed < NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY; number_of_pages_removed++) {
-
-        page = container_of(headToRemove->entry.Flink, pfn, entry);
 
         if (&page->entry == &headToRemove->entry) {
             break;
         }
 
         enterPageLock(page, threadInfo);
+
+        page = container_of(page->entry.Flink, pfn, entry);
     }
+#if DBG
+    InterlockedAdd(&pagesremoved, number_of_pages_removed);
+#endif
+
+
+    InterlockedAdd64(&headToRemove->length,
+         (0 - number_of_pages_removed));
+
+
+
+
+
+    // i can edit the flinks and blinks here because all the pages have been lock
+    //
+    if (number_of_pages_removed != 0) {
+
+        firstPage = container_of(headToRemove->entry.Flink, pfn, entry);
+        lastPage = container_of(page->entry.Blink, pfn, entry);
+
+        headToAdd->entry.Flink = &firstPage->entry;
+        headToAdd->entry.Blink = &lastPage->entry;
+
+        firstPage->entry.Blink = &headToAdd->entry;
+        lastPage->entry.Flink = &headToAdd->entry;
+
+        headToAdd->length = number_of_pages_removed;
+
+        headToRemove->entry.Flink = &page->entry;
+        if (&headToRemove->entry == &page->entry) {
+            headToRemove->entry.Blink = &headToRemove->entry;
+        }
+    }
+
+#if DBG
+
+    validateList(headToRemove);
+    validateList(headToAdd);
+
+#endif
+
+    leavePageLock(&headToRemove->page, threadInfo);
+    release_srw_shared(&headToRemove->sharedLock);
 
     if (number_of_pages_removed == 0) {
         return LIST_IS_EMPTY;
     }
-
-    InterlockedAdd64(&headToRemove->length,
-        -1* (number_of_pages_removed));
-
-    release_srw_shared(&headToRemove->sharedLock);
-    leavePageLock(&headToRemove->page, threadInfo);
-
-    // i can edit the flinks and blinks here because all the pages have been lock
-    //
-    headToAdd->entry.Flink = headToRemove->entry.Flink;
-    headToAdd->entry.Blink = page->entry.Blink;
-    headToAdd->length = number_of_pages_removed;
 
     return SUCCESS;
 }

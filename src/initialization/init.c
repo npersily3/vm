@@ -27,7 +27,7 @@
 listHead headFreeLists[NUMBER_OF_FREE_LISTS];
  volatile LONG freeListAddIndex;
  volatile LONG freeListRemoveIndex;
-volatile LONG freeListLength;
+volatile ULONG64 freeListLength;
 volatile boolean standByPruningInProgress;
 
 listHead headActiveList;
@@ -298,7 +298,7 @@ VOID init_free_list(VOID) {
     }
     freeListAddIndex = 0;
     freeListRemoveIndex = 0;
-    freeListLength = 0;
+    freeListLength = NUMBER_OF_PHYSICAL_PAGES;
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {

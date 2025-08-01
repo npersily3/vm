@@ -101,7 +101,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1) / NUMBER_OF_USER_THREADS; i++) {
+ for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
 //while (TRUE) {
         #endif
 

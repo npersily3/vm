@@ -23,6 +23,7 @@ VOID debugUserTransferVA (PVOID va, ULONG64 number_pages) {
     }
 }
 
+// called with page lock held
 VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
     ULONG64 localFreeListIndex;
     ULONG64 oldLength;
@@ -41,6 +42,8 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
 
             leavePageLock(&headFreeLists[localFreeListIndex].page, threadInfo);
 
+            return;
+
 
         }
         // go around in a circle
@@ -55,23 +58,31 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
 VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
     pfn* page;
+    pfn* nextPage;
     ULONG64 freeListIndex;
 
     init_list_head(&localList);
 
 
-    removeBatchFromList(&headStandByList, &localList, threadInfo);
-
+    if (removeBatchFromList(&headStandByList, &localList, threadInfo) == LIST_IS_EMPTY) {
+        return;
+    }
+#if DBG
+    validateList(&localList);
+#endif
+    page = container_of(localList.entry.Flink, pfn, entry);
     // for every page on the local list, update its pte without a lock because the pagelock protects it from rescues
-    while (localList.entry.Flink != &localList.entry) {
-        page = container_of(localList.entry.Flink, pfn, entry);
+    while (&page->entry != &localList.entry) {
+
 
         page->pte->transitionFormat.contentsLocation = DISK;
         page->pte->invalidFormat.diskIndex = page->diskIndex;
 
-        enterPageLock(page, threadInfo);
+        nextPage = container_of(page->entry.Flink, pfn, entry);
         addPageToFreeList(page, threadInfo);
         leavePageLock(page, threadInfo);
+        page = nextPage;
+
     }
 
 }
@@ -475,7 +486,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     ULONG64 localFreeListIndex;
     PLIST_ENTRY entry;
     pfn* page;
-    ULONG64 oldValue;
+    ULONG64 localFreeListLength;
     boolean pruneInProgress = FALSE;
     boolean gotLock = FALSE;
     ULONG64 counter;
@@ -508,11 +519,11 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                 return LIST_IS_EMPTY;
             } else {
 
-                oldValue = InterlockedDecrement(&freeListLength);
+                localFreeListLength = InterlockedDecrement(&freeListLength);
 
-                ASSERT((LONG64)oldValue != -1)
+               ASSERT(localFreeListLength != MAXULONG64);
                 // check to see if we have enough pages on the free list
-                if (oldValue <= STAND_BY_TRIM_THRESHOLD) {
+                if (localFreeListLength <= STAND_BY_TRIM_THRESHOLD) {
                     // if there is not a pruning mission already happening
                     pruneInProgress = InterlockedCompareExchange(&standByPruningInProgress, TRUE, FALSE);
 
