@@ -62,13 +62,13 @@ full_virtual_memory_test(VOID) {
 
     printf("Elapsed time: %llu ms\n", end - start);
 
-    printf("StandBy length %I64x \n", headStandByList.length);
-    printf("Modified length %I64x \n", headModifiedList.length);
-    printf("Free length %lx \n", freeListLength);
-    printf("Active length %I64x \n", headActiveList.length);
+    printf("StandBy length %llu  \n", headStandByList.length);
+    printf("Modified length %llu \n", headModifiedList.length);
+    printf("Free length %llu \n", freeListLength);
+    printf("Active length %llu \n", headActiveList.length);
 
-    printf("pagewaits %I64x \n",   pageWaits);
-    printf("total time waiting %f s\n",   (totalTimeWaiting / ((double) MB(24000) )));
+    printf("pagewaits %llu \n",   pageWaits);
+    printf("total time waiting %llu ticks\n",   (totalTimeWaiting));
     return;
 }
 
@@ -98,7 +98,7 @@ DWORD testVM(LPVOID lpParam) {
     InitializeThreadRNG(&thread_info->rng);
       // Now perform random accesses
 
-#if DBG
+#if DBG || spinEvents
     while (TRUE) {
 #else
 

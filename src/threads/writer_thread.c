@@ -52,7 +52,7 @@ DWORD diskWriter (LPVOID threadContext) {
 
         previousBatchSize = localBatchSize;
 
-        getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray, (PTHREAD_INFO) threadContext);
+        getPagesFromModifiedList(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray, (PTHREAD_INFO) threadContext);
 
 
 
@@ -165,7 +165,7 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
 }
 
 
-VOID getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
+VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
     pfn* page;
