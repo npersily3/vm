@@ -68,6 +68,7 @@ HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
  PCRITICAL_SECTION lockDiskActive;
  PCRITICAL_SECTION lockNumberOfSlots;
 PCRITICAL_SECTION lockWritingTransferVa;
+CRITICAL_SECTION serializeWriterandUser;
 
 ULONG64 lockModList;
 ULONG64 lockToBeZeroedList;
@@ -173,8 +174,6 @@ init_virtual_memory(VOID) {
 
 }
 VOID init_pte_regions(VOID) {
-
-    ULONG64 numRegions;
 
     //nptodo add the case where NUMPTES is not divisible by 64
 
@@ -309,8 +308,8 @@ VOID init_free_list(VOID) {
         pfn *new_pfn = (pfn*)(pfnStart + physical_page_numbers[i]);
 
         // Calculate the page-aligned range that contains this pfn structure
-        PVOID startPage = (PVOID)ROUND_DOWN_TO_PAGE(new_pfn);
-        PVOID endPage = (PVOID)ROUND_UP_TO_PAGE((ULONG_PTR)new_pfn + sizeof(pfn));
+         PVOID startPage = (PVOID)ROUND_DOWN_TO_PAGE(new_pfn);
+         PVOID endPage = (PVOID)ROUND_UP_TO_PAGE((ULONG_PTR)new_pfn + sizeof(pfn));
         SIZE_T commitSize = (ULONG_PTR)endPage - (ULONG_PTR)startPage;
 
         // Commit the full page(s) that contain this pfn structure

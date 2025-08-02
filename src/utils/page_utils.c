@@ -39,7 +39,7 @@ pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
     ULONG64 number_of_pages_removed = 0;
     pfn* page;
 
-    InterlockedIncrement(&prunecount);
+    InterlockedIncrement64((volatile LONG64 *) &prunecount);
 
     page = container_of(headToRemove->entry.Flink, pfn, entry);
     // lock all the pages you can up until the threshold
@@ -54,11 +54,11 @@ pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
         page = container_of(page->entry.Flink, pfn, entry);
     }
 #if DBG
-    InterlockedAdd(&pagesremoved, number_of_pages_removed);
+    InterlockedAdd64( (volatile LONG64 *) &pagesremoved,(LONG64) number_of_pages_removed);
 #endif
 
 
-    InterlockedAdd64(&headToRemove->length,
+    InterlockedAdd64(&headToRemove->length, (LONG64)
          (0 - number_of_pages_removed));
 
 
@@ -114,7 +114,7 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
     boolean obtainedPageLocks;
 
     obtainedPageLocks = FALSE;
-    boolean holdingSharedLock = TRUE;
+
 
 
     acquire_srw_shared(&head->sharedLock);
@@ -146,8 +146,6 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
 
         release_srw_shared(&head->sharedLock);
-
-        holdingSharedLock = FALSE;
 
 
         acquire_srw_exclusive(&head->sharedLock, threadInfo);
@@ -211,9 +209,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
     pfn* pageToRemove;
     pfn* flinkOfPageToRemove;
     boolean obtainedPageLocks;
-    boolean holdingSharedLock;
 
-    holdingSharedLock = TRUE;
     obtainedPageLocks = FALSE;
 
 
@@ -264,8 +260,6 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
         release_srw_shared(&head->sharedLock);
 
-
-        holdingSharedLock = FALSE;
 
         // keep trying to acquire the page lock then the list lock exclusive to maintain our order
         while (TRUE) {
@@ -350,7 +344,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 // page lock is held
 VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     boolean obtainedPageLocks = FALSE;
-    boolean holdingSharedLock = TRUE;
+
 
     pfn* nextPage;
 
@@ -385,7 +379,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
 
         release_srw_shared(&head->sharedLock);
 
-        holdingSharedLock = FALSE;
+
 
         acquire_srw_exclusive(&head->sharedLock, threadInfo);
         //check if zero again

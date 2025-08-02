@@ -13,6 +13,22 @@
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
 
+#if spinEvents
+
+VOID spinWhileWaiting(VOID) {
+
+    DWORD status;
+
+    while (TRUE) {
+        status = WaitForSingleObject(writingEndEvent, 0);
+        if (status != WAIT_TIMEOUT) {
+            return;
+        }
+    }
+
+}
+#endif
+
 
 VOID debugUserTransferVA (PVOID va, ULONG64 number_pages) {
 
@@ -26,13 +42,13 @@ VOID debugUserTransferVA (PVOID va, ULONG64 number_pages) {
 // called with page lock held
 VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
     ULONG64 localFreeListIndex;
-    ULONG64 oldLength;
+
 
     // add it to the correct free list
     localFreeListIndex = InterlockedIncrement(&freeListAddIndex);
     localFreeListIndex %= NUMBER_OF_FREE_LISTS;
 
-    InterlockedIncrement(&freeListLength);
+    InterlockedIncrement64((volatile LONG64 *)&freeListLength);
 
     // iterate through the freelists starting at the index calculated above and try to lock it
     while (TRUE) {
@@ -68,7 +84,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
     pfn* page;
     pfn* nextPage;
-    ULONG64 freeListIndex;
+
 
     init_list_head(&localList);
 
@@ -190,7 +206,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     ULONG64 frameNumber;
 
     pte entryContents;
-    entryContents.entireFormat = ReadULong64NoFence((ULONG64)currentPTE);
+    entryContents.entireFormat = ReadULong64NoFence((DWORD64 const volatile *)currentPTE);
 
 
 
@@ -273,7 +289,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     pfn* page;
     ULONG64 frameNumber;
     PTHREAD_INFO threadInfo;
-    BOOL pruneInProgress;
+
 
     threadInfo = (PTHREAD_INFO)threadContext;
 
@@ -289,8 +305,10 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
             LeaveCriticalSection(currentPageTableLock);
 
             //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
+
             ResetEvent(writingEndEvent);
             SetEvent(trimmingStartEvent);
+
 
             pageWaits++;
 
@@ -298,12 +316,16 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
             ULONG64 end;
 
             start = ReadTimeStampCounter();
-
+#if spinEvents
+            spinWhileWaiting();
+#else
             WaitForSingleObject(writingEndEvent, INFINITE);
+
+#endif
 
            end = ReadTimeStampCounter();
 
-            InterlockedAdd64(&totalTimeWaiting, end - start);
+            InterlockedAdd64((volatile LONG64 *) &totalTimeWaiting, (LONG64)(end - start));
 
             EnterCriticalSection(currentPageTableLock);
 
@@ -344,7 +366,7 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 
     pte* currentPTE;
     pfn* page;
-    ULONG64 localFreeListIndex;
+
 
 
 
@@ -386,7 +408,7 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
 
 
 
-    isPageZeroed = FALSE;
+
     currentPTE = va_to_pte(arbitrary_va);
     entryContents = *currentPTE;
 
@@ -556,13 +578,13 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                 continue;
             } else {
 
-                localTotalFreeListLength = InterlockedDecrement(&freeListLength);
+                localTotalFreeListLength = InterlockedDecrement64((volatile LONG64 *) &freeListLength);
 
                ASSERT(localTotalFreeListLength != MAXULONG64);
                 // check to see if we have enough pages on the free list
                 if (localTotalFreeListLength <= STAND_BY_TRIM_THRESHOLD) {
                     // if there is not a pruning mission already happening
-                    pruneInProgress = InterlockedCompareExchange(&standByPruningInProgress, TRUE, FALSE);
+                    pruneInProgress = InterlockedCompareExchange((volatile LONG *)&standByPruningInProgress, TRUE, FALSE);
 
                     if (pruneInProgress == FALSE) {
                         batchVictimsFromStandByList(threadContext);

@@ -132,6 +132,7 @@ VOID initCriticalSections(VOID) {
 
     INITIALIZE_LOCK(lockDiskActive);
     INITIALIZE_LOCK(lockNumberOfSlots);
+    InitializeCriticalSection(&serializeWriterandUser);
 
 //    lockModList = LOCK_FREE;
 //    lockToBeZeroedList = LOCK_FREE;

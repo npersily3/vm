@@ -119,7 +119,7 @@ void acquireLock(PULONG64 lock) {
 
     while (TRUE) {
 
-        oldValueComparator =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
+        oldValueComparator =  InterlockedCompareExchange((volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
 
         if (oldValueComparator == LOCK_FREE) {
             break;
@@ -128,13 +128,13 @@ void acquireLock(PULONG64 lock) {
 }
 void releaseLock(PULONG64 lock) {
 
-    InterlockedExchange(lock, LOCK_FREE);
+    InterlockedExchange((volatile LONG *) lock, LOCK_FREE);
 }
 BOOL tryAcquireLock(PULONG64 lock) {
 
     ULONG64 oldValue;
 
-    oldValue =  InterlockedCompareExchange(lock, LOCK_HELD, LOCK_FREE);
+    oldValue =  InterlockedCompareExchange( (volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
 
     if (oldValue == LOCK_FREE) {
         return FALSE;
@@ -195,7 +195,7 @@ VOID debug_acquire_srw_shared(sharedLock* lock, const char* fileName, int lineNu
         LeaveCriticalSection(&lock->debugLock);
     }
 
-    InterlockedIncrement(&lock->numHeldShared);
+    InterlockedIncrement64((volatile LONG64 *) &lock->numHeldShared);
 }
 
 VOID debug_release_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
@@ -229,7 +229,7 @@ VOID debug_release_srw_shared(sharedLock* lock, const char* fileName, int lineNu
     }
 
     ReleaseSRWLockShared(&lock->sharedLock);
-    InterlockedDecrement(&lock->numHeldShared);
+    InterlockedDecrement64((volatile LONG64 *) &lock->numHeldShared);
 }
 
 VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {

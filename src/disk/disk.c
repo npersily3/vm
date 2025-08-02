@@ -24,7 +24,63 @@ most_free_disk_portion(VOID) {
     return index;
 }
 
+ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
+    ULONG64 freePortion;
+    PULONG64 start;
+    PULONG64 end;
+    ULONG64 bitOffset;
+    ULONG64 returnValue;
+    ULONG64 numDiskSlotsFilled = 0;
 
+    BOOL isNotAtEnd = TRUE;
+    BOOL arrayIsNotFull = TRUE;
+    freePortion = most_free_disk_portion();
+
+
+    start = diskActive + freePortion * (DISK_DIVISION_SIZE_IN_PAGES/64);
+
+    if(number_of_open_slots[freePortion] == 0) {
+        return COULD_NOT_FIND_SLOT;
+    }
+
+
+    // accounts for extra slot case
+    end = start + DISK_DIVISION_SIZE_IN_PAGES/64;
+    if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
+        end += 1;
+    }
+
+
+
+    // TODO make it wrap and have a writer thread ulong past in that is the last location
+    while (isNotAtEnd && arrayIsNotFull) {
+
+        if (*start != FULL_DISK_SPACE) {
+
+            bitOffset = get_free_disk_bit(start);
+
+            if (bitOffset == 64) {
+                 start++;
+            }
+
+            InterlockedDecrement64((volatile LONG64 *)&number_of_open_slots[freePortion]);
+            returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
+            diskIndices[numDiskSlotsFilled] = returnValue;
+            numDiskSlotsFilled++;
+
+        } else {
+            start++;
+        }
+        isNotAtEnd = start < end ;
+        arrayIsNotFull =  numDiskSlotsFilled <  BATCH_SIZE;
+
+    }
+    if (isNotAtEnd == FALSE) {
+      if ( numDiskSlotsFilled == 0) {
+          return COULD_NOT_FIND_SLOT;
+      }
+    }   return numDiskSlotsFilled;
+}
 
 ULONG64 get_free_disk_index(VOID) {
     ULONG64 freePortion;
@@ -59,7 +115,7 @@ ULONG64 get_free_disk_index(VOID) {
                 continue;
             }
 
-            InterlockedDecrement64(&number_of_open_slots[freePortion]);
+            InterlockedDecrement64((volatile LONG64 *) &number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
 
             return returnValue;
@@ -88,9 +144,9 @@ ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
             newBit = ((ULONG64) 1) << i;
             newDiskSlotContents = oldDiskSlotContents | newBit;
 
-            oldDiskSlotComparator = InterlockedCompareExchange64(diskSlot,
-                newDiskSlotContents,
-                oldDiskSlotContents);
+            oldDiskSlotComparator = InterlockedCompareExchange64((volatile LONG64 *) diskSlot,
+                (LONG64)newDiskSlotContents,
+                (LONG64) oldDiskSlotContents);
 
             if (oldDiskSlotComparator == oldDiskSlotContents) {
                 return i;
@@ -117,7 +173,6 @@ set_disk_space_free(ULONG64 diskIndex) {
     ULONG64 bitOffset;
     ULONG64 diskHasChanged;
 
-    DWORD isEventSet;
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that

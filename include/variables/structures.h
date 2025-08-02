@@ -10,6 +10,14 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+
+// Debug macros
+#define DBG 0
+#if DBG
+#define ASSERT(x) if ((x) == FALSE) DebugBreak();
+#else
+#define ASSERT(x)
+#endif
 #define SUCCESS 10
 
 //
@@ -21,11 +29,21 @@
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
 #define GB(x)                       ((x) * 1024 * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE      GB(1)
+
+#if DBG
+
+#define VIRTUAL_ADDRESS_SIZE    PAGE_SIZE * 256//  GB(1)
+#define NUMBER_OF_PHYSICAL_PAGES 128
+
+#else
+
+#define VIRTUAL_ADDRESS_SIZE     GB(1)
+#define NUMBER_OF_PHYSICAL_PAGES  MB(512)/PAGE_SIZE
+
+#endif
+
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
-
-#define NUMBER_OF_PHYSICAL_PAGES  MB(512)/PAGE_SIZE
 
 
 #define NUMBER_OF_DISK_DIVISIONS   1
@@ -58,13 +76,6 @@
 #define REMOVE_FREE_PAGE           FALSE
 #define REMOVE_ACTIVE_PAGE         TRUE
 
-// Debug macros
-#define DBG 0
-#if DBG
-#define ASSERT(x) if ((x) == FALSE) DebugBreak();
-#else
-#define ASSERT(x)
-#endif
 
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
@@ -79,7 +90,7 @@
 #define NUMBER_OF_SYSTEM_THREADS (NUMBER_OF_THREADS-NUMBER_OF_USER_THREADS)
 
 #define MAX_FAULTS 0xFFFFFF
-#define BATCH_SIZE (NUMBER_OF_PHYSICAL_PAGES / 4)
+#define BATCH_SIZE (NUMBER_OF_PHYSICAL_PAGES / 10)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
@@ -106,9 +117,10 @@ InitializeCriticalSection(x)
 
 #define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (128)
 #define STAND_BY_TRIM_THRESHOLD (NUMBER_OF_PHYSICAL_PAGES / 10)
-#define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY (NUMBER_OF_PHYSICAL_PAGES / 4)
+#define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY (NUMBER_OF_PHYSICAL_PAGES / 10)
 #define NUMBER_OF_FREE_LISTS 8
 
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared

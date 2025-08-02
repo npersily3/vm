@@ -19,7 +19,7 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
     pte* currentPTE;
     PTE_REGION* region;
     PCRITICAL_SECTION currentPageTableLock;
-    BOOL returnValue;
+
     boolean wasOnPage;
     pfn* page;
     ULONG64 freeListIndex;
@@ -32,7 +32,6 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
     currentPTE = va_to_pte((ULONG64) arbitrary_va);
 
 
-    returnValue = !REDO_FAULT;
     region = getPTERegion(currentPTE);
     currentPageTableLock = &region->lock;
 

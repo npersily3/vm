@@ -14,5 +14,5 @@ VOID wipePage (ULONG64 diskIndex);
 VOID set_disk_space_free(ULONG64 diskIndex);
 pfn* standByToDisk();
 ULONG64 get_free_disk_bit(PULONG64 diskSlot);
-
+ULONG64 getMultipleDiskIndices(PULONG64 diskIndices);
 #endif // DISK_H

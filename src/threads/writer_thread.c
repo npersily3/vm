@@ -17,9 +17,11 @@ DWORD diskWriter (LPVOID threadContext) {
 
 
     ULONG64 localBatchSize;
-
+    ULONG64 previousBatchSize;
 
     ULONG64 diskAddressArray[BATCH_SIZE];
+    ULONG64 diskIndexArray[BATCH_SIZE];
+
     ULONG64 frameNumberArray[BATCH_SIZE];
     pfn* pfnArray[BATCH_SIZE];
 
@@ -41,14 +43,48 @@ DWORD diskWriter (LPVOID threadContext) {
 
         localBatchSize = BATCH_SIZE;
 
-        if (getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskAddressArray, frameNumberArray, (PTHREAD_INFO) threadContext) == FALSE) {
+        localBatchSize = getMultipleDiskIndices(diskIndexArray);
+
+        if (localBatchSize == COULD_NOT_FIND_SLOT) {
             SetEvent(writingEndEvent);
             continue;
         }
 
+        previousBatchSize = localBatchSize;
+
+        getPagesFromModifiedList(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray, (PTHREAD_INFO) threadContext);
+
+
+
+        if (previousBatchSize != localBatchSize) {
+            freeUnusedDiskSlots(diskIndexArray, localBatchSize, previousBatchSize);
+        }
+        if (localBatchSize == 0) {
+            SetEvent(writingEndEvent);
+            continue;
+        }
+
+        getDiskAddressesFromDiskIndices(diskIndexArray, diskAddressArray, localBatchSize);
+
+
         writeToDisk(localBatchSize, frameNumberArray, diskAddressArray);
 
         addToStandBy(localBatchSize, pfnArray, (PTHREAD_INFO) threadContext);
+
+// Usually it is fine to have stale data stored in these stack variables,
+// but for debugging it is useful to reset the variables
+#if DBG
+for (int i = 0; i < BATCH_SIZE; ++i)
+{
+     diskAddressArray[i] = 0;
+     diskIndexArray[i] = 0;
+     frameNumberArray[i] = 0;
+     pfnArray[i] = 0;
+
+}
+
+#endif
+
 
         // this needs to be in a sharedLock to avoid
         // the race condition where it is reset right after it is
@@ -58,11 +94,16 @@ DWORD diskWriter (LPVOID threadContext) {
     }
 
 }
+
+VOID freeUnusedDiskSlots(PULONG64 diskIndexArray, ULONG64 start, ULONG64 end) {
+    for (;start < end; start++) {
+        set_disk_space_free(diskIndexArray[start]);
+    }
+}
+
 VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
     pfn* page;
-    PCRITICAL_SECTION writingPageTableLock;
-    PTE_REGION* region;
 
     //nptodo make it so the page lock protects this
     for (int i = 0; i < localBatchSize; ++i) {
@@ -70,33 +111,30 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
         page = pfnArray[i];
 
 
-        region = getPTERegion(page->pte);
-        writingPageTableLock = &region->lock;
-        EnterCriticalSection(writingPageTableLock);
+        enterPageLock(page, info);
 
-        //if it has been rescued, free up the disk space and do not put it on the standby list
+        //if it has been rescued, free up the disk space and do not put it on the standby list because the faulter
+        // will put it on the active list
         if(page->isBeingWritten == FALSE) {
             set_disk_space_free(page->diskIndex);
+
+            // if a pte/page pair had been freed the user thread does not want to wait for the writer thread
+            // to finish in order to release locks, so the faulter signals this status and tells us to put this page on
+            // the freelist
             if (page->isBeingFreed == TRUE) {
                 page->isBeingFreed = FALSE;
                 addPageToFreeList(page, info);
             }
         } else {
-            //check if disk page is empty
-            //checkIfPageIsZero(diskAddressArray[i]);
 
             page->isBeingWritten = FALSE;
 
-            // AcquireSRWLockExclusive(&headStandByList.sharedLock);
-            // InsertTailList(&headStandByList, &page->entry);
-            // ReleaseSRWLockExclusive(&headStandByList.sharedLock);
-            enterPageLock(page, info);
+            // this expects me to come in with the lock and does not release it for me
             addPageToTail(&headStandByList, page, info);
-            leavePageLock(page, info);
+
         }
-        // need to hold pte sharedLock you could optimize to reduce enters and leave by grouping the locks, you need, but that is for later
-        //make sure pte then list sharedLock
-        LeaveCriticalSection(writingPageTableLock);
+
+        leavePageLock(page, info);
     }
 }
 
@@ -127,29 +165,21 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
 }
 
 
-BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskAddressArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
+VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
-    ULONG64 counter;
     pfn* page;
-    ULONG64 localBatchSize;
-    PCRITICAL_SECTION writingPageTableLock;
-    PTE_REGION* region;
-
     ULONG64 frameNumber;
     BOOL doubleBreak;
 
 
-    localBatchSize = *localBatchSizePointer;
-
-    counter = 0;
     i = 0;
     doubleBreak = FALSE;
 
-    for (; i < localBatchSize; i++) {
+    for (; i < *localBatchSizePointer; i++) {
 
 
-        // exit with pagelock
+        // this function obtains the pagelock for us
         page = RemoveFromHeadofPageList(&headModifiedList, threadContext);
 
 
@@ -157,94 +187,41 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
             if (i == 0) {
                 doubleBreak = TRUE;
             }
-            localBatchSize = i;
+            *localBatchSizePointer = i;
             break;
         }
-
-
-        region = getPTERegion(page->pte);
-        writingPageTableLock = &region->lock;
-
-        // if the pte is being worked on, release your locks and back up
-        if (TryEnterCriticalSection(writingPageTableLock) == FALSE) {
-
-            //ASSERT(counter < MB(1))
-            i--;
-            addPageToTail(&headModifiedList, page, threadContext);
-            counter++;
-            leavePageLock(page, threadContext);
-            continue;
-        }
-        counter = 0;
-
-        // now that you have access to both the pte and modified list sharedLock you can finally completely remove it from
-        // the list and then release the modified list sharedLock
-
-        leavePageLock(page, threadContext);
+        frameNumber = getFrameNumber(page);
 
         pfnArray[i] = page;
-
-        frameNumber = getFrameNumber(page);
         frameNumberArray[i] = frameNumber;
 
-        //nptodo go pte lock free and use the pagelock
-        if (getDiskSlotAndUpdatePage(page, diskAddressArray, i) == FALSE) {
-            localBatchSize = i;
+        updatePage(page, diskIndexArray[i]);
 
-            // AcquireSRWLockExclusive(&headModifiedList.sharedLock);
-            // InsertTailList(&headModifiedList, &page->entry);
-            // ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
-            enterPageLock(page, threadContext);
-            addPageToTail(&headModifiedList, page, threadContext);
-            leavePageLock(page, threadContext);
-            if (i == 0) {
-                doubleBreak = TRUE;
-            }
-            LeaveCriticalSection(writingPageTableLock);
-
-            break;
-        }
-        LeaveCriticalSection(writingPageTableLock);
+        leavePageLock(page, threadContext);
     }
     if (doubleBreak == TRUE) {
-        return FALSE;
+        return;
     }
 
-
-    *localBatchSizePointer = localBatchSize;
-    return TRUE;
+    return;
 }
 
 
-BOOL getDiskSlotAndUpdatePage (pfn* page, PULONG64 diskAddressArray, ULONG64 index) {
-    ULONG64 diskIndex;
-    ULONG64 diskByteAddress;
-
-
-    diskIndex = get_free_disk_index();
-
-
-    if (diskIndex == COULD_NOT_FIND_SLOT) {
-        return FALSE;
-    }
-    //
-    // if (diskActiveVa[diskIndex] == NULL || ((ULONG64)diskActiveVa[diskIndex] & 0x1)) {
-    //     diskActiveVa[diskIndex] = va;
-    // } else {
-    //     DebugBreak();
-    // }
-
-
-    // modified writing
-    diskByteAddress = (ULONG64) diskStart + diskIndex * PAGE_SIZE;
-    diskAddressArray[index] = diskByteAddress;
-
-
+// called with pagelock held
+// no pte lock held, but that is ok, since the only time it could accessed while marked modified is in a rescue
+// and I use pagelocks in the rescue to serialize threads
+VOID updatePage (pfn* page, ULONG64 diskIndex) {
 
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
     page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
 
-    return TRUE;
 }
+
+VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG64 size) {
+    for (int i = 0; i < size; i++) {
+        addresses[i] = indices[i] * PAGE_SIZE + (ULONG64) diskStart;
+    }
+}
+
 
