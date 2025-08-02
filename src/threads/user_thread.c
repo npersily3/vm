@@ -13,6 +13,22 @@
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
 
+#if spinEvents
+
+VOID spinWhileWaiting(VOID) {
+
+    DWORD status;
+
+    while (TRUE) {
+        status = WaitForSingleObject(writingEndEvent, 0);
+        if (status != WAIT_TIMEOUT) {
+            return;
+        }
+    }
+
+}
+#endif
+
 
 VOID debugUserTransferVA (PVOID va, ULONG64 number_pages) {
 
@@ -289,8 +305,10 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
             LeaveCriticalSection(currentPageTableLock);
 
             //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
+
             ResetEvent(writingEndEvent);
             SetEvent(trimmingStartEvent);
+
 
             pageWaits++;
 
@@ -298,8 +316,12 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
             ULONG64 end;
 
             start = ReadTimeStampCounter();
-
+#if spinEvents
+            spinWhileWaiting();
+#else
             WaitForSingleObject(writingEndEvent, INFINITE);
+
+#endif
 
            end = ReadTimeStampCounter();
 

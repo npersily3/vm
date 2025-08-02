@@ -68,7 +68,7 @@ full_virtual_memory_test(VOID) {
     printf("Active length %I64x \n", headActiveList.length);
 
     printf("pagewaits %I64x \n",   pageWaits);
-    printf("total time waiting %I64x \n",   totalTimeWaiting);
+    printf("total time waiting %f s\n",   (totalTimeWaiting / ((double) MB(24000) )));
     return;
 }
 
@@ -103,8 +103,8 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
-//while (TRUE) {
+ //for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+while (TRUE) {
         #endif
 
 
@@ -161,11 +161,7 @@ DWORD testVM(LPVOID lpParam) {
             counter = 0;
             while (redo_fault == REDO_FAULT) {
                 redo_fault = pageFault(arbitrary_va, lpParam);
-                counter += 1;
-                if (counter == MB(1)) {
-                    DebugBreak();
-                    printf("Fault overflow, at va %p", arbitrary_va);
-                }
+
             }
             redo_try_same_address = TRUE;
             i--;

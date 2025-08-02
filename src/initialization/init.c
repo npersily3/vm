@@ -68,6 +68,7 @@ HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
  PCRITICAL_SECTION lockDiskActive;
  PCRITICAL_SECTION lockNumberOfSlots;
 PCRITICAL_SECTION lockWritingTransferVa;
+CRITICAL_SECTION serializeWriterandUser;
 
 ULONG64 lockModList;
 ULONG64 lockToBeZeroedList;
