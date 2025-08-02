@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define SUCCESS 10
+
 //
 // Configuration constants
 //
@@ -19,11 +21,11 @@
 #define KB(x)                       (x*1024)
 #define MB(x)                       ((x) * 1024 * 1024)
 #define GB(x)                       ((x) * 1024 * 1024 * 1024)
-#define VIRTUAL_ADDRESS_SIZE       GB(1)
+#define VIRTUAL_ADDRESS_SIZE      GB(1)
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
 
-#define NUMBER_OF_PHYSICAL_PAGES MB(512)/PAGE_SIZE
+#define NUMBER_OF_PHYSICAL_PAGES  MB(512)/PAGE_SIZE
 
 
 #define NUMBER_OF_DISK_DIVISIONS   1
@@ -83,6 +85,7 @@
 #define LIST_IS_EMPTY 0
 
 #define REDO_FAULT TRUE
+#define REDO_FREE TRUE
 //
 // Thread configuration
 //
@@ -101,7 +104,12 @@ InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)
 InitializeCriticalSection(x)
 #endif
 
-#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (8)
+#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (128)
+#define STAND_BY_TRIM_THRESHOLD (NUMBER_OF_PHYSICAL_PAGES / 10)
+#define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY (NUMBER_OF_PHYSICAL_PAGES / 4)
+#define NUMBER_OF_FREE_LISTS 8
+
+
 
 // this one does not malloc and is used for the array that is statically declared
 #if SPIN_COUNTS
@@ -188,7 +196,7 @@ typedef struct {
     pte *pte;
     ULONG64 diskIndex;
     ULONG64 isBeingWritten: 1;
-    ULONG64 isBeingTrimmed: 1;
+    ULONG64 isBeingFreed: 1;
     CRITICAL_SECTION lock;
 } pfn;
 
@@ -254,7 +262,7 @@ typedef struct _SHARED_HOLDER_DEBUG {
 
 typedef struct {
     LIST_ENTRY entry;
-    ULONG64 length;
+    volatile LONG64 length;
     sharedLock sharedLock;
 
     pfn page;

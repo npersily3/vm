@@ -13,11 +13,19 @@ extern HANDLE physical_page_handle;
 //
 // Page list heads
 //
-extern listHead headFreeList;
+
 extern listHead headActiveList;
 extern listHead headModifiedList;
 extern listHead headStandByList;
 extern listHead headToBeZeroedList;
+
+//Free list
+
+extern listHead headFreeLists[NUMBER_OF_FREE_LISTS];
+extern volatile LONG freeListAddIndex;
+extern volatile LONG freeListRemoveIndex;
+extern volatile ULONG64 freeListLength;
+
 
 //
 // Page table and PFN database
@@ -26,6 +34,7 @@ extern pte *pageTable;
 extern pfn *pfnStart;
 extern pfn *endPFN;
 extern PTE_REGION* pteRegionsBase;
+extern volatile boolean standByPruningInProgress;
 
 //
 // Virtual address space
@@ -83,11 +92,6 @@ extern PCRITICAL_SECTION lockWritingTransferVa;
 extern CRITICAL_SECTION lockTransferReadingVa[NUMBER_OF_USER_THREADS];
 
 
-//
-// Interlocked locks
-//
-
-extern ULONG64 lockToBeZeroedList;
 
 //
 // Arrays of thread info

@@ -69,7 +69,9 @@ Flink = Entry->Flink;
 
 ListHead->entry.Flink = Flink;
 Flink->Blink = &ListHead->entry;
-        ListHead->length--;
+ListHead->length--;
+
+
 return Entry;
 }
 
@@ -100,7 +102,7 @@ InsertTailList(
 {
 
         if (Entry == &headModifiedList.entry || Entry == &headActiveList.entry
-                || Entry == &headFreeList.entry || Entry == &headStandByList.entry) {DebugBreak(); return;}
+               || Entry == &headStandByList.entry) {DebugBreak(); return;}
 PLIST_ENTRY Blink;
 
 
@@ -116,7 +118,7 @@ ListHead->entry.Blink = Entry;
 
 FORCEINLINE
         VOID
-InsertHeadLAist(
+InsertHeadList(
         __inout pListHead ListHead,
         __inout __drv_aliasesMem PLIST_ENTRY Entry
 )
