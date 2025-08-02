@@ -69,7 +69,9 @@ Flink = Entry->Flink;
 
 ListHead->entry.Flink = Flink;
 Flink->Blink = &ListHead->entry;
-        ListHead->length--;
+ListHead->length--;
+
+
 return Entry;
 }
 

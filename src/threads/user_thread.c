@@ -31,14 +31,23 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
     // add it to the correct free list
     localFreeListIndex = InterlockedIncrement(&freeListAddIndex);
     localFreeListIndex %= NUMBER_OF_FREE_LISTS;
-    addPageToTail(&headFreeLists[localFreeListIndex], page, threadInfo);
+
     InterlockedIncrement(&freeListLength);
 
     // iterate through the freelists starting at the index calculated above and try to lock it
     while (TRUE) {
         if (TryEnterCriticalSection(&headFreeLists[localFreeListIndex].page.lock) == TRUE) {
 
+#if DBG
+            validateList(&headFreeLists[localFreeListIndex]);
+#endif
+
+
             InsertHeadList(&headFreeLists[localFreeListIndex], &page->entry );
+
+#if DBG
+            validateList(&headFreeLists[localFreeListIndex]);
+#endif
 
             leavePageLock(&headFreeLists[localFreeListIndex].page, threadInfo);
 
@@ -276,13 +285,25 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
             // if we were not able to from freelist to modified, start the trimmer and go to sleep
 
+
             LeaveCriticalSection(currentPageTableLock);
 
             //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
             ResetEvent(writingEndEvent);
             SetEvent(trimmingStartEvent);
 
+            pageWaits++;
+
+            ULONG64 start;
+            ULONG64 end;
+
+            start = ReadTimeStampCounter();
+
             WaitForSingleObject(writingEndEvent, INFINITE);
+
+           end = ReadTimeStampCounter();
+
+            InterlockedAdd64(&totalTimeWaiting, end - start);
 
             EnterCriticalSection(currentPageTableLock);
 
@@ -486,9 +507,9 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     ULONG64 localFreeListIndex;
     PLIST_ENTRY entry;
     pfn* page;
-    ULONG64 localFreeListLength;
+    ULONG64 localTotalFreeListLength;
     boolean pruneInProgress = FALSE;
-    boolean gotLock = FALSE;
+    boolean gotFreeListLock = FALSE;
     ULONG64 counter;
 
 
@@ -501,29 +522,45 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     while (TRUE) {
         if (counter < NUMBER_OF_FREE_LISTS) {
             if (TryEnterCriticalSection(&headFreeLists[localFreeListIndex].page.lock) == TRUE) {
-                gotLock = TRUE;
+                gotFreeListLock = TRUE;
             }
+        } else if (counter == 2* NUMBER_OF_FREE_LISTS) {
+            return LIST_IS_EMPTY;
         } else {
             EnterCriticalSection(&headFreeLists[localFreeListIndex].page.lock);
-            gotLock = TRUE;
+            gotFreeListLock = TRUE;
         }
 
-        if (gotLock) {
+        if (gotFreeListLock) {
+#if DBG
+        validateList(&headFreeLists[localFreeListIndex]);
+#endif
             // now we have a locked page
             entry = RemoveHeadList(&headFreeLists[localFreeListIndex]);
-            page = container_of(entry, pfn, entry);
 
-            leavePageLock(&headFreeLists[localFreeListIndex].page, threadContext);
+            if (entry == LIST_IS_EMPTY) {
+                page = LIST_IS_EMPTY;
+            } else {
+                page = container_of(entry, pfn, entry);
+            }
+#if DBG
+            validateList(&headFreeLists[localFreeListIndex]);
+#endif
+
+            LeaveCriticalSection(&headFreeLists[localFreeListIndex].page.lock);
 
             if (page == LIST_IS_EMPTY) {
-                return LIST_IS_EMPTY;
+                gotFreeListLock = FALSE;
+                counter++;
+                localFreeListIndex = (localFreeListIndex + 1) % NUMBER_OF_FREE_LISTS;
+                continue;
             } else {
 
-                localFreeListLength = InterlockedDecrement(&freeListLength);
+                localTotalFreeListLength = InterlockedDecrement(&freeListLength);
 
-               ASSERT(localFreeListLength != MAXULONG64);
+               ASSERT(localTotalFreeListLength != MAXULONG64);
                 // check to see if we have enough pages on the free list
-                if (localFreeListLength <= STAND_BY_TRIM_THRESHOLD) {
+                if (localTotalFreeListLength <= STAND_BY_TRIM_THRESHOLD) {
                     // if there is not a pruning mission already happening
                     pruneInProgress = InterlockedCompareExchange(&standByPruningInProgress, TRUE, FALSE);
 

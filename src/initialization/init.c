@@ -20,6 +20,8 @@
 
 #pragma comment(lib, "onecore.lib")
 
+volatile ULONG64 pageWaits;
+volatile ULONG64 totalTimeWaiting;
 
 //
 // Global variable definitions

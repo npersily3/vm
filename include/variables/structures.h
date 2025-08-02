@@ -25,7 +25,7 @@
 #define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
 
 
-#define NUMBER_OF_PHYSICAL_PAGES  128//MB(512)/PAGE_SIZE
+#define NUMBER_OF_PHYSICAL_PAGES  MB(512)/PAGE_SIZE
 
 
 #define NUMBER_OF_DISK_DIVISIONS   1
@@ -59,7 +59,7 @@
 #define REMOVE_ACTIVE_PAGE         TRUE
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else

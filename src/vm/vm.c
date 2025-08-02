@@ -67,6 +67,8 @@ full_virtual_memory_test(VOID) {
     printf("Free length %lx \n", freeListLength);
     printf("Active length %I64x \n", headActiveList.length);
 
+    printf("pagewaits %I64x \n",   pageWaits);
+    printf("total time waiting %I64x \n",   totalTimeWaiting);
     return;
 }
 
