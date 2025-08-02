@@ -63,7 +63,7 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
                  start++;
             }
 
-            InterlockedDecrement64(&number_of_open_slots[freePortion]);
+            InterlockedDecrement64((volatile LONG64 *)&number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
             diskIndices[numDiskSlotsFilled] = returnValue;
             numDiskSlotsFilled++;
@@ -115,7 +115,7 @@ ULONG64 get_free_disk_index(VOID) {
                 continue;
             }
 
-            InterlockedDecrement64(&number_of_open_slots[freePortion]);
+            InterlockedDecrement64((volatile LONG64 *) &number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
 
             return returnValue;
@@ -144,9 +144,9 @@ ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
             newBit = ((ULONG64) 1) << i;
             newDiskSlotContents = oldDiskSlotContents | newBit;
 
-            oldDiskSlotComparator = InterlockedCompareExchange64(diskSlot,
-                newDiskSlotContents,
-                oldDiskSlotContents);
+            oldDiskSlotComparator = InterlockedCompareExchange64((volatile LONG64 *) diskSlot,
+                (LONG64)newDiskSlotContents,
+                (LONG64) oldDiskSlotContents);
 
             if (oldDiskSlotComparator == oldDiskSlotContents) {
                 return i;
@@ -173,7 +173,6 @@ set_disk_space_free(ULONG64 diskIndex) {
     ULONG64 bitOffset;
     ULONG64 diskHasChanged;
 
-    DWORD isEventSet;
 
     ULONG64 diskIndexSection;
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that

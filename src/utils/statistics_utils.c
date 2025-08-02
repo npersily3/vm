@@ -25,7 +25,7 @@ VOID recordAccess(ULONG64 arbitrary_va) {
 
     region->accessed = TRUE;
 
-    index = InterlockedIncrement(&data->currentStamp) - 1;
+    index = InterlockedIncrement64((volatile LONG64 *) &data->currentStamp) - 1;
     index %= NUMBER_OF_TIME_STAMPS;
 
 

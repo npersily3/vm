@@ -17,7 +17,7 @@ DWORD diskWriter (LPVOID threadContext) {
 
 
     ULONG64 localBatchSize;
-
+    ULONG64 previousBatchSize;
 
     ULONG64 diskAddressArray[BATCH_SIZE];
     ULONG64 diskIndexArray[BATCH_SIZE];
@@ -50,7 +50,16 @@ DWORD diskWriter (LPVOID threadContext) {
             continue;
         }
 
-        if (getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray, (PTHREAD_INFO) threadContext) == FALSE) {
+        previousBatchSize = localBatchSize;
+
+        getAllPagesAndDiskIndices(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray, (PTHREAD_INFO) threadContext);
+
+
+
+        if (previousBatchSize != localBatchSize) {
+            freeUnusedDiskSlots(diskIndexArray, localBatchSize, previousBatchSize);
+        }
+        if (localBatchSize == 0) {
             SetEvent(writingEndEvent);
             continue;
         }
@@ -69,7 +78,6 @@ for (int i = 0; i < BATCH_SIZE; ++i)
 {
      diskAddressArray[i] = 0;
      diskIndexArray[i] = 0;
-
      frameNumberArray[i] = 0;
      pfnArray[i] = 0;
 
@@ -87,13 +95,15 @@ for (int i = 0; i < BATCH_SIZE; ++i)
 
 }
 
-
+VOID freeUnusedDiskSlots(PULONG64 diskIndexArray, ULONG64 start, ULONG64 end) {
+    for (;start < end; start++) {
+        set_disk_space_free(diskIndexArray[start]);
+    }
+}
 
 VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
     pfn* page;
-    PCRITICAL_SECTION writingPageTableLock;
-    PTE_REGION* region;
 
     //nptodo make it so the page lock protects this
     for (int i = 0; i < localBatchSize; ++i) {
@@ -155,20 +165,14 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
 }
 
 
-BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
+VOID getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
-    ULONG64 counter;
     pfn* page;
-
-    PCRITICAL_SECTION writingPageTableLock;
-    PTE_REGION* region;
-
     ULONG64 frameNumber;
     BOOL doubleBreak;
 
 
-    counter = 0;
     i = 0;
     doubleBreak = FALSE;
 
@@ -196,10 +200,10 @@ BOOL getAllPagesAndDiskIndices (PULONG64 localBatchSizePointer, pfn** pfnArray, 
         leavePageLock(page, threadContext);
     }
     if (doubleBreak == TRUE) {
-        return FALSE;
+        return;
     }
 
-    return TRUE;
+    return;
 }
 
 
