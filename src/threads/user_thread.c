@@ -358,14 +358,20 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     threadInfo = (PTHREAD_INFO)threadContext;
 
 
+    frameNumber = NULL;
+    page = NULL;
 
     // Attempt to get a page from the free list and standby list
-    // TODO change this version of redo fault to something else. It does not make sense
-    if (mapPageFromFreeList(arbitrary_va, threadInfo, &frameNumber) == REDO_FAULT) {
-        if (mapPageFromStandByList(arbitrary_va, (PTHREAD_INFO) threadContext, &frameNumber) == REDO_FAULT) {
+    // NULL means the page could not be found
+     mapPageFromFreeList(currentPTE, threadInfo, &page);
+
+    ASSERT(false);
+     if (page == NULL) {
+         mapPageFromStandByList(currentPTE,  threadInfo, page);
+
+         if (page == NULL) {
 
             // If we are not able to get a page, start the trimmer and sleep
-
 
             LeaveCriticalSection(currentPageTableLock);
 
@@ -394,8 +400,6 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
             EnterCriticalSection(currentPageTableLock);
 
-
-
             return REDO_FAULT;
         }
     }
@@ -418,6 +422,11 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     page = getPFNfromFrameNumber(frameNumber);
     page->pte = currentPTE;
 
+    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
+        DebugBreak();
+        printf("full_virtual_memory_test : could not map VA %llu to page %llX\n", arbitrary_va, frameNumber);
+        return FALSE;
+    }
 
     enterPageLock(page, threadInfo);
     addPageToTail(&headActiveList, page, threadInfo);
@@ -429,72 +438,64 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 /**
  * @brief This function tries to get a physical page of a free list. It will also detect if the number of free pages
  * is running low, and take some from the standby list.
- * @param arbitrary_va The virtual address that is being faulted.
+ * @param currentPTE The page table entry of the virtual address that is being faulted on
  * @param threadInfo The info about the calling thread.
- * @param frameNumber An address to store the frame number that corresponding to the page we are about to map.
+ * @param page A place to store the page we are about to map.
 * @return Returns true if we need to redo the fault, false otherwise.
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry.
  */
-//TODO make it no mapping is done, The pte is passed in instead of the va, and change redo fault to could not find page
-BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
 
-    pte* currentPTE;
-    pfn* page;
+VOID mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
 
 
 
-    currentPTE = va_to_pte(arbitrary_va);
+    ULONG64 frameNumber;
 
     // This function acquires the page lock
     page = getPageFromFreeList(threadInfo);
 
 
     if (page == LIST_IS_EMPTY) {
-        return REDO_FAULT;
+        return;
     }
 
 
     leavePageLock(page, threadInfo);
 
-    *frameNumber = getFrameNumber(page);
+    frameNumber = getFrameNumber(page);
 
 
 
     // Zero the page if we are on a first fault, otherwise read from disk
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, *frameNumber, threadInfo);
+        modified_read(currentPTE, frameNumber, threadInfo);
     } else {
         zeroOnePage(page, threadInfo);
     }
 
-    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, frameNumber) == FALSE) {
-        DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, frameNumber);
-        return FALSE;
-    }
-    return !REDO_FAULT;
+
+    return;
 
 }
 
 /**
  *@brief This function attempts to take a page from the standby list. If there is a page to take, this function
  *will update the page's pagetable entry to reflect that it is no longer on standby, but on disk
- * @param arbitrary_va The virtual address that is being faulted on
+ * @param currentPTE The page table entry of the virtual address that is being faulted on
  * @param threadInfo The info of the calling thread
- * @param frameNumber A place to store the frame number of the page that is about to be mapped to the virtual address
+ * @param page A place to store the page that is about to be mapped to the virtual address
  * @return Returns true if we need to redo the fault, false otherwise.
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry
  */
-//TODO change it so that a pte is passed in, and change redo fault
-BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
-    pte* currentPTE;
-    pfn* page;
+
+VOID mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
+
+
+    ULONG64 frameNumber;
     pte entryContents;
 
-
-    currentPTE = va_to_pte(arbitrary_va);
     entryContents = *currentPTE;
 
 
@@ -503,10 +504,10 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULO
     page = getVictimFromStandByList(threadInfo);
 
     if (page == NULL) {
-        return REDO_FAULT;
+        return;
     }
 
-    *frameNumber = getFrameNumber(page);
+    frameNumber = getFrameNumber(page);
 
 
 
@@ -516,21 +517,10 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULO
             DebugBreak();
         }
     } else {
-        modified_read(currentPTE, *frameNumber, threadInfo);
+        modified_read(currentPTE, frameNumber, threadInfo);
     }
 
-
-    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, frameNumber) == FALSE) {
-        DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, *frameNumber);
-        return FALSE;
-    }
-
-
- //   ASSERT(checkVa((PULONG64) pageStart, (PULONG64)arbitrary_va));
-
-    return !REDO_FAULT;
-
+    return;
 }
 
 /**

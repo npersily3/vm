@@ -133,35 +133,6 @@ pfn* getActivePage(PTHREAD_INFO threadContext) {
 }
 
 /**
- * @brief This function peeks into the head of the active list and sees if the next page is in the same pte region.
- * @param region The page table region struct of the batch that is currently being trimmed.
- * @param info The info of the caller.
- * @return Returns true if the next page's corresponding page table entry is in the region passed in.
- */
-BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
-
-    pfn* nextPage;
-    PTE_REGION* nextRegion;
-    sharedLock* lock;
-    lock = &headActiveList.sharedLock;
-
-    // Peek ahead
-    // TODO make this a no fence on the entry
-    enterPageLock(&headActiveList.page, info);
-    nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
-    leavePageLock(&headActiveList.page, info);
-
-
-    if (&headActiveList.entry == &nextPage->entry) {
-        return LIST_IS_EMPTY;
-    }
-
-    nextRegion = getPTERegion(nextPage->pte);
-
-    return nextRegion == region;
-}
-
-/**
  * @brief Simple wrapper for a MapUserPhysicalPagesScatter call.
  * @param virtualAddresses An array of virtual addresses to unmap.
  * @param batchSize The size of the array.
@@ -192,4 +163,33 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
         addPageToTail(&headModifiedList, page, threadContext);
         leavePageLock(page, threadContext);
     }
+}
+
+/**
+ * @brief This function peeks into the head of the active list and sees if the next page is in the same pte region.
+ * @param region The page table region struct of the batch that is currently being trimmed.
+ * @param info The info of the caller.
+ * @return Returns true if the next page's corresponding page table entry is in the region passed in.
+ */
+BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
+
+    pfn* nextPage;
+    PTE_REGION* nextRegion;
+    sharedLock* lock;
+    lock = &headActiveList.sharedLock;
+
+    // Peek ahead
+    // TODO make this a no fence on the entry
+    enterPageLock(&headActiveList.page, info);
+    nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
+    leavePageLock(&headActiveList.page, info);
+
+
+    if (&headActiveList.entry == &nextPage->entry) {
+        return LIST_IS_EMPTY;
+    }
+
+    nextRegion = getPTERegion(nextPage->pte);
+
+    return nextRegion == region;
 }
