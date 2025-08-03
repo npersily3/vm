@@ -123,13 +123,14 @@ BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
     sharedLock* lock;
     lock = &headActiveList.sharedLock;
 
-    acquire_srw_exclusive(lock, info);
-    if (headActiveList.length == 0) {
-        release_srw_exclusive(lock);
-        return FALSE;
-    }
+    //TODO make a better peak that just acquires the pagelock and uses the entry instead of the length
+    enterPageLock(&headActiveList.page, info);
     nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
-    release_srw_exclusive(lock);
+    leavePageLock(&headActiveList.page, info);
+
+    if (&headActiveList.entry == &nextPage->entry) {
+        return LIST_IS_EMPTY;
+    }
 
     nextRegion = getPTERegion(nextPage->pte);
 
