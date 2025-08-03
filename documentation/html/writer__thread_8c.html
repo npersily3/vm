@@ -106,6 +106,9 @@ $(function() {
   <div class="headertitle"><div class="title">writer_thread.c File Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>This file contains all the functions associated with writing to page that have been recently trimmed to disk.  
+<a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="writer__thread_8h_source.html">../../include/threads/writer_thread.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="globals_8h_source.html">../../include/variables/globals.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="macros_8h_source.html">../../include/variables/macros.h</a>&quot;</code><br />
@@ -132,7 +135,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a2b89eecb0dc156e4930c2cac0a9ebd11" id="r_a2b89eecb0dc156e4930c2cac0a9ebd11"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2b89eecb0dc156e4930c2cac0a9ebd11">getDiskAddressesFromDiskIndices</a> (PULONG64 indices, PULONG64 addresses, ULONG64 size)</td></tr>
 <tr class="memdesc:a2b89eecb0dc156e4930c2cac0a9ebd11"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function converts indices to addresses by multiplying by page size and adding the disk base.  <br /></td></tr>
 </table>
-<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>This file contains all the functions associated with writing to page that have been recently trimmed to disk. </p>
+<dl class="section author"><dt>Author</dt><dd>Noah Persily </dd></dl>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a831b19b858591a55cc17312a77c33874" name="a831b19b858591a55cc17312a77c33874"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a831b19b858591a55cc17312a77c33874">&#9670;&#160;</a></span>addToStandBy()</h2>
 

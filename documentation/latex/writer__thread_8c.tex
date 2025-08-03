@@ -1,5 +1,10 @@
 \doxysection{src/threads/writer\+\_\+thread.c File Reference}
 \hypertarget{writer__thread_8c}{}\label{writer__thread_8c}\index{src/threads/writer\_thread.c@{src/threads/writer\_thread.c}}
+
+
+This file contains all the functions associated with writing to page that have been recently trimmed to disk.  
+
+
 {\ttfamily \#include "{}../../include/threads/writer\+\_\+thread.\+h"{}}\newline
 {\ttfamily \#include "{}../../include/variables/globals.\+h"{}}\newline
 {\ttfamily \#include "{}../../include/variables/macros.\+h"{}}\newline
@@ -25,6 +30,14 @@ VOID \mbox{\hyperlink{writer__thread_8c_ae55b9d3c072a0157b7bcbd6a320e2fc6}{updat
 \begin{DoxyCompactList}\small\item\em This function updates the page to hold a disk index and change its status to write in progress and standby. \end{DoxyCompactList}\item 
 VOID \mbox{\hyperlink{writer__thread_8c_a2b89eecb0dc156e4930c2cac0a9ebd11}{get\+Disk\+Addresses\+From\+Disk\+Indices}} (PULONG64 indices, PULONG64 addresses, ULONG64 size)
 \begin{DoxyCompactList}\small\item\em This function converts indices to addresses by multiplying by page size and adding the disk base. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file contains all the functions associated with writing to page that have been recently trimmed to disk. 
+
+\begin{DoxyAuthor}{Author}
+Noah Persily 
+\end{DoxyAuthor}
 
 
 \label{doc-func-members}

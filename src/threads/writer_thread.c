@@ -11,7 +11,11 @@
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
 #include "threads/user_thread.h"
-
+/**
+ *@file
+ *@brief This file contains all the functions associated with writing to page that have been recently trimmed to disk.
+ *@author Noah Persily
+*/
 /**
  * @brief This function takes pages off the modified list and tries to write them to disk. It batch writes pages to disk to be more effiecient.
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
