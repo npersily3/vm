@@ -264,7 +264,7 @@ VOID init_num_open_slots(VOID) {
         return;
     }
 
-    //TODO if you switch back to more regions, change this back
+    // if you switch back to more regions, change this back
     for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
         number_of_open_slots[i] = DISK_SIZE_IN_PAGES - 1;
     }

@@ -22,6 +22,15 @@ pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
 
 volatile ULONG64 prunecount;
 volatile ULONG64 pagesremoved;
+
+/**
+ *
+ * @param headToRemove A list head to remove pages from
+ * @param headToAdd A list head to add the pages removed
+ * @param threadInfo
+ * @return
+ */
+//TODO make it a bool
 pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo) {
 
     pfn* firstPage;

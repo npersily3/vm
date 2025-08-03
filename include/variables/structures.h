@@ -120,7 +120,7 @@ InitializeCriticalSection(x)
 #define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY (NUMBER_OF_PHYSICAL_PAGES / 10)
 #define NUMBER_OF_FREE_LISTS 8
 
-#define spinEvents 0
+#define spinEvents 1
 
 
 // this one does not malloc and is used for the array that is statically declared

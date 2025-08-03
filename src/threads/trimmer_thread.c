@@ -14,7 +14,7 @@
 #include "../../include/utils/thread_utils.h"
 
 
-DWORD page_trimmer(LPVOID threadContext) {
+DWORD page_trimmer(LPVOID info) {
     ULONG64 BatchIndex;
     BOOL doubleBreak;
     PCRITICAL_SECTION trimmedPageTableLock;
@@ -22,6 +22,8 @@ DWORD page_trimmer(LPVOID threadContext) {
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
     PTE_REGION* region;
+    PTHREAD_INFO threadContext;
+    threadContext = (PTHREAD_INFO)info;
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -43,7 +45,8 @@ DWORD page_trimmer(LPVOID threadContext) {
 
         // while there is still stuff to trim and the arrays are not at capacity
         while (headModifiedList.length < NUMBER_OF_PHYSICAL_PAGES / 4 && BatchIndex < BATCH_SIZE) {
-            page = getActivePage((PTHREAD_INFO) threadContext);
+
+            page = getActivePage(threadContext);
 
             if (page == NULL) {
                 if (BatchIndex == 0) {
@@ -52,7 +55,7 @@ DWORD page_trimmer(LPVOID threadContext) {
                 break;
             }
 
-            // if we are not on a streak
+            // if we are not on a streak we need to get a new region a lock the ptes
             if (trimmedPageTableLock == NULL) {
 
                 region = getPTERegion(page->pte);
@@ -69,11 +72,12 @@ DWORD page_trimmer(LPVOID threadContext) {
             pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
             BatchIndex++;
 
-            if (isNextPageInSameRegion(region, (PTHREAD_INFO) threadContext) == FALSE) {
+            if (isNextPageInSameRegion(region, threadContext) == FALSE) {
                 unmapBatch(virtualAddresses, BatchIndex);
-                addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
+                addBatchToModifiedList(pages, BatchIndex,  threadContext);
 
                 LeaveCriticalSection(trimmedPageTableLock);
+                // Setting this to null tells the next loop to get a new region
                 trimmedPageTableLock = NULL;
                 BatchIndex = 0;
 
@@ -88,7 +92,7 @@ DWORD page_trimmer(LPVOID threadContext) {
             continue;
         }
 
-
+        //this just handles the last batch
         unmapBatch(virtualAddresses, BatchIndex);
         addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
 
@@ -101,6 +105,11 @@ DWORD page_trimmer(LPVOID threadContext) {
     }
 }
 
+/**
+ * @brief This functions pops a page off the active list and returns it unlocked
+ * @param threadContext The thread info of the caller.
+ * @return Returns an active page. If the list is empty, it returns null.
+ */
 pfn* getActivePage(PTHREAD_INFO threadContext) {
 
 
@@ -116,6 +125,12 @@ pfn* getActivePage(PTHREAD_INFO threadContext) {
     return page;
 }
 
+/**
+ * @brief This function peeks into the head of the active list and sees if the next page is in the same pte region.
+ * @param region The page table region struct of the batch that is currently being trimmed.
+ * @param info The info of the caller.
+ * @return Returns true if the next page's corresponding page table entry is in the region passed in.
+ */
 BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
 
     pfn* nextPage;
@@ -123,10 +138,12 @@ BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
     sharedLock* lock;
     lock = &headActiveList.sharedLock;
 
-    //TODO make a better peak that just acquires the pagelock and uses the entry instead of the length
+    // Peek ahead
+    // TODO make this a no fence on the entry
     enterPageLock(&headActiveList.page, info);
     nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
     leavePageLock(&headActiveList.page, info);
+
 
     if (&headActiveList.entry == &nextPage->entry) {
         return LIST_IS_EMPTY;
@@ -136,6 +153,12 @@ BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
 
     return nextRegion == region;
 }
+
+/**
+ * @brief Simple wrapper for a MapUserPhysicalPagesScatter call.
+ * @param virtualAddresses An array of virtual addresses to unmap.
+ * @param batchSize The size of the array.
+ */
 VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
 
     if (MapUserPhysicalPagesScatter((PVOID)virtualAddresses, batchSize, NULL) == FALSE) {
@@ -145,20 +168,21 @@ VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
     }
 }
 
+/**
+ * @brief This function adds a batch of pages to the modified list
+ * @param pages An array of pointers to pages.
+ * @param batchSize The size of the array.
+ * @param threadContext The thread info of the caller
+ */
+// TODO maybe a assemble a local list and then add it to modified in order to get the lock less
 VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO threadContext) {
 
     pfn* page;
-
-
-//    AcquireSRWLockExclusive(&headModifiedList.sharedLock);
 
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
         enterPageLock(page, threadContext);
         addPageToTail(&headModifiedList, page, threadContext);
         leavePageLock(page, threadContext);
-    //    InsertTailList(&headModifiedList, &page->entry);
-
     }
-  //  ReleaseSRWLockExclusive(&headModifiedList.sharedLock);
 }

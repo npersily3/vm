@@ -15,6 +15,9 @@
 
 #if spinEvents
 
+/**
+ * * @brief This function spins while waiting so waits show up as time on a performance trace
+ */
 VOID spinWhileWaiting(VOID) {
 
     DWORD status;
@@ -29,29 +32,30 @@ VOID spinWhileWaiting(VOID) {
 }
 #endif
 
+/**
+ * @brief Adds a page to any available freelist.
+ *
 
-VOID debugUserTransferVA (PVOID va, ULONG64 number_pages) {
+ *
+ * @param page The page you are inserting into the list
+ * @param threadInfo The thread info of a caller. It is mainly used for debug functions
+ *
+* @pre The page  must be locked.
+ * @post The caller must release the page lock.
+ */
 
-    for (int i = 0; i < number_pages; i++) {
-        PULONG p = (PULONG)((ULONG64) va + i * PAGE_SIZE);
-
-        *p = 1;
-    }
-}
-
-// called with page lock held
 VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
     ULONG64 localFreeListIndex;
 
 
-    // add it to the correct free list
+    // Increment the global index which is a guess as to what free list most likely is available and has pages
     localFreeListIndex = InterlockedIncrement(&freeListAddIndex);
     localFreeListIndex %= NUMBER_OF_FREE_LISTS;
-
     InterlockedIncrement64((volatile LONG64 *)&freeListLength);
 
     // iterate through the freelists starting at the index calculated above and try to lock it
     while (TRUE) {
+        // once you lock a free list insert it at the head
         if (TryEnterCriticalSection(&headFreeLists[localFreeListIndex].page.lock) == TRUE) {
 
 #if DBG
@@ -69,9 +73,8 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
 
             return;
 
-
         }
-        // go around in a circle
+        // increment and wrap
         localFreeListIndex = (localFreeListIndex + 1) % NUMBER_OF_FREE_LISTS;
     }
 
@@ -79,7 +82,10 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
 
 }
 
-
+/**
+ * @brief Removes a batch of victims from the standby list and puts them on the free list.
+ * @param threadInfo The thread info of a caller. It is mainly used for debug functions.
+ */
 VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
     pfn* page;
@@ -89,20 +95,27 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     init_list_head(&localList);
 
 
+    // adds pages onto the local list from the standby list but does not update them
+    // returns with all the pages locked
     if (removeBatchFromList(&headStandByList, &localList, threadInfo) == LIST_IS_EMPTY) {
         return;
     }
+
 #if DBG
     validateList(&localList);
 #endif
+
+
     page = container_of(localList.entry.Flink, pfn, entry);
-    // for every page on the local list, update its pte without a lock because the pagelock protects it from rescues
+    // For every page on the local list
+
     while (&page->entry != &localList.entry) {
 
-
+        // We can do this without a pte lock because the page lock protects it from rescues
         page->pte->transitionFormat.contentsLocation = DISK;
         page->pte->invalidFormat.diskIndex = page->diskIndex;
 
+        // add it to the list and manage locks
         nextPage = container_of(page->entry.Flink, pfn, entry);
         addPageToFreeList(page, threadInfo);
         leavePageLock(page, threadInfo);
@@ -111,11 +124,16 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     }
 
 }
+/**
+ *@brief A function that gets the current transfer virtual address that a thread needs.
+ *@param threadContext The thread info of the caller. It is used to update the per thread index into its transfer virtual address space.
+ *@return A pointer to a page of unmapped transfer virtual address space.
+*/
 
-
-//outputs the next free space in the kernel read va
 PVOID getThreadMapping(PTHREAD_INFO threadContext) {
+    // Get the current thread's transfer va space
     PVOID currentTransferVa = userThreadTransferVa[threadContext->ThreadNumber];
+    // Index into it
     PVOID va = (PVOID) ((ULONG64) currentTransferVa + PAGE_SIZE  * threadContext->TransferVaIndex);
 
     threadContext->TransferVaIndex += 1;
@@ -124,9 +142,13 @@ PVOID getThreadMapping(PTHREAD_INFO threadContext) {
     return va;
 }
 
-//unmaps a user kernel va only if all the pages are used up
+/**
+ * @brief Unmaps the thread's transfer virtual address space if it has all mapped. Batching it in this way saves a lot of time spent mapping and flushing.
+ * @param threadContext The thread info of the caller. It is used to index into the correct transfer virtual address space.
+ */
 VOID freeThreadMapping(PTHREAD_INFO threadContext) {
 
+    // If we are at the end, reset and unmap everything
     if (threadContext->TransferVaIndex == SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES) {
         threadContext->TransferVaIndex = 0;
 
@@ -138,9 +160,14 @@ VOID freeThreadMapping(PTHREAD_INFO threadContext) {
     }
 }
 
-//nptodo remove 2nd transition bit, and check the pfn diskIndex to see what list it is on, then pass into rescue what list it is
-//then you will need to reset diskIndex after you map it
-BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
+/**
+ *@brief This function is the core of the program. It will culminate in the mapping of a physical page to the passed in virtual address.
+ *@param arbitrary_va The virtual address that is being accessed and faulted on.
+ *@param threadContext The information about the faulting thread.
+ *@return A boolean that determines whether we need to back up and redo the fault.
+*/
+//TODO move mapping and adding to the active list to this function as opposed to being in two place
+BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
 
@@ -153,6 +180,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     currentPTE = va_to_pte((ULONG64) arbitrary_va);
 
 
+    // Checks to see if the user is accessing out of bounds va space
     if (isVaValid((ULONG64) arbitrary_va) == FALSE) {
         DebugBreak();
         printf("invalid va %p\n", arbitrary_va);
@@ -165,25 +193,23 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     EnterCriticalSection(currentPageTableLock);
     pteContents = *currentPTE;
 
-    //if the page fault was already handled by another thread
+    // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
 
+        // If the pte is in flight
         if (isRescue(currentPTE)) {
-
-            if (rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) lpParam) == REDO_FAULT) {
+            // Determine if the rescue told us to back up or not
+            if (rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) threadContext) == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
-            } else {
-
-                if (mapPage((ULONG64) arbitrary_va, currentPTE, lpParam, currentPageTableLock) == REDO_FAULT) {
-                    returnValue = REDO_FAULT;
-                }
+        } else {
+            // If we are on a first fault or a disk read map that page.
+            if (mapPage((ULONG64) arbitrary_va, currentPTE, threadContext, currentPageTableLock) == REDO_FAULT) {
+                returnValue = REDO_FAULT;
             }
+        }
     }
 
-    if (returnValue == !REDO_FAULT) {
-        *arbitrary_va = (ULONG_PTR) arbitrary_va;
-    }
 
     LeaveCriticalSection(currentPageTableLock);
 
@@ -191,26 +217,50 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID lpParam) {
     return returnValue;
 
 }
-//simple check, should always be called with a lock
+
+/**
+ * @brief
+ *
+ * @param currentPTE The page table entry of the virtual address that was faulted on.
+ * @return It returns true if the currentPTE is signaled as transition.
+ *
+ * @pre The page table entry must be locked.
+ * @post The caller must release the lock of the page table entry.
+ */
 BOOL isRescue(pte* currentPTE) {
     return (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST) ||
             (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST);
 }
 
 
-// this function deals with the case where a pages content is still on a physical page as opposed to a completely new
-//page or a disk read
-// this function determines where the page is and rescues it after it has been trimmed, written, or in between
+
+/**
+ * @brief This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page.
+ * If the page corresponding to the virtual address is on the modified list, this function just simply removes it from the middle.
+ * If the page is on the standby list, this function removes it from the middle of the list and sets the corresponding disk space free.
+ * Lastly, If the page is not on any list, but in the process of being written out, just mark it as no longer being written out.
+ * The writer will see this and free the corresponding disk space
+ *
+ * @param arbitrary_va The virtual address that is faulted on.
+ * @param currentPTE  The page table entry corresponding with the virtual address.
+ * @param threadInfo The info of the thread that is faulted on.
+ * @return Returns true if we need to redo the fault, false otherwise.
+ * @pre The page table entry must be locked on entry to this function.
+ * @post The caller must unlock the page table entry
+ */
 BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo) {
     pfn* page;
     ULONG64 frameNumber;
 
     pte entryContents;
+
+    // We must read no fence because the pte could be getting cross edited by another faulter who is using it as a victim
     entryContents.entireFormat = ReadULong64NoFence((DWORD64 const volatile *)currentPTE);
 
 
+    // The following two checks see if the case where a pte is cross edited in the process of victimization occured
 
-    //If before we got our snapshot, the pte was changed to non rescue
+    // If before we got our snapshot, the pte was changed to non rescue
     if (!isRescue(currentPTE)){
 
         return REDO_FAULT;
@@ -219,16 +269,17 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     frameNumber = entryContents.transitionFormat.frameNumber;
     page = getPFNfromFrameNumber(frameNumber);
 
-    // if our supposed page no longer maps to our copy
+    // if our page that we believe our contents is on no longer maps to our copy
     if (page->pte->entireFormat != entryContents.entireFormat) {
         return REDO_FAULT;
     }
 
 
+
     enterPageLock(page, threadInfo);
 
     // Now that we are in the pagelock we can be sure the pte is not being edited without a lock in our victimization code.
-    // Therefore, we can now check the actual pte for the same things as above as opposed to out copy
+    // Therefore, we can now check the actual pte for the same things as above as opposed to our copy
 
     if (page->pte != currentPTE) {
         leavePageLock(page, threadInfo);
@@ -242,13 +293,14 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     }
     ASSERT(currentPTE->transitionFormat.frameNumber == frameNumber);
 
-    //if there is a write in progress the page is not on any list
-    // we do not know when in the right this is occuring so we set this variable to signal to the writer to not add this
-    // page to standby, but instead free its disk space
+    // If there is a write in progress the page is not on any list
+    // We do not know when in the right this is occurring, so we set this variable to signal to the writer to not add this
+    // page to the standby list
+    // Instead, the writer will free its disk space
     if (page->isBeingWritten == TRUE) {
         page->isBeingWritten = FALSE;
     }
-    // if its on standby, remove it and set the disk space free
+    // If its on standby, remove it and set the disk space free
     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
 
         removeFromMiddleOfList(&headStandByList, page, threadInfo);
@@ -257,10 +309,11 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
 
 
     } else {
-        // it must be on the modified list now.
+        // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfList(&headModifiedList,page, threadInfo);
     }
-    // we can leave this lock because it is no longer on a list and another faulter will be stopped by the page table lock
+    // we can leave this lock because it is no longer on a list, so no other operations like a list removal but be poking at this page
+    // A faulter that is accessing the same region will be stopped by a pagetable lock
     leavePageLock(page, threadInfo);
 
     if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
@@ -282,8 +335,19 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
 }
 
 
-// this function assumes the page table lock is held before being called and will be released for them when exiting
-// all other locks must be entered and left before returning
+/**
+ * @brief This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk.
+ * First this thread will attempt to map from the free list; then it will try to map from standby. If none of those succeed it will wake up the trimmer and wait to redo the fault.
+ * If this thread notices that usable pages are getting low, it will wake up the trimmer.
+ * @param arbitrary_va The virtual address being accessed.
+ * @param currentPTE The page table entry of the virtual address being accessed.
+ * @param threadContext The thread info of the faulting thread.
+ * @param currentPageTableLock The lock corresponding to the page table entry
+ * @return Returns true if we need to redo the fault, false otherwise.
+ * @pre The page table entry must be locked on entry to this function.
+ * @post The caller must unlock the page table entry.
+ */
+//TODO change it so that only the pte is passed in, and thread Context is of type PTHREAD_INFO, also pull out the decision to zero or modified read from the inner functions to this function
 BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock) {
 
     pfn* page;
@@ -295,11 +359,12 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
 
 
-
+    // Attempt to get a page from the free list and standby list
+    // TODO change this version of redo fault to something else. It does not make sense
     if (mapPageFromFreeList(arbitrary_va, threadInfo, &frameNumber) == REDO_FAULT) {
-        if (mapPageFromStandByList(arbitrary_va, currentPageTableLock, (PTHREAD_INFO) threadContext, &frameNumber) == REDO_FAULT) {
+        if (mapPageFromStandByList(arbitrary_va, (PTHREAD_INFO) threadContext, &frameNumber) == REDO_FAULT) {
 
-            // if we were not able to from freelist to modified, start the trimmer and go to sleep
+            // If we are not able to get a page, start the trimmer and sleep
 
 
             LeaveCriticalSection(currentPageTableLock);
@@ -339,7 +404,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
 
 
-    // if we seem to be running low on free and standby wake the trimmer
+    // if we seem to be running low on free and standby pages wake the trimmer
     if (((double) (headStandByList.length + ReadULong64NoFence(&freeListLength)) / ((double) NUMBER_OF_PHYSICAL_PAGES )) < .5) {
         SetEvent(trimmingStartEvent);
     }
@@ -361,7 +426,17 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     return !REDO_FAULT;
 }
 
-//assumes pte lock is held on entry and will be released
+/**
+ * @brief This function tries to get a physical page of a free list. It will also detect if the number of free pages
+ * is running low, and take some from the standby list.
+ * @param arbitrary_va The virtual address that is being faulted.
+ * @param threadInfo The info about the calling thread.
+ * @param frameNumber An address to store the frame number that corresponding to the page we are about to map.
+* @return Returns true if we need to redo the fault, false otherwise.
+ * @pre The page table entry must be locked on entry to this function.
+ * @post The caller must unlock the page table entry.
+ */
+//TODO make it no mapping is done, The pte is passed in instead of the va, and change redo fault to could not find page
 BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
 
     pte* currentPTE;
@@ -369,9 +444,11 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 
 
 
-
     currentPTE = va_to_pte(arbitrary_va);
+
+    // This function acquires the page lock
     page = getPageFromFreeList(threadInfo);
+
 
     if (page == LIST_IS_EMPTY) {
         return REDO_FAULT;
@@ -384,7 +461,7 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
 
 
 
-    // read if neccesary or zero it
+    // Zero the page if we are on a first fault, otherwise read from disk
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
         modified_read(currentPTE, *frameNumber, threadInfo);
     } else {
@@ -399,14 +476,22 @@ BOOL mapPageFromFreeList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG6
     return !REDO_FAULT;
 
 }
-BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
+
+/**
+ *@brief This function attempts to take a page from the standby list. If there is a page to take, this function
+ *will update the page's pagetable entry to reflect that it is no longer on standby, but on disk
+ * @param arbitrary_va The virtual address that is being faulted on
+ * @param threadInfo The info of the calling thread
+ * @param frameNumber A place to store the frame number of the page that is about to be mapped to the virtual address
+ * @return Returns true if we need to redo the fault, false otherwise.
+ * @pre The page table entry must be locked on entry to this function.
+ * @post The caller must unlock the page table entry
+ */
+//TODO change it so that a pte is passed in, and change redo fault
+BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PTHREAD_INFO threadInfo, PULONG64 frameNumber) {
     pte* currentPTE;
     pfn* page;
     pte entryContents;
-
-    BOOL isPageZeroed;
-
-
 
 
     currentPTE = va_to_pte(arbitrary_va);
@@ -414,7 +499,8 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
 
 
 
-    page = getVictimFromStandByList(currentPageTableLock, threadInfo);
+    // All locks pertaining to this page are dealt with in this function. We do not need to lock or unlock it
+    page = getVictimFromStandByList(threadInfo);
 
     if (page == NULL) {
         return REDO_FAULT;
@@ -423,17 +509,18 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
     *frameNumber = getFrameNumber(page);
 
 
+
+    // Zero the page if we are on a first fault, otherwise read from disk
     if (entryContents.invalidFormat.diskIndex == EMPTY_PTE) {
         if (!zeroOnePage(page, threadInfo)) {
             DebugBreak();
         }
-        isPageZeroed = TRUE;
     } else {
         modified_read(currentPTE, *frameNumber, threadInfo);
     }
 
 
-       if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, frameNumber) == FALSE) {
+    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, frameNumber) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", arbitrary_va, *frameNumber);
         return FALSE;
@@ -446,13 +533,21 @@ BOOL mapPageFromStandByList (ULONG64 arbitrary_va, PCRITICAL_SECTION currentPage
 
 }
 
-// gets a page off of standby and return it
-pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock, PTHREAD_INFO threadInfo) {
+/**
+ * @brief This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry
+ * of the page without holding a page table lock. It can do this because the page table entry's corresponding page lock
+ * protects it from being rescued at the same. However, this means that in the rescue or other functions relating to standby pages,
+ * the page table entry could be changing.
+ * @param threadInfo The thread info of the caller.
+ * @return Return a page from the standby list. If the list is empty return NULL
+ */
+pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo) {
 
     pfn* page;
     pte local;
 
 
+    // Exits with page lock held
     page = RemoveFromHeadofPageList(&headStandByList, threadInfo);
 
     if (page == LIST_IS_EMPTY) {
@@ -463,6 +558,7 @@ pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock, PTHREAD_I
     // we can edit the pte without a lock because the page lock protects it
     // if another faulter tries to get this the pagelock will stop it in the rescue
     // if the rescue sees a change in the pte it will redo the fault
+    // We have to write no fence here in order to avoid tearing
 
     local.transitionFormat.contentsLocation = DISK;
     local.invalidFormat.diskIndex = page->diskIndex;
@@ -475,8 +571,16 @@ pfn* getVictimFromStandByList (PCRITICAL_SECTION currentPageTableLock, PTHREAD_I
     return page;
 }
 
-// copies the contents of a disk page into a physical frame number, and frees disk space
-// assumes pagetable lock is held on entry and will be release by the caller
+/**
+ * @brief This function reads in the contents of a disk page onto a physical page. It uses an interim transfer virtual address to complete this task.
+ * Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls,
+ * a lot of time spent flushing and unmapping is saved.
+ * @param currentPTE The page table entry that contains the disk page we want to read from.
+ * @param frameNumber The frame to read into.
+ * @param threadContext The caller's thread info. It is used to determine which transfer virtual page to use
+ * @pre The page table entry must be locked on entry to this function.
+ * @post The caller must unlock the page table entry
+ */
 VOID
 modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) {
 
@@ -500,7 +604,15 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
     set_disk_space_free(diskIndex);
 }
 
-// zeroes one physical page
+/**
+*  @brief This function zeroes a physical page. It uses an interim transfer virtual address to complete this task.
+ * Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls,
+ * a lot of time spent flushing and unmapping is saved.
+ * @param page The page to zero.
+ * @param threadContext The caller's thread info. It is used to determine which transfer virtual page to use.
+
+ */
+// TODO make it only take in a frame number and make it void
 BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
 
     PVOID zeroVA;
@@ -524,7 +636,12 @@ BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
     return TRUE;
 }
 
-// gets a page of off the free list, assumes caller will release pagelock
+/**
+ * @brief This function gets a page off of one of the free lists. It returns with the page locked.
+ * @param threadContext The thread info of the caller.
+ * @return Returns a free page.
+ * @post The caller must release the page lock of the returned page.
+ */
 pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     ULONG64 localFreeListIndex;
     PLIST_ENTRY entry;
@@ -535,23 +652,30 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     ULONG64 counter;
 
 
+
     counter = 0;
+
+    // Increment global data that approximates what free list should be the most full/least contended
     localFreeListIndex = InterlockedIncrement(&freeListRemoveIndex) % NUMBER_OF_FREE_LISTS;
 
 
-    // iterate through the freelists starting at the index calculated above and try to lock it
+    // Iterate through the freelists starting at the index calculated above and try to lock it
 
     while (TRUE) {
+        // In our first run through, just try to enter a freelist lock
         if (counter < NUMBER_OF_FREE_LISTS) {
             if (TryEnterCriticalSection(&headFreeLists[localFreeListIndex].page.lock) == TRUE) {
                 gotFreeListLock = TRUE;
             }
+            // if all of them were empty at the time we checked
         } else if (counter == 2* NUMBER_OF_FREE_LISTS) {
             return LIST_IS_EMPTY;
+            // acquire a freelist lock exclusive
         } else {
             EnterCriticalSection(&headFreeLists[localFreeListIndex].page.lock);
             gotFreeListLock = TRUE;
         }
+
 
         if (gotFreeListLock) {
 #if DBG
@@ -569,6 +693,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
             validateList(&headFreeLists[localFreeListIndex]);
 #endif
 
+            // now that the page is off the list we no longer need to lock the list
             LeaveCriticalSection(&headFreeLists[localFreeListIndex].page.lock);
 
             if (page == LIST_IS_EMPTY) {
@@ -578,6 +703,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                 continue;
             } else {
 
+                // The following code calls the standby pruner.
                 localTotalFreeListLength = InterlockedDecrement64((volatile LONG64 *) &freeListLength);
 
                ASSERT(localTotalFreeListLength != MAXULONG64);
@@ -592,7 +718,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 
                     InterlockedExchange(&standByPruningInProgress, FALSE);
                 }
-
+                // return a locked page
                 enterPageLock(page, threadContext);
                 return page;
             }

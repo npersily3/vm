@@ -62,7 +62,7 @@ BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
     }
 
 
-    //TODO change it to a new pte format that signals that it has been freed
+
     currentPTE->entireFormat = EMPTY_PTE;
 
 
