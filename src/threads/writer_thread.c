@@ -12,7 +12,7 @@
 #include "../../include/utils/thread_utils.h"
 #include "threads/user_thread.h"
 /**
- *@file
+ *@file writer_thread.c
  *@brief This file contains all the functions associated with writing to page that have been recently trimmed to disk.
  *@author Noah Persily
 */

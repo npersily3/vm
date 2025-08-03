@@ -14,6 +14,11 @@
 #include "../../include/utils/thread_utils.h"
 
 /**
+ *@file trimmer_thread.c
+ *@brief This file containsa protocal for unmapping active pages and adding them to a modified list.
+ *@author Noah Persily
+*/
+/**
  * @brief This is the function that deals with unmapping pages.
  * It will pop a page off the active list and add it to the modified list.
  * It will batch unmap if the consecutive pages are in the same page table entry region.

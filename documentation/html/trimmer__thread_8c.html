@@ -106,6 +106,9 @@ $(function() {
   <div class="headertitle"><div class="title">trimmer_thread.c File Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>This file containsa protocal for unmapping active pages and adding them to a modified list.  
+<a href="#details">More...</a></p>
 <div class="textblock"><code>#include &quot;<a class="el" href="trimmer__thread_8h_source.html">../../include/threads/trimmer_thread.h</a>&quot;</code><br />
 <code>#include &lt;stdio.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="structures_8h_source.html">../../include/variables/structures.h</a>&quot;</code><br />
@@ -121,14 +124,17 @@ Functions</h2></td></tr>
 <tr class="memdesc:ad435722c9283c37221db5ee47f172da9"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the function that deals with unmapping pages. It will pop a page off the active list and add it to the modified list. It will batch unmap if the consecutive pages are in the same page table entry region.  <br /></td></tr>
 <tr class="memitem:a66447264f92e1fef2cf4a1496ac42760" id="r_a66447264f92e1fef2cf4a1496ac42760"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66447264f92e1fef2cf4a1496ac42760">getActivePage</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
 <tr class="memdesc:a66447264f92e1fef2cf4a1496ac42760"><td class="mdescLeft">&#160;</td><td class="mdescRight">This functions pops a page off the active list and returns it unlocked.  <br /></td></tr>
-<tr class="memitem:a7ab4b49f6892ee10915cb0ea079b3529" id="r_a7ab4b49f6892ee10915cb0ea079b3529"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7ab4b49f6892ee10915cb0ea079b3529">isNextPageInSameRegion</a> (<a class="el" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a> *region, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> info)</td></tr>
-<tr class="memdesc:a7ab4b49f6892ee10915cb0ea079b3529"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function peeks into the head of the active list and sees if the next page is in the same pte region.  <br /></td></tr>
 <tr class="memitem:aefb918ee98100baec9ed6e9bf1b8e58b" id="r_aefb918ee98100baec9ed6e9bf1b8e58b"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aefb918ee98100baec9ed6e9bf1b8e58b">unmapBatch</a> (PULONG64 virtualAddresses, ULONG64 batchSize)</td></tr>
 <tr class="memdesc:aefb918ee98100baec9ed6e9bf1b8e58b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simple wrapper for a MapUserPhysicalPagesScatter call.  <br /></td></tr>
 <tr class="memitem:a9f5290d354fd250aaa561208846ed337" id="r_a9f5290d354fd250aaa561208846ed337"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9f5290d354fd250aaa561208846ed337">addBatchToModifiedList</a> (<a class="el" href="structpfn.html">pfn</a> **pages, ULONG64 batchSize, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
 <tr class="memdesc:a9f5290d354fd250aaa561208846ed337"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function adds a batch of pages to the modified list.  <br /></td></tr>
+<tr class="memitem:a7ab4b49f6892ee10915cb0ea079b3529" id="r_a7ab4b49f6892ee10915cb0ea079b3529"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7ab4b49f6892ee10915cb0ea079b3529">isNextPageInSameRegion</a> (<a class="el" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a> *region, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> info)</td></tr>
+<tr class="memdesc:a7ab4b49f6892ee10915cb0ea079b3529"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function peeks into the head of the active list and sees if the next page is in the same pte region.  <br /></td></tr>
 </table>
-<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>This file containsa protocal for unmapping active pages and adding them to a modified list. </p>
+<dl class="section author"><dt>Author</dt><dd>Noah Persily </dd></dl>
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a9f5290d354fd250aaa561208846ed337" name="a9f5290d354fd250aaa561208846ed337"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9f5290d354fd250aaa561208846ed337">&#9670;&#160;</a></span>addBatchToModifiedList()</h2>
 

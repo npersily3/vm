@@ -1,5 +1,10 @@
 \doxysection{src/threads/trimmer\+\_\+thread.c File Reference}
 \hypertarget{trimmer__thread_8c}{}\label{trimmer__thread_8c}\index{src/threads/trimmer\_thread.c@{src/threads/trimmer\_thread.c}}
+
+
+This file containsa protocal for unmapping active pages and adding them to a modified list.  
+
+
 {\ttfamily \#include "{}../../include/threads/trimmer\+\_\+thread.\+h"{}}\newline
 {\ttfamily \#include $<$stdio.\+h$>$}\newline
 {\ttfamily \#include "{}../../include/variables/structures.\+h"{}}\newline
@@ -15,12 +20,20 @@ DWORD \mbox{\hyperlink{trimmer__thread_8c_ad435722c9283c37221db5ee47f172da9}{pag
 \begin{DoxyCompactList}\small\item\em This is the function that deals with unmapping pages. It will pop a page off the active list and add it to the modified list. It will batch unmap if the consecutive pages are in the same page table entry region. \end{DoxyCompactList}\item 
 \mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{trimmer__thread_8c_a66447264f92e1fef2cf4a1496ac42760}{get\+Active\+Page}} (\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Context)
 \begin{DoxyCompactList}\small\item\em This functions pops a page off the active list and returns it unlocked. \end{DoxyCompactList}\item 
-BOOL \mbox{\hyperlink{trimmer__thread_8c_a7ab4b49f6892ee10915cb0ea079b3529}{is\+Next\+Page\+In\+Same\+Region}} (\mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\+\_\+\+REGION}} \texorpdfstring{$\ast$}{*}region, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} info)
-\begin{DoxyCompactList}\small\item\em This function peeks into the head of the active list and sees if the next page is in the same pte region. \end{DoxyCompactList}\item 
 VOID \mbox{\hyperlink{trimmer__thread_8c_aefb918ee98100baec9ed6e9bf1b8e58b}{unmap\+Batch}} (PULONG64 virtual\+Addresses, ULONG64 batch\+Size)
 \begin{DoxyCompactList}\small\item\em Simple wrapper for a Map\+User\+Physical\+Pages\+Scatter call. \end{DoxyCompactList}\item 
 VOID \mbox{\hyperlink{trimmer__thread_8c_a9f5290d354fd250aaa561208846ed337}{add\+Batch\+To\+Modified\+List}} (\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*}\texorpdfstring{$\ast$}{*}pages, ULONG64 batch\+Size, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Context)
-\begin{DoxyCompactList}\small\item\em This function adds a batch of pages to the modified list. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\begin{DoxyCompactList}\small\item\em This function adds a batch of pages to the modified list. \end{DoxyCompactList}\item 
+BOOL \mbox{\hyperlink{trimmer__thread_8c_a7ab4b49f6892ee10915cb0ea079b3529}{is\+Next\+Page\+In\+Same\+Region}} (\mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\+\_\+\+REGION}} \texorpdfstring{$\ast$}{*}region, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} info)
+\begin{DoxyCompactList}\small\item\em This function peeks into the head of the active list and sees if the next page is in the same pte region. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+This file containsa protocal for unmapping active pages and adding them to a modified list. 
+
+\begin{DoxyAuthor}{Author}
+Noah Persily 
+\end{DoxyAuthor}
 
 
 \label{doc-func-members}

@@ -1,7 +1,11 @@
 //
 // Created by nrper on 7/17/2025.
 //
-
+/**
+ *@file page_utils.c
+ *@brief This file contains functions used to manipulate lists. It makes use of slim-read-write locks to accomplish this task with little contention.
+ *@author Noah Persily
+*/
 #include "../../include/utils/page_utils.h"
 #include "../../include/variables/globals.h"
 #include "utils/thread_utils.h"
@@ -24,14 +28,16 @@ volatile ULONG64 prunecount;
 volatile ULONG64 pagesremoved;
 
 /**
- *
+ *@brief This function removes a batch of pages off of one list onto another instead of removing them one by one.
  * @param headToRemove A list head to remove pages from
  * @param headToAdd A list head to add the pages removed
- * @param threadInfo
- * @return
+ * @param threadInfo The info of the calling thread
+ * @retval True if it was able to remove pages
+ * @retval False if the list to remove from was empty
+ * @post All the pages added to the local list need to be unlocked
  */
-//TODO make it a bool
-pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo) {
+
+bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo) {
 
     pfn* firstPage;
     pfn* lastPage;
@@ -109,7 +115,7 @@ pfn* removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
         return LIST_IS_EMPTY;
     }
 
-    return SUCCESS;
+    return !LIST_IS_EMPTY;
 }
 
 // Called with page's pageLock held
