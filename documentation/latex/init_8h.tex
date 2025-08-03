@@ -1,0 +1,172 @@
+\doxysection{include/initialization/init.h File Reference}
+\hypertarget{init_8h}{}\label{init_8h}\index{include/initialization/init.h@{include/initialization/init.h}}
+{\ttfamily \#include $<$windows.\+h$>$}\newline
+{\ttfamily \#include "{}../variables/structures.\+h"{}}\newline
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+BOOL \mbox{\hyperlink{init_8h_a0c9e77a2b25b5860e244091021684d60}{Get\+Privilege}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a01df8b1767d5a0c7f704e92b31eeebf1}{init\+\_\+virtual\+\_\+memory}} (VOID)
+\item 
+ULONG64 \mbox{\hyperlink{init_8h_aa298b9446869fc2d050a719120cb9539}{get\+Max\+Frame\+Number}} (VOID)
+\item 
+BOOL \mbox{\hyperlink{init_8h_aff702f29284682a44388dec8bb01dc0e}{init\+VA}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a9bd070d2ab0bdb93ced23c5af39fa1b0}{initialize\+Page\+Table\+Locks}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a3b30a5be9b508508041da8ac419ca003}{init\+\_\+pfns}} (VOID)
+\item 
+BOOL \mbox{\hyperlink{init_8h_a8b2c639850bfa092726592380b96793d}{get\+Physical\+Pages}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a6b4b0d965a12cb6a4fa0e81d6e336758}{init\+\_\+lists}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a078f5aba4625a546574b183c704d8e38}{init\+\_\+free\+\_\+list}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a9ce66c35f161c7dd184eccf32832d6bf}{init\+\_\+list\+\_\+head}} (\mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} head)
+\item 
+VOID \mbox{\hyperlink{init_8h_ad31c55307ec3cbe6533db805a599740a}{init\+\_\+num\+\_\+open\+\_\+slots}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a822b9dabc0a8be9f581135cbd5ba8dfd}{init\+\_\+disk\+\_\+active}} (VOID)
+\item 
+PVOID \mbox{\hyperlink{init_8h_a63ea90e5d68efe47281012ba0bb76111}{init\+\_\+memory}} (ULONG64 num\+Bytes)
+\item 
+VOID \mbox{\hyperlink{init_8h_a84f4576fe95cedeef28cdc4d0a9496d8}{init\+\_\+page\+Table}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_a3946185081bbb14bbde6e08f8572928b}{init\+\_\+pte\+\_\+regions}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8h_aafb639d2ea6780be13d3dd463d7d1241}{init\+\_\+disk}} (VOID)
+\item 
+HANDLE \mbox{\hyperlink{init_8h_a4d2f5117b6c262e13d5d752b524cd3d7}{Create\+Shared\+Memory\+Section}} (VOID)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+volatile ULONG64 \mbox{\hyperlink{init_8h_a433a3b7b95392ee63bcfbfe382673e00}{page\+Waits}}
+\item 
+volatile ULONG64 \mbox{\hyperlink{init_8h_adbc56ab37cb1acc59cad16b92848af82}{total\+Time\+Waiting}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{init_8h_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{init_8h_a4d2f5117b6c262e13d5d752b524cd3d7}\index{init.h@{init.h}!CreateSharedMemorySection@{CreateSharedMemorySection}}
+\index{CreateSharedMemorySection@{CreateSharedMemorySection}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{CreateSharedMemorySection()}{CreateSharedMemorySection()}}
+{\footnotesize\ttfamily \label{init_8h_a4d2f5117b6c262e13d5d752b524cd3d7} 
+HANDLE Create\+Shared\+Memory\+Section (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_aa298b9446869fc2d050a719120cb9539}\index{init.h@{init.h}!getMaxFrameNumber@{getMaxFrameNumber}}
+\index{getMaxFrameNumber@{getMaxFrameNumber}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{getMaxFrameNumber()}{getMaxFrameNumber()}}
+{\footnotesize\ttfamily \label{init_8h_aa298b9446869fc2d050a719120cb9539} 
+ULONG64 get\+Max\+Frame\+Number (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a8b2c639850bfa092726592380b96793d}\index{init.h@{init.h}!getPhysicalPages@{getPhysicalPages}}
+\index{getPhysicalPages@{getPhysicalPages}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{getPhysicalPages()}{getPhysicalPages()}}
+{\footnotesize\ttfamily \label{init_8h_a8b2c639850bfa092726592380b96793d} 
+BOOL get\+Physical\+Pages (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a0c9e77a2b25b5860e244091021684d60}\index{init.h@{init.h}!GetPrivilege@{GetPrivilege}}
+\index{GetPrivilege@{GetPrivilege}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{GetPrivilege()}{GetPrivilege()}}
+{\footnotesize\ttfamily \label{init_8h_a0c9e77a2b25b5860e244091021684d60} 
+BOOL Get\+Privilege (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_aafb639d2ea6780be13d3dd463d7d1241}\index{init.h@{init.h}!init\_disk@{init\_disk}}
+\index{init\_disk@{init\_disk}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_disk()}{init\_disk()}}
+{\footnotesize\ttfamily \label{init_8h_aafb639d2ea6780be13d3dd463d7d1241} 
+VOID init\+\_\+disk (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a822b9dabc0a8be9f581135cbd5ba8dfd}\index{init.h@{init.h}!init\_disk\_active@{init\_disk\_active}}
+\index{init\_disk\_active@{init\_disk\_active}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_disk\_active()}{init\_disk\_active()}}
+{\footnotesize\ttfamily \label{init_8h_a822b9dabc0a8be9f581135cbd5ba8dfd} 
+VOID init\+\_\+disk\+\_\+active (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a078f5aba4625a546574b183c704d8e38}\index{init.h@{init.h}!init\_free\_list@{init\_free\_list}}
+\index{init\_free\_list@{init\_free\_list}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_free\_list()}{init\_free\_list()}}
+{\footnotesize\ttfamily \label{init_8h_a078f5aba4625a546574b183c704d8e38} 
+VOID init\+\_\+free\+\_\+list (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a9ce66c35f161c7dd184eccf32832d6bf}\index{init.h@{init.h}!init\_list\_head@{init\_list\_head}}
+\index{init\_list\_head@{init\_list\_head}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_list\_head()}{init\_list\_head()}}
+{\footnotesize\ttfamily \label{init_8h_a9ce66c35f161c7dd184eccf32832d6bf} 
+VOID init\+\_\+list\+\_\+head (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{head}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a6b4b0d965a12cb6a4fa0e81d6e336758}\index{init.h@{init.h}!init\_lists@{init\_lists}}
+\index{init\_lists@{init\_lists}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_lists()}{init\_lists()}}
+{\footnotesize\ttfamily \label{init_8h_a6b4b0d965a12cb6a4fa0e81d6e336758} 
+VOID init\+\_\+lists (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a63ea90e5d68efe47281012ba0bb76111}\index{init.h@{init.h}!init\_memory@{init\_memory}}
+\index{init\_memory@{init\_memory}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_memory()}{init\_memory()}}
+{\footnotesize\ttfamily \label{init_8h_a63ea90e5d68efe47281012ba0bb76111} 
+PVOID init\+\_\+memory (\begin{DoxyParamCaption}\item[{ULONG64}]{num\+Bytes}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_ad31c55307ec3cbe6533db805a599740a}\index{init.h@{init.h}!init\_num\_open\_slots@{init\_num\_open\_slots}}
+\index{init\_num\_open\_slots@{init\_num\_open\_slots}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_num\_open\_slots()}{init\_num\_open\_slots()}}
+{\footnotesize\ttfamily \label{init_8h_ad31c55307ec3cbe6533db805a599740a} 
+VOID init\+\_\+num\+\_\+open\+\_\+slots (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a84f4576fe95cedeef28cdc4d0a9496d8}\index{init.h@{init.h}!init\_pageTable@{init\_pageTable}}
+\index{init\_pageTable@{init\_pageTable}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_pageTable()}{init\_pageTable()}}
+{\footnotesize\ttfamily \label{init_8h_a84f4576fe95cedeef28cdc4d0a9496d8} 
+VOID init\+\_\+page\+Table (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a3b30a5be9b508508041da8ac419ca003}\index{init.h@{init.h}!init\_pfns@{init\_pfns}}
+\index{init\_pfns@{init\_pfns}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_pfns()}{init\_pfns()}}
+{\footnotesize\ttfamily \label{init_8h_a3b30a5be9b508508041da8ac419ca003} 
+VOID init\+\_\+pfns (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a3946185081bbb14bbde6e08f8572928b}\index{init.h@{init.h}!init\_pte\_regions@{init\_pte\_regions}}
+\index{init\_pte\_regions@{init\_pte\_regions}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_pte\_regions()}{init\_pte\_regions()}}
+{\footnotesize\ttfamily \label{init_8h_a3946185081bbb14bbde6e08f8572928b} 
+VOID init\+\_\+pte\+\_\+regions (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a01df8b1767d5a0c7f704e92b31eeebf1}\index{init.h@{init.h}!init\_virtual\_memory@{init\_virtual\_memory}}
+\index{init\_virtual\_memory@{init\_virtual\_memory}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{init\_virtual\_memory()}{init\_virtual\_memory()}}
+{\footnotesize\ttfamily \label{init_8h_a01df8b1767d5a0c7f704e92b31eeebf1} 
+VOID init\+\_\+virtual\+\_\+memory (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_a9bd070d2ab0bdb93ced23c5af39fa1b0}\index{init.h@{init.h}!initializePageTableLocks@{initializePageTableLocks}}
+\index{initializePageTableLocks@{initializePageTableLocks}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{initializePageTableLocks()}{initializePageTableLocks()}}
+{\footnotesize\ttfamily \label{init_8h_a9bd070d2ab0bdb93ced23c5af39fa1b0} 
+VOID initialize\+Page\+Table\+Locks (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8h_aff702f29284682a44388dec8bb01dc0e}\index{init.h@{init.h}!initVA@{initVA}}
+\index{initVA@{initVA}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{initVA()}{initVA()}}
+{\footnotesize\ttfamily \label{init_8h_aff702f29284682a44388dec8bb01dc0e} 
+BOOL init\+VA (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-var-members}
+\Hypertarget{init_8h_doc-var-members}
+\doxysubsection{Variable Documentation}
+\Hypertarget{init_8h_a433a3b7b95392ee63bcfbfe382673e00}\index{init.h@{init.h}!pageWaits@{pageWaits}}
+\index{pageWaits@{pageWaits}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{pageWaits}{pageWaits}}
+{\footnotesize\ttfamily \label{init_8h_a433a3b7b95392ee63bcfbfe382673e00} 
+volatile ULONG64 page\+Waits\hspace{0.3cm}{\ttfamily [extern]}}
+
+\Hypertarget{init_8h_adbc56ab37cb1acc59cad16b92848af82}\index{init.h@{init.h}!totalTimeWaiting@{totalTimeWaiting}}
+\index{totalTimeWaiting@{totalTimeWaiting}!init.h@{init.h}}
+\doxysubsubsection{\texorpdfstring{totalTimeWaiting}{totalTimeWaiting}}
+{\footnotesize\ttfamily \label{init_8h_adbc56ab37cb1acc59cad16b92848af82} 
+volatile ULONG64 total\+Time\+Waiting\hspace{0.3cm}{\ttfamily [extern]}}
+

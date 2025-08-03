@@ -1,0 +1,553 @@
+\doxysection{src/initialization/init.c File Reference}
+\hypertarget{init_8c}{}\label{init_8c}\index{src/initialization/init.c@{src/initialization/init.c}}
+{\ttfamily \#include "{}../../include/variables/structures.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/variables/globals.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/initialization/init.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/variables/macros.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/initialization/init\+\_\+threads.\+h"{}}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+BOOL \mbox{\hyperlink{init_8c_a0c9e77a2b25b5860e244091021684d60}{Get\+Privilege}} (VOID)
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a4d2f5117b6c262e13d5d752b524cd3d7}{Create\+Shared\+Memory\+Section}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a01df8b1767d5a0c7f704e92b31eeebf1}{init\+\_\+virtual\+\_\+memory}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a3946185081bbb14bbde6e08f8572928b}{init\+\_\+pte\+\_\+regions}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a84f4576fe95cedeef28cdc4d0a9496d8}{init\+\_\+page\+Table}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_aafb639d2ea6780be13d3dd463d7d1241}{init\+\_\+disk}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a822b9dabc0a8be9f581135cbd5ba8dfd}{init\+\_\+disk\+\_\+active}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_ad31c55307ec3cbe6533db805a599740a}{init\+\_\+num\+\_\+open\+\_\+slots}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a3b30a5be9b508508041da8ac419ca003}{init\+\_\+pfns}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a078f5aba4625a546574b183c704d8e38}{init\+\_\+free\+\_\+list}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a6b4b0d965a12cb6a4fa0e81d6e336758}{init\+\_\+lists}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init_8c_a9ce66c35f161c7dd184eccf32832d6bf}{init\+\_\+list\+\_\+head}} (\mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} head)
+\item 
+BOOL \mbox{\hyperlink{init_8c_a8b2c639850bfa092726592380b96793d}{get\+Physical\+Pages}} (VOID)
+\item 
+BOOL \mbox{\hyperlink{init_8c_a70143d9a4a7923d239acad3ad4f587ce}{init\+VA}} ()
+\item 
+ULONG64 \mbox{\hyperlink{init_8c_aa298b9446869fc2d050a719120cb9539}{get\+Max\+Frame\+Number}} (VOID)
+\item 
+PVOID \mbox{\hyperlink{init_8c_a63ea90e5d68efe47281012ba0bb76111}{init\+\_\+memory}} (ULONG64 num\+Bytes)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+volatile ULONG64 \mbox{\hyperlink{init_8c_a433a3b7b95392ee63bcfbfe382673e00}{page\+Waits}}
+\item 
+volatile ULONG64 \mbox{\hyperlink{init_8c_adbc56ab37cb1acc59cad16b92848af82}{total\+Time\+Waiting}}
+\item 
+\mbox{\hyperlink{structlist_head}{list\+Head}} \mbox{\hyperlink{init_8c_a52984f5994ddf0c0360c085b79b9023b}{head\+Free\+Lists}} \mbox{[}\mbox{\hyperlink{structures_8h_a498bbf40c65552f824c46efcd3496669}{NUMBER\+\_\+\+OF\+\_\+\+FREE\+\_\+\+LISTS}}\mbox{]}
+\item 
+volatile LONG \mbox{\hyperlink{init_8c_a43109329be1b09d2231295e71232c648}{free\+List\+Add\+Index}}
+\item 
+volatile LONG \mbox{\hyperlink{init_8c_afebe9a4d0644fedfcee04e8bd67554de}{free\+List\+Remove\+Index}}
+\item 
+volatile ULONG64 \mbox{\hyperlink{init_8c_a3798be30b1f648b1b1de8c1d6560c533}{free\+List\+Length}}
+\item 
+volatile boolean \mbox{\hyperlink{init_8c_a3ee8727f68de6ca78ffbc6bea01512cd}{stand\+By\+Pruning\+In\+Progress}}
+\item 
+\mbox{\hyperlink{structlist_head}{list\+Head}} \mbox{\hyperlink{init_8c_a94fe7d15f3121ceb68cee2c8fa317bad}{head\+Active\+List}}
+\item 
+\mbox{\hyperlink{structlist_head}{list\+Head}} \mbox{\hyperlink{init_8c_acd57aa13d337da1922deec378258ca32}{head\+Modified\+List}}
+\item 
+\mbox{\hyperlink{structlist_head}{list\+Head}} \mbox{\hyperlink{init_8c_a2104c2f630ec691446eb83024e5eb897}{head\+Stand\+By\+List}}
+\item 
+\mbox{\hyperlink{structlist_head}{list\+Head}} \mbox{\hyperlink{init_8c_a29264284e4818cecfacb8d88bb123275}{head\+To\+Be\+Zeroed\+List}}
+\item 
+\mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{init_8c_a377cadc3f3505d5777cad6f2deb856cf}{page\+Table}}
+\item 
+\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{init_8c_ab9a938255df813505ee77eef3cdc5aed}{pfn\+Start}}
+\item 
+\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{init_8c_a6714a26157ebdb9b9563bfb92ae3b5e0}{end\+PFN}}
+\item 
+PULONG\+\_\+\+PTR \mbox{\hyperlink{init_8c_aaaf4624300194b91a31836695b593a30}{va\+Start}}
+\item 
+PULONG\+\_\+\+PTR \mbox{\hyperlink{init_8c_a725d904e3cf158b59c18626a4a6f8df5}{va\+End}}
+\item 
+PVOID \mbox{\hyperlink{init_8c_a0e3ed94c0d8426754bbe064cb62d8756}{transfer\+Va\+Writing}}
+\item 
+PVOID \mbox{\hyperlink{init_8c_a17f39208d3a7e2889b13d9cb79b3a7b9}{user\+Thread\+Transfer\+Va}} \mbox{[}\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}}\mbox{]}
+\item 
+PVOID \mbox{\hyperlink{init_8c_aea8eb8024cc46acb883918c96f259d91}{zero\+Thread\+Transfer\+Va}}
+\item 
+ULONG\+\_\+\+PTR \mbox{\hyperlink{init_8c_ab03733558cb372455cf304fbe3557898}{physical\+\_\+page\+\_\+count}}
+\item 
+PULONG\+\_\+\+PTR \mbox{\hyperlink{init_8c_a18a3a8092de1ecdffeb9169cd922ec55}{physical\+\_\+page\+\_\+numbers}}
+\item 
+\mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\+\_\+\+REGION}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{init_8c_a2e8469f2378cb4430554fbacc3c5b7a4}{pte\+Regions\+Base}}
+\item 
+PVOID \mbox{\hyperlink{init_8c_a7e828d4a313bca81b6bae08f803ad50e}{disk\+Start}}
+\item 
+ULONG64 \mbox{\hyperlink{init_8c_a444c05823db77df8673c6b9e3a7bdfac}{disk\+End}}
+\item 
+PULONG64 \mbox{\hyperlink{init_8c_ae0db0ae49376aafded2a89d3773100fb}{disk\+Active}}
+\item 
+PULONG64 \mbox{\hyperlink{init_8c_acfd88af492b8882572108d2c8c71351f}{disk\+Active\+End}}
+\item 
+PULONG64 \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{init_8c_ab66e3a5dafd02f83268a845ad87e3acc}{disk\+Active\+Va}}
+\item 
+ULONG64 \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{init_8c_a9f446154d095c72a73761fdcec055e28}{number\+\_\+of\+\_\+open\+\_\+slots}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_af5e81ab60d5254eb0e607a0403268306}{work\+Done\+Thread\+Handles}} \mbox{[}\mbox{\hyperlink{structures_8h_a13521bb0f1dfd16021b5638c96c48572}{NUMBER\+\_\+\+OF\+\_\+\+THREADS}}\mbox{]}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a3a15fee53bd0c64b27452389031f7513}{user\+Thread\+Handles}} \mbox{[}\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}}\mbox{]}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_ad53a830ad07de85db0b1c8aed436e94e}{system\+Thread\+Handles}} \mbox{[}\mbox{\hyperlink{structures_8h_aecd13cc61ec8ab92172ec6bbbcbe773c}{NUMBER\+\_\+\+OF\+\_\+\+SYSTEM\+\_\+\+THREADS}}\mbox{]}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_ac9d7e8959ccbaaf17543b87c18250052}{lock\+Free\+List}}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_a6417e97c548a0ba579800ecde77dcc4f}{lock\+Active\+List}}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_a2888267ad679c49a7685bd1f689551c3}{lock\+Modified\+List}}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_aad5eeca9da68dc529e9ff6d9e90d0ff0}{lock\+Stand\+By\+List}}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_ace953395f45a735a3424dbbca3717906}{lock\+Disk\+Active}}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_a8c02eda8b512a6c6aeb976f2f1d50b5c}{lock\+Number\+Of\+Slots}}
+\item 
+PCRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_a7f548e4b4ba5df0c29b855268d0d868f}{lock\+Writing\+Transfer\+Va}}
+\item 
+CRITICAL\+\_\+\+SECTION \mbox{\hyperlink{init_8c_ac74251c606c49c2437751b911e77a0f6}{serialize\+Writerand\+User}}
+\item 
+ULONG64 \mbox{\hyperlink{init_8c_a462f29ada8760fa04a54ad500692289e}{lock\+Mod\+List}}
+\item 
+ULONG64 \mbox{\hyperlink{init_8c_a4fd382b4c25215c5c72c3eeff9740078}{lock\+To\+Be\+Zeroed\+List}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a1c302bfa8283e1fd3ac07b41cbec4793}{Global\+Start\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_adff0a60b8e4254e817f619ccc8d5a105}{trimming\+Start\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_ad27b5858a32d7c89137c68150f36c0ea}{writing\+Start\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a80e48e2103f402bb77050723a5c053e5}{writing\+End\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a1f77d91812324575a3bd55f9ba07b4d1}{user\+Start\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_acefd683d0ec814a5f35e5e63e6744aac}{user\+End\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a94c076359309b0aa7014248aa5718aad}{zeroing\+Start\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_a6d400d90f983c4790d1853579b259cd9}{system\+Shutdown\+Event}}
+\item 
+HANDLE \mbox{\hyperlink{init_8c_af6cfe28afd9e7bc72619e8836cb9fc03}{physical\+\_\+page\+\_\+handle}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{init_8c_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{init_8c_a4d2f5117b6c262e13d5d752b524cd3d7}\index{init.c@{init.c}!CreateSharedMemorySection@{CreateSharedMemorySection}}
+\index{CreateSharedMemorySection@{CreateSharedMemorySection}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{CreateSharedMemorySection()}{CreateSharedMemorySection()}}
+{\footnotesize\ttfamily \label{init_8c_a4d2f5117b6c262e13d5d752b524cd3d7} 
+HANDLE Create\+Shared\+Memory\+Section (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_aa298b9446869fc2d050a719120cb9539}\index{init.c@{init.c}!getMaxFrameNumber@{getMaxFrameNumber}}
+\index{getMaxFrameNumber@{getMaxFrameNumber}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{getMaxFrameNumber()}{getMaxFrameNumber()}}
+{\footnotesize\ttfamily \label{init_8c_aa298b9446869fc2d050a719120cb9539} 
+ULONG64 get\+Max\+Frame\+Number (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a8b2c639850bfa092726592380b96793d}\index{init.c@{init.c}!getPhysicalPages@{getPhysicalPages}}
+\index{getPhysicalPages@{getPhysicalPages}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{getPhysicalPages()}{getPhysicalPages()}}
+{\footnotesize\ttfamily \label{init_8c_a8b2c639850bfa092726592380b96793d} 
+BOOL get\+Physical\+Pages (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a0c9e77a2b25b5860e244091021684d60}\index{init.c@{init.c}!GetPrivilege@{GetPrivilege}}
+\index{GetPrivilege@{GetPrivilege}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{GetPrivilege()}{GetPrivilege()}}
+{\footnotesize\ttfamily \label{init_8c_a0c9e77a2b25b5860e244091021684d60} 
+BOOL Get\+Privilege (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_aafb639d2ea6780be13d3dd463d7d1241}\index{init.c@{init.c}!init\_disk@{init\_disk}}
+\index{init\_disk@{init\_disk}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_disk()}{init\_disk()}}
+{\footnotesize\ttfamily \label{init_8c_aafb639d2ea6780be13d3dd463d7d1241} 
+VOID init\+\_\+disk (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a822b9dabc0a8be9f581135cbd5ba8dfd}\index{init.c@{init.c}!init\_disk\_active@{init\_disk\_active}}
+\index{init\_disk\_active@{init\_disk\_active}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_disk\_active()}{init\_disk\_active()}}
+{\footnotesize\ttfamily \label{init_8c_a822b9dabc0a8be9f581135cbd5ba8dfd} 
+VOID init\+\_\+disk\+\_\+active (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a078f5aba4625a546574b183c704d8e38}\index{init.c@{init.c}!init\_free\_list@{init\_free\_list}}
+\index{init\_free\_list@{init\_free\_list}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_free\_list()}{init\_free\_list()}}
+{\footnotesize\ttfamily \label{init_8c_a078f5aba4625a546574b183c704d8e38} 
+VOID init\+\_\+free\+\_\+list (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a9ce66c35f161c7dd184eccf32832d6bf}\index{init.c@{init.c}!init\_list\_head@{init\_list\_head}}
+\index{init\_list\_head@{init\_list\_head}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_list\_head()}{init\_list\_head()}}
+{\footnotesize\ttfamily \label{init_8c_a9ce66c35f161c7dd184eccf32832d6bf} 
+VOID init\+\_\+list\+\_\+head (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{head}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a6b4b0d965a12cb6a4fa0e81d6e336758}\index{init.c@{init.c}!init\_lists@{init\_lists}}
+\index{init\_lists@{init\_lists}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_lists()}{init\_lists()}}
+{\footnotesize\ttfamily \label{init_8c_a6b4b0d965a12cb6a4fa0e81d6e336758} 
+VOID init\+\_\+lists (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a63ea90e5d68efe47281012ba0bb76111}\index{init.c@{init.c}!init\_memory@{init\_memory}}
+\index{init\_memory@{init\_memory}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_memory()}{init\_memory()}}
+{\footnotesize\ttfamily \label{init_8c_a63ea90e5d68efe47281012ba0bb76111} 
+PVOID init\+\_\+memory (\begin{DoxyParamCaption}\item[{ULONG64}]{num\+Bytes}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_ad31c55307ec3cbe6533db805a599740a}\index{init.c@{init.c}!init\_num\_open\_slots@{init\_num\_open\_slots}}
+\index{init\_num\_open\_slots@{init\_num\_open\_slots}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_num\_open\_slots()}{init\_num\_open\_slots()}}
+{\footnotesize\ttfamily \label{init_8c_ad31c55307ec3cbe6533db805a599740a} 
+VOID init\+\_\+num\+\_\+open\+\_\+slots (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a84f4576fe95cedeef28cdc4d0a9496d8}\index{init.c@{init.c}!init\_pageTable@{init\_pageTable}}
+\index{init\_pageTable@{init\_pageTable}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_pageTable()}{init\_pageTable()}}
+{\footnotesize\ttfamily \label{init_8c_a84f4576fe95cedeef28cdc4d0a9496d8} 
+VOID init\+\_\+page\+Table (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a3b30a5be9b508508041da8ac419ca003}\index{init.c@{init.c}!init\_pfns@{init\_pfns}}
+\index{init\_pfns@{init\_pfns}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_pfns()}{init\_pfns()}}
+{\footnotesize\ttfamily \label{init_8c_a3b30a5be9b508508041da8ac419ca003} 
+VOID init\+\_\+pfns (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a3946185081bbb14bbde6e08f8572928b}\index{init.c@{init.c}!init\_pte\_regions@{init\_pte\_regions}}
+\index{init\_pte\_regions@{init\_pte\_regions}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_pte\_regions()}{init\_pte\_regions()}}
+{\footnotesize\ttfamily \label{init_8c_a3946185081bbb14bbde6e08f8572928b} 
+VOID init\+\_\+pte\+\_\+regions (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a01df8b1767d5a0c7f704e92b31eeebf1}\index{init.c@{init.c}!init\_virtual\_memory@{init\_virtual\_memory}}
+\index{init\_virtual\_memory@{init\_virtual\_memory}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{init\_virtual\_memory()}{init\_virtual\_memory()}}
+{\footnotesize\ttfamily \label{init_8c_a01df8b1767d5a0c7f704e92b31eeebf1} 
+VOID init\+\_\+virtual\+\_\+memory (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init_8c_a70143d9a4a7923d239acad3ad4f587ce}\index{init.c@{init.c}!initVA@{initVA}}
+\index{initVA@{initVA}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{initVA()}{initVA()}}
+{\footnotesize\ttfamily \label{init_8c_a70143d9a4a7923d239acad3ad4f587ce} 
+BOOL init\+VA (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-var-members}
+\Hypertarget{init_8c_doc-var-members}
+\doxysubsection{Variable Documentation}
+\Hypertarget{init_8c_ae0db0ae49376aafded2a89d3773100fb}\index{init.c@{init.c}!diskActive@{diskActive}}
+\index{diskActive@{diskActive}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{diskActive}{diskActive}}
+{\footnotesize\ttfamily \label{init_8c_ae0db0ae49376aafded2a89d3773100fb} 
+PULONG64 disk\+Active}
+
+\Hypertarget{init_8c_acfd88af492b8882572108d2c8c71351f}\index{init.c@{init.c}!diskActiveEnd@{diskActiveEnd}}
+\index{diskActiveEnd@{diskActiveEnd}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{diskActiveEnd}{diskActiveEnd}}
+{\footnotesize\ttfamily \label{init_8c_acfd88af492b8882572108d2c8c71351f} 
+PULONG64 disk\+Active\+End}
+
+\Hypertarget{init_8c_ab66e3a5dafd02f83268a845ad87e3acc}\index{init.c@{init.c}!diskActiveVa@{diskActiveVa}}
+\index{diskActiveVa@{diskActiveVa}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{diskActiveVa}{diskActiveVa}}
+{\footnotesize\ttfamily \label{init_8c_ab66e3a5dafd02f83268a845ad87e3acc} 
+PULONG64\texorpdfstring{$\ast$}{*} disk\+Active\+Va}
+
+\Hypertarget{init_8c_a444c05823db77df8673c6b9e3a7bdfac}\index{init.c@{init.c}!diskEnd@{diskEnd}}
+\index{diskEnd@{diskEnd}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{diskEnd}{diskEnd}}
+{\footnotesize\ttfamily \label{init_8c_a444c05823db77df8673c6b9e3a7bdfac} 
+ULONG64 disk\+End}
+
+\Hypertarget{init_8c_a7e828d4a313bca81b6bae08f803ad50e}\index{init.c@{init.c}!diskStart@{diskStart}}
+\index{diskStart@{diskStart}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{diskStart}{diskStart}}
+{\footnotesize\ttfamily \label{init_8c_a7e828d4a313bca81b6bae08f803ad50e} 
+PVOID disk\+Start}
+
+\Hypertarget{init_8c_a6714a26157ebdb9b9563bfb92ae3b5e0}\index{init.c@{init.c}!endPFN@{endPFN}}
+\index{endPFN@{endPFN}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{endPFN}{endPFN}}
+{\footnotesize\ttfamily \label{init_8c_a6714a26157ebdb9b9563bfb92ae3b5e0} 
+\mbox{\hyperlink{structpfn}{pfn}}\texorpdfstring{$\ast$}{*} end\+PFN}
+
+\Hypertarget{init_8c_a43109329be1b09d2231295e71232c648}\index{init.c@{init.c}!freeListAddIndex@{freeListAddIndex}}
+\index{freeListAddIndex@{freeListAddIndex}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{freeListAddIndex}{freeListAddIndex}}
+{\footnotesize\ttfamily \label{init_8c_a43109329be1b09d2231295e71232c648} 
+volatile LONG free\+List\+Add\+Index}
+
+\Hypertarget{init_8c_a3798be30b1f648b1b1de8c1d6560c533}\index{init.c@{init.c}!freeListLength@{freeListLength}}
+\index{freeListLength@{freeListLength}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{freeListLength}{freeListLength}}
+{\footnotesize\ttfamily \label{init_8c_a3798be30b1f648b1b1de8c1d6560c533} 
+volatile ULONG64 free\+List\+Length}
+
+\Hypertarget{init_8c_afebe9a4d0644fedfcee04e8bd67554de}\index{init.c@{init.c}!freeListRemoveIndex@{freeListRemoveIndex}}
+\index{freeListRemoveIndex@{freeListRemoveIndex}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{freeListRemoveIndex}{freeListRemoveIndex}}
+{\footnotesize\ttfamily \label{init_8c_afebe9a4d0644fedfcee04e8bd67554de} 
+volatile LONG free\+List\+Remove\+Index}
+
+\Hypertarget{init_8c_a1c302bfa8283e1fd3ac07b41cbec4793}\index{init.c@{init.c}!GlobalStartEvent@{GlobalStartEvent}}
+\index{GlobalStartEvent@{GlobalStartEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{GlobalStartEvent}{GlobalStartEvent}}
+{\footnotesize\ttfamily \label{init_8c_a1c302bfa8283e1fd3ac07b41cbec4793} 
+HANDLE Global\+Start\+Event}
+
+\Hypertarget{init_8c_a94fe7d15f3121ceb68cee2c8fa317bad}\index{init.c@{init.c}!headActiveList@{headActiveList}}
+\index{headActiveList@{headActiveList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{headActiveList}{headActiveList}}
+{\footnotesize\ttfamily \label{init_8c_a94fe7d15f3121ceb68cee2c8fa317bad} 
+\mbox{\hyperlink{structlist_head}{list\+Head}} head\+Active\+List}
+
+\Hypertarget{init_8c_a52984f5994ddf0c0360c085b79b9023b}\index{init.c@{init.c}!headFreeLists@{headFreeLists}}
+\index{headFreeLists@{headFreeLists}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{headFreeLists}{headFreeLists}}
+{\footnotesize\ttfamily \label{init_8c_a52984f5994ddf0c0360c085b79b9023b} 
+\mbox{\hyperlink{structlist_head}{list\+Head}} head\+Free\+Lists\mbox{[}\mbox{\hyperlink{structures_8h_a498bbf40c65552f824c46efcd3496669}{NUMBER\+\_\+\+OF\+\_\+\+FREE\+\_\+\+LISTS}}\mbox{]}}
+
+\Hypertarget{init_8c_acd57aa13d337da1922deec378258ca32}\index{init.c@{init.c}!headModifiedList@{headModifiedList}}
+\index{headModifiedList@{headModifiedList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{headModifiedList}{headModifiedList}}
+{\footnotesize\ttfamily \label{init_8c_acd57aa13d337da1922deec378258ca32} 
+\mbox{\hyperlink{structlist_head}{list\+Head}} head\+Modified\+List}
+
+\Hypertarget{init_8c_a2104c2f630ec691446eb83024e5eb897}\index{init.c@{init.c}!headStandByList@{headStandByList}}
+\index{headStandByList@{headStandByList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{headStandByList}{headStandByList}}
+{\footnotesize\ttfamily \label{init_8c_a2104c2f630ec691446eb83024e5eb897} 
+\mbox{\hyperlink{structlist_head}{list\+Head}} head\+Stand\+By\+List}
+
+\Hypertarget{init_8c_a29264284e4818cecfacb8d88bb123275}\index{init.c@{init.c}!headToBeZeroedList@{headToBeZeroedList}}
+\index{headToBeZeroedList@{headToBeZeroedList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{headToBeZeroedList}{headToBeZeroedList}}
+{\footnotesize\ttfamily \label{init_8c_a29264284e4818cecfacb8d88bb123275} 
+\mbox{\hyperlink{structlist_head}{list\+Head}} head\+To\+Be\+Zeroed\+List}
+
+\Hypertarget{init_8c_a6417e97c548a0ba579800ecde77dcc4f}\index{init.c@{init.c}!lockActiveList@{lockActiveList}}
+\index{lockActiveList@{lockActiveList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockActiveList}{lockActiveList}}
+{\footnotesize\ttfamily \label{init_8c_a6417e97c548a0ba579800ecde77dcc4f} 
+PCRITICAL\+\_\+\+SECTION lock\+Active\+List}
+
+\Hypertarget{init_8c_ace953395f45a735a3424dbbca3717906}\index{init.c@{init.c}!lockDiskActive@{lockDiskActive}}
+\index{lockDiskActive@{lockDiskActive}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockDiskActive}{lockDiskActive}}
+{\footnotesize\ttfamily \label{init_8c_ace953395f45a735a3424dbbca3717906} 
+PCRITICAL\+\_\+\+SECTION lock\+Disk\+Active}
+
+\Hypertarget{init_8c_ac9d7e8959ccbaaf17543b87c18250052}\index{init.c@{init.c}!lockFreeList@{lockFreeList}}
+\index{lockFreeList@{lockFreeList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockFreeList}{lockFreeList}}
+{\footnotesize\ttfamily \label{init_8c_ac9d7e8959ccbaaf17543b87c18250052} 
+PCRITICAL\+\_\+\+SECTION lock\+Free\+List}
+
+\Hypertarget{init_8c_a2888267ad679c49a7685bd1f689551c3}\index{init.c@{init.c}!lockModifiedList@{lockModifiedList}}
+\index{lockModifiedList@{lockModifiedList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockModifiedList}{lockModifiedList}}
+{\footnotesize\ttfamily \label{init_8c_a2888267ad679c49a7685bd1f689551c3} 
+PCRITICAL\+\_\+\+SECTION lock\+Modified\+List}
+
+\Hypertarget{init_8c_a462f29ada8760fa04a54ad500692289e}\index{init.c@{init.c}!lockModList@{lockModList}}
+\index{lockModList@{lockModList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockModList}{lockModList}}
+{\footnotesize\ttfamily \label{init_8c_a462f29ada8760fa04a54ad500692289e} 
+ULONG64 lock\+Mod\+List}
+
+\Hypertarget{init_8c_a8c02eda8b512a6c6aeb976f2f1d50b5c}\index{init.c@{init.c}!lockNumberOfSlots@{lockNumberOfSlots}}
+\index{lockNumberOfSlots@{lockNumberOfSlots}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockNumberOfSlots}{lockNumberOfSlots}}
+{\footnotesize\ttfamily \label{init_8c_a8c02eda8b512a6c6aeb976f2f1d50b5c} 
+PCRITICAL\+\_\+\+SECTION lock\+Number\+Of\+Slots}
+
+\Hypertarget{init_8c_aad5eeca9da68dc529e9ff6d9e90d0ff0}\index{init.c@{init.c}!lockStandByList@{lockStandByList}}
+\index{lockStandByList@{lockStandByList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockStandByList}{lockStandByList}}
+{\footnotesize\ttfamily \label{init_8c_aad5eeca9da68dc529e9ff6d9e90d0ff0} 
+PCRITICAL\+\_\+\+SECTION lock\+Stand\+By\+List}
+
+\Hypertarget{init_8c_a4fd382b4c25215c5c72c3eeff9740078}\index{init.c@{init.c}!lockToBeZeroedList@{lockToBeZeroedList}}
+\index{lockToBeZeroedList@{lockToBeZeroedList}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockToBeZeroedList}{lockToBeZeroedList}}
+{\footnotesize\ttfamily \label{init_8c_a4fd382b4c25215c5c72c3eeff9740078} 
+ULONG64 lock\+To\+Be\+Zeroed\+List}
+
+\Hypertarget{init_8c_a7f548e4b4ba5df0c29b855268d0d868f}\index{init.c@{init.c}!lockWritingTransferVa@{lockWritingTransferVa}}
+\index{lockWritingTransferVa@{lockWritingTransferVa}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{lockWritingTransferVa}{lockWritingTransferVa}}
+{\footnotesize\ttfamily \label{init_8c_a7f548e4b4ba5df0c29b855268d0d868f} 
+PCRITICAL\+\_\+\+SECTION lock\+Writing\+Transfer\+Va}
+
+\Hypertarget{init_8c_a9f446154d095c72a73761fdcec055e28}\index{init.c@{init.c}!number\_of\_open\_slots@{number\_of\_open\_slots}}
+\index{number\_of\_open\_slots@{number\_of\_open\_slots}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{number\_of\_open\_slots}{number\_of\_open\_slots}}
+{\footnotesize\ttfamily \label{init_8c_a9f446154d095c72a73761fdcec055e28} 
+ULONG64\texorpdfstring{$\ast$}{*} number\+\_\+of\+\_\+open\+\_\+slots}
+
+\Hypertarget{init_8c_a377cadc3f3505d5777cad6f2deb856cf}\index{init.c@{init.c}!pageTable@{pageTable}}
+\index{pageTable@{pageTable}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{pageTable}{pageTable}}
+{\footnotesize\ttfamily \label{init_8c_a377cadc3f3505d5777cad6f2deb856cf} 
+\mbox{\hyperlink{structpte}{pte}}\texorpdfstring{$\ast$}{*} page\+Table}
+
+\Hypertarget{init_8c_a433a3b7b95392ee63bcfbfe382673e00}\index{init.c@{init.c}!pageWaits@{pageWaits}}
+\index{pageWaits@{pageWaits}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{pageWaits}{pageWaits}}
+{\footnotesize\ttfamily \label{init_8c_a433a3b7b95392ee63bcfbfe382673e00} 
+volatile ULONG64 page\+Waits}
+
+\Hypertarget{init_8c_ab9a938255df813505ee77eef3cdc5aed}\index{init.c@{init.c}!pfnStart@{pfnStart}}
+\index{pfnStart@{pfnStart}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{pfnStart}{pfnStart}}
+{\footnotesize\ttfamily \label{init_8c_ab9a938255df813505ee77eef3cdc5aed} 
+\mbox{\hyperlink{structpfn}{pfn}}\texorpdfstring{$\ast$}{*} pfn\+Start}
+
+\Hypertarget{init_8c_ab03733558cb372455cf304fbe3557898}\index{init.c@{init.c}!physical\_page\_count@{physical\_page\_count}}
+\index{physical\_page\_count@{physical\_page\_count}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{physical\_page\_count}{physical\_page\_count}}
+{\footnotesize\ttfamily \label{init_8c_ab03733558cb372455cf304fbe3557898} 
+ULONG\+\_\+\+PTR physical\+\_\+page\+\_\+count}
+
+\Hypertarget{init_8c_af6cfe28afd9e7bc72619e8836cb9fc03}\index{init.c@{init.c}!physical\_page\_handle@{physical\_page\_handle}}
+\index{physical\_page\_handle@{physical\_page\_handle}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{physical\_page\_handle}{physical\_page\_handle}}
+{\footnotesize\ttfamily \label{init_8c_af6cfe28afd9e7bc72619e8836cb9fc03} 
+HANDLE physical\+\_\+page\+\_\+handle}
+
+\Hypertarget{init_8c_a18a3a8092de1ecdffeb9169cd922ec55}\index{init.c@{init.c}!physical\_page\_numbers@{physical\_page\_numbers}}
+\index{physical\_page\_numbers@{physical\_page\_numbers}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{physical\_page\_numbers}{physical\_page\_numbers}}
+{\footnotesize\ttfamily \label{init_8c_a18a3a8092de1ecdffeb9169cd922ec55} 
+PULONG\+\_\+\+PTR physical\+\_\+page\+\_\+numbers}
+
+\Hypertarget{init_8c_a2e8469f2378cb4430554fbacc3c5b7a4}\index{init.c@{init.c}!pteRegionsBase@{pteRegionsBase}}
+\index{pteRegionsBase@{pteRegionsBase}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{pteRegionsBase}{pteRegionsBase}}
+{\footnotesize\ttfamily \label{init_8c_a2e8469f2378cb4430554fbacc3c5b7a4} 
+\mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\+\_\+\+REGION}}\texorpdfstring{$\ast$}{*} pte\+Regions\+Base}
+
+\Hypertarget{init_8c_ac74251c606c49c2437751b911e77a0f6}\index{init.c@{init.c}!serializeWriterandUser@{serializeWriterandUser}}
+\index{serializeWriterandUser@{serializeWriterandUser}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{serializeWriterandUser}{serializeWriterandUser}}
+{\footnotesize\ttfamily \label{init_8c_ac74251c606c49c2437751b911e77a0f6} 
+CRITICAL\+\_\+\+SECTION serialize\+Writerand\+User}
+
+\Hypertarget{init_8c_a3ee8727f68de6ca78ffbc6bea01512cd}\index{init.c@{init.c}!standByPruningInProgress@{standByPruningInProgress}}
+\index{standByPruningInProgress@{standByPruningInProgress}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{standByPruningInProgress}{standByPruningInProgress}}
+{\footnotesize\ttfamily \label{init_8c_a3ee8727f68de6ca78ffbc6bea01512cd} 
+volatile boolean stand\+By\+Pruning\+In\+Progress}
+
+\Hypertarget{init_8c_a6d400d90f983c4790d1853579b259cd9}\index{init.c@{init.c}!systemShutdownEvent@{systemShutdownEvent}}
+\index{systemShutdownEvent@{systemShutdownEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{systemShutdownEvent}{systemShutdownEvent}}
+{\footnotesize\ttfamily \label{init_8c_a6d400d90f983c4790d1853579b259cd9} 
+HANDLE system\+Shutdown\+Event}
+
+\Hypertarget{init_8c_ad53a830ad07de85db0b1c8aed436e94e}\index{init.c@{init.c}!systemThreadHandles@{systemThreadHandles}}
+\index{systemThreadHandles@{systemThreadHandles}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{systemThreadHandles}{systemThreadHandles}}
+{\footnotesize\ttfamily \label{init_8c_ad53a830ad07de85db0b1c8aed436e94e} 
+HANDLE system\+Thread\+Handles\mbox{[}\mbox{\hyperlink{structures_8h_aecd13cc61ec8ab92172ec6bbbcbe773c}{NUMBER\+\_\+\+OF\+\_\+\+SYSTEM\+\_\+\+THREADS}}\mbox{]}}
+
+\Hypertarget{init_8c_adbc56ab37cb1acc59cad16b92848af82}\index{init.c@{init.c}!totalTimeWaiting@{totalTimeWaiting}}
+\index{totalTimeWaiting@{totalTimeWaiting}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{totalTimeWaiting}{totalTimeWaiting}}
+{\footnotesize\ttfamily \label{init_8c_adbc56ab37cb1acc59cad16b92848af82} 
+volatile ULONG64 total\+Time\+Waiting}
+
+\Hypertarget{init_8c_a0e3ed94c0d8426754bbe064cb62d8756}\index{init.c@{init.c}!transferVaWriting@{transferVaWriting}}
+\index{transferVaWriting@{transferVaWriting}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{transferVaWriting}{transferVaWriting}}
+{\footnotesize\ttfamily \label{init_8c_a0e3ed94c0d8426754bbe064cb62d8756} 
+PVOID transfer\+Va\+Writing}
+
+\Hypertarget{init_8c_adff0a60b8e4254e817f619ccc8d5a105}\index{init.c@{init.c}!trimmingStartEvent@{trimmingStartEvent}}
+\index{trimmingStartEvent@{trimmingStartEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{trimmingStartEvent}{trimmingStartEvent}}
+{\footnotesize\ttfamily \label{init_8c_adff0a60b8e4254e817f619ccc8d5a105} 
+HANDLE trimming\+Start\+Event}
+
+\Hypertarget{init_8c_acefd683d0ec814a5f35e5e63e6744aac}\index{init.c@{init.c}!userEndEvent@{userEndEvent}}
+\index{userEndEvent@{userEndEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{userEndEvent}{userEndEvent}}
+{\footnotesize\ttfamily \label{init_8c_acefd683d0ec814a5f35e5e63e6744aac} 
+HANDLE user\+End\+Event}
+
+\Hypertarget{init_8c_a1f77d91812324575a3bd55f9ba07b4d1}\index{init.c@{init.c}!userStartEvent@{userStartEvent}}
+\index{userStartEvent@{userStartEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{userStartEvent}{userStartEvent}}
+{\footnotesize\ttfamily \label{init_8c_a1f77d91812324575a3bd55f9ba07b4d1} 
+HANDLE user\+Start\+Event}
+
+\Hypertarget{init_8c_a3a15fee53bd0c64b27452389031f7513}\index{init.c@{init.c}!userThreadHandles@{userThreadHandles}}
+\index{userThreadHandles@{userThreadHandles}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{userThreadHandles}{userThreadHandles}}
+{\footnotesize\ttfamily \label{init_8c_a3a15fee53bd0c64b27452389031f7513} 
+HANDLE user\+Thread\+Handles\mbox{[}\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}}\mbox{]}}
+
+\Hypertarget{init_8c_a17f39208d3a7e2889b13d9cb79b3a7b9}\index{init.c@{init.c}!userThreadTransferVa@{userThreadTransferVa}}
+\index{userThreadTransferVa@{userThreadTransferVa}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{userThreadTransferVa}{userThreadTransferVa}}
+{\footnotesize\ttfamily \label{init_8c_a17f39208d3a7e2889b13d9cb79b3a7b9} 
+PVOID user\+Thread\+Transfer\+Va\mbox{[}\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}}\mbox{]}}
+
+\Hypertarget{init_8c_a725d904e3cf158b59c18626a4a6f8df5}\index{init.c@{init.c}!vaEnd@{vaEnd}}
+\index{vaEnd@{vaEnd}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{vaEnd}{vaEnd}}
+{\footnotesize\ttfamily \label{init_8c_a725d904e3cf158b59c18626a4a6f8df5} 
+PULONG\+\_\+\+PTR va\+End}
+
+\Hypertarget{init_8c_aaaf4624300194b91a31836695b593a30}\index{init.c@{init.c}!vaStart@{vaStart}}
+\index{vaStart@{vaStart}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{vaStart}{vaStart}}
+{\footnotesize\ttfamily \label{init_8c_aaaf4624300194b91a31836695b593a30} 
+PULONG\+\_\+\+PTR va\+Start}
+
+\Hypertarget{init_8c_af5e81ab60d5254eb0e607a0403268306}\index{init.c@{init.c}!workDoneThreadHandles@{workDoneThreadHandles}}
+\index{workDoneThreadHandles@{workDoneThreadHandles}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{workDoneThreadHandles}{workDoneThreadHandles}}
+{\footnotesize\ttfamily \label{init_8c_af5e81ab60d5254eb0e607a0403268306} 
+HANDLE work\+Done\+Thread\+Handles\mbox{[}\mbox{\hyperlink{structures_8h_a13521bb0f1dfd16021b5638c96c48572}{NUMBER\+\_\+\+OF\+\_\+\+THREADS}}\mbox{]}}
+
+\Hypertarget{init_8c_a80e48e2103f402bb77050723a5c053e5}\index{init.c@{init.c}!writingEndEvent@{writingEndEvent}}
+\index{writingEndEvent@{writingEndEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{writingEndEvent}{writingEndEvent}}
+{\footnotesize\ttfamily \label{init_8c_a80e48e2103f402bb77050723a5c053e5} 
+HANDLE writing\+End\+Event}
+
+\Hypertarget{init_8c_ad27b5858a32d7c89137c68150f36c0ea}\index{init.c@{init.c}!writingStartEvent@{writingStartEvent}}
+\index{writingStartEvent@{writingStartEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{writingStartEvent}{writingStartEvent}}
+{\footnotesize\ttfamily \label{init_8c_ad27b5858a32d7c89137c68150f36c0ea} 
+HANDLE writing\+Start\+Event}
+
+\Hypertarget{init_8c_a94c076359309b0aa7014248aa5718aad}\index{init.c@{init.c}!zeroingStartEvent@{zeroingStartEvent}}
+\index{zeroingStartEvent@{zeroingStartEvent}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{zeroingStartEvent}{zeroingStartEvent}}
+{\footnotesize\ttfamily \label{init_8c_a94c076359309b0aa7014248aa5718aad} 
+HANDLE zeroing\+Start\+Event}
+
+\Hypertarget{init_8c_aea8eb8024cc46acb883918c96f259d91}\index{init.c@{init.c}!zeroThreadTransferVa@{zeroThreadTransferVa}}
+\index{zeroThreadTransferVa@{zeroThreadTransferVa}!init.c@{init.c}}
+\doxysubsubsection{\texorpdfstring{zeroThreadTransferVa}{zeroThreadTransferVa}}
+{\footnotesize\ttfamily \label{init_8c_aea8eb8024cc46acb883918c96f259d91} 
+PVOID zero\+Thread\+Transfer\+Va}
+

@@ -12,7 +12,11 @@
 #include "../../include/utils/thread_utils.h"
 #include "threads/user_thread.h"
 
-
+/**
+ * @brief This function takes pages off the modified list and tries to write them to disk. It batch writes pages to disk to be more effiecient.
+ * @param info A pointer to a thread info struct. Passed in during the function CreateThread
+ * @retval 0 If the program succeeds
+ */
 DWORD diskWriter (LPVOID info) {
 
 

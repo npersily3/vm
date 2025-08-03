@@ -1,0 +1,741 @@
+\doxysection{include/variables/structures.h File Reference}
+\hypertarget{structures_8h}{}\label{structures_8h}\index{include/variables/structures.h@{include/variables/structures.h}}
+{\ttfamily \#include $<$windows.\+h$>$}\newline
+{\ttfamily \#include $<$stdbool.\+h$>$}\newline
+{\ttfamily \#include $<$stddef.\+h$>$}\newline
+\doxysubsubsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structvalid_pte}{valid\+Pte}}
+\item 
+struct \mbox{\hyperlink{structinvalid_pte}{invalid\+Pte}}
+\item 
+struct \mbox{\hyperlink{structtransition_pte}{transition\+Pte}}
+\item 
+struct \mbox{\hyperlink{structpte}{pte}}
+\item 
+struct \mbox{\hyperlink{struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e}{THREAD\+\_\+\+RNG\+\_\+\+STATE}}
+\item 
+struct \mbox{\hyperlink{structpfn}{pfn}}
+\item 
+struct \mbox{\hyperlink{structstochastic__data}{stochastic\+\_\+data}}
+\item 
+struct \mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\+\_\+\+REGION}}
+\item 
+struct \mbox{\hyperlink{structshared_lock}{shared\+Lock}}
+\item 
+struct \mbox{\hyperlink{structlist_head}{list\+Head}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{structures_8h_a49606be7356624568932ec81c0d429f4}{DBG}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_aca68c0d4ac8df0838e209fb5300f7be3}{ASSERT}}(x)
+\item 
+\#define \mbox{\hyperlink{structures_8h_aa90cac659d18e8ef6294c7ae337f6b58}{SUCCESS}}~10
+\item 
+\#define \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}}~4096
+\item 
+\#define \mbox{\hyperlink{structures_8h_a4f8e33efe08ed40ace91397906173136}{frame\+\_\+number\+\_\+size}}~40
+\item 
+\#define \mbox{\hyperlink{structures_8h_a5c723c0cc71b83224ead557db3ab74dd}{KB}}(x)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a44d2b171cc92225ec0a76ef70fc9b531}{MB}}(x)
+\item 
+\#define \mbox{\hyperlink{structures_8h_af207e8203eedc05adcf341a24bfa6cbb}{GB}}(x)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}}~\mbox{\hyperlink{structures_8h_af207e8203eedc05adcf341a24bfa6cbb}{GB}}(1)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}}~\mbox{\hyperlink{structures_8h_a44d2b171cc92225ec0a76ef70fc9b531}{MB}}(512)/\mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}}
+\item 
+\#define \mbox{\hyperlink{structures_8h_a8f84682134486247673ba0b44ba7968a}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+UNSIGNED\+\_\+\+CHUNKS}}~(\mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}} / sizeof (ULONG\+\_\+\+PTR))
+\item 
+\#define \mbox{\hyperlink{structures_8h_a52fb748fa47a3f22fa9a41c7b4399432}{NUMBER\+\_\+\+OF\+\_\+\+DISK\+\_\+\+DIVISIONS}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_abec7e3ffc9d6f42812e23c2b708a6660}{DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}}~(\mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}} -\/ \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} + 2\texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}})
+\item 
+\#define \mbox{\hyperlink{structures_8h_afff34d9f7378c64b65819efe80b32070}{DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+PAGES}}~(\mbox{\hyperlink{structures_8h_abec7e3ffc9d6f42812e23c2b708a6660}{DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}} / \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}})
+\item 
+\#define \mbox{\hyperlink{structures_8h_a9fbd244277b89b7c4ce31aea73ec76e5}{DISK\+\_\+\+DIVISION\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+PAGES}}~(\mbox{\hyperlink{structures_8h_afff34d9f7378c64b65819efe80b32070}{DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+PAGES}} / (\mbox{\hyperlink{structures_8h_a52fb748fa47a3f22fa9a41c7b4399432}{NUMBER\+\_\+\+OF\+\_\+\+DISK\+\_\+\+DIVISIONS}}) )
+\item 
+\#define \mbox{\hyperlink{structures_8h_acc926dae11595da6dd20217b78c009a0}{EMPTY\+\_\+\+PTE}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_ad38003d1d75d1d8de702312f08906621}{AUTO\+\_\+\+RESET}}~FALSE
+\item 
+\#define \mbox{\hyperlink{structures_8h_a4c495faae0071bbff4120433bb0bb166}{MANUAL\+\_\+\+RESET}}~TRUE
+\item 
+\#define \mbox{\hyperlink{structures_8h_abc05de8f119aa19208c90dd4941e2c02}{WAIT\+\_\+\+FOR\+\_\+\+ALL}}~TRUE
+\item 
+\#define \mbox{\hyperlink{structures_8h_a12cb120cf20b81cb428d32b69d19b7f5}{WAIT\+\_\+\+FOR\+\_\+\+ONE}}~FALSE
+\item 
+\#define \mbox{\hyperlink{structures_8h_a83e0e77b48801e8a522f0918325b18ef}{DEFAULT\+\_\+\+SECURITY}}~((LPSECURITY\+\_\+\+ATTRIBUTES) NULL)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a87dcbc4991a2a2fc4eb6fc6a24449f26}{DEFAULT\+\_\+\+STACK\+\_\+\+SIZE}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_a33d210bae48d7d5e5efcc5b647d29094}{DEFAULT\+\_\+\+CREATION\+\_\+\+FLAGS}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_abe6329f1be7e1699ab49800ae148dca5}{ROUND\+\_\+\+DOWN\+\_\+\+TO\+\_\+\+PAGE}}(addr)
+\item 
+\#define \mbox{\hyperlink{structures_8h_ad38e45c58dd90983ecb2e10a199f66af}{ROUND\+\_\+\+UP\+\_\+\+TO\+\_\+\+PAGE}}(addr)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a9327ceb25ca443e16fa09fcbb9f7449f}{LOCK\+\_\+\+FREE}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_a9168dd836ed5be45dfcf6d8fd598a66c}{LOCK\+\_\+\+HELD}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_a0f3b73c556102de7594460152532cea2}{DISK\+\_\+\+ACTIVE}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_a29c944fb3ec4de60614a00568176a4e5}{VARIABLE\+\_\+\+DID\+\_\+\+NOT\+\_\+\+CHANGE}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_aa670c1304332707e17d30ad4232d58b5}{DISK\+\_\+\+FREE}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_ab07721c3e949f9dc3a0fb4f8c9ae08b9}{FULL\+\_\+\+DISK\+\_\+\+SPACE}}~\texorpdfstring{$\sim$}{\string~}0\+ULL
+\item 
+\#define \mbox{\hyperlink{structures_8h_a6ae36b4ca49040c50aa53df957dfd721}{REMOVE\+\_\+\+FREE\+\_\+\+PAGE}}~FALSE
+\item 
+\#define \mbox{\hyperlink{structures_8h_a626ca3a053b87d0977fba82fbda91e3c}{REMOVE\+\_\+\+ACTIVE\+\_\+\+PAGE}}~TRUE
+\item 
+\#define \mbox{\hyperlink{structures_8h_af8c317a42292b61c93aae91e59118a46}{container\+\_\+of}}(ptr,  type,  member)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}}~8
+\item 
+\#define \mbox{\hyperlink{structures_8h_ac51654038811d028b8e5b3060c6c3ae4}{NUMBER\+\_\+\+OF\+\_\+\+ZEROING\+\_\+\+THREADS}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_acbc07915dcf4bdb65b8ac73b8ca92133}{NUMBER\+\_\+\+OF\+\_\+\+TRIMMING\+\_\+\+THREADS}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_aae22bfcc5318d230d5cdd8b46e84f3b1}{NUMBER\+\_\+\+OF\+\_\+\+WRITING\+\_\+\+THREADS}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_a13521bb0f1dfd16021b5638c96c48572}{NUMBER\+\_\+\+OF\+\_\+\+THREADS}}~(\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}} + \mbox{\hyperlink{structures_8h_ac51654038811d028b8e5b3060c6c3ae4}{NUMBER\+\_\+\+OF\+\_\+\+ZEROING\+\_\+\+THREADS}} + \mbox{\hyperlink{structures_8h_acbc07915dcf4bdb65b8ac73b8ca92133}{NUMBER\+\_\+\+OF\+\_\+\+TRIMMING\+\_\+\+THREADS}} + \mbox{\hyperlink{structures_8h_aae22bfcc5318d230d5cdd8b46e84f3b1}{NUMBER\+\_\+\+OF\+\_\+\+WRITING\+\_\+\+THREADS}} )
+\item 
+\#define \mbox{\hyperlink{structures_8h_aecd13cc61ec8ab92172ec6bbbcbe773c}{NUMBER\+\_\+\+OF\+\_\+\+SYSTEM\+\_\+\+THREADS}}~(\mbox{\hyperlink{structures_8h_a13521bb0f1dfd16021b5638c96c48572}{NUMBER\+\_\+\+OF\+\_\+\+THREADS}}-\/\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}})
+\item 
+\#define \mbox{\hyperlink{structures_8h_ab00c6e7d045e0b3149476ec3f5f615ac}{MAX\+\_\+\+FAULTS}}~0x\+FFFFFF
+\item 
+\#define \mbox{\hyperlink{structures_8h_a9ae2958e436c566413867028fc829ec0}{BATCH\+\_\+\+SIZE}}~(\mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} / 10)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a0a60fdeee4a7f5f102de2142ea7f1ff4}{COULD\+\_\+\+NOT\+\_\+\+FIND\+\_\+\+SLOT}}~(\texorpdfstring{$\sim$}{\string~}0\+ULL)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a8c4c01cac35e54e00185c8c6ff6b0347}{LIST\+\_\+\+IS\+\_\+\+EMPTY}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_a51048a012b81ba95e75649ea0bbe9d08}{REDO\+\_\+\+FAULT}}~TRUE
+\item 
+\#define \mbox{\hyperlink{structures_8h_aeeb9d7188b2c83c123e48027a312e090}{REDO\+\_\+\+FREE}}~TRUE
+\item 
+\#define \mbox{\hyperlink{structures_8h_a824af3fad4a112c67c6f5da0fad3493b}{EVENT\+\_\+\+START\+\_\+\+ON}}~TRUE
+\item 
+\#define \mbox{\hyperlink{structures_8h_a59db202542246f88b2d4ee100197a104}{EVENT\+\_\+\+START\+\_\+\+OFF}}~FALSE
+\item 
+\#define \mbox{\hyperlink{structures_8h_ac7c7f551b36e4250202bf72bf5ec7bc2}{SPIN\+\_\+\+COUNTS}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_a25ca55840a4a71eccfb6f31654210859}{SPIN\+\_\+\+COUNT}}~0x\+FFFFFF
+\item 
+\#define \mbox{\hyperlink{structures_8h_a7a80f8f5ee9281d2db93288382fc2c43}{INITIALIZE\+\_\+\+LOCK}}(x)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a9eefb250bd0434821972a6f427a64ea9}{SIZE\+\_\+\+OF\+\_\+\+TRANSFER\+\_\+\+VA\+\_\+\+SPACE\+\_\+\+IN\+\_\+\+PAGES}}~(128)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a74a896e61b7fcbe2dc1f4f305a556bf2}{STAND\+\_\+\+BY\+\_\+\+TRIM\+\_\+\+THRESHOLD}}~(\mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} / 10)
+\item 
+\#define \mbox{\hyperlink{structures_8h_ab4e4d302e884f71a7c20726b2bebb073}{NUMBER\+\_\+\+OF\+\_\+\+PAGES\+\_\+\+TO\+\_\+\+TRIM\+\_\+\+FROM\+\_\+\+STAND\+\_\+\+BY}}~(\mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} / 10)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a498bbf40c65552f824c46efcd3496669}{NUMBER\+\_\+\+OF\+\_\+\+FREE\+\_\+\+LISTS}}~8
+\item 
+\#define \mbox{\hyperlink{structures_8h_a127376a1173ffab6d2a81c1846a9df8b}{spin\+Events}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_ae34e75e77ca075a7a2286d4308e38b42}{INITIALIZE\+\_\+\+LOCK\+\_\+\+DIRECT}}(x)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a8f119a4753d0e5933da10e933942e1cd}{DISK}}~0
+\item 
+\#define \mbox{\hyperlink{structures_8h_a7f2a734b84f750bb35708fd8f3d0121e}{UNASSIGNED}}~1
+\item 
+\#define \mbox{\hyperlink{structures_8h_aab53ed9cd9619846798e02612c94e641}{MODIFIED\+\_\+\+LIST}}~2
+\item 
+\#define \mbox{\hyperlink{structures_8h_ad18aeed9e566dea67bf439d46d857998}{STAND\+\_\+\+BY\+\_\+\+LIST}}~3
+\item 
+\#define \mbox{\hyperlink{structures_8h_a03920fa04a85656fc2deac08e774e9fc}{PAGE\+\_\+\+TABLE\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}}~(\mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}} / \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}} \texorpdfstring{$\ast$}{*} sizeof(\mbox{\hyperlink{structpte}{pte}}))
+\item 
+\#define \mbox{\hyperlink{structures_8h_ae0de6f143afb3fecd3100c0960153815}{NUMBER\+\_\+\+OF\+\_\+\+PTES}}~(\mbox{\hyperlink{structures_8h_a03920fa04a85656fc2deac08e774e9fc}{PAGE\+\_\+\+TABLE\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}} / sizeof(\mbox{\hyperlink{structpte}{pte}}))
+\item 
+\#define \mbox{\hyperlink{structures_8h_a999b7fc30c996b67673d7773ba13eb06}{NUMBER\+\_\+\+OF\+\_\+\+PAGE\+\_\+\+TABLE\+\_\+\+LOCKS}}~\mbox{\hyperlink{structures_8h_ae0de6f143afb3fecd3100c0960153815}{NUMBER\+\_\+\+OF\+\_\+\+PTES}} / 8
+\item 
+\#define \mbox{\hyperlink{structures_8h_abacff3056116d9f06e75a53ee54c6bac}{SIZE\+\_\+\+OF\+\_\+\+PAGE\+\_\+\+TABLE\+\_\+\+DIVISION}}~(\mbox{\hyperlink{structures_8h_a03920fa04a85656fc2deac08e774e9fc}{PAGE\+\_\+\+TABLE\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}}/\mbox{\hyperlink{structures_8h_a999b7fc30c996b67673d7773ba13eb06}{NUMBER\+\_\+\+OF\+\_\+\+PAGE\+\_\+\+TABLE\+\_\+\+LOCKS}})
+\item 
+\#define \mbox{\hyperlink{structures_8h_ae0536329bb5a3e3d83c005cde13ebc67}{NUMBER\+\_\+\+OF\+\_\+\+TIME\+\_\+\+STAMPS}}~16
+\item 
+\#define \mbox{\hyperlink{structures_8h_a4468590b793f9c68318e330ccde10e45}{BASELINE\+\_\+\+HAZARD}}~(1)
+\item 
+\#define \mbox{\hyperlink{structures_8h_acc479996d53bbaa99c23581d79f63e2f}{LOG\+\_\+\+BASELINE\+\_\+\+HAZARD}}~(0)
+\item 
+\#define \mbox{\hyperlink{structures_8h_a1cf344cb8aeccdbacde60ec436e9a2ac}{DRIFT\+\_\+\+COEFFICENT}}~.\+33
+\item 
+\#define \mbox{\hyperlink{structures_8h_afbcb9f48d7229e0ba0ede4dad3d8585c}{VOLATILITY\+\_\+\+COEFFICENT}}~.\+33
+\item 
+\#define \mbox{\hyperlink{structures_8h_a81dd897785b6ef00ccaccd410bf13b1a}{RECENT\+\_\+\+ACCESS\+\_\+\+COEFFICIENT}}~-\/0.\+0000001
+\item 
+\#define \mbox{\hyperlink{structures_8h_aab72b2804a8220784034f7756654fcbb}{NUMBER\+\_\+\+OF\+\_\+\+AGES}}~8
+\item 
+\#define \mbox{\hyperlink{structures_8h_ab72513369e604b53eb0125e7bb0c4295}{NUMBER\+\_\+\+OF\+\_\+\+PTES\+\_\+\+PER\+\_\+\+REGION}}~64
+\item 
+\#define \mbox{\hyperlink{structures_8h_ac89673676f0f8705c99b84e72534f9ef}{NUMBER\+\_\+\+OF\+\_\+\+PTE\+\_\+\+REGIONS}}~(\mbox{\hyperlink{structures_8h_ae0de6f143afb3fecd3100c0960153815}{NUMBER\+\_\+\+OF\+\_\+\+PTES}}/\mbox{\hyperlink{structures_8h_ab72513369e604b53eb0125e7bb0c4295}{NUMBER\+\_\+\+OF\+\_\+\+PTES\+\_\+\+PER\+\_\+\+REGION}})
+\item 
+\#define \mbox{\hyperlink{structures_8h_a45db4429e1cde822c7989f74d6b5ac9d}{LENGTH\+\_\+\+OF\+\_\+\+PREDICTION}}~10
+\item 
+\#define \mbox{\hyperlink{structures_8h_abb1c8bf45c615b44b7e0ba6d90c5db9d}{use\+Shared\+Lock}}~1
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct \mbox{\hyperlink{structlist_head}{list\+Head}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structures_8h_a0323af3fde6a5cc3ea8243c800211385}{\+\_\+\+\_\+declspec}} (align(64))
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{structures_8h_a6a51703cda40a61f356163e521dfe4ec}{THREAD\+\_\+\+INFO}}
+\item 
+\texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}}
+\end{DoxyCompactItemize}
+
+
+\label{doc-define-members}
+\Hypertarget{structures_8h_doc-define-members}
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{structures_8h_aca68c0d4ac8df0838e209fb5300f7be3}\index{structures.h@{structures.h}!ASSERT@{ASSERT}}
+\index{ASSERT@{ASSERT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{ASSERT}{ASSERT}}
+{\footnotesize\ttfamily \label{structures_8h_aca68c0d4ac8df0838e209fb5300f7be3} 
+\#define ASSERT(\begin{DoxyParamCaption}\item[{}]{x}{}\end{DoxyParamCaption})}
+
+\Hypertarget{structures_8h_ad38003d1d75d1d8de702312f08906621}\index{structures.h@{structures.h}!AUTO\_RESET@{AUTO\_RESET}}
+\index{AUTO\_RESET@{AUTO\_RESET}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{AUTO\_RESET}{AUTO\_RESET}}
+{\footnotesize\ttfamily \label{structures_8h_ad38003d1d75d1d8de702312f08906621} 
+\#define AUTO\+\_\+\+RESET~FALSE}
+
+\Hypertarget{structures_8h_a4468590b793f9c68318e330ccde10e45}\index{structures.h@{structures.h}!BASELINE\_HAZARD@{BASELINE\_HAZARD}}
+\index{BASELINE\_HAZARD@{BASELINE\_HAZARD}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{BASELINE\_HAZARD}{BASELINE\_HAZARD}}
+{\footnotesize\ttfamily \label{structures_8h_a4468590b793f9c68318e330ccde10e45} 
+\#define BASELINE\+\_\+\+HAZARD~(1)}
+
+\Hypertarget{structures_8h_a9ae2958e436c566413867028fc829ec0}\index{structures.h@{structures.h}!BATCH\_SIZE@{BATCH\_SIZE}}
+\index{BATCH\_SIZE@{BATCH\_SIZE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{BATCH\_SIZE}{BATCH\_SIZE}}
+{\footnotesize\ttfamily \label{structures_8h_a9ae2958e436c566413867028fc829ec0} 
+\#define BATCH\+\_\+\+SIZE~(\mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} / 10)}
+
+\Hypertarget{structures_8h_af8c317a42292b61c93aae91e59118a46}\index{structures.h@{structures.h}!container\_of@{container\_of}}
+\index{container\_of@{container\_of}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{container\_of}{container\_of}}
+{\footnotesize\ttfamily \label{structures_8h_af8c317a42292b61c93aae91e59118a46} 
+\#define container\+\_\+of(\begin{DoxyParamCaption}\item[{}]{ptr}{, }\item[{}]{type}{, }\item[{}]{member}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{((type\ *)((\textcolor{keywordtype}{char}\ *)(ptr)\ -\/\ offsetof(type,\ member)))}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_a0a60fdeee4a7f5f102de2142ea7f1ff4}\index{structures.h@{structures.h}!COULD\_NOT\_FIND\_SLOT@{COULD\_NOT\_FIND\_SLOT}}
+\index{COULD\_NOT\_FIND\_SLOT@{COULD\_NOT\_FIND\_SLOT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{COULD\_NOT\_FIND\_SLOT}{COULD\_NOT\_FIND\_SLOT}}
+{\footnotesize\ttfamily \label{structures_8h_a0a60fdeee4a7f5f102de2142ea7f1ff4} 
+\#define COULD\+\_\+\+NOT\+\_\+\+FIND\+\_\+\+SLOT~(\texorpdfstring{$\sim$}{\string~}0\+ULL)}
+
+\Hypertarget{structures_8h_a49606be7356624568932ec81c0d429f4}\index{structures.h@{structures.h}!DBG@{DBG}}
+\index{DBG@{DBG}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DBG}{DBG}}
+{\footnotesize\ttfamily \label{structures_8h_a49606be7356624568932ec81c0d429f4} 
+\#define DBG~0}
+
+\Hypertarget{structures_8h_a33d210bae48d7d5e5efcc5b647d29094}\index{structures.h@{structures.h}!DEFAULT\_CREATION\_FLAGS@{DEFAULT\_CREATION\_FLAGS}}
+\index{DEFAULT\_CREATION\_FLAGS@{DEFAULT\_CREATION\_FLAGS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DEFAULT\_CREATION\_FLAGS}{DEFAULT\_CREATION\_FLAGS}}
+{\footnotesize\ttfamily \label{structures_8h_a33d210bae48d7d5e5efcc5b647d29094} 
+\#define DEFAULT\+\_\+\+CREATION\+\_\+\+FLAGS~0}
+
+\Hypertarget{structures_8h_a83e0e77b48801e8a522f0918325b18ef}\index{structures.h@{structures.h}!DEFAULT\_SECURITY@{DEFAULT\_SECURITY}}
+\index{DEFAULT\_SECURITY@{DEFAULT\_SECURITY}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DEFAULT\_SECURITY}{DEFAULT\_SECURITY}}
+{\footnotesize\ttfamily \label{structures_8h_a83e0e77b48801e8a522f0918325b18ef} 
+\#define DEFAULT\+\_\+\+SECURITY~((LPSECURITY\+\_\+\+ATTRIBUTES) NULL)}
+
+\Hypertarget{structures_8h_a87dcbc4991a2a2fc4eb6fc6a24449f26}\index{structures.h@{structures.h}!DEFAULT\_STACK\_SIZE@{DEFAULT\_STACK\_SIZE}}
+\index{DEFAULT\_STACK\_SIZE@{DEFAULT\_STACK\_SIZE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DEFAULT\_STACK\_SIZE}{DEFAULT\_STACK\_SIZE}}
+{\footnotesize\ttfamily \label{structures_8h_a87dcbc4991a2a2fc4eb6fc6a24449f26} 
+\#define DEFAULT\+\_\+\+STACK\+\_\+\+SIZE~0}
+
+\Hypertarget{structures_8h_a8f119a4753d0e5933da10e933942e1cd}\index{structures.h@{structures.h}!DISK@{DISK}}
+\index{DISK@{DISK}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DISK}{DISK}}
+{\footnotesize\ttfamily \label{structures_8h_a8f119a4753d0e5933da10e933942e1cd} 
+\#define DISK~0}
+
+\Hypertarget{structures_8h_a0f3b73c556102de7594460152532cea2}\index{structures.h@{structures.h}!DISK\_ACTIVE@{DISK\_ACTIVE}}
+\index{DISK\_ACTIVE@{DISK\_ACTIVE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DISK\_ACTIVE}{DISK\_ACTIVE}}
+{\footnotesize\ttfamily \label{structures_8h_a0f3b73c556102de7594460152532cea2} 
+\#define DISK\+\_\+\+ACTIVE~1}
+
+\Hypertarget{structures_8h_a9fbd244277b89b7c4ce31aea73ec76e5}\index{structures.h@{structures.h}!DISK\_DIVISION\_SIZE\_IN\_PAGES@{DISK\_DIVISION\_SIZE\_IN\_PAGES}}
+\index{DISK\_DIVISION\_SIZE\_IN\_PAGES@{DISK\_DIVISION\_SIZE\_IN\_PAGES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DISK\_DIVISION\_SIZE\_IN\_PAGES}{DISK\_DIVISION\_SIZE\_IN\_PAGES}}
+{\footnotesize\ttfamily \label{structures_8h_a9fbd244277b89b7c4ce31aea73ec76e5} 
+\#define DISK\+\_\+\+DIVISION\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+PAGES~(\mbox{\hyperlink{structures_8h_afff34d9f7378c64b65819efe80b32070}{DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+PAGES}} / (\mbox{\hyperlink{structures_8h_a52fb748fa47a3f22fa9a41c7b4399432}{NUMBER\+\_\+\+OF\+\_\+\+DISK\+\_\+\+DIVISIONS}}) )}
+
+\Hypertarget{structures_8h_aa670c1304332707e17d30ad4232d58b5}\index{structures.h@{structures.h}!DISK\_FREE@{DISK\_FREE}}
+\index{DISK\_FREE@{DISK\_FREE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DISK\_FREE}{DISK\_FREE}}
+{\footnotesize\ttfamily \label{structures_8h_aa670c1304332707e17d30ad4232d58b5} 
+\#define DISK\+\_\+\+FREE~0}
+
+\Hypertarget{structures_8h_abec7e3ffc9d6f42812e23c2b708a6660}\index{structures.h@{structures.h}!DISK\_SIZE\_IN\_BYTES@{DISK\_SIZE\_IN\_BYTES}}
+\index{DISK\_SIZE\_IN\_BYTES@{DISK\_SIZE\_IN\_BYTES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DISK\_SIZE\_IN\_BYTES}{DISK\_SIZE\_IN\_BYTES}}
+{\footnotesize\ttfamily \label{structures_8h_abec7e3ffc9d6f42812e23c2b708a6660} 
+\#define DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES~(\mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}} -\/ \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} + 2\texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}})}
+
+\Hypertarget{structures_8h_afff34d9f7378c64b65819efe80b32070}\index{structures.h@{structures.h}!DISK\_SIZE\_IN\_PAGES@{DISK\_SIZE\_IN\_PAGES}}
+\index{DISK\_SIZE\_IN\_PAGES@{DISK\_SIZE\_IN\_PAGES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DISK\_SIZE\_IN\_PAGES}{DISK\_SIZE\_IN\_PAGES}}
+{\footnotesize\ttfamily \label{structures_8h_afff34d9f7378c64b65819efe80b32070} 
+\#define DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+PAGES~(\mbox{\hyperlink{structures_8h_abec7e3ffc9d6f42812e23c2b708a6660}{DISK\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}} / \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}})}
+
+\Hypertarget{structures_8h_a1cf344cb8aeccdbacde60ec436e9a2ac}\index{structures.h@{structures.h}!DRIFT\_COEFFICENT@{DRIFT\_COEFFICENT}}
+\index{DRIFT\_COEFFICENT@{DRIFT\_COEFFICENT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{DRIFT\_COEFFICENT}{DRIFT\_COEFFICENT}}
+{\footnotesize\ttfamily \label{structures_8h_a1cf344cb8aeccdbacde60ec436e9a2ac} 
+\#define DRIFT\+\_\+\+COEFFICENT~.\+33}
+
+\Hypertarget{structures_8h_acc926dae11595da6dd20217b78c009a0}\index{structures.h@{structures.h}!EMPTY\_PTE@{EMPTY\_PTE}}
+\index{EMPTY\_PTE@{EMPTY\_PTE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{EMPTY\_PTE}{EMPTY\_PTE}}
+{\footnotesize\ttfamily \label{structures_8h_acc926dae11595da6dd20217b78c009a0} 
+\#define EMPTY\+\_\+\+PTE~0}
+
+\Hypertarget{structures_8h_a59db202542246f88b2d4ee100197a104}\index{structures.h@{structures.h}!EVENT\_START\_OFF@{EVENT\_START\_OFF}}
+\index{EVENT\_START\_OFF@{EVENT\_START\_OFF}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{EVENT\_START\_OFF}{EVENT\_START\_OFF}}
+{\footnotesize\ttfamily \label{structures_8h_a59db202542246f88b2d4ee100197a104} 
+\#define EVENT\+\_\+\+START\+\_\+\+OFF~FALSE}
+
+\Hypertarget{structures_8h_a824af3fad4a112c67c6f5da0fad3493b}\index{structures.h@{structures.h}!EVENT\_START\_ON@{EVENT\_START\_ON}}
+\index{EVENT\_START\_ON@{EVENT\_START\_ON}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{EVENT\_START\_ON}{EVENT\_START\_ON}}
+{\footnotesize\ttfamily \label{structures_8h_a824af3fad4a112c67c6f5da0fad3493b} 
+\#define EVENT\+\_\+\+START\+\_\+\+ON~TRUE}
+
+\Hypertarget{structures_8h_a4f8e33efe08ed40ace91397906173136}\index{structures.h@{structures.h}!frame\_number\_size@{frame\_number\_size}}
+\index{frame\_number\_size@{frame\_number\_size}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{frame\_number\_size}{frame\_number\_size}}
+{\footnotesize\ttfamily \label{structures_8h_a4f8e33efe08ed40ace91397906173136} 
+\#define frame\+\_\+number\+\_\+size~40}
+
+\Hypertarget{structures_8h_ab07721c3e949f9dc3a0fb4f8c9ae08b9}\index{structures.h@{structures.h}!FULL\_DISK\_SPACE@{FULL\_DISK\_SPACE}}
+\index{FULL\_DISK\_SPACE@{FULL\_DISK\_SPACE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{FULL\_DISK\_SPACE}{FULL\_DISK\_SPACE}}
+{\footnotesize\ttfamily \label{structures_8h_ab07721c3e949f9dc3a0fb4f8c9ae08b9} 
+\#define FULL\+\_\+\+DISK\+\_\+\+SPACE~\texorpdfstring{$\sim$}{\string~}0\+ULL}
+
+\Hypertarget{structures_8h_af207e8203eedc05adcf341a24bfa6cbb}\index{structures.h@{structures.h}!GB@{GB}}
+\index{GB@{GB}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{GB}{GB}}
+{\footnotesize\ttfamily \label{structures_8h_af207e8203eedc05adcf341a24bfa6cbb} 
+\#define GB(\begin{DoxyParamCaption}\item[{}]{x}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{((x)\ *\ 1024\ *\ 1024\ *\ 1024)}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_a7a80f8f5ee9281d2db93288382fc2c43}\index{structures.h@{structures.h}!INITIALIZE\_LOCK@{INITIALIZE\_LOCK}}
+\index{INITIALIZE\_LOCK@{INITIALIZE\_LOCK}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{INITIALIZE\_LOCK}{INITIALIZE\_LOCK}}
+{\footnotesize\ttfamily \label{structures_8h_a7a80f8f5ee9281d2db93288382fc2c43} 
+\#define INITIALIZE\+\_\+\+LOCK(\begin{DoxyParamCaption}\item[{}]{x}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{(x)\ =\ malloc(\textcolor{keyword}{sizeof}(CRITICAL\_SECTION));\ \(\backslash\)}
+\DoxyCodeLine{InitializeCriticalSectionAndSpinCount((x),\ \mbox{\hyperlink{structures_8h_a25ca55840a4a71eccfb6f31654210859}{SPIN\_COUNT}})}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_ae34e75e77ca075a7a2286d4308e38b42}\index{structures.h@{structures.h}!INITIALIZE\_LOCK\_DIRECT@{INITIALIZE\_LOCK\_DIRECT}}
+\index{INITIALIZE\_LOCK\_DIRECT@{INITIALIZE\_LOCK\_DIRECT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{INITIALIZE\_LOCK\_DIRECT}{INITIALIZE\_LOCK\_DIRECT}}
+{\footnotesize\ttfamily \label{structures_8h_ae34e75e77ca075a7a2286d4308e38b42} 
+\#define INITIALIZE\+\_\+\+LOCK\+\_\+\+DIRECT(\begin{DoxyParamCaption}\item[{}]{x}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{InitializeCriticalSectionAndSpinCount(\&(x),\ \mbox{\hyperlink{structures_8h_a25ca55840a4a71eccfb6f31654210859}{SPIN\_COUNT}})}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_a5c723c0cc71b83224ead557db3ab74dd}\index{structures.h@{structures.h}!KB@{KB}}
+\index{KB@{KB}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{KB}{KB}}
+{\footnotesize\ttfamily \label{structures_8h_a5c723c0cc71b83224ead557db3ab74dd} 
+\#define KB(\begin{DoxyParamCaption}\item[{}]{x}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{(x*1024)}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_a45db4429e1cde822c7989f74d6b5ac9d}\index{structures.h@{structures.h}!LENGTH\_OF\_PREDICTION@{LENGTH\_OF\_PREDICTION}}
+\index{LENGTH\_OF\_PREDICTION@{LENGTH\_OF\_PREDICTION}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{LENGTH\_OF\_PREDICTION}{LENGTH\_OF\_PREDICTION}}
+{\footnotesize\ttfamily \label{structures_8h_a45db4429e1cde822c7989f74d6b5ac9d} 
+\#define LENGTH\+\_\+\+OF\+\_\+\+PREDICTION~10}
+
+\Hypertarget{structures_8h_a8c4c01cac35e54e00185c8c6ff6b0347}\index{structures.h@{structures.h}!LIST\_IS\_EMPTY@{LIST\_IS\_EMPTY}}
+\index{LIST\_IS\_EMPTY@{LIST\_IS\_EMPTY}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{LIST\_IS\_EMPTY}{LIST\_IS\_EMPTY}}
+{\footnotesize\ttfamily \label{structures_8h_a8c4c01cac35e54e00185c8c6ff6b0347} 
+\#define LIST\+\_\+\+IS\+\_\+\+EMPTY~0}
+
+\Hypertarget{structures_8h_a9327ceb25ca443e16fa09fcbb9f7449f}\index{structures.h@{structures.h}!LOCK\_FREE@{LOCK\_FREE}}
+\index{LOCK\_FREE@{LOCK\_FREE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{LOCK\_FREE}{LOCK\_FREE}}
+{\footnotesize\ttfamily \label{structures_8h_a9327ceb25ca443e16fa09fcbb9f7449f} 
+\#define LOCK\+\_\+\+FREE~0}
+
+\Hypertarget{structures_8h_a9168dd836ed5be45dfcf6d8fd598a66c}\index{structures.h@{structures.h}!LOCK\_HELD@{LOCK\_HELD}}
+\index{LOCK\_HELD@{LOCK\_HELD}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{LOCK\_HELD}{LOCK\_HELD}}
+{\footnotesize\ttfamily \label{structures_8h_a9168dd836ed5be45dfcf6d8fd598a66c} 
+\#define LOCK\+\_\+\+HELD~1}
+
+\Hypertarget{structures_8h_acc479996d53bbaa99c23581d79f63e2f}\index{structures.h@{structures.h}!LOG\_BASELINE\_HAZARD@{LOG\_BASELINE\_HAZARD}}
+\index{LOG\_BASELINE\_HAZARD@{LOG\_BASELINE\_HAZARD}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{LOG\_BASELINE\_HAZARD}{LOG\_BASELINE\_HAZARD}}
+{\footnotesize\ttfamily \label{structures_8h_acc479996d53bbaa99c23581d79f63e2f} 
+\#define LOG\+\_\+\+BASELINE\+\_\+\+HAZARD~(0)}
+
+\Hypertarget{structures_8h_a4c495faae0071bbff4120433bb0bb166}\index{structures.h@{structures.h}!MANUAL\_RESET@{MANUAL\_RESET}}
+\index{MANUAL\_RESET@{MANUAL\_RESET}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{MANUAL\_RESET}{MANUAL\_RESET}}
+{\footnotesize\ttfamily \label{structures_8h_a4c495faae0071bbff4120433bb0bb166} 
+\#define MANUAL\+\_\+\+RESET~TRUE}
+
+\Hypertarget{structures_8h_ab00c6e7d045e0b3149476ec3f5f615ac}\index{structures.h@{structures.h}!MAX\_FAULTS@{MAX\_FAULTS}}
+\index{MAX\_FAULTS@{MAX\_FAULTS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{MAX\_FAULTS}{MAX\_FAULTS}}
+{\footnotesize\ttfamily \label{structures_8h_ab00c6e7d045e0b3149476ec3f5f615ac} 
+\#define MAX\+\_\+\+FAULTS~0x\+FFFFFF}
+
+\Hypertarget{structures_8h_a44d2b171cc92225ec0a76ef70fc9b531}\index{structures.h@{structures.h}!MB@{MB}}
+\index{MB@{MB}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{MB}{MB}}
+{\footnotesize\ttfamily \label{structures_8h_a44d2b171cc92225ec0a76ef70fc9b531} 
+\#define MB(\begin{DoxyParamCaption}\item[{}]{x}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{((x)\ *\ 1024\ *\ 1024)}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_aab53ed9cd9619846798e02612c94e641}\index{structures.h@{structures.h}!MODIFIED\_LIST@{MODIFIED\_LIST}}
+\index{MODIFIED\_LIST@{MODIFIED\_LIST}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{MODIFIED\_LIST}{MODIFIED\_LIST}}
+{\footnotesize\ttfamily \label{structures_8h_aab53ed9cd9619846798e02612c94e641} 
+\#define MODIFIED\+\_\+\+LIST~2}
+
+\Hypertarget{structures_8h_aab72b2804a8220784034f7756654fcbb}\index{structures.h@{structures.h}!NUMBER\_OF\_AGES@{NUMBER\_OF\_AGES}}
+\index{NUMBER\_OF\_AGES@{NUMBER\_OF\_AGES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_AGES}{NUMBER\_OF\_AGES}}
+{\footnotesize\ttfamily \label{structures_8h_aab72b2804a8220784034f7756654fcbb} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+AGES~8}
+
+\Hypertarget{structures_8h_a52fb748fa47a3f22fa9a41c7b4399432}\index{structures.h@{structures.h}!NUMBER\_OF\_DISK\_DIVISIONS@{NUMBER\_OF\_DISK\_DIVISIONS}}
+\index{NUMBER\_OF\_DISK\_DIVISIONS@{NUMBER\_OF\_DISK\_DIVISIONS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_DISK\_DIVISIONS}{NUMBER\_OF\_DISK\_DIVISIONS}}
+{\footnotesize\ttfamily \label{structures_8h_a52fb748fa47a3f22fa9a41c7b4399432} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+DISK\+\_\+\+DIVISIONS~1}
+
+\Hypertarget{structures_8h_a498bbf40c65552f824c46efcd3496669}\index{structures.h@{structures.h}!NUMBER\_OF\_FREE\_LISTS@{NUMBER\_OF\_FREE\_LISTS}}
+\index{NUMBER\_OF\_FREE\_LISTS@{NUMBER\_OF\_FREE\_LISTS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_FREE\_LISTS}{NUMBER\_OF\_FREE\_LISTS}}
+{\footnotesize\ttfamily \label{structures_8h_a498bbf40c65552f824c46efcd3496669} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+FREE\+\_\+\+LISTS~8}
+
+\Hypertarget{structures_8h_a999b7fc30c996b67673d7773ba13eb06}\index{structures.h@{structures.h}!NUMBER\_OF\_PAGE\_TABLE\_LOCKS@{NUMBER\_OF\_PAGE\_TABLE\_LOCKS}}
+\index{NUMBER\_OF\_PAGE\_TABLE\_LOCKS@{NUMBER\_OF\_PAGE\_TABLE\_LOCKS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_PAGE\_TABLE\_LOCKS}{NUMBER\_OF\_PAGE\_TABLE\_LOCKS}}
+{\footnotesize\ttfamily \label{structures_8h_a999b7fc30c996b67673d7773ba13eb06} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+PAGE\+\_\+\+TABLE\+\_\+\+LOCKS~\mbox{\hyperlink{structures_8h_ae0de6f143afb3fecd3100c0960153815}{NUMBER\+\_\+\+OF\+\_\+\+PTES}} / 8}
+
+\Hypertarget{structures_8h_ab4e4d302e884f71a7c20726b2bebb073}\index{structures.h@{structures.h}!NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY@{NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY}}
+\index{NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY@{NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY}{NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY}}
+{\footnotesize\ttfamily \label{structures_8h_ab4e4d302e884f71a7c20726b2bebb073} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+PAGES\+\_\+\+TO\+\_\+\+TRIM\+\_\+\+FROM\+\_\+\+STAND\+\_\+\+BY~(\mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} / 10)}
+
+\Hypertarget{structures_8h_a1e905c2e2a948059f3414462c702fe2d}\index{structures.h@{structures.h}!NUMBER\_OF\_PHYSICAL\_PAGES@{NUMBER\_OF\_PHYSICAL\_PAGES}}
+\index{NUMBER\_OF\_PHYSICAL\_PAGES@{NUMBER\_OF\_PHYSICAL\_PAGES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_PHYSICAL\_PAGES}{NUMBER\_OF\_PHYSICAL\_PAGES}}
+{\footnotesize\ttfamily \label{structures_8h_a1e905c2e2a948059f3414462c702fe2d} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES~\mbox{\hyperlink{structures_8h_a44d2b171cc92225ec0a76ef70fc9b531}{MB}}(512)/\mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}}}
+
+\Hypertarget{structures_8h_ac89673676f0f8705c99b84e72534f9ef}\index{structures.h@{structures.h}!NUMBER\_OF\_PTE\_REGIONS@{NUMBER\_OF\_PTE\_REGIONS}}
+\index{NUMBER\_OF\_PTE\_REGIONS@{NUMBER\_OF\_PTE\_REGIONS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_PTE\_REGIONS}{NUMBER\_OF\_PTE\_REGIONS}}
+{\footnotesize\ttfamily \label{structures_8h_ac89673676f0f8705c99b84e72534f9ef} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+PTE\+\_\+\+REGIONS~(\mbox{\hyperlink{structures_8h_ae0de6f143afb3fecd3100c0960153815}{NUMBER\+\_\+\+OF\+\_\+\+PTES}}/\mbox{\hyperlink{structures_8h_ab72513369e604b53eb0125e7bb0c4295}{NUMBER\+\_\+\+OF\+\_\+\+PTES\+\_\+\+PER\+\_\+\+REGION}})}
+
+\Hypertarget{structures_8h_ae0de6f143afb3fecd3100c0960153815}\index{structures.h@{structures.h}!NUMBER\_OF\_PTES@{NUMBER\_OF\_PTES}}
+\index{NUMBER\_OF\_PTES@{NUMBER\_OF\_PTES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_PTES}{NUMBER\_OF\_PTES}}
+{\footnotesize\ttfamily \label{structures_8h_ae0de6f143afb3fecd3100c0960153815} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+PTES~(\mbox{\hyperlink{structures_8h_a03920fa04a85656fc2deac08e774e9fc}{PAGE\+\_\+\+TABLE\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}} / sizeof(\mbox{\hyperlink{structpte}{pte}}))}
+
+\Hypertarget{structures_8h_ab72513369e604b53eb0125e7bb0c4295}\index{structures.h@{structures.h}!NUMBER\_OF\_PTES\_PER\_REGION@{NUMBER\_OF\_PTES\_PER\_REGION}}
+\index{NUMBER\_OF\_PTES\_PER\_REGION@{NUMBER\_OF\_PTES\_PER\_REGION}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_PTES\_PER\_REGION}{NUMBER\_OF\_PTES\_PER\_REGION}}
+{\footnotesize\ttfamily \label{structures_8h_ab72513369e604b53eb0125e7bb0c4295} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+PTES\+\_\+\+PER\+\_\+\+REGION~64}
+
+\Hypertarget{structures_8h_aecd13cc61ec8ab92172ec6bbbcbe773c}\index{structures.h@{structures.h}!NUMBER\_OF\_SYSTEM\_THREADS@{NUMBER\_OF\_SYSTEM\_THREADS}}
+\index{NUMBER\_OF\_SYSTEM\_THREADS@{NUMBER\_OF\_SYSTEM\_THREADS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_SYSTEM\_THREADS}{NUMBER\_OF\_SYSTEM\_THREADS}}
+{\footnotesize\ttfamily \label{structures_8h_aecd13cc61ec8ab92172ec6bbbcbe773c} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+SYSTEM\+\_\+\+THREADS~(\mbox{\hyperlink{structures_8h_a13521bb0f1dfd16021b5638c96c48572}{NUMBER\+\_\+\+OF\+\_\+\+THREADS}}-\/\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}})}
+
+\Hypertarget{structures_8h_a13521bb0f1dfd16021b5638c96c48572}\index{structures.h@{structures.h}!NUMBER\_OF\_THREADS@{NUMBER\_OF\_THREADS}}
+\index{NUMBER\_OF\_THREADS@{NUMBER\_OF\_THREADS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_THREADS}{NUMBER\_OF\_THREADS}}
+{\footnotesize\ttfamily \label{structures_8h_a13521bb0f1dfd16021b5638c96c48572} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+THREADS~(\mbox{\hyperlink{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}{NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS}} + \mbox{\hyperlink{structures_8h_ac51654038811d028b8e5b3060c6c3ae4}{NUMBER\+\_\+\+OF\+\_\+\+ZEROING\+\_\+\+THREADS}} + \mbox{\hyperlink{structures_8h_acbc07915dcf4bdb65b8ac73b8ca92133}{NUMBER\+\_\+\+OF\+\_\+\+TRIMMING\+\_\+\+THREADS}} + \mbox{\hyperlink{structures_8h_aae22bfcc5318d230d5cdd8b46e84f3b1}{NUMBER\+\_\+\+OF\+\_\+\+WRITING\+\_\+\+THREADS}} )}
+
+\Hypertarget{structures_8h_ae0536329bb5a3e3d83c005cde13ebc67}\index{structures.h@{structures.h}!NUMBER\_OF\_TIME\_STAMPS@{NUMBER\_OF\_TIME\_STAMPS}}
+\index{NUMBER\_OF\_TIME\_STAMPS@{NUMBER\_OF\_TIME\_STAMPS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_TIME\_STAMPS}{NUMBER\_OF\_TIME\_STAMPS}}
+{\footnotesize\ttfamily \label{structures_8h_ae0536329bb5a3e3d83c005cde13ebc67} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+TIME\+\_\+\+STAMPS~16}
+
+\Hypertarget{structures_8h_acbc07915dcf4bdb65b8ac73b8ca92133}\index{structures.h@{structures.h}!NUMBER\_OF\_TRIMMING\_THREADS@{NUMBER\_OF\_TRIMMING\_THREADS}}
+\index{NUMBER\_OF\_TRIMMING\_THREADS@{NUMBER\_OF\_TRIMMING\_THREADS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_TRIMMING\_THREADS}{NUMBER\_OF\_TRIMMING\_THREADS}}
+{\footnotesize\ttfamily \label{structures_8h_acbc07915dcf4bdb65b8ac73b8ca92133} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+TRIMMING\+\_\+\+THREADS~1}
+
+\Hypertarget{structures_8h_a6893ed9fb06f470b3c214434909d1a5e}\index{structures.h@{structures.h}!NUMBER\_OF\_USER\_THREADS@{NUMBER\_OF\_USER\_THREADS}}
+\index{NUMBER\_OF\_USER\_THREADS@{NUMBER\_OF\_USER\_THREADS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_USER\_THREADS}{NUMBER\_OF\_USER\_THREADS}}
+{\footnotesize\ttfamily \label{structures_8h_a6893ed9fb06f470b3c214434909d1a5e} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+USER\+\_\+\+THREADS~8}
+
+\Hypertarget{structures_8h_aae22bfcc5318d230d5cdd8b46e84f3b1}\index{structures.h@{structures.h}!NUMBER\_OF\_WRITING\_THREADS@{NUMBER\_OF\_WRITING\_THREADS}}
+\index{NUMBER\_OF\_WRITING\_THREADS@{NUMBER\_OF\_WRITING\_THREADS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_WRITING\_THREADS}{NUMBER\_OF\_WRITING\_THREADS}}
+{\footnotesize\ttfamily \label{structures_8h_aae22bfcc5318d230d5cdd8b46e84f3b1} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+WRITING\+\_\+\+THREADS~1}
+
+\Hypertarget{structures_8h_ac51654038811d028b8e5b3060c6c3ae4}\index{structures.h@{structures.h}!NUMBER\_OF\_ZEROING\_THREADS@{NUMBER\_OF\_ZEROING\_THREADS}}
+\index{NUMBER\_OF\_ZEROING\_THREADS@{NUMBER\_OF\_ZEROING\_THREADS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{NUMBER\_OF\_ZEROING\_THREADS}{NUMBER\_OF\_ZEROING\_THREADS}}
+{\footnotesize\ttfamily \label{structures_8h_ac51654038811d028b8e5b3060c6c3ae4} 
+\#define NUMBER\+\_\+\+OF\+\_\+\+ZEROING\+\_\+\+THREADS~1}
+
+\Hypertarget{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}\index{structures.h@{structures.h}!PAGE\_SIZE@{PAGE\_SIZE}}
+\index{PAGE\_SIZE@{PAGE\_SIZE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{PAGE\_SIZE}{PAGE\_SIZE}}
+{\footnotesize\ttfamily \label{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e} 
+\#define PAGE\+\_\+\+SIZE~4096}
+
+\Hypertarget{structures_8h_a03920fa04a85656fc2deac08e774e9fc}\index{structures.h@{structures.h}!PAGE\_TABLE\_SIZE\_IN\_BYTES@{PAGE\_TABLE\_SIZE\_IN\_BYTES}}
+\index{PAGE\_TABLE\_SIZE\_IN\_BYTES@{PAGE\_TABLE\_SIZE\_IN\_BYTES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{PAGE\_TABLE\_SIZE\_IN\_BYTES}{PAGE\_TABLE\_SIZE\_IN\_BYTES}}
+{\footnotesize\ttfamily \label{structures_8h_a03920fa04a85656fc2deac08e774e9fc} 
+\#define PAGE\+\_\+\+TABLE\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES~(\mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}} / \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\+\_\+\+SIZE}} \texorpdfstring{$\ast$}{*} sizeof(\mbox{\hyperlink{structpte}{pte}}))}
+
+\Hypertarget{structures_8h_a81dd897785b6ef00ccaccd410bf13b1a}\index{structures.h@{structures.h}!RECENT\_ACCESS\_COEFFICIENT@{RECENT\_ACCESS\_COEFFICIENT}}
+\index{RECENT\_ACCESS\_COEFFICIENT@{RECENT\_ACCESS\_COEFFICIENT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{RECENT\_ACCESS\_COEFFICIENT}{RECENT\_ACCESS\_COEFFICIENT}}
+{\footnotesize\ttfamily \label{structures_8h_a81dd897785b6ef00ccaccd410bf13b1a} 
+\#define RECENT\+\_\+\+ACCESS\+\_\+\+COEFFICIENT~-\/0.\+0000001}
+
+\Hypertarget{structures_8h_a51048a012b81ba95e75649ea0bbe9d08}\index{structures.h@{structures.h}!REDO\_FAULT@{REDO\_FAULT}}
+\index{REDO\_FAULT@{REDO\_FAULT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{REDO\_FAULT}{REDO\_FAULT}}
+{\footnotesize\ttfamily \label{structures_8h_a51048a012b81ba95e75649ea0bbe9d08} 
+\#define REDO\+\_\+\+FAULT~TRUE}
+
+\Hypertarget{structures_8h_aeeb9d7188b2c83c123e48027a312e090}\index{structures.h@{structures.h}!REDO\_FREE@{REDO\_FREE}}
+\index{REDO\_FREE@{REDO\_FREE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{REDO\_FREE}{REDO\_FREE}}
+{\footnotesize\ttfamily \label{structures_8h_aeeb9d7188b2c83c123e48027a312e090} 
+\#define REDO\+\_\+\+FREE~TRUE}
+
+\Hypertarget{structures_8h_a626ca3a053b87d0977fba82fbda91e3c}\index{structures.h@{structures.h}!REMOVE\_ACTIVE\_PAGE@{REMOVE\_ACTIVE\_PAGE}}
+\index{REMOVE\_ACTIVE\_PAGE@{REMOVE\_ACTIVE\_PAGE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{REMOVE\_ACTIVE\_PAGE}{REMOVE\_ACTIVE\_PAGE}}
+{\footnotesize\ttfamily \label{structures_8h_a626ca3a053b87d0977fba82fbda91e3c} 
+\#define REMOVE\+\_\+\+ACTIVE\+\_\+\+PAGE~TRUE}
+
+\Hypertarget{structures_8h_a6ae36b4ca49040c50aa53df957dfd721}\index{structures.h@{structures.h}!REMOVE\_FREE\_PAGE@{REMOVE\_FREE\_PAGE}}
+\index{REMOVE\_FREE\_PAGE@{REMOVE\_FREE\_PAGE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{REMOVE\_FREE\_PAGE}{REMOVE\_FREE\_PAGE}}
+{\footnotesize\ttfamily \label{structures_8h_a6ae36b4ca49040c50aa53df957dfd721} 
+\#define REMOVE\+\_\+\+FREE\+\_\+\+PAGE~FALSE}
+
+\Hypertarget{structures_8h_abe6329f1be7e1699ab49800ae148dca5}\index{structures.h@{structures.h}!ROUND\_DOWN\_TO\_PAGE@{ROUND\_DOWN\_TO\_PAGE}}
+\index{ROUND\_DOWN\_TO\_PAGE@{ROUND\_DOWN\_TO\_PAGE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{ROUND\_DOWN\_TO\_PAGE}{ROUND\_DOWN\_TO\_PAGE}}
+{\footnotesize\ttfamily \label{structures_8h_abe6329f1be7e1699ab49800ae148dca5} 
+\#define ROUND\+\_\+\+DOWN\+\_\+\+TO\+\_\+\+PAGE(\begin{DoxyParamCaption}\item[{}]{addr}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{((ULONG\_PTR)(addr)\ \&\ \string~(\mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\_SIZE}}\ -\/\ 1))}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_ad38e45c58dd90983ecb2e10a199f66af}\index{structures.h@{structures.h}!ROUND\_UP\_TO\_PAGE@{ROUND\_UP\_TO\_PAGE}}
+\index{ROUND\_UP\_TO\_PAGE@{ROUND\_UP\_TO\_PAGE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{ROUND\_UP\_TO\_PAGE}{ROUND\_UP\_TO\_PAGE}}
+{\footnotesize\ttfamily \label{structures_8h_ad38e45c58dd90983ecb2e10a199f66af} 
+\#define ROUND\+\_\+\+UP\+\_\+\+TO\+\_\+\+PAGE(\begin{DoxyParamCaption}\item[{}]{addr}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{(((ULONG\_PTR)(addr)\ +\ \mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\_SIZE}}\ -\/\ 1)\ \&\ \string~(\mbox{\hyperlink{structures_8h_a7d467c1d283fdfa1f2081ba1e0d01b6e}{PAGE\_SIZE}}\ -\/\ 1))}
+
+\end{DoxyCode}
+\Hypertarget{structures_8h_abacff3056116d9f06e75a53ee54c6bac}\index{structures.h@{structures.h}!SIZE\_OF\_PAGE\_TABLE\_DIVISION@{SIZE\_OF\_PAGE\_TABLE\_DIVISION}}
+\index{SIZE\_OF\_PAGE\_TABLE\_DIVISION@{SIZE\_OF\_PAGE\_TABLE\_DIVISION}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{SIZE\_OF\_PAGE\_TABLE\_DIVISION}{SIZE\_OF\_PAGE\_TABLE\_DIVISION}}
+{\footnotesize\ttfamily \label{structures_8h_abacff3056116d9f06e75a53ee54c6bac} 
+\#define SIZE\+\_\+\+OF\+\_\+\+PAGE\+\_\+\+TABLE\+\_\+\+DIVISION~(\mbox{\hyperlink{structures_8h_a03920fa04a85656fc2deac08e774e9fc}{PAGE\+\_\+\+TABLE\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+BYTES}}/\mbox{\hyperlink{structures_8h_a999b7fc30c996b67673d7773ba13eb06}{NUMBER\+\_\+\+OF\+\_\+\+PAGE\+\_\+\+TABLE\+\_\+\+LOCKS}})}
+
+\Hypertarget{structures_8h_a9eefb250bd0434821972a6f427a64ea9}\index{structures.h@{structures.h}!SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES@{SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES}}
+\index{SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES@{SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES}{SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES}}
+{\footnotesize\ttfamily \label{structures_8h_a9eefb250bd0434821972a6f427a64ea9} 
+\#define SIZE\+\_\+\+OF\+\_\+\+TRANSFER\+\_\+\+VA\+\_\+\+SPACE\+\_\+\+IN\+\_\+\+PAGES~(128)}
+
+\Hypertarget{structures_8h_a25ca55840a4a71eccfb6f31654210859}\index{structures.h@{structures.h}!SPIN\_COUNT@{SPIN\_COUNT}}
+\index{SPIN\_COUNT@{SPIN\_COUNT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{SPIN\_COUNT}{SPIN\_COUNT}}
+{\footnotesize\ttfamily \label{structures_8h_a25ca55840a4a71eccfb6f31654210859} 
+\#define SPIN\+\_\+\+COUNT~0x\+FFFFFF}
+
+\Hypertarget{structures_8h_ac7c7f551b36e4250202bf72bf5ec7bc2}\index{structures.h@{structures.h}!SPIN\_COUNTS@{SPIN\_COUNTS}}
+\index{SPIN\_COUNTS@{SPIN\_COUNTS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{SPIN\_COUNTS}{SPIN\_COUNTS}}
+{\footnotesize\ttfamily \label{structures_8h_ac7c7f551b36e4250202bf72bf5ec7bc2} 
+\#define SPIN\+\_\+\+COUNTS~1}
+
+\Hypertarget{structures_8h_a127376a1173ffab6d2a81c1846a9df8b}\index{structures.h@{structures.h}!spinEvents@{spinEvents}}
+\index{spinEvents@{spinEvents}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{spinEvents}{spinEvents}}
+{\footnotesize\ttfamily \label{structures_8h_a127376a1173ffab6d2a81c1846a9df8b} 
+\#define spin\+Events~1}
+
+\Hypertarget{structures_8h_ad18aeed9e566dea67bf439d46d857998}\index{structures.h@{structures.h}!STAND\_BY\_LIST@{STAND\_BY\_LIST}}
+\index{STAND\_BY\_LIST@{STAND\_BY\_LIST}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{STAND\_BY\_LIST}{STAND\_BY\_LIST}}
+{\footnotesize\ttfamily \label{structures_8h_ad18aeed9e566dea67bf439d46d857998} 
+\#define STAND\+\_\+\+BY\+\_\+\+LIST~3}
+
+\Hypertarget{structures_8h_a74a896e61b7fcbe2dc1f4f305a556bf2}\index{structures.h@{structures.h}!STAND\_BY\_TRIM\_THRESHOLD@{STAND\_BY\_TRIM\_THRESHOLD}}
+\index{STAND\_BY\_TRIM\_THRESHOLD@{STAND\_BY\_TRIM\_THRESHOLD}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{STAND\_BY\_TRIM\_THRESHOLD}{STAND\_BY\_TRIM\_THRESHOLD}}
+{\footnotesize\ttfamily \label{structures_8h_a74a896e61b7fcbe2dc1f4f305a556bf2} 
+\#define STAND\+\_\+\+BY\+\_\+\+TRIM\+\_\+\+THRESHOLD~(\mbox{\hyperlink{structures_8h_a1e905c2e2a948059f3414462c702fe2d}{NUMBER\+\_\+\+OF\+\_\+\+PHYSICAL\+\_\+\+PAGES}} / 10)}
+
+\Hypertarget{structures_8h_aa90cac659d18e8ef6294c7ae337f6b58}\index{structures.h@{structures.h}!SUCCESS@{SUCCESS}}
+\index{SUCCESS@{SUCCESS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{SUCCESS}{SUCCESS}}
+{\footnotesize\ttfamily \label{structures_8h_aa90cac659d18e8ef6294c7ae337f6b58} 
+\#define SUCCESS~10}
+
+\Hypertarget{structures_8h_a7f2a734b84f750bb35708fd8f3d0121e}\index{structures.h@{structures.h}!UNASSIGNED@{UNASSIGNED}}
+\index{UNASSIGNED@{UNASSIGNED}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{UNASSIGNED}{UNASSIGNED}}
+{\footnotesize\ttfamily \label{structures_8h_a7f2a734b84f750bb35708fd8f3d0121e} 
+\#define UNASSIGNED~1}
+
+\Hypertarget{structures_8h_abb1c8bf45c615b44b7e0ba6d90c5db9d}\index{structures.h@{structures.h}!useSharedLock@{useSharedLock}}
+\index{useSharedLock@{useSharedLock}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{useSharedLock}{useSharedLock}}
+{\footnotesize\ttfamily \label{structures_8h_abb1c8bf45c615b44b7e0ba6d90c5db9d} 
+\#define use\+Shared\+Lock~1}
+
+\Hypertarget{structures_8h_a29c944fb3ec4de60614a00568176a4e5}\index{structures.h@{structures.h}!VARIABLE\_DID\_NOT\_CHANGE@{VARIABLE\_DID\_NOT\_CHANGE}}
+\index{VARIABLE\_DID\_NOT\_CHANGE@{VARIABLE\_DID\_NOT\_CHANGE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{VARIABLE\_DID\_NOT\_CHANGE}{VARIABLE\_DID\_NOT\_CHANGE}}
+{\footnotesize\ttfamily \label{structures_8h_a29c944fb3ec4de60614a00568176a4e5} 
+\#define VARIABLE\+\_\+\+DID\+\_\+\+NOT\+\_\+\+CHANGE~0}
+
+\Hypertarget{structures_8h_a9a8d97e13ab816495b154d3bb9826016}\index{structures.h@{structures.h}!VIRTUAL\_ADDRESS\_SIZE@{VIRTUAL\_ADDRESS\_SIZE}}
+\index{VIRTUAL\_ADDRESS\_SIZE@{VIRTUAL\_ADDRESS\_SIZE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{VIRTUAL\_ADDRESS\_SIZE}{VIRTUAL\_ADDRESS\_SIZE}}
+{\footnotesize\ttfamily \label{structures_8h_a9a8d97e13ab816495b154d3bb9826016} 
+\#define VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE~\mbox{\hyperlink{structures_8h_af207e8203eedc05adcf341a24bfa6cbb}{GB}}(1)}
+
+\Hypertarget{structures_8h_a8f84682134486247673ba0b44ba7968a}\index{structures.h@{structures.h}!VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS@{VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS}}
+\index{VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS@{VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS}{VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS}}
+{\footnotesize\ttfamily \label{structures_8h_a8f84682134486247673ba0b44ba7968a} 
+\#define VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE\+\_\+\+IN\+\_\+\+UNSIGNED\+\_\+\+CHUNKS~(\mbox{\hyperlink{structures_8h_a9a8d97e13ab816495b154d3bb9826016}{VIRTUAL\+\_\+\+ADDRESS\+\_\+\+SIZE}} / sizeof (ULONG\+\_\+\+PTR))}
+
+\Hypertarget{structures_8h_afbcb9f48d7229e0ba0ede4dad3d8585c}\index{structures.h@{structures.h}!VOLATILITY\_COEFFICENT@{VOLATILITY\_COEFFICENT}}
+\index{VOLATILITY\_COEFFICENT@{VOLATILITY\_COEFFICENT}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{VOLATILITY\_COEFFICENT}{VOLATILITY\_COEFFICENT}}
+{\footnotesize\ttfamily \label{structures_8h_afbcb9f48d7229e0ba0ede4dad3d8585c} 
+\#define VOLATILITY\+\_\+\+COEFFICENT~.\+33}
+
+\Hypertarget{structures_8h_abc05de8f119aa19208c90dd4941e2c02}\index{structures.h@{structures.h}!WAIT\_FOR\_ALL@{WAIT\_FOR\_ALL}}
+\index{WAIT\_FOR\_ALL@{WAIT\_FOR\_ALL}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{WAIT\_FOR\_ALL}{WAIT\_FOR\_ALL}}
+{\footnotesize\ttfamily \label{structures_8h_abc05de8f119aa19208c90dd4941e2c02} 
+\#define WAIT\+\_\+\+FOR\+\_\+\+ALL~TRUE}
+
+\Hypertarget{structures_8h_a12cb120cf20b81cb428d32b69d19b7f5}\index{structures.h@{structures.h}!WAIT\_FOR\_ONE@{WAIT\_FOR\_ONE}}
+\index{WAIT\_FOR\_ONE@{WAIT\_FOR\_ONE}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{WAIT\_FOR\_ONE}{WAIT\_FOR\_ONE}}
+{\footnotesize\ttfamily \label{structures_8h_a12cb120cf20b81cb428d32b69d19b7f5} 
+\#define WAIT\+\_\+\+FOR\+\_\+\+ONE~FALSE}
+
+
+
+\label{doc-typedef-members}
+\Hypertarget{structures_8h_doc-typedef-members}
+\doxysubsection{Typedef Documentation}
+\Hypertarget{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}\index{structures.h@{structures.h}!pListHead@{pListHead}}
+\index{pListHead@{pListHead}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{pListHead}{pListHead}}
+{\footnotesize\ttfamily \label{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe} 
+typedef  struct \mbox{\hyperlink{structlist_head}{list\+Head}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}
+
+
+
+\label{doc-func-members}
+\Hypertarget{structures_8h_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{structures_8h_a0323af3fde6a5cc3ea8243c800211385}\index{structures.h@{structures.h}!\_\_declspec@{\_\_declspec}}
+\index{\_\_declspec@{\_\_declspec}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{\_\_declspec()}{\_\_declspec()}}
+{\footnotesize\ttfamily \label{structures_8h_a0323af3fde6a5cc3ea8243c800211385} 
+struct \+\_\+\+\_\+declspec (\begin{DoxyParamCaption}\item[{align(64)}]{}{}\end{DoxyParamCaption})}
+
+
+
+\label{doc-var-members}
+\Hypertarget{structures_8h_doc-var-members}
+\doxysubsection{Variable Documentation}
+\Hypertarget{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}\index{structures.h@{structures.h}!PTHREAD\_INFO@{PTHREAD\_INFO}}
+\index{PTHREAD\_INFO@{PTHREAD\_INFO}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{PTHREAD\_INFO}{PTHREAD\_INFO}}
+{\footnotesize\ttfamily \label{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4} 
+\texorpdfstring{$\ast$}{*} PTHREAD\+\_\+\+INFO}
+
+\Hypertarget{structures_8h_a6a51703cda40a61f356163e521dfe4ec}\index{structures.h@{structures.h}!THREAD\_INFO@{THREAD\_INFO}}
+\index{THREAD\_INFO@{THREAD\_INFO}!structures.h@{structures.h}}
+\doxysubsubsection{\texorpdfstring{THREAD\_INFO}{THREAD\_INFO}}
+{\footnotesize\ttfamily \label{structures_8h_a6a51703cda40a61f356163e521dfe4ec} 
+THREAD\+\_\+\+INFO}
+

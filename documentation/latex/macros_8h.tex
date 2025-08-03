@@ -1,0 +1,94 @@
+\doxysection{include/variables/macros.h File Reference}
+\hypertarget{macros_8h}{}\label{macros_8h}\index{include/variables/macros.h@{include/variables/macros.h}}
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$Windows.\+h$>$}\newline
+{\ttfamily \#include "{}structures.\+h"{}}\newline
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+FORCEINLINE VOID \mbox{\hyperlink{macros_8h_afa8f00416a027788c25c09317cfa9ab6}{Initialize\+List\+Head}} (\+\_\+\+\_\+out PLIST\+\_\+\+ENTRY List\+Head)
+\item 
+\+\_\+\+\_\+check\+Return BOOLEAN FORCEINLINE \mbox{\hyperlink{macros_8h_adf0e1f55fc389f4ba6ef4c09209d6c6a}{Is\+List\+Empty}} (\+\_\+\+\_\+in const \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head)
+\item 
+FORCEINLINE BOOLEAN \mbox{\hyperlink{macros_8h_a86c16913629907888167c1e8fd3323f6}{Remove\+Entry\+List}} (\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head, \+\_\+\+\_\+in PLIST\+\_\+\+ENTRY Entry)
+\item 
+FORCEINLINE PLIST\+\_\+\+ENTRY \mbox{\hyperlink{macros_8h_a0d33293ffc5eed4d8fafc9de60f7579f}{Remove\+Head\+List}} (\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head)
+\item 
+FORCEINLINE PLIST\+\_\+\+ENTRY \mbox{\hyperlink{macros_8h_a6603555e1494ad2b8c6f9e05b00a2071}{Remove\+Tail\+List}} (\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head)
+\item 
+FORCEINLINE VOID \mbox{\hyperlink{macros_8h_ae9f8be34081522b2afef70bb45a18672}{Insert\+Tail\+List}} (\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head, \+\_\+\+\_\+inout \+\_\+\+\_\+drv\+\_\+aliases\+Mem PLIST\+\_\+\+ENTRY Entry)
+\item 
+FORCEINLINE VOID \mbox{\hyperlink{macros_8h_a47aa8dee2f7a2d1e5e9a517d0a07a6ba}{Insert\+Head\+List}} (\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head, \+\_\+\+\_\+inout \+\_\+\+\_\+drv\+\_\+aliases\+Mem PLIST\+\_\+\+ENTRY Entry)
+\item 
+FORCEINLINE VOID \mbox{\hyperlink{macros_8h_a882af682b9a02d8f840d4ea194e43d80}{Append\+Tail\+List}} (\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}} List\+Head, \+\_\+\+\_\+inout PLIST\+\_\+\+ENTRY List\+To\+Append)
+\item 
+FORCEINLINE PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY \mbox{\hyperlink{macros_8h_ac2d13e335eb7bbcd048eb8327b1c39bd}{Pop\+Entry\+List}} (\+\_\+\+\_\+inout PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY List\+Head)
+\item 
+FORCEINLINE VOID \mbox{\hyperlink{macros_8h_a2c071a421a8ec2350186195c4fc396f3}{Push\+Entry\+List}} (\+\_\+\+\_\+inout PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY List\+Head, \+\_\+\+\_\+inout \+\_\+\+\_\+drv\+\_\+aliases\+Mem PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY Entry)
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{macros_8h_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{macros_8h_a882af682b9a02d8f840d4ea194e43d80}\index{macros.h@{macros.h}!AppendTailList@{AppendTailList}}
+\index{AppendTailList@{AppendTailList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{AppendTailList()}{AppendTailList()}}
+{\footnotesize\ttfamily \label{macros_8h_a882af682b9a02d8f840d4ea194e43d80} 
+FORCEINLINE VOID Append\+Tail\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{, }\item[{\+\_\+\+\_\+inout PLIST\+\_\+\+ENTRY}]{List\+To\+Append}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_afa8f00416a027788c25c09317cfa9ab6}\index{macros.h@{macros.h}!InitializeListHead@{InitializeListHead}}
+\index{InitializeListHead@{InitializeListHead}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{InitializeListHead()}{InitializeListHead()}}
+{\footnotesize\ttfamily \label{macros_8h_afa8f00416a027788c25c09317cfa9ab6} 
+FORCEINLINE VOID Initialize\+List\+Head (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+out PLIST\+\_\+\+ENTRY}]{List\+Head}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_a47aa8dee2f7a2d1e5e9a517d0a07a6ba}\index{macros.h@{macros.h}!InsertHeadList@{InsertHeadList}}
+\index{InsertHeadList@{InsertHeadList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{InsertHeadList()}{InsertHeadList()}}
+{\footnotesize\ttfamily \label{macros_8h_a47aa8dee2f7a2d1e5e9a517d0a07a6ba} 
+FORCEINLINE VOID Insert\+Head\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{, }\item[{\+\_\+\+\_\+inout \+\_\+\+\_\+drv\+\_\+aliases\+Mem PLIST\+\_\+\+ENTRY}]{Entry}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_ae9f8be34081522b2afef70bb45a18672}\index{macros.h@{macros.h}!InsertTailList@{InsertTailList}}
+\index{InsertTailList@{InsertTailList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{InsertTailList()}{InsertTailList()}}
+{\footnotesize\ttfamily \label{macros_8h_ae9f8be34081522b2afef70bb45a18672} 
+FORCEINLINE VOID Insert\+Tail\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{, }\item[{\+\_\+\+\_\+inout \+\_\+\+\_\+drv\+\_\+aliases\+Mem PLIST\+\_\+\+ENTRY}]{Entry}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_adf0e1f55fc389f4ba6ef4c09209d6c6a}\index{macros.h@{macros.h}!IsListEmpty@{IsListEmpty}}
+\index{IsListEmpty@{IsListEmpty}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{IsListEmpty()}{IsListEmpty()}}
+{\footnotesize\ttfamily \label{macros_8h_adf0e1f55fc389f4ba6ef4c09209d6c6a} 
+\+\_\+\+\_\+check\+Return BOOLEAN FORCEINLINE Is\+List\+Empty (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+in const \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_ac2d13e335eb7bbcd048eb8327b1c39bd}\index{macros.h@{macros.h}!PopEntryList@{PopEntryList}}
+\index{PopEntryList@{PopEntryList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{PopEntryList()}{PopEntryList()}}
+{\footnotesize\ttfamily \label{macros_8h_ac2d13e335eb7bbcd048eb8327b1c39bd} 
+FORCEINLINE PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY Pop\+Entry\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY}]{List\+Head}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_a2c071a421a8ec2350186195c4fc396f3}\index{macros.h@{macros.h}!PushEntryList@{PushEntryList}}
+\index{PushEntryList@{PushEntryList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{PushEntryList()}{PushEntryList()}}
+{\footnotesize\ttfamily \label{macros_8h_a2c071a421a8ec2350186195c4fc396f3} 
+FORCEINLINE VOID Push\+Entry\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY}]{List\+Head}{, }\item[{\+\_\+\+\_\+inout \+\_\+\+\_\+drv\+\_\+aliases\+Mem PSINGLE\+\_\+\+LIST\+\_\+\+ENTRY}]{Entry}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_a86c16913629907888167c1e8fd3323f6}\index{macros.h@{macros.h}!RemoveEntryList@{RemoveEntryList}}
+\index{RemoveEntryList@{RemoveEntryList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{RemoveEntryList()}{RemoveEntryList()}}
+{\footnotesize\ttfamily \label{macros_8h_a86c16913629907888167c1e8fd3323f6} 
+FORCEINLINE BOOLEAN Remove\+Entry\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{, }\item[{\+\_\+\+\_\+in PLIST\+\_\+\+ENTRY}]{Entry}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_a0d33293ffc5eed4d8fafc9de60f7579f}\index{macros.h@{macros.h}!RemoveHeadList@{RemoveHeadList}}
+\index{RemoveHeadList@{RemoveHeadList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{RemoveHeadList()}{RemoveHeadList()}}
+{\footnotesize\ttfamily \label{macros_8h_a0d33293ffc5eed4d8fafc9de60f7579f} 
+FORCEINLINE PLIST\+\_\+\+ENTRY Remove\+Head\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{}\end{DoxyParamCaption})}
+
+\Hypertarget{macros_8h_a6603555e1494ad2b8c6f9e05b00a2071}\index{macros.h@{macros.h}!RemoveTailList@{RemoveTailList}}
+\index{RemoveTailList@{RemoveTailList}!macros.h@{macros.h}}
+\doxysubsubsection{\texorpdfstring{RemoveTailList()}{RemoveTailList()}}
+{\footnotesize\ttfamily \label{macros_8h_a6603555e1494ad2b8c6f9e05b00a2071} 
+FORCEINLINE PLIST\+\_\+\+ENTRY Remove\+Tail\+List (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+inout \mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{p\+List\+Head}}}]{List\+Head}{}\end{DoxyParamCaption})}
+

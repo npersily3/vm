@@ -1,0 +1,293 @@
+\doxysection{structures.\+h}
+\hypertarget{structures_8h_source}{}\label{structures_8h_source}\index{include/variables/structures.h@{include/variables/structures.h}}
+\mbox{\hyperlink{structures_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//\ Created\ by\ nrper\ on\ 7/16/2025.}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifndef\ STRUCTURES\_H}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#define\ STRUCTURES\_H}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <windows.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <stdbool.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <stddef.h>}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{comment}{//\ Debug\ macros}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#define\ DBG\ 0}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#if\ DBG}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ ASSERT(x)\ if\ ((x)\ ==\ FALSE)\ DebugBreak();}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#define\ ASSERT(x)}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#define\ SUCCESS\ 10}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{comment}{//}}
+\DoxyCodeLine{00024\ \textcolor{comment}{//\ Configuration\ constants}}
+\DoxyCodeLine{00025\ \textcolor{comment}{//}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#define\ PAGE\_SIZE\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 4096}}
+\DoxyCodeLine{00027\ \textcolor{comment}{//\ 52\ bits\ is\ max\ that\ bus\ accepts\ and\ if\ each\ page\ is\ 4k\ or\ 12\ bits,\ there\ is\ 40\ bits\ left\ over}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#define\ frame\_number\_size\ \ \ \ \ \ \ \ \ \ \ 40}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#define\ KB(x)\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (x*1024)}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#define\ MB(x)\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((x)\ *\ 1024\ *\ 1024)}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#define\ GB(x)\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((x)\ *\ 1024\ *\ 1024\ *\ 1024)}}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#if\ DBG}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#define\ VIRTUAL\_ADDRESS\_SIZE\ \ \ \ PAGE\_SIZE\ *\ 256}\textcolor{comment}{//\ \ GB(1)}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PHYSICAL\_PAGES\ 128}}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#define\ VIRTUAL\_ADDRESS\_SIZE\ \ \ \ \ GB(1)}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PHYSICAL\_PAGES\ \ MB(512)/PAGE\_SIZE}}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#define\ VIRTUAL\_ADDRESS\_SIZE\_IN\_UNSIGNED\_CHUNKS\ \ \ \ \ \ \ \ (VIRTUAL\_ADDRESS\_SIZE\ /\ sizeof\ (ULONG\_PTR))}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_DISK\_DIVISIONS\ \ \ 1}}
+\DoxyCodeLine{00050\ \textcolor{preprocessor}{\#define\ DISK\_SIZE\_IN\_BYTES\ \ \ \ \ \ \ \ \ (VIRTUAL\_ADDRESS\_SIZE\ -\/\ PAGE\_SIZE\ *\ NUMBER\_OF\_PHYSICAL\_PAGES\ +\ 2*\ PAGE\_SIZE)}}
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#define\ DISK\_SIZE\_IN\_PAGES\ \ \ \ \ \ \ \ \ (DISK\_SIZE\_IN\_BYTES\ /\ PAGE\_SIZE)}}
+\DoxyCodeLine{00052\ \textcolor{preprocessor}{\#define\ DISK\_DIVISION\_SIZE\_IN\_PAGES\ (DISK\_SIZE\_IN\_PAGES\ /\ (NUMBER\_OF\_DISK\_DIVISIONS)\ )}}
+\DoxyCodeLine{00053\ \textcolor{preprocessor}{\#define\ EMPTY\_PTE\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 0}}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{preprocessor}{\#define\ AUTO\_RESET\ \ \ \ \ \ \ \ \ \ \ \ \ \ FALSE}}
+\DoxyCodeLine{00056\ \textcolor{preprocessor}{\#define\ MANUAL\_RESET\ \ \ \ \ \ \ \ \ \ \ \ TRUE}}
+\DoxyCodeLine{00057\ \textcolor{preprocessor}{\#define\ WAIT\_FOR\_ALL\ \ \ \ \ \ \ \ \ \ \ \ TRUE}}
+\DoxyCodeLine{00058\ \textcolor{preprocessor}{\#define\ WAIT\_FOR\_ONE\ \ \ \ \ \ \ \ \ \ \ \ FALSE}}
+\DoxyCodeLine{00059\ \textcolor{preprocessor}{\#define\ DEFAULT\_SECURITY\ \ \ \ \ \ \ \ ((LPSECURITY\_ATTRIBUTES)\ NULL)}}
+\DoxyCodeLine{00060\ \textcolor{preprocessor}{\#define\ DEFAULT\_STACK\_SIZE\ \ \ \ \ \ 0}}
+\DoxyCodeLine{00061\ \textcolor{preprocessor}{\#define\ DEFAULT\_CREATION\_FLAGS\ \ 0}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \textcolor{preprocessor}{\#define\ ROUND\_DOWN\_TO\_PAGE(addr)\ ((ULONG\_PTR)(addr)\ \&\ \string~(PAGE\_SIZE\ -\/\ 1))}}
+\DoxyCodeLine{00064\ \textcolor{preprocessor}{\#define\ ROUND\_UP\_TO\_PAGE(addr)\ (((ULONG\_PTR)(addr)\ +\ PAGE\_SIZE\ -\/\ 1)\ \&\ \string~(PAGE\_SIZE\ -\/\ 1))}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \textcolor{preprocessor}{\#define\ LOCK\_FREE\ 0}}
+\DoxyCodeLine{00067\ \textcolor{preprocessor}{\#define\ LOCK\_HELD\ 1}}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \textcolor{preprocessor}{\#define\ DISK\_ACTIVE\ 1}}
+\DoxyCodeLine{00070\ \textcolor{preprocessor}{\#define\ VARIABLE\_DID\_NOT\_CHANGE\ 0}}
+\DoxyCodeLine{00071\ \textcolor{preprocessor}{\#define\ DISK\_FREE\ 0}}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \textcolor{preprocessor}{\#define\ FULL\_DISK\_SPACE\ \string~0ULL}}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ \textcolor{comment}{//\ List\ operation\ constants}}
+\DoxyCodeLine{00076\ \textcolor{preprocessor}{\#define\ REMOVE\_FREE\_PAGE\ \ \ \ \ \ \ \ \ \ \ FALSE}}
+\DoxyCodeLine{00077\ \textcolor{preprocessor}{\#define\ REMOVE\_ACTIVE\_PAGE\ \ \ \ \ \ \ \ \ TRUE}}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \textcolor{preprocessor}{\#define\ container\_of(ptr,\ type,\ member)\ \(\backslash\)}}
+\DoxyCodeLine{00081\ \textcolor{preprocessor}{((type\ *)((char\ *)(ptr)\ -\/\ offsetof(type,\ member)))}}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_USER\_THREADS\ 8}}
+\DoxyCodeLine{00084\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_ZEROING\_THREADS\ 1}}
+\DoxyCodeLine{00085\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_TRIMMING\_THREADS\ 1}}
+\DoxyCodeLine{00086\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_WRITING\_THREADS\ 1}}
+\DoxyCodeLine{00087\ \textcolor{comment}{//\#define\ NUMBER\_OF\_SCHEDULING\_THREADS\ 1}}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00089\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_THREADS\ (NUMBER\_OF\_USER\_THREADS\ +\ NUMBER\_OF\_ZEROING\_THREADS\ +\ NUMBER\_OF\_TRIMMING\_THREADS\ +\ NUMBER\_OF\_WRITING\_THREADS\ )}\textcolor{comment}{//+)//\ NUMBER\_OF\_SCHEDULING\_THREADS)}}
+\DoxyCodeLine{00090\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_SYSTEM\_THREADS\ (NUMBER\_OF\_THREADS-\/NUMBER\_OF\_USER\_THREADS)}}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \textcolor{preprocessor}{\#define\ MAX\_FAULTS\ 0xFFFFFF}}
+\DoxyCodeLine{00093\ \textcolor{preprocessor}{\#define\ BATCH\_SIZE\ (NUMBER\_OF\_PHYSICAL\_PAGES\ /\ 10)}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \textcolor{preprocessor}{\#define\ COULD\_NOT\_FIND\_SLOT\ (\string~0ULL)}}
+\DoxyCodeLine{00096\ \textcolor{preprocessor}{\#define\ LIST\_IS\_EMPTY\ 0}}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \textcolor{preprocessor}{\#define\ REDO\_FAULT\ TRUE}}
+\DoxyCodeLine{00099\ \textcolor{preprocessor}{\#define\ REDO\_FREE\ TRUE}}
+\DoxyCodeLine{00100\ \textcolor{comment}{//}}
+\DoxyCodeLine{00101\ \textcolor{comment}{//\ Thread\ configuration}}
+\DoxyCodeLine{00102\ \textcolor{comment}{//}}
+\DoxyCodeLine{00103\ \textcolor{preprocessor}{\#define\ EVENT\_START\_ON\ TRUE}}
+\DoxyCodeLine{00104\ \textcolor{preprocessor}{\#define\ EVENT\_START\_OFF\ FALSE}}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \textcolor{preprocessor}{\#define\ SPIN\_COUNTS\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 1}}
+\DoxyCodeLine{00107\ \textcolor{preprocessor}{\#define\ SPIN\_COUNT\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 0xFFFFFF}}
+\DoxyCodeLine{00108\ \textcolor{preprocessor}{\#if\ SPIN\_COUNTS}}
+\DoxyCodeLine{00109\ \textcolor{preprocessor}{\#define\ INITIALIZE\_LOCK(x)\ \(\backslash\)}}
+\DoxyCodeLine{00110\ \textcolor{preprocessor}{(x)\ =\ malloc(sizeof(CRITICAL\_SECTION));\ \(\backslash\)}}
+\DoxyCodeLine{00111\ \textcolor{preprocessor}{InitializeCriticalSectionAndSpinCount((x),\ SPIN\_COUNT)}}
+\DoxyCodeLine{00112\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00113\ \textcolor{preprocessor}{\#define\ INITIALIZE\_LOCK(x)\ \(\backslash\)}}
+\DoxyCodeLine{00114\ \textcolor{preprocessor}{(x)\ =\ malloc(sizeof(CRITICAL\_SECTION));\ \(\backslash\)}}
+\DoxyCodeLine{00115\ \textcolor{preprocessor}{InitializeCriticalSection(x)}}
+\DoxyCodeLine{00116\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \textcolor{preprocessor}{\#define\ SIZE\_OF\_TRANSFER\_VA\_SPACE\_IN\_PAGES\ (128)}}
+\DoxyCodeLine{00119\ \textcolor{preprocessor}{\#define\ STAND\_BY\_TRIM\_THRESHOLD\ (NUMBER\_OF\_PHYSICAL\_PAGES\ /\ 10)}}
+\DoxyCodeLine{00120\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PAGES\_TO\_TRIM\_FROM\_STAND\_BY\ (NUMBER\_OF\_PHYSICAL\_PAGES\ /\ 10)}}
+\DoxyCodeLine{00121\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_FREE\_LISTS\ 8}}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ \textcolor{preprocessor}{\#define\ spinEvents\ 1}}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \textcolor{comment}{//\ this\ one\ does\ not\ malloc\ and\ is\ used\ for\ the\ array\ that\ is\ statically\ declared}}
+\DoxyCodeLine{00127\ \textcolor{preprocessor}{\#if\ SPIN\_COUNTS}}
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#define\ INITIALIZE\_LOCK\_DIRECT(x)\ \(\backslash\)}}
+\DoxyCodeLine{00129\ \textcolor{preprocessor}{InitializeCriticalSectionAndSpinCount(\&(x),\ SPIN\_COUNT)}}
+\DoxyCodeLine{00130\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00131\ \textcolor{preprocessor}{\#define\ INITIALIZE\_LOCK\_DIRECT(x)\ \(\backslash\)}}
+\DoxyCodeLine{00132\ \textcolor{preprocessor}{InitializeCriticalSection(\&(x))}}
+\DoxyCodeLine{00133\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \textcolor{comment}{//}}
+\DoxyCodeLine{00136\ \textcolor{comment}{//\ PTE\ format\ definitions}}
+\DoxyCodeLine{00137\ \textcolor{comment}{//}}
+\DoxyCodeLine{00138\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00139\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structvalid_pte_ab69d0644ffe76adc8155ea74fdfb1044}{valid}}:\ 1;}
+\DoxyCodeLine{00140\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structvalid_pte_a58bedc14359873650418bc99f7cd9897}{transition}}:\ 2;}
+\DoxyCodeLine{00141\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structvalid_pte_a922221c69159322392389138fe8d1960}{frameNumber}}:\ \mbox{\hyperlink{structures_8h_a4f8e33efe08ed40ace91397906173136}{frame\_number\_size}};}
+\DoxyCodeLine{00142\ \}\ \mbox{\hyperlink{structvalid_pte}{validPte}};}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00145\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structinvalid_pte_ac7820cd9bf10193112ee5c617bf3a67b}{mustBeZero}}:\ 1;}
+\DoxyCodeLine{00146\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structinvalid_pte_a7c17f9d8d2b30428513aaa853d2b51f2}{transition}}:\ 2;}
+\DoxyCodeLine{00147\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structinvalid_pte_abbf271d7576a2bf1ac5c2c2a7633ee3c}{diskIndex}}:\ \mbox{\hyperlink{structures_8h_a4f8e33efe08ed40ace91397906173136}{frame\_number\_size}};}
+\DoxyCodeLine{00148\ \}\ \mbox{\hyperlink{structinvalid_pte}{invalidPte}};}
+\DoxyCodeLine{00149\ }
+\DoxyCodeLine{00150\ \textcolor{preprocessor}{\#define\ DISK\ 0}}
+\DoxyCodeLine{00151\ \textcolor{preprocessor}{\#define\ UNASSIGNED\ 1}}
+\DoxyCodeLine{00152\ \textcolor{preprocessor}{\#define\ MODIFIED\_LIST\ 2}}
+\DoxyCodeLine{00153\ \textcolor{preprocessor}{\#define\ STAND\_BY\_LIST\ 3}}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00156\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structtransition_pte_af579e18d1f9820b8c0fd733dc53e62c7}{mustBeZero}}:\ 1;}
+\DoxyCodeLine{00157\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structtransition_pte_a10b3e72c49cd4c23663bc3bdf09412c8}{contentsLocation}}:\ 2;}
+\DoxyCodeLine{00158\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structtransition_pte_a05ae171e501eec7d4ed160bec19cd6be}{frameNumber}}:\ \mbox{\hyperlink{structures_8h_a4f8e33efe08ed40ace91397906173136}{frame\_number\_size}};}
+\DoxyCodeLine{00159\ \}\ \mbox{\hyperlink{structtransition_pte}{transitionPte}};}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{keyword}{union\ }\{}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structvalid_pte}{validPte}}\ \mbox{\hyperlink{structpte_a0b4d9ecd38326d0b13cd3d75be3224a9}{validFormat}};}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structinvalid_pte}{invalidPte}}\ \mbox{\hyperlink{structpte_adf4cf10e70f271c69b50e12ded45c02f}{invalidFormat}};}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structtransition_pte}{transitionPte}}\ \mbox{\hyperlink{structpte_a6382aa31ee89fcdd5524083024925ebc}{transitionFormat}};}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ ULONG64\ \mbox{\hyperlink{structpte_ae8c26fcaf4191b5b94504b99ba4c5adf}{entireFormat}};}
+\DoxyCodeLine{00167\ \ \ \ \ \};}
+\DoxyCodeLine{00168\ \}\ \mbox{\hyperlink{structpte}{pte}};}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \textcolor{comment}{//}}
+\DoxyCodeLine{00171\ \textcolor{comment}{//\ Page\ table\ configuration}}
+\DoxyCodeLine{00172\ \textcolor{comment}{//}}
+\DoxyCodeLine{00173\ \textcolor{preprocessor}{\#define\ PAGE\_TABLE\_SIZE\_IN\_BYTES\ (VIRTUAL\_ADDRESS\_SIZE\ /\ PAGE\_SIZE\ *\ sizeof(pte))}}
+\DoxyCodeLine{00174\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PTES\ (PAGE\_TABLE\_SIZE\_IN\_BYTES\ /\ sizeof(pte))}}
+\DoxyCodeLine{00175\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PAGE\_TABLE\_LOCKS\ NUMBER\_OF\_PTES\ /\ 8}}
+\DoxyCodeLine{00176\ \textcolor{preprocessor}{\#define\ SIZE\_OF\_PAGE\_TABLE\_DIVISION\ (PAGE\_TABLE\_SIZE\_IN\_BYTES/NUMBER\_OF\_PAGE\_TABLE\_LOCKS)}}
+\DoxyCodeLine{00177\ }
+\DoxyCodeLine{00178\ \textcolor{comment}{//}}
+\DoxyCodeLine{00179\ \textcolor{comment}{//\ Thread\ information\ structure}}
+\DoxyCodeLine{00180\ \textcolor{comment}{//}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00183\ \ \ \ \ ULONG64\ \mbox{\hyperlink{struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e_a0b67a7c648b8cc7fedbd5e4b8ce37cd1}{state}};}
+\DoxyCodeLine{00184\ \ \ \ \ ULONG64\ \mbox{\hyperlink{struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e_aa65c1689c5f2268c34b3240d98bfa6a2}{counter}};}
+\DoxyCodeLine{00185\ \}\ \mbox{\hyperlink{struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e}{THREAD\_RNG\_STATE}};}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00188\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ \ }\mbox{\hyperlink{structures_8h_a0323af3fde6a5cc3ea8243c800211385}{\_\_declspec}}(align(64))\ \ \{}
+\DoxyCodeLine{00189\ \ \ \ \ ULONG\ ThreadNumber;}
+\DoxyCodeLine{00190\ \ \ \ \ ULONG\ ThreadId;}
+\DoxyCodeLine{00191\ \ \ \ \ ULONG64\ TransferVaIndex;}
+\DoxyCodeLine{00192\ \ \ \ \ HANDLE\ ThreadHandle;}
+\DoxyCodeLine{00193\ \ \ \ \ \mbox{\hyperlink{struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e}{THREAD\_RNG\_STATE}}\ rng;}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \}\ \mbox{\hyperlink{structures_8h_a6a51703cda40a61f356163e521dfe4ec}{THREAD\_INFO}},\ *\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}};}
+\DoxyCodeLine{00197\ }
+\DoxyCodeLine{00198\ \textcolor{comment}{//}}
+\DoxyCodeLine{00199\ \textcolor{comment}{//\ List\ head\ structure}}
+\DoxyCodeLine{00200\ \textcolor{comment}{//}}
+\DoxyCodeLine{00201\ }
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \textcolor{comment}{//}}
+\DoxyCodeLine{00204\ \textcolor{comment}{//\ PFN\ (Page\ Frame\ Number)\ structure}}
+\DoxyCodeLine{00205\ \textcolor{comment}{//}}
+\DoxyCodeLine{00206\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00207\ \ \ \ \ LIST\_ENTRY\ \mbox{\hyperlink{structpfn_ab6ad595c698387fda8c17a768927abc7}{entry}};}
+\DoxyCodeLine{00208\ \ \ \ \ \mbox{\hyperlink{structpfn_ae2e24bb0e467c948348fd35010dec4e5}{pte}}\ *\mbox{\hyperlink{structpfn_ae2e24bb0e467c948348fd35010dec4e5}{pte}};}
+\DoxyCodeLine{00209\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structpfn_a573f579df22566e2dbedc20535dda482}{diskIndex}};}
+\DoxyCodeLine{00210\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structpfn_a3d9fb4680c2d513ddd312cb20f51c324}{isBeingWritten}}:\ 1;}
+\DoxyCodeLine{00211\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structpfn_a39b96b5b6af47ee33b0123d41b2d7389}{isBeingFreed}}:\ 1;}
+\DoxyCodeLine{00212\ \ \ \ \ CRITICAL\_SECTION\ \mbox{\hyperlink{structpfn_a90e89efbad0a46c24ae279d79d2f8349}{lock}};}
+\DoxyCodeLine{00213\ \}\ \mbox{\hyperlink{structpfn}{pfn}};}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ }
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00218\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_TIME\_STAMPS\ 16}}
+\DoxyCodeLine{00219\ \textcolor{preprocessor}{\#define\ BASELINE\_HAZARD\ (1)}}
+\DoxyCodeLine{00220\ \textcolor{preprocessor}{\#define\ LOG\_BASELINE\_HAZARD\ (0)}}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \textcolor{preprocessor}{\#define\ DRIFT\_COEFFICENT\ .33}}
+\DoxyCodeLine{00223\ \textcolor{preprocessor}{\#define\ VOLATILITY\_COEFFICENT\ .33}}
+\DoxyCodeLine{00224\ \textcolor{preprocessor}{\#define\ RECENT\_ACCESS\_COEFFICIENT\ -\/0.0000001}}
+\DoxyCodeLine{00225\ }
+\DoxyCodeLine{00226\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00227\ \ \ \ \ ULONG64\ \mbox{\hyperlink{structstochastic__data_ab0516ab52c27fa858fa8b44ec8f62244}{timeStamps}}[\mbox{\hyperlink{structures_8h_ae0536329bb5a3e3d83c005cde13ebc67}{NUMBER\_OF\_TIME\_STAMPS}}];}
+\DoxyCodeLine{00228\ \ \ \ \ ULONG64:4,\ \mbox{\hyperlink{structstochastic__data_ad38720c0d503df91d5bc8d3fe017327a}{currentStamp}};}
+\DoxyCodeLine{00229\ \ \ \ \ ULONG64:4,\ \mbox{\hyperlink{structstochastic__data_af40e9655fabd142f436a273a151c9fca}{numValidStamps}};}
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structstochastic__data_a14c061f5cd6ac4d489656528f1a99e3f}{volatility}};}
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structstochastic__data_a6fefc0a32dd64cdf173ed373e7e4d483}{drift}};}
+\DoxyCodeLine{00234\ }
+\DoxyCodeLine{00235\ \}\ \mbox{\hyperlink{structstochastic__data}{stochastic\_data}};}
+\DoxyCodeLine{00236\ }
+\DoxyCodeLine{00237\ \textcolor{comment}{//}}
+\DoxyCodeLine{00238\ \textcolor{comment}{//PTE\_REGION\ \ a\ section\ of\ 64\ ptes}}
+\DoxyCodeLine{00239\ \textcolor{comment}{//}}
+\DoxyCodeLine{00240\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_AGES\ 8}}
+\DoxyCodeLine{00241\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PTES\_PER\_REGION\ 64}}
+\DoxyCodeLine{00242\ \textcolor{preprocessor}{\#define\ NUMBER\_OF\_PTE\_REGIONS\ (NUMBER\_OF\_PTES/NUMBER\_OF\_PTES\_PER\_REGION)}}
+\DoxyCodeLine{00243\ \textcolor{preprocessor}{\#define\ LENGTH\_OF\_PREDICTION\ 10}}
+\DoxyCodeLine{00244\ }
+\DoxyCodeLine{00245\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00246\ \ \ \ \ LIST\_ENTRY\ \mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n_a8e9d703126bf047faa3ba9308d59dd54}{entry}};}
+\DoxyCodeLine{00247\ \ \ \ \ \mbox{\hyperlink{structstochastic__data}{stochastic\_data}}\ \mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n_a8cbe3157665c7d070617627b7495083a}{statistics}};}
+\DoxyCodeLine{00248\ \ \ \ \ CRITICAL\_SECTION\ \mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n_a5a47700edae0d01d18370739954e9860}{lock}};}
+\DoxyCodeLine{00249\ }
+\DoxyCodeLine{00250\ \ \ \ \ ULONG64:1,\ \mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n_ada745bb656ec1860d15cf226cc18a099}{accessed}};}
+\DoxyCodeLine{00251\ }
+\DoxyCodeLine{00252\ \}\ \mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\_REGION}};}
+\DoxyCodeLine{00253\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00254\ \ \ \ \ SRWLOCK\ \mbox{\hyperlink{structshared_lock_a73cf768bc4d7ce3a69565122245e8051}{sharedLock}};}
+\DoxyCodeLine{00255\ \textcolor{preprocessor}{\#if\ DBG}}
+\DoxyCodeLine{00256\ \ \ \ \ LONG64\ threadId;}
+\DoxyCodeLine{00257\ \ \ \ \ LONG64\ numHeldShared;}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{comment}{//\ Debug\ tracking\ list}}
+\DoxyCodeLine{00260\ \ \ \ \ LIST\_ENTRY\ sharedHolders;}
+\DoxyCodeLine{00261\ \ \ \ \ CRITICAL\_SECTION\ debugLock;}
+\DoxyCodeLine{00262\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00263\ \}\ \mbox{\hyperlink{structshared_lock}{sharedLock}};}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \textcolor{preprocessor}{\#if\ DBG}}
+\DoxyCodeLine{00266\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\_SHARED\_HOLDER\_DEBUG\ \{}
+\DoxyCodeLine{00267\ \ \ \ \ LIST\_ENTRY\ entry;}
+\DoxyCodeLine{00268\ \ \ \ \ ULONG64\ threadId;}
+\DoxyCodeLine{00269\ \ \ \ \ ULONG64\ acquireTime;}
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ fileName;}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{keywordtype}{int}\ lineNumber;}
+\DoxyCodeLine{00272\ \}\ SHARED\_HOLDER\_DEBUG;}
+\DoxyCodeLine{00273\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00274\ }
+\DoxyCodeLine{00275\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\{}
+\DoxyCodeLine{00276\ \ \ \ \ LIST\_ENTRY\ \mbox{\hyperlink{structlist_head_a1adaf6dfc0d2e0fb2b275f3557eca04a}{entry}};}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keyword}{volatile}\ LONG64\ \mbox{\hyperlink{structlist_head_ab804a0c0961e0898c9b690e9adc39dfe}{length}};}
+\DoxyCodeLine{00278\ \ \ \ \ \mbox{\hyperlink{structlist_head_ab82994491305327afe2643f568f738d5}{sharedLock}}\ \mbox{\hyperlink{structlist_head_ab82994491305327afe2643f568f738d5}{sharedLock}};}
+\DoxyCodeLine{00279\ }
+\DoxyCodeLine{00280\ \ \ \ \ \mbox{\hyperlink{structpfn}{pfn}}\ \mbox{\hyperlink{structlist_head_aa4a6d4735a6f994da0fbb892af5ca906}{page}};}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \}\ \mbox{\hyperlink{structlist_head}{listHead}},\ *\mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{pListHead}};}
+\DoxyCodeLine{00283\ }
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00285\ \textcolor{preprocessor}{\#define\ useSharedLock\ 1}}
+\DoxyCodeLine{00286\ }
+\DoxyCodeLine{00287\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{//STRUCTURES\_H}}
+
+\end{DoxyCode}

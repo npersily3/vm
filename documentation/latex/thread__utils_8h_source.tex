@@ -1,0 +1,43 @@
+\doxysection{thread\+\_\+utils.\+h}
+\hypertarget{thread__utils_8h_source}{}\label{thread__utils_8h_source}\index{include/utils/thread\_utils.h@{include/utils/thread\_utils.h}}
+\mbox{\hyperlink{thread__utils_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//\ Created\ by\ nrper\ on\ 7/17/2025.}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifndef\ THREAD\_UTILS\_H}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#define\ THREAD\_UTILS\_H}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{structures_8h}{../variables/structures.h}}"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{thread__utils_8h_a5760d7851b54a6f3ad52ef61fdd2e317}{acquireLock}}(PULONG64\ lock);}
+\DoxyCodeLine{00011\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{thread__utils_8h_a0f17ccd6bffa7fb86260af69a42b7ef6}{releaseLock}}(PULONG64\ lock);}
+\DoxyCodeLine{00012\ BOOL\ \mbox{\hyperlink{thread__utils_8h_af834a9800b975db7e48f17771473a002}{tryAcquireLock}}(PULONG64\ lock);}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ VOID\ \mbox{\hyperlink{thread__utils_8h_ada2a56df112594780ba2b9578efb2278}{validateList}}(\mbox{\hyperlink{structures_8h_a21e46ac33c16e9b75c519f62ceb1c9fe}{pListHead}}\ head);}
+\DoxyCodeLine{00016\ VOID\ \mbox{\hyperlink{thread__utils_8h_aec03cb2efb5030c32bf350e08bf58612}{acquire\_srw\_exclusive}}(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00017\ VOID\ \mbox{\hyperlink{thread__utils_8h_a43ace7ec0b78b479c5c81fd460b5e51c}{release\_srw\_exclusive}}(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock);}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ VOID\ \mbox{\hyperlink{thread__utils_8h_a15237c39cffac9b5ab0af5fc4414e168}{acquire\_srw\_shared}}(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock);}
+\DoxyCodeLine{00020\ VOID\ \mbox{\hyperlink{thread__utils_8h_a5dc8ae3adf26c08e32b1da93d165a34a}{release\_srw\_shared}}(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ VOID\ \mbox{\hyperlink{thread__utils_8h_a0b65478cbff267e6e35c3c2090f9c21d}{enterPageLock}}(\mbox{\hyperlink{structpfn}{pfn}}*\ page,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00025\ VOID\ \mbox{\hyperlink{thread__utils_8h_a1db2dc4187f63adf6556fbd6339700b2}{leavePageLock}}(\mbox{\hyperlink{structpfn}{pfn}}*\ page,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#if\ DBG}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ VOID\ debug\_acquire\_srw\_shared(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ fileName,\ \textcolor{keywordtype}{int}\ lineNumber);}
+\DoxyCodeLine{00030\ VOID\ debug\_release\_srw\_shared(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ fileName,\ \textcolor{keywordtype}{int}\ lineNumber);}
+\DoxyCodeLine{00031\ VOID\ debug\_acquire\_srw\_exclusive(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00032\ VOID\ debug\_release\_srw\_exclusive(\mbox{\hyperlink{structshared_lock}{sharedLock}}*\ lock);}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{//THREAD\_UTILS\_H}}
+
+\end{DoxyCode}

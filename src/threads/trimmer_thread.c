@@ -13,7 +13,14 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/utils/thread_utils.h"
 
-
+/**
+ * @brief This is the function that deals with unmapping pages.
+ * It will pop a page off the active list and add it to the modified list.
+ * It will batch unmap if the consecutive pages are in the same page table entry region.
+ *
+ * @param info A pointer to a thread info struct. Passed in during the function CreateThread
+ * @retval 0 If the program succeeds
+ */
 DWORD page_trimmer(LPVOID info) {
     ULONG64 BatchIndex;
     BOOL doubleBreak;

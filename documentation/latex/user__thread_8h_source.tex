@@ -1,0 +1,29 @@
+\doxysection{user\+\_\+thread.\+h}
+\hypertarget{user__thread_8h_source}{}\label{user__thread_8h_source}\index{include/threads/user\_thread.h@{include/threads/user\_thread.h}}
+\mbox{\hyperlink{user__thread_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//\ Created\ by\ nrper\ on\ 7/16/2025.}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifndef\ USER\_THREAD\_H}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#define\ USER\_THREAD\_H}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{structures_8h}{../variables/structures.h}}"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ BOOL\ \mbox{\hyperlink{user__thread_8h_a15daaf165c91aa6784d5c54ea0acef75}{pageFault}}(PULONG\_PTR\ arbitrary\_va,\ LPVOID\ threadContext);}
+\DoxyCodeLine{00012\ BOOL\ \mbox{\hyperlink{user__thread_8h_a054a809045b98743dd633e71b528a419}{isRescue}}(\mbox{\hyperlink{structpte}{pte}}*\ currentPTE);}
+\DoxyCodeLine{00013\ BOOL\ \mbox{\hyperlink{user__thread_8h_a2fa63b38d1709223f1f15036eac0ee85}{rescue\_page}}(ULONG64\ arbitrary\_va,\ \mbox{\hyperlink{structpte}{pte}}*\ currentPTE,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00014\ BOOL\ \mbox{\hyperlink{user__thread_8h_ac535eb59f3846245be236bf3d3855dcc}{mapPageFromFreeList}}\ (ULONG64\ arbitrary\_va,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadInfo,\ PULONG64\ frameNumber);}
+\DoxyCodeLine{00015\ \mbox{\hyperlink{structpfn}{pfn}}*\ \mbox{\hyperlink{user__thread_8h_adf110e8fee1dab537a5b4a22909843d5}{getVictimFromStandByList}}\ (\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadInfo);}
+\DoxyCodeLine{00016\ BOOL\ \mbox{\hyperlink{user__thread_8h_a48c215668a27a6260785ffbbe7cab8c9}{mapPageFromStandByList}}\ (ULONG64\ arbitrary\_va,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadInfo,\ PULONG64\ frameNumber);}
+\DoxyCodeLine{00017\ BOOL\ \mbox{\hyperlink{user__thread_8h_a35ee50dd4c8faf90e7decfdcc106ee7b}{mapPage}}(ULONG64\ arbitrary\_va,\ \mbox{\hyperlink{structpte}{pte}}*\ currentPTE,\ LPVOID\ threadContext,\ PCRITICAL\_SECTION\ pagetablelock);}
+\DoxyCodeLine{00018\ VOID\ \mbox{\hyperlink{user__thread_8h_aa4d5559bed59f8700f4e332ffedd6064}{modified\_read}}(\mbox{\hyperlink{structpte}{pte}}*\ currentPTE,\ ULONG64\ frameNumber,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadContext);}
+\DoxyCodeLine{00019\ BOOL\ \mbox{\hyperlink{user__thread_8h_af1205a343835cc29fa5cbaf2916603bd}{zeroOnePage}}\ (\mbox{\hyperlink{structpfn}{pfn}}*\ page,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadInfo);}
+\DoxyCodeLine{00020\ \mbox{\hyperlink{structpfn}{pfn}}*\ \mbox{\hyperlink{user__thread_8h_aaac03443ad63f63ed80d86cbfcc6bec0}{getPageFromFreeList}}(\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadContext);}
+\DoxyCodeLine{00021\ VOID\ \mbox{\hyperlink{user__thread_8h_a448eb2bbcbf9ade5e09d3af9b2bb0ea3}{addPageToFreeList}}(\mbox{\hyperlink{structpfn}{pfn}}*\ page,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadInfo);}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{//USER\_THREAD\_H}}
+
+\end{DoxyCode}

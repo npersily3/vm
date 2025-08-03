@@ -1,0 +1,8 @@
+var searchData=
+[
+  ['unmapactivepage_0',['unmapActivePage',['../user__free_8c.html#ace9699c358575767ceae2f188fa31cb8',1,'unmapActivePage(pte *currentPTE, PTHREAD_INFO threadInfo, pfn *page):&#160;user_free.c'],['../user__free_8h.html#ace9699c358575767ceae2f188fa31cb8',1,'unmapActivePage(pte *currentPTE, PTHREAD_INFO threadInfo, pfn *page):&#160;user_free.c']]],
+  ['unmapbatch_1',['unmapBatch',['../trimmer__thread_8c.html#aefb918ee98100baec9ed6e9bf1b8e58b',1,'unmapBatch(PULONG64 virtualAddresses, ULONG64 batchSize):&#160;trimmer_thread.c'],['../trimmer__thread_8h.html#aefb918ee98100baec9ed6e9bf1b8e58b',1,'unmapBatch(PULONG64 virtualAddresses, ULONG64 batchSize):&#160;trimmer_thread.c']]],
+  ['unmapdiskformatpte_2',['unmapDiskFormatPTE',['../user__free_8c.html#ae3d9b98a053d70b5aa22b49823cd27bc',1,'unmapDiskFormatPTE(pte *currentPTE, PTHREAD_INFO threadInfo):&#160;user_free.c'],['../user__free_8h.html#ae3d9b98a053d70b5aa22b49823cd27bc',1,'unmapDiskFormatPTE(pte *currentPTE, PTHREAD_INFO threadInfo):&#160;user_free.c']]],
+  ['unmaprescuepage_3',['unmapRescuePage',['../user__free_8c.html#a4d045be3964ad3d5b8945ce7e83ea210',1,'unmapRescuePage(pte *currentPTE, PTHREAD_INFO threadInfo, pfn *page, boolean *addToFreeList):&#160;user_free.c'],['../user__free_8h.html#a4d045be3964ad3d5b8945ce7e83ea210',1,'unmapRescuePage(pte *currentPTE, PTHREAD_INFO threadInfo, pfn *page, boolean *addToFreeList):&#160;user_free.c']]],
+  ['updatepage_4',['updatePage',['../writer__thread_8c.html#ae55b9d3c072a0157b7bcbd6a320e2fc6',1,'updatePage(pfn *page, ULONG64 diskIndex):&#160;writer_thread.c'],['../writer__thread_8h.html#a78be49ecefee026c3571621395261391',1,'updatePage(pfn *page, ULONG64 index):&#160;writer_thread.c']]]
+];

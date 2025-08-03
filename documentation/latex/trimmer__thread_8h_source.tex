@@ -1,0 +1,22 @@
+\doxysection{trimmer\+\_\+thread.\+h}
+\hypertarget{trimmer__thread_8h_source}{}\label{trimmer__thread_8h_source}\index{include/threads/trimmer\_thread.h@{include/threads/trimmer\_thread.h}}
+\mbox{\hyperlink{trimmer__thread_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//\ Created\ by\ nrper\ on\ 7/16/2025.}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#ifndef\ TRIMMER\_THREAD\_H}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#define\ TRIMMER\_THREAD\_H}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{structures_8h}{../variables/structures.h}}"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ DWORD\ \mbox{\hyperlink{trimmer__thread_8h_ade2e7ac971d24a51f6787c1561fde99b}{page\_trimmer}}(LPVOID\ threadContext);}
+\DoxyCodeLine{00011\ \mbox{\hyperlink{structpfn}{pfn}}*\ \mbox{\hyperlink{trimmer__thread_8h_a11880728b8d9ad4f839b15939c2fc2d1}{getActivePage}}(\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ threadInfo);}
+\DoxyCodeLine{00012\ BOOL\ \mbox{\hyperlink{trimmer__thread_8h_a13dcdf0321f41ee6605a3ba9578fecd0}{isNextPageInSameRegion}}(\mbox{\hyperlink{struct_p_t_e___r_e_g_i_o_n}{PTE\_REGION}}*\ nextRegion,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00013\ VOID\ \mbox{\hyperlink{trimmer__thread_8h_aefb918ee98100baec9ed6e9bf1b8e58b}{unmapBatch}}\ (PULONG64\ virtualAddresses,\ ULONG64\ batchSize);}
+\DoxyCodeLine{00014\ VOID\ \mbox{\hyperlink{trimmer__thread_8h_a8624239b4805f261525d6d33ff65b091}{addBatchToModifiedList}}\ (\mbox{\hyperlink{structpfn}{pfn}}**\ pages,\ ULONG64\ batchSize,\ \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\_INFO}}\ info);}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{//TRIMMER\_THREAD\_H}}
+
+\end{DoxyCode}

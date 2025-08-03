@@ -1,0 +1,69 @@
+\doxysection{src/initialization/init\+\_\+threads.c File Reference}
+\hypertarget{init__threads_8c}{}\label{init__threads_8c}\index{src/initialization/init\_threads.c@{src/initialization/init\_threads.c}}
+{\ttfamily \#include "{}../../include/initialization/init\+\_\+threads.\+h"{}}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include "{}../../include/variables/globals.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/variables/structures.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/threads/user\+\_\+thread.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/threads/trimmer\+\_\+thread.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/threads/writer\+\_\+thread.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/threads/zero\+\_\+thread.\+h"{}}\newline
+{\ttfamily \#include "{}../../include/vm.\+h"{}}\newline
+{\ttfamily \#include "{}threads/statistics.\+h"{}}\newline
+{\ttfamily \#include "{}utils/random\+\_\+utils.\+h"{}}\newline
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+VOID \mbox{\hyperlink{init__threads_8c_aab1b5789118354c27bf39d29b3338509}{init\+Threads}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init__threads_8c_a86159e994d33f90d79e149463ecbeb11}{create\+Threads}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init__threads_8c_a1c045e7187f8f9c0bf2ba68de5a10bca}{create\+Events}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init__threads_8c_ac46fe8c321a8fcd2217bb5a738a7f09e}{init\+Critical\+Sections}} (VOID)
+\item 
+VOID \mbox{\hyperlink{init__threads_8c_a9bd070d2ab0bdb93ced23c5af39fa1b0}{initialize\+Page\+Table\+Locks}} (VOID)
+\item 
+HANDLE \mbox{\hyperlink{init__threads_8c_a6dcc007f243c01c1c0dd02d3fe3e5c43}{create\+New\+Thread}} (LPTHREAD\+\_\+\+START\+\_\+\+ROUTINE Thread\+Function, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} Thread\+Context)
+\end{DoxyCompactItemize}
+
+
+\label{doc-func-members}
+\Hypertarget{init__threads_8c_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{init__threads_8c_a1c045e7187f8f9c0bf2ba68de5a10bca}\index{init\_threads.c@{init\_threads.c}!createEvents@{createEvents}}
+\index{createEvents@{createEvents}!init\_threads.c@{init\_threads.c}}
+\doxysubsubsection{\texorpdfstring{createEvents()}{createEvents()}}
+{\footnotesize\ttfamily \label{init__threads_8c_a1c045e7187f8f9c0bf2ba68de5a10bca} 
+VOID create\+Events (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init__threads_8c_a6dcc007f243c01c1c0dd02d3fe3e5c43}\index{init\_threads.c@{init\_threads.c}!createNewThread@{createNewThread}}
+\index{createNewThread@{createNewThread}!init\_threads.c@{init\_threads.c}}
+\doxysubsubsection{\texorpdfstring{createNewThread()}{createNewThread()}}
+{\footnotesize\ttfamily \label{init__threads_8c_a6dcc007f243c01c1c0dd02d3fe3e5c43} 
+HANDLE create\+New\+Thread (\begin{DoxyParamCaption}\item[{LPTHREAD\+\_\+\+START\+\_\+\+ROUTINE}]{Thread\+Function}{, }\item[{\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}}}]{Thread\+Context}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init__threads_8c_a86159e994d33f90d79e149463ecbeb11}\index{init\_threads.c@{init\_threads.c}!createThreads@{createThreads}}
+\index{createThreads@{createThreads}!init\_threads.c@{init\_threads.c}}
+\doxysubsubsection{\texorpdfstring{createThreads()}{createThreads()}}
+{\footnotesize\ttfamily \label{init__threads_8c_a86159e994d33f90d79e149463ecbeb11} 
+VOID create\+Threads (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init__threads_8c_ac46fe8c321a8fcd2217bb5a738a7f09e}\index{init\_threads.c@{init\_threads.c}!initCriticalSections@{initCriticalSections}}
+\index{initCriticalSections@{initCriticalSections}!init\_threads.c@{init\_threads.c}}
+\doxysubsubsection{\texorpdfstring{initCriticalSections()}{initCriticalSections()}}
+{\footnotesize\ttfamily \label{init__threads_8c_ac46fe8c321a8fcd2217bb5a738a7f09e} 
+VOID init\+Critical\+Sections (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init__threads_8c_a9bd070d2ab0bdb93ced23c5af39fa1b0}\index{init\_threads.c@{init\_threads.c}!initializePageTableLocks@{initializePageTableLocks}}
+\index{initializePageTableLocks@{initializePageTableLocks}!init\_threads.c@{init\_threads.c}}
+\doxysubsubsection{\texorpdfstring{initializePageTableLocks()}{initializePageTableLocks()}}
+{\footnotesize\ttfamily \label{init__threads_8c_a9bd070d2ab0bdb93ced23c5af39fa1b0} 
+VOID initialize\+Page\+Table\+Locks (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{init__threads_8c_aab1b5789118354c27bf39d29b3338509}\index{init\_threads.c@{init\_threads.c}!initThreads@{initThreads}}
+\index{initThreads@{initThreads}!init\_threads.c@{init\_threads.c}}
+\doxysubsubsection{\texorpdfstring{initThreads()}{initThreads()}}
+{\footnotesize\ttfamily \label{init__threads_8c_aab1b5789118354c27bf39d29b3338509} 
+VOID init\+Threads (\begin{DoxyParamCaption}\item[{VOID}]{}{}\end{DoxyParamCaption})}
+
