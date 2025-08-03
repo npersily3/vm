@@ -350,6 +350,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
 //TODO change it so that only the pte is passed in, and thread Context is of type PTHREAD_INFO, also pull out the decision to zero or modified read from the inner functions to this function
 BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock) {
 
+    pfn** page_pointer;
     pfn* page;
     ULONG64 frameNumber;
     PTHREAD_INFO threadInfo;
@@ -358,18 +359,17 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     threadInfo = (PTHREAD_INFO)threadContext;
 
 
-    frameNumber = NULL;
-    page = NULL;
+    page_pointer = NULL;
 
     // Attempt to get a page from the free list and standby list
     // NULL means the page could not be found
-     mapPageFromFreeList(currentPTE, threadInfo, &page);
+     mapPageFromFreeList(currentPTE, threadInfo, page_pointer);
 
-    ASSERT(false);
-     if (page == NULL) {
-         mapPageFromStandByList(currentPTE,  threadInfo, page);
 
-         if (page == NULL) {
+     if (page_pointer == NULL) {
+         mapPageFromStandByList(currentPTE,  threadInfo, page_pointer);
+
+         if (page_pointer == NULL) {
 
             // If we are not able to get a page, start the trimmer and sleep
 
@@ -412,7 +412,8 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
     if (((double) (headStandByList.length + ReadULong64NoFence(&freeListLength)) / ((double) NUMBER_OF_PHYSICAL_PAGES )) < .5) {
         SetEvent(trimmingStartEvent);
     }
-
+    page = *page_pointer;
+    frameNumber = getFrameNumber(page);
 
 
     //validate the pte and add it to the list
@@ -440,30 +441,30 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
  * is running low, and take some from the standby list.
  * @param currentPTE The page table entry of the virtual address that is being faulted on
  * @param threadInfo The info about the calling thread.
- * @param page A place to store the page we are about to map.
+ * @param page_pointer A place to store the page we are about to map.
 * @return Returns true if we need to redo the fault, false otherwise.
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry.
  */
 
-VOID mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
+VOID mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo, pfn** page_pointer) {
 
 
 
     ULONG64 frameNumber;
 
     // This function acquires the page lock
-    page = getPageFromFreeList(threadInfo);
+    page_pointer = getPageFromFreeList(threadInfo);
 
 
-    if (page == LIST_IS_EMPTY) {
+    if (page_pointer == LIST_IS_EMPTY) {
         return;
     }
 
 
-    leavePageLock(page, threadInfo);
+    leavePageLock(*page_pointer, threadInfo);
 
-    frameNumber = getFrameNumber(page);
+    frameNumber = getFrameNumber(*page_pointer);
 
 
 
@@ -471,7 +472,7 @@ VOID mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
     if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
         modified_read(currentPTE, frameNumber, threadInfo);
     } else {
-        zeroOnePage(page, threadInfo);
+        zeroOnePage(*page_pointer, threadInfo);
     }
 
 
@@ -484,13 +485,13 @@ VOID mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
  *will update the page's pagetable entry to reflect that it is no longer on standby, but on disk
  * @param currentPTE The page table entry of the virtual address that is being faulted on
  * @param threadInfo The info of the calling thread
- * @param page A place to store the page that is about to be mapped to the virtual address
+ * @param page_pointer A place to store the page that is about to be mapped to the virtual address
  * @return Returns true if we need to redo the fault, false otherwise.
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry
  */
 
-VOID mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo, pfn* page) {
+VOID mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo, pfn** page_pointer) {
 
 
     ULONG64 frameNumber;
@@ -501,19 +502,19 @@ VOID mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo, pfn* pag
 
 
     // All locks pertaining to this page are dealt with in this function. We do not need to lock or unlock it
-    page = getVictimFromStandByList(threadInfo);
+    *page_pointer = getVictimFromStandByList(threadInfo);
 
-    if (page == NULL) {
+    if (page_pointer == NULL) {
         return;
     }
 
-    frameNumber = getFrameNumber(page);
+    frameNumber = getFrameNumber(*page_pointer);
 
 
 
     // Zero the page if we are on a first fault, otherwise read from disk
     if (entryContents.invalidFormat.diskIndex == EMPTY_PTE) {
-        if (!zeroOnePage(page, threadInfo)) {
+        if (!zeroOnePage(*page_pointer, threadInfo)) {
             DebugBreak();
         }
     } else {
