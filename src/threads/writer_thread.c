@@ -37,8 +37,8 @@ DWORD diskWriter (LPVOID info) {
 
     HANDLE events[2];
     DWORD returnEvent;
-    events[0] = writingStartEvent;
-    events[1] = systemShutdownEvent;
+    events[0] = vm.events.writingStart;
+    events[1] = vm.events.systemShutdown;
 
     while (TRUE) {
 
@@ -58,7 +58,7 @@ DWORD diskWriter (LPVOID info) {
 
         // the disk was empty upon entry
         if (localBatchSize == COULD_NOT_FIND_SLOT) {
-            SetEvent(writingEndEvent);
+            SetEvent(vm.events.writingEnd);
             continue;
         }
 
@@ -76,7 +76,7 @@ DWORD diskWriter (LPVOID info) {
         }
 
         if (localBatchSize == 0) {
-            SetEvent(writingEndEvent);
+            SetEvent(vm.events.writingEnd);
             continue;
         }
 
@@ -106,9 +106,9 @@ for (int i = 0; i < BATCH_SIZE; ++i)
         // this needs to be in a sharedLock to avoid
         // the race condition where it is reset right after it is
         // TODO think about this
-        acquire_srw_exclusive(&headStandByList.sharedLock, (PTHREAD_INFO) threadContext);
-        SetEvent(writingEndEvent);
-        release_srw_exclusive(&headStandByList.sharedLock);
+        acquire_srw_exclusive(&vm.lists.standby.sharedLock, (PTHREAD_INFO) threadContext);
+        SetEvent(vm.events.writingEnd);
+        release_srw_exclusive(&vm.lists.standby.sharedLock);
     }
 
 }
@@ -161,7 +161,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
             page->isBeingWritten = FALSE;
 
             // this expects me to come in with the lock and does not release it for me
-            addPageToTail(&headStandByList, page, info);
+            addPageToTail(&vm.lists.standby, page, info);
 
         }
 
@@ -177,20 +177,20 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
  */
 // TODO make it so that is no longer unmaps everytime similar to modified read
 VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray) {
-    if (MapUserPhysicalPages(transferVaWriting, localBatchSize, frameNumberArray) == FALSE) {
+    if (MapUserPhysicalPages(vm.va.writing, localBatchSize, frameNumberArray) == FALSE) {
 
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", transferVaWriting, frameNumberArray[0]);
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", vm.va.writing, frameNumberArray[0]);
         return ;
     }
 
     for (int i = 0; i < localBatchSize; ++i) {
-        memcpy((PVOID)diskAddressArray[i], (PVOID) ((ULONG64) transferVaWriting + i * PAGE_SIZE) , PAGE_SIZE);
+        memcpy((PVOID)diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE) , PAGE_SIZE);
     }
 
-    if (MapUserPhysicalPages(transferVaWriting, localBatchSize, NULL) == FALSE) {
+    if (MapUserPhysicalPages(vm.va.writing, localBatchSize, NULL) == FALSE) {
         DebugBreak();
-        printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
+        printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.writing);
         return ;
     }
 
@@ -221,7 +221,7 @@ VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, P
 
 
         // this function obtains the page lock for us
-        page = RemoveFromHeadofPageList(&headModifiedList, threadContext);
+        page = RemoveFromHeadofPageList(&vm.lists.modified, threadContext);
 
 
         // if we reach the end update the contents of the size pointer and break
@@ -276,7 +276,7 @@ VOID updatePage (pfn* page, ULONG64 diskIndex) {
  */
 VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG64 size) {
     for (int i = 0; i < size; i++) {
-        addresses[i] = indices[i] * PAGE_SIZE + (ULONG64) diskStart;
+        addresses[i] = indices[i] * PAGE_SIZE + (ULONG64) vm.disk.start;
     }
 }
 

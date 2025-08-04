@@ -58,7 +58,7 @@ typedef struct {
     ULONG64 number_of_pte_regions;
 } configuration;
 
-extern configuration config;
+
 
 #define EMPTY_PTE                  0
 
@@ -260,14 +260,108 @@ typedef struct _SHARED_HOLDER_DEBUG {
 } SHARED_HOLDER_DEBUG;
 #endif
 
-typedef struct {
+typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
-    volatile LONG64 length;
+    volatile ULONG64 length;
     sharedLock sharedLock;
 
     pfn page;
 } listHead, *pListHead;
 
+typedef struct {
+    listHead* heads;
+    volatile LONG AddIndex;
+    volatile LONG RemoveIndex;
+    volatile LONG64 length;
+
+} freeList;
+
+typedef struct {
+     listHead active;
+     listHead modified;
+     listHead standby;
+     listHead zeroed;
+    freeList free;
+} page_lists;
+typedef struct {
+    PULONG_PTR start,end;
+    PVOID* userThreadTransfer;
+    PVOID writing;
+
+
+} va;
+
+typedef struct {
+    PVOID start;
+    ULONG64 end;
+    PULONG64 active;
+    PULONG64 activeEnd;
+    PULONG64* activeVa;
+    ULONG64* number_of_open_slots;
+} disk;
+
+typedef struct {
+    ULONG_PTR physical_page_count;
+    PULONG_PTR physical_page_numbers;
+    pfn *start;
+    pfn *end;
+} pfns;
+
+typedef struct {
+    PTE_REGION* RegionsBase;
+    pte* table;
+
+} ptes;
+
+typedef struct {
+
+    HANDLE* workDoneThreadHandles;
+    HANDLE* userThreadHandles;
+    HANDLE* systemThreadHandles;
+
+
+    HANDLE globalStart;
+    HANDLE trimmingStart;
+    HANDLE writingStart;
+    HANDLE writingEnd;
+    HANDLE userStart;
+    HANDLE userEnd;
+    HANDLE zeroingStartEvent;
+    HANDLE systemShutdown;
+
+
+    HANDLE physical_page_handle;
+} events;
+
+typedef struct {
+
+    volatile ULONG64 pageWaits;
+    volatile ULONG64 totalTimeWaiting;
+
+    volatile boolean standByPruningInProgress;
+} misc;
+typedef struct {
+    PTHREAD_INFO user;
+    PTHREAD_INFO trimmer;
+    PTHREAD_INFO writer;
+
+} threadInfo;
+
+
+typedef struct {
+    configuration config;
+    page_lists lists;
+    va va;
+    disk disk;
+    pfns pfn;
+    ptes pte;
+    events events;
+    misc misc;
+    threadInfo threadInfo;
+} state;
+
+
+extern state vm;
 
 #define useSharedLock 1
 

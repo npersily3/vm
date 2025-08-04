@@ -6,8 +6,7 @@
 #include "../variables/structures.h"
 
 
-extern volatile ULONG64 pageWaits;
-extern volatile ULONG64 totalTimeWaiting;
+
 
 //
 // Initialization functions

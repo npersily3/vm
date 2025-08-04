@@ -12,14 +12,14 @@ most_free_disk_portion(VOID) {
     ULONG64 max = 0;
     ULONG64 index = 0;
 
-    EnterCriticalSection(lockNumberOfSlots);
-    for (int i = 0; i < config.number_of_disk_divisions; ++i) {
-        if (max <= number_of_open_slots[i]) {
-            max = number_of_open_slots[i];
+   // EnterCriticalSection(lockNumberOfSlots);
+    for (int i = 0; i < vm.config.number_of_disk_divisions; ++i) {
+        if (max <= vm.disk.number_of_open_slots[i]) {
+            max = vm.disk.number_of_open_slots[i];
             index = i;
         }
     }
-    LeaveCriticalSection(lockNumberOfSlots);
+    //LeaveCriticalSection(lockNumberOfSlots);
 
     return index;
 }
@@ -37,16 +37,16 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
     freePortion = most_free_disk_portion();
 
 
-    start = diskActive + freePortion * ( config.disk_division_size_in_pages / 64);
+    start = vm.disk.active + freePortion * ( vm.config.disk_division_size_in_pages / 64);
 
-    if(number_of_open_slots[freePortion] == 0) {
+    if(vm.disk.number_of_open_slots[freePortion] == 0) {
         return COULD_NOT_FIND_SLOT;
     }
 
 
     // accounts for the extra slot case
-    end = start + ((ULONG64) config.disk_division_size_in_pages / (ULONG64)64);
-    if (freePortion == config.number_of_disk_divisions - 1) {
+    end = start + ((ULONG64) vm.config.disk_division_size_in_pages / (ULONG64)64);
+    if (freePortion == vm.config.number_of_disk_divisions - 1) {
         end += 1;
     }
 
@@ -63,8 +63,8 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
                  start++;
             }
 
-            InterlockedDecrement64((volatile LONG64 *)&number_of_open_slots[freePortion]);
-            returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
+            InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
+            returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
             diskIndices[numDiskSlotsFilled] = returnValue;
             numDiskSlotsFilled++;
 
@@ -81,49 +81,49 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
       }
     }   return numDiskSlotsFilled;
 }
-
-ULONG64 get_free_disk_index(VOID) {
-    ULONG64 freePortion;
-    PULONG64 start;
-    PULONG64 end;
-    ULONG64 bitOffset;
-    ULONG64 returnValue;
-
-    freePortion = most_free_disk_portion();
-
-
-    start = diskActive + freePortion * (config.disk_division_size_in_pages/64);
-
-    if(number_of_open_slots[freePortion] == 0) {
-        return COULD_NOT_FIND_SLOT;
-    }
-
-
-    // accounts for the extra slot case
-    end = start + ( config.disk_division_size_in_pages  / (ULONG64)64);
-    if (freePortion == config.number_of_disk_divisions - 1) {
-        end += 1;
-    }
-
-    //for every ULONG in the section
-    for (; start < end; start++) {
-        if (*start != FULL_DISK_SPACE) {
-
-            bitOffset = get_free_disk_bit(start);
-
-            if (bitOffset == 64) {
-                continue;
-            }
-
-            InterlockedDecrement64((volatile LONG64 *) &number_of_open_slots[freePortion]);
-            returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
-
-            return returnValue;
-        }
-    }
-
-    return COULD_NOT_FIND_SLOT;
-}
+//
+// ULONG64 get_free_disk_index(VOID) {
+//     ULONG64 freePortion;
+//     PULONG64 start;
+//     PULONG64 end;
+//     ULONG64 bitOffset;
+//     ULONG64 returnValue;
+//
+//     freePortion = most_free_disk_portion();
+//
+//
+//     start = diskActive + freePortion * (config.disk_division_size_in_pages/64);
+//
+//     if(number_of_open_slots[freePortion] == 0) {
+//         return COULD_NOT_FIND_SLOT;
+//     }
+//
+//
+//     // accounts for the extra slot case
+//     end = start + ( config.disk_division_size_in_pages  / (ULONG64)64);
+//     if (freePortion == config.number_of_disk_divisions - 1) {
+//         end += 1;
+//     }
+//
+//     //for every ULONG in the section
+//     for (; start < end; start++) {
+//         if (*start != FULL_DISK_SPACE) {
+//
+//             bitOffset = get_free_disk_bit(start);
+//
+//             if (bitOffset == 64) {
+//                 continue;
+//             }
+//
+//             InterlockedDecrement64((volatile LONG64 *) &number_of_open_slots[freePortion]);
+//             returnValue = 8 * sizeof(ULONG64) * (start - diskActive) + bitOffset;
+//
+//             return returnValue;
+//         }
+//     }
+//
+//     return COULD_NOT_FIND_SLOT;
+// }
 ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
     ULONG64 oldDiskSlotContents;
     ULONG64 newDiskSlotContents;
@@ -179,17 +179,17 @@ set_disk_space_free(ULONG64 diskIndex) {
     // there is truncation when stuff cant go in easily
 
 
-    diskIndexSection = (ULONG64) diskIndex /  (ULONG64) config.disk_division_size_in_pages;
+    diskIndexSection = (ULONG64) diskIndex /  (ULONG64) vm.config.disk_division_size_in_pages;
 
-    if (diskIndexSection >= config.number_of_disk_divisions) {
-        diskIndexSection = config.number_of_disk_divisions - 1;
+    if (diskIndexSection >= vm.config.number_of_disk_divisions) {
+        diskIndexSection = vm.config.number_of_disk_divisions - 1;
     }
 
 
     // round down to the nearest ULONG64
     diskMetaDataIndex = (diskIndex >> 6);
 
-    diskMetaDateAddress = diskActive + diskMetaDataIndex;
+    diskMetaDateAddress = vm.disk.active + diskMetaDataIndex;
 
     oldDiskSlotContents = *diskMetaDateAddress;
 
@@ -223,8 +223,8 @@ set_disk_space_free(ULONG64 diskIndex) {
 
 
     //if the disk previously had zero slots
-    if (InterlockedIncrement64((PLONG64) &number_of_open_slots[diskIndexSection]) == 1) {
-        SetEvent(writingStartEvent);
+    if (InterlockedIncrement64((PLONG64) &vm.disk.number_of_open_slots[diskIndexSection]) == 1) {
+        SetEvent(vm.events.writingStart);
     }
 }
 

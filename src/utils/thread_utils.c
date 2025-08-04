@@ -49,7 +49,7 @@ VOID validateList(pListHead head) {
     ULONG64 backwardLength = 0;
 
 
-    const ULONG64 MAX_EXPECTED_LENGTH = NUMBER_OF_PHYSICAL_PAGES + 10; // Safety limit
+    const ULONG64 MAX_EXPECTED_LENGTH = vm.config.number_of_physical_pages + 10; // Safety limit
 
     // Check empty list case
     if (head->length == 0) {

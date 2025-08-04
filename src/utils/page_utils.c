@@ -12,16 +12,16 @@
 
 VOID
 pfnInbounds(pfn* trimmed) {
-    if (trimmed < pfnStart || trimmed >= endPFN) {
+    if (trimmed < vm.pfn.start || trimmed >= vm.pfn.end) {
         DebugBreak();
     }
 }
 ULONG64 getFrameNumber(pfn* pfn) {
-    return (ULONG64)(pfn - pfnStart);
+    return (ULONG64)(pfn - vm.pfn.start);
 }
 
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber) {
-    return pfnStart + frameNumber;
+    return vm.pfn.start + frameNumber;
 }
 
 volatile ULONG64 prunecount;
@@ -58,7 +58,7 @@ bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
 
     page = container_of(headToRemove->entry.Flink, pfn, entry);
     // lock all the pages you can up until the threshold
-    for (; number_of_pages_removed < NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY; number_of_pages_removed++) {
+    for (; number_of_pages_removed < vm.config.number_of_pages_to_trim_from_stand_by; number_of_pages_removed++) {
 
         if (&page->entry == &headToRemove->entry) {
             break;

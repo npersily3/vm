@@ -37,45 +37,45 @@ full_virtual_memory_test(VOID) {
 
     start = GetTickCount64();
 
-    SetEvent(userStartEvent);
+    SetEvent(vm.events.userStart);
 
     int i;
     i = 0;
 
 
 
-     for (; i < config.number_of_user_threads; ++i) {
-         WaitForSingleObject(userThreadHandles[i], INFINITE);
+     for (; i < vm.config.number_of_user_threads; ++i) {
+         WaitForSingleObject(vm.events.userThreadHandles[i], INFINITE);
      }
-    SetEvent(systemShutdownEvent);
+    SetEvent(vm.events.systemShutdown);
 
     i = 0;
-    for (; i < config.number_of_system_threads; ++i) {
-        WaitForSingleObject(systemThreadHandles[i], INFINITE);
+    for (; i < vm.config.number_of_system_threads; ++i) {
+        WaitForSingleObject(vm.events.systemThreadHandles[i], INFINITE);
     }
-    ResetEvent(systemShutdownEvent);
+    ResetEvent(vm.events.systemShutdown);
 
     end = GetTickCount64();
     // Now that we're done with our memory we can be a good
     // citizen and free it.
-    VirtualFree(vaStart, 0, MEM_RELEASE);
+    VirtualFree(vm.va.start, 0, MEM_RELEASE);
 
     printf("Elapsed time: %llu ms\n", end - start);
 
-    printf("StandBy length %llu  \n", headStandByList.length);
-    printf("Modified length %llu \n", headModifiedList.length);
-    printf("Free length %llu \n", freeListLength);
-    printf("Active length %llu \n", headActiveList.length);
+    printf("StandBy length %llu  \n", vm.lists.standby.length);
+    printf("Modified length %llu \n", vm.lists.modified.length);
+    printf("Free length %llu \n", vm.lists.free.length);
+    printf("Active length %llu \n", vm.lists.active.length);
 
-    printf("pagewaits %llu \n",   pageWaits);
-    printf("total time waiting %llu ticks\n",   (totalTimeWaiting));
+    printf("pagewaits %llu \n",   vm.misc.pageWaits);
+    printf("total time waiting %llu ticks\n",   (vm.misc.totalTimeWaiting));
     return;
 }
 
 
 DWORD testVM(LPVOID lpParam) {
 
-    WaitForSingleObject(userStartEvent, INFINITE);
+    WaitForSingleObject(vm.events.userStart, INFINITE);
 
 
    // DebugBreak();
@@ -104,7 +104,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1)/config.number_of_user_threads; i++) {
+ for (; i < MB(1) / (vm.config.number_of_user_threads); i++) {
 //while (TRUE) {
         #endif
 
@@ -135,7 +135,7 @@ DWORD testVM(LPVOID lpParam) {
             //    random_number += KB(256)*(thread_info->ThreadNumber + 2);
 #endif
 
-                random_number %= config.virtual_address_size_in_unsigned_chunks;
+                random_number %= vm.config.virtual_address_size_in_unsigned_chunks;
 
                 // Write the virtual address into each page. If we need to
                 // debug anything, we'll be able to see these in the pages.
@@ -144,7 +144,7 @@ DWORD testVM(LPVOID lpParam) {
                 // Ensure the write to the arbitrary virtual address doesn't
                 // straddle a PAGE_SIZE boundary just to keep things simple for now.
                 random_number &= ~0x7;
-                arbitrary_va = vaStart + random_number;
+                arbitrary_va = vm.va.start + random_number;
                // printf("arbitrary_va %p\n", arbitrary_va);
 
             }
@@ -175,8 +175,7 @@ DWORD testVM(LPVOID lpParam) {
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
-   // SetEvent(thread_info->WorkDoneHandle);
-    SetEvent(userEndEvent);
+
     return 0;
 }
 
