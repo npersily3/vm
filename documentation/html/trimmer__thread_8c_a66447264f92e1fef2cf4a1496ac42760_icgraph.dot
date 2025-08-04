@@ -1,0 +1,22 @@
+digraph "getActivePage"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="getActivePage",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="This functions pops a page off the active list and returns it unlocked."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="page_trimmer",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$trimmer__thread_8c.html#ad435722c9283c37221db5ee47f172da9",tooltip="This is the function that deals with unmapping pages."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="createThreads",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$init__threads_8c.html#a86159e994d33f90d79e149463ecbeb11",tooltip=" "];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="initThreads",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$init__threads_8c.html#aab1b5789118354c27bf39d29b3338509",tooltip=" "];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="init_virtual_memory",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$init_8c.html#a01df8b1767d5a0c7f704e92b31eeebf1",tooltip=" "];
+  Node5 -> Node6 [id="edge5_Node000005_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="full_virtual_memory_test",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$vm_8c.html#a146a3ced98c4fba2f0493395b0455046",tooltip=" "];
+  Node6 -> Node7 [id="edge6_Node000006_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="main",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$vm_8c.html#afa843d4a834093df8f01ccea0c964950",tooltip=" "];
+}

@@ -1,0 +1,16 @@
+digraph "isNextPageInSameRegion"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="isNextPageInSameRegion",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="This function peeks into the head of the active list and sees if the next page is in the same pte reg..."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="enterPageLock",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d",tooltip=" "];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="getPTERegion",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7",tooltip=" "];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="leavePageLock",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2",tooltip=" "];
+}

@@ -1,0 +1,27 @@
+digraph "hazardRate"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="hazardRate",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="calculateDeltaAccessTimes",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#a7943bf7c556a8a53aeee8dbb90b55024",tooltip=" "];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="calculateDrift",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#af14e0efd40d02e766158e48add6cb42c",tooltip=" "];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="getSlope",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#a46fbdc032829612e92acf8c668109c9e",tooltip=" "];
+  Node1 -> Node5 [id="edge4_Node000001_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="calculateMostRecentAccessTime",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#abd702493fd399e4e4c70e7d1d151ac48",tooltip=" "];
+  Node1 -> Node6 [id="edge5_Node000001_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="calculateVolatility",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#a834556aa53542feb429966dcf83fd131",tooltip=" "];
+  Node6 -> Node7 [id="edge6_Node000006_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="variance",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#a8d3b2efc05e3e8783a04aeaf6c93e91d",tooltip=" "];
+  Node7 -> Node8 [id="edge7_Node000007_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="mean",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$statistics__utils_8c.html#a5b80f74e519479e8f29a0ea1e5c7d175",tooltip=" "];
+  Node8 -> Node8 [id="edge8_Node000008_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node7 -> Node7 [id="edge9_Node000007_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node8 [id="edge10_Node000001_Node000008",color="steelblue1",style="solid",tooltip=" "];
+}

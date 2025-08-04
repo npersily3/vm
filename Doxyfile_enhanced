@@ -1,0 +1,84 @@
+# Enhanced Doxyfile for Virtual Memory Manager
+PROJECT_NAME           = "Virtual Memory Manager"
+PROJECT_NUMBER         = "v1.0"
+PROJECT_BRIEF          = "A high-performance multithreaded virtual memory management system"
+PROJECT_LOGO           = docs/assets/images/logo.png
+
+# Output configuration
+OUTPUT_DIRECTORY       = documentation
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_RTF          = NO
+GENERATE_MAN          = NO
+
+# Enhanced HTML output
+GENERATE_HTML          = YES
+HTML_COLORSTYLE        = DARK
+HTML_DYNAMIC_MENUS     = YES
+HTML_DYNAMIC_SECTIONS  = YES
+HTML_CODE_FOLDING      = YES
+HTML_COPY_CLIPBOARD    = YES
+FULL_SIDEBAR          = YES
+GENERATE_TREEVIEW     = YES
+
+# Custom styling and scripts
+HTML_EXTRA_STYLESHEET  = docs/assets/css/custom.css \
+                         docs/assets/css/three-integration.css
+HTML_EXTRA_FILES       = docs/assets/js/three.min.js \
+                         docs/assets/js/OrbitControls.js \
+                         docs/assets/js/memory-visualizer.js \
+                         docs/assets/js/page-animations.js \
+                         docs/assets/images/
+
+# Input configuration
+INPUT                  = ./src ./include README.md docs/markdown
+RECURSIVE              = YES
+FILE_PATTERNS          = *.c *.h *.cpp *.hpp *.md *.dox
+
+# Documentation extraction
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+JAVADOC_AUTOBRIEF      = YES
+QT_AUTOBRIEF           = YES
+MULTILINE_CPP_IS_BRIEF = YES
+
+# Source browsing
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+STRIP_CODE_COMMENTS    = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+
+# Search and formulas
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+HTML_FORMULA_FORMAT    = svg
+USE_MATHJAX            = YES
+MATHJAX_FORMAT         = SVG
+
+# Aliases for better documentation
+ALIASES                = "complexity=@par Complexity:^^" \
+                         "threadsafe=@par Thread Safety:^^" \
+                         "performance=@par Performance Notes:^^" \
+                         "memorymodel=@par Memory Model:^^" \
+                         "lockorder=@par Lock Ordering:^^"
+
+# Quality control
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+WARN_AS_ERROR          = NO
+
+# Graph generation
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES

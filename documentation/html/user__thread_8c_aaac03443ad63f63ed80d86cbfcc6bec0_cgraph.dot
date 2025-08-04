@@ -1,0 +1,45 @@
+digraph "getPageFromFreeList"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="getPageFromFreeList",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="This function gets a page off of one of the free lists."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="batchVictimsFromStandByList",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$user__thread_8c.html#a6730003fb29092de5ffafa988d59deac",tooltip="Removes a batch of victims from the standby list and puts them on the free list."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="addPageToFreeList",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$user__thread_8c.html#a448eb2bbcbf9ade5e09d3af9b2bb0ea3",tooltip="Adds a page to any available freelist."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="InsertHeadList",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$macros_8h.html#a47aa8dee2f7a2d1e5e9a517d0a07a6ba",tooltip=" "];
+  Node3 -> Node5 [id="edge4_Node000003_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="leavePageLock",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2",tooltip=" "];
+  Node3 -> Node6 [id="edge5_Node000003_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="validateList",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278",tooltip=" "];
+  Node2 -> Node7 [id="edge6_Node000002_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="init_list_head",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf",tooltip=" "];
+  Node7 -> Node8 [id="edge7_Node000007_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="InitializeListHead",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$macros_8h.html#afa8f00416a027788c25c09317cfa9ab6",tooltip=" "];
+  Node7 -> Node9 [id="edge8_Node000007_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="sharedLock::sharedLock",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051",tooltip=" "];
+  Node9 -> Node9 [id="edge9_Node000009_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node5 [id="edge10_Node000002_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node10 [id="edge11_Node000002_Node000010",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="removeBatchFromList",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$page__utils_8c.html#aaa59d7db7521cbc4c921cad1aca15a40",tooltip="This function removes a batch of pages off of one list onto another instead of removing them one by o..."];
+  Node10 -> Node11 [id="edge12_Node000010_Node000011",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="acquire_srw_shared",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168",tooltip=" "];
+  Node11 -> Node9 [id="edge13_Node000011_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node10 -> Node12 [id="edge14_Node000010_Node000012",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="enterPageLock",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d",tooltip=" "];
+  Node10 -> Node5 [id="edge15_Node000010_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node10 -> Node13 [id="edge16_Node000010_Node000013",color="steelblue1",style="solid",tooltip=" "];
+  Node13 [id="Node000013",label="release_srw_shared",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a",tooltip=" "];
+  Node13 -> Node9 [id="edge17_Node000013_Node000009",color="steelblue1",style="solid",tooltip=" "];
+  Node10 -> Node6 [id="edge18_Node000010_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node2 -> Node6 [id="edge19_Node000002_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node12 [id="edge20_Node000001_Node000012",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node14 [id="edge21_Node000001_Node000014",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="RemoveHeadList",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$macros_8h.html#a0d33293ffc5eed4d8fafc9de60f7579f",tooltip=" "];
+  Node1 -> Node6 [id="edge22_Node000001_Node000006",color="steelblue1",style="solid",tooltip=" "];
+}
