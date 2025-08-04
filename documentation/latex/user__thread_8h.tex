@@ -10,11 +10,11 @@ BOOL \mbox{\hyperlink{user__thread_8h_a054a809045b98743dd633e71b528a419}{is\+Res
 \item 
 BOOL \mbox{\hyperlink{user__thread_8h_a2fa63b38d1709223f1f15036eac0ee85}{rescue\+\_\+page}} (ULONG64 arbitrary\+\_\+va, \mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*}current\+PTE, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} info)
 \begin{DoxyCompactList}\small\item\em This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page. If the page corresponding to the virtual address is on the modified list, this function just simply removes it from the middle. If the page is on the standby list, this function removes it from the middle of the list and sets the corresponding disk space free. Lastly, If the page is not on any list, but in the process of being written out, just mark it as no longer being written out. The writer will see this and free the corresponding disk space. \end{DoxyCompactList}\item 
-BOOL \mbox{\hyperlink{user__thread_8h_ac535eb59f3846245be236bf3d3855dcc}{map\+Page\+From\+Free\+List}} (ULONG64 arbitrary\+\_\+va, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Info, PULONG64 frame\+Number)
+\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{user__thread_8h_a39091ec036a9c3ade72645232a6c655b}{map\+Page\+From\+Free\+List}} (\mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*}current\+PTE, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Info)
 \begin{DoxyCompactList}\small\item\em This function tries to get a physical page of a free list. It will also detect if the number of free pages is running low, and take some from the standby list. \end{DoxyCompactList}\item 
 \mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{user__thread_8h_adf110e8fee1dab537a5b4a22909843d5}{get\+Victim\+From\+Stand\+By\+List}} (\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Info)
 \begin{DoxyCompactList}\small\item\em This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry of the page without holding a page table lock. It can do this because the page table entry\textquotesingle{}s corresponding page lock protects it from being rescued at the same. However, this means that in the rescue or other functions relating to standby pages, the page table entry could be changing. \end{DoxyCompactList}\item 
-BOOL \mbox{\hyperlink{user__thread_8h_a48c215668a27a6260785ffbbe7cab8c9}{map\+Page\+From\+Stand\+By\+List}} (ULONG64 arbitrary\+\_\+va, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Info, PULONG64 frame\+Number)
+\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{user__thread_8h_abe86a2d11f81fe2a1b903588bffd3972}{map\+Page\+From\+Stand\+By\+List}} (\mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*}current\+PTE, \mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}} thread\+Info)
 \begin{DoxyCompactList}\small\item\em This function attempts to take a page from the standby list. If there is a page to take, this function will update the page\textquotesingle{}s pagetable entry to reflect that it is no longer on standby, but on disk. \end{DoxyCompactList}\item 
 BOOL \mbox{\hyperlink{user__thread_8h_a35ee50dd4c8faf90e7decfdcc106ee7b}{map\+Page}} (ULONG64 arbitrary\+\_\+va, \mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*}current\+PTE, LPVOID thread\+Context, PCRITICAL\+\_\+\+SECTION pagetablelock)
 \begin{DoxyCompactList}\small\item\em This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk. First this thread will attempt to map from the free list; then it will try to map from standby. If none of those succeed it will wake up the trimmer and wait to redo the fault. If this thread notices that usable pages are getting low, it will wake up the trimmer. \end{DoxyCompactList}\item 
@@ -143,11 +143,11 @@ The page table entry must be locked on entry to this function.
 \begin{DoxyPostcond}{Postcondition}
 The caller must unlock the page table entry. 
 \end{DoxyPostcond}
-\Hypertarget{user__thread_8h_ac535eb59f3846245be236bf3d3855dcc}\index{user\_thread.h@{user\_thread.h}!mapPageFromFreeList@{mapPageFromFreeList}}
+\Hypertarget{user__thread_8h_a39091ec036a9c3ade72645232a6c655b}\index{user\_thread.h@{user\_thread.h}!mapPageFromFreeList@{mapPageFromFreeList}}
 \index{mapPageFromFreeList@{mapPageFromFreeList}!user\_thread.h@{user\_thread.h}}
 \doxysubsubsection{\texorpdfstring{mapPageFromFreeList()}{mapPageFromFreeList()}}
-{\footnotesize\ttfamily \label{user__thread_8h_ac535eb59f3846245be236bf3d3855dcc} 
-BOOL map\+Page\+From\+Free\+List (\begin{DoxyParamCaption}\item[{ULONG64}]{arbitrary\+\_\+va}{, }\item[{\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}}}]{thread\+Info}{, }\item[{PULONG64}]{frame\+Number}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{user__thread_8h_a39091ec036a9c3ade72645232a6c655b} 
+\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} map\+Page\+From\+Free\+List (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*}}]{current\+PTE}{, }\item[{\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}}}]{thread\+Info}{}\end{DoxyParamCaption})}
 
 
 
@@ -155,27 +155,30 @@ This function tries to get a physical page of a free list. It will also detect i
 
 
 \begin{DoxyParams}{Parameters}
-{\em arbitrary\+\_\+va} & The virtual address that is being faulted. \\
+{\em current\+PTE} & The page table entry of the virtual address that is being faulted on \\
 \hline
 {\em thread\+Info} & The info about the calling thread. \\
 \hline
-{\em frame\+Number} & An address to store the frame number that corresponding to the page we are about to map. \\
-\hline
 \end{DoxyParams}
 \begin{DoxyReturn}{Returns}
-Returns true if we need to redo the fault, false otherwise. 
+Returns a page from a freelist 
 \end{DoxyReturn}
+
+\begin{DoxyRetVals}{Return values}
+{\em Returns} & null if the list is empty \\
+\hline
+\end{DoxyRetVals}
 \begin{DoxyPrecond}{Precondition}
 The page table entry must be locked on entry to this function. 
 \end{DoxyPrecond}
 \begin{DoxyPostcond}{Postcondition}
 The caller must unlock the page table entry. 
 \end{DoxyPostcond}
-\Hypertarget{user__thread_8h_a48c215668a27a6260785ffbbe7cab8c9}\index{user\_thread.h@{user\_thread.h}!mapPageFromStandByList@{mapPageFromStandByList}}
+\Hypertarget{user__thread_8h_abe86a2d11f81fe2a1b903588bffd3972}\index{user\_thread.h@{user\_thread.h}!mapPageFromStandByList@{mapPageFromStandByList}}
 \index{mapPageFromStandByList@{mapPageFromStandByList}!user\_thread.h@{user\_thread.h}}
 \doxysubsubsection{\texorpdfstring{mapPageFromStandByList()}{mapPageFromStandByList()}}
-{\footnotesize\ttfamily \label{user__thread_8h_a48c215668a27a6260785ffbbe7cab8c9} 
-BOOL map\+Page\+From\+Stand\+By\+List (\begin{DoxyParamCaption}\item[{ULONG64}]{arbitrary\+\_\+va}{, }\item[{\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}}}]{thread\+Info}{, }\item[{PULONG64}]{frame\+Number}{}\end{DoxyParamCaption})}
+{\footnotesize\ttfamily \label{user__thread_8h_abe86a2d11f81fe2a1b903588bffd3972} 
+\mbox{\hyperlink{structpfn}{pfn}} \texorpdfstring{$\ast$}{*} map\+Page\+From\+Stand\+By\+List (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structpte}{pte}} \texorpdfstring{$\ast$}{*}}]{current\+PTE}{, }\item[{\mbox{\hyperlink{structures_8h_a0d2bf865b114b5aa46dd6f5558f60df4}{PTHREAD\+\_\+\+INFO}}}]{thread\+Info}{}\end{DoxyParamCaption})}
 
 
 
@@ -183,16 +186,19 @@ This function attempts to take a page from the standby list. If there is a page 
 
 
 \begin{DoxyParams}{Parameters}
-{\em arbitrary\+\_\+va} & The virtual address that is being faulted on \\
+{\em current\+PTE} & The page table entry of the virtual address that is being faulted on \\
 \hline
 {\em thread\+Info} & The info of the calling thread \\
 \hline
-{\em frame\+Number} & A place to store the frame number of the page that is about to be mapped to the virtual address \\
-\hline
 \end{DoxyParams}
 \begin{DoxyReturn}{Returns}
-Returns true if we need to redo the fault, false otherwise. 
+Returns a page from a freelist 
 \end{DoxyReturn}
+
+\begin{DoxyRetVals}{Return values}
+{\em Returns} & null if the list is empty \\
+\hline
+\end{DoxyRetVals}
 \begin{DoxyPrecond}{Precondition}
 The page table entry must be locked on entry to this function. 
 \end{DoxyPrecond}

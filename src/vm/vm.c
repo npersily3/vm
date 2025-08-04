@@ -100,6 +100,7 @@ DWORD testVM(LPVOID lpParam) {
 
 #if DBG || spinEvents
     while (TRUE) {
+        
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS

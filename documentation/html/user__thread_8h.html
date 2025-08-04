@@ -117,12 +117,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a054a809045b98743dd633e71b528a419" id="r_a054a809045b98743dd633e71b528a419"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a054a809045b98743dd633e71b528a419">isRescue</a> (<a class="el" href="structpte.html">pte</a> *currentPTE)</td></tr>
 <tr class="memitem:a2fa63b38d1709223f1f15036eac0ee85" id="r_a2fa63b38d1709223f1f15036eac0ee85"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a2fa63b38d1709223f1f15036eac0ee85">rescue_page</a> (ULONG64 arbitrary_va, <a class="el" href="structpte.html">pte</a> *currentPTE, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> info)</td></tr>
 <tr class="memdesc:a2fa63b38d1709223f1f15036eac0ee85"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page. If the page corresponding to the virtual address is on the modified list, this function just simply removes it from the middle. If the page is on the standby list, this function removes it from the middle of the list and sets the corresponding disk space free. Lastly, If the page is not on any list, but in the process of being written out, just mark it as no longer being written out. The writer will see this and free the corresponding disk space.  <br /></td></tr>
-<tr class="memitem:ac535eb59f3846245be236bf3d3855dcc" id="r_ac535eb59f3846245be236bf3d3855dcc"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac535eb59f3846245be236bf3d3855dcc">mapPageFromFreeList</a> (ULONG64 arbitrary_va, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo, PULONG64 frameNumber)</td></tr>
-<tr class="memdesc:ac535eb59f3846245be236bf3d3855dcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function tries to get a physical page of a free list. It will also detect if the number of free pages is running low, and take some from the standby list.  <br /></td></tr>
+<tr class="memitem:a39091ec036a9c3ade72645232a6c655b" id="r_a39091ec036a9c3ade72645232a6c655b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39091ec036a9c3ade72645232a6c655b">mapPageFromFreeList</a> (<a class="el" href="structpte.html">pte</a> *currentPTE, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
+<tr class="memdesc:a39091ec036a9c3ade72645232a6c655b"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function tries to get a physical page of a free list. It will also detect if the number of free pages is running low, and take some from the standby list.  <br /></td></tr>
 <tr class="memitem:adf110e8fee1dab537a5b4a22909843d5" id="r_adf110e8fee1dab537a5b4a22909843d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adf110e8fee1dab537a5b4a22909843d5">getVictimFromStandByList</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
 <tr class="memdesc:adf110e8fee1dab537a5b4a22909843d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry of the page without holding a page table lock. It can do this because the page table entry's corresponding page lock protects it from being rescued at the same. However, this means that in the rescue or other functions relating to standby pages, the page table entry could be changing.  <br /></td></tr>
-<tr class="memitem:a48c215668a27a6260785ffbbe7cab8c9" id="r_a48c215668a27a6260785ffbbe7cab8c9"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a48c215668a27a6260785ffbbe7cab8c9">mapPageFromStandByList</a> (ULONG64 arbitrary_va, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo, PULONG64 frameNumber)</td></tr>
-<tr class="memdesc:a48c215668a27a6260785ffbbe7cab8c9"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function attempts to take a page from the standby list. If there is a page to take, this function will update the page's pagetable entry to reflect that it is no longer on standby, but on disk.  <br /></td></tr>
+<tr class="memitem:abe86a2d11f81fe2a1b903588bffd3972" id="r_abe86a2d11f81fe2a1b903588bffd3972"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abe86a2d11f81fe2a1b903588bffd3972">mapPageFromStandByList</a> (<a class="el" href="structpte.html">pte</a> *currentPTE, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
+<tr class="memdesc:abe86a2d11f81fe2a1b903588bffd3972"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function attempts to take a page from the standby list. If there is a page to take, this function will update the page's pagetable entry to reflect that it is no longer on standby, but on disk.  <br /></td></tr>
 <tr class="memitem:a35ee50dd4c8faf90e7decfdcc106ee7b" id="r_a35ee50dd4c8faf90e7decfdcc106ee7b"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a35ee50dd4c8faf90e7decfdcc106ee7b">mapPage</a> (ULONG64 arbitrary_va, <a class="el" href="structpte.html">pte</a> *currentPTE, LPVOID threadContext, PCRITICAL_SECTION pagetablelock)</td></tr>
 <tr class="memdesc:a35ee50dd4c8faf90e7decfdcc106ee7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk. First this thread will attempt to map from the free list; then it will try to map from standby. If none of those succeed it will wake up the trimmer and wait to redo the fault. If this thread notices that usable pages are getting low, it will wake up the trimmer.  <br /></td></tr>
 <tr class="memitem:aa4d5559bed59f8700f4e332ffedd6064" id="r_aa4d5559bed59f8700f4e332ffedd6064"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4d5559bed59f8700f4e332ffedd6064">modified_read</a> (<a class="el" href="structpte.html">pte</a> *currentPTE, ULONG64 frameNumber, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
@@ -291,26 +291,21 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ac535eb59f3846245be236bf3d3855dcc" name="ac535eb59f3846245be236bf3d3855dcc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac535eb59f3846245be236bf3d3855dcc">&#9670;&#160;</a></span>mapPageFromFreeList()</h2>
+<a id="a39091ec036a9c3ade72645232a6c655b" name="a39091ec036a9c3ade72645232a6c655b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39091ec036a9c3ade72645232a6c655b">&#9670;&#160;</a></span>mapPageFromFreeList()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">BOOL mapPageFromFreeList </td>
+          <td class="memname"><a class="el" href="structpfn.html">pfn</a> * mapPageFromFreeList </td>
           <td>(</td>
-          <td class="paramtype">ULONG64</td>          <td class="paramname"><span class="paramname"><em>arbitrary_va</em></span>, </td>
+          <td class="paramtype"><a class="el" href="structpte.html">pte</a> *</td>          <td class="paramname"><span class="paramname"><em>currentPTE</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></td>          <td class="paramname"><span class="paramname"><em>threadInfo</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">PULONG64</td>          <td class="paramname"><span class="paramname"><em>frameNumber</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></td>          <td class="paramname"><span class="paramname"><em>threadInfo</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -318,38 +313,38 @@ Functions</h2></td></tr>
 <p>This function tries to get a physical page of a free list. It will also detect if the number of free pages is running low, and take some from the standby list. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">arbitrary_va</td><td>The virtual address that is being faulted. </td></tr>
+    <tr><td class="paramname">currentPTE</td><td>The page table entry of the virtual address that is being faulted on </td></tr>
     <tr><td class="paramname">threadInfo</td><td>The info about the calling thread. </td></tr>
-    <tr><td class="paramname">frameNumber</td><td>An address to store the frame number that corresponding to the page we are about to map. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>Returns true if we need to redo the fault, false otherwise. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>Returns a page from a freelist </dd></dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">Returns</td><td>null if the list is empty </td></tr>
+  </table>
+  </dd>
+</dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry. </dd></dl>
 
 </div>
 </div>
-<a id="a48c215668a27a6260785ffbbe7cab8c9" name="a48c215668a27a6260785ffbbe7cab8c9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a48c215668a27a6260785ffbbe7cab8c9">&#9670;&#160;</a></span>mapPageFromStandByList()</h2>
+<a id="abe86a2d11f81fe2a1b903588bffd3972" name="abe86a2d11f81fe2a1b903588bffd3972"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe86a2d11f81fe2a1b903588bffd3972">&#9670;&#160;</a></span>mapPageFromStandByList()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">BOOL mapPageFromStandByList </td>
+          <td class="memname"><a class="el" href="structpfn.html">pfn</a> * mapPageFromStandByList </td>
           <td>(</td>
-          <td class="paramtype">ULONG64</td>          <td class="paramname"><span class="paramname"><em>arbitrary_va</em></span>, </td>
+          <td class="paramtype"><a class="el" href="structpte.html">pte</a> *</td>          <td class="paramname"><span class="paramname"><em>currentPTE</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></td>          <td class="paramname"><span class="paramname"><em>threadInfo</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">PULONG64</td>          <td class="paramname"><span class="paramname"><em>frameNumber</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></td>          <td class="paramname"><span class="paramname"><em>threadInfo</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -357,13 +352,18 @@ Functions</h2></td></tr>
 <p>This function attempts to take a page from the standby list. If there is a page to take, this function will update the page's pagetable entry to reflect that it is no longer on standby, but on disk. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">arbitrary_va</td><td>The virtual address that is being faulted on </td></tr>
+    <tr><td class="paramname">currentPTE</td><td>The page table entry of the virtual address that is being faulted on </td></tr>
     <tr><td class="paramname">threadInfo</td><td>The info of the calling thread </td></tr>
-    <tr><td class="paramname">frameNumber</td><td>A place to store the frame number of the page that is about to be mapped to the virtual address </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>Returns true if we need to redo the fault, false otherwise. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>Returns a page from a freelist </dd></dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">Returns</td><td>null if the list is empty </td></tr>
+  </table>
+  </dd>
+</dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry </dd></dl>
 

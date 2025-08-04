@@ -118,7 +118,8 @@ Functions</h2></td></tr>
 <tr class="memitem:aa30e01e92ab002730cc6edd4f2c933f9" id="r_aa30e01e92ab002730cc6edd4f2c933f9"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa30e01e92ab002730cc6edd4f2c933f9">removeFromMiddleOfList</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> head, <a class="el" href="structpfn.html">pfn</a> *page, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
 <tr class="memitem:a5f1ebc15a9e5f0561a2f02ae5e0aae93" id="r_a5f1ebc15a9e5f0561a2f02ae5e0aae93"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5f1ebc15a9e5f0561a2f02ae5e0aae93">RemoveFromHeadofPageList</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> head, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
 <tr class="memitem:a81bc32fad7e2392ab7737db66ed14a4f" id="r_a81bc32fad7e2392ab7737db66ed14a4f"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a81bc32fad7e2392ab7737db66ed14a4f">addPageToTail</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> head, <a class="el" href="structpfn.html">pfn</a> *page, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
-<tr class="memitem:ae61bcc5923368489d62a3e56f46bacae" id="r_ae61bcc5923368489d62a3e56f46bacae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae61bcc5923368489d62a3e56f46bacae">removeBatchFromList</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> headToRemove, <a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> headToAdd, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
+<tr class="memitem:aaa59d7db7521cbc4c921cad1aca15a40" id="r_aaa59d7db7521cbc4c921cad1aca15a40"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaa59d7db7521cbc4c921cad1aca15a40">removeBatchFromList</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> headToRemove, <a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> headToAdd, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
+<tr class="memdesc:aaa59d7db7521cbc4c921cad1aca15a40"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function removes a batch of pages off of one list onto another instead of removing them one by one.  <br /></td></tr>
 <tr class="memitem:ad2ed83806d65a3117c627067c053e8ce" id="r_ad2ed83806d65a3117c627067c053e8ce"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad2ed83806d65a3117c627067c053e8ce">RemoveFromHeadWithListLockHeld</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> head, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
@@ -199,14 +200,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ae61bcc5923368489d62a3e56f46bacae" name="ae61bcc5923368489d62a3e56f46bacae"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae61bcc5923368489d62a3e56f46bacae">&#9670;&#160;</a></span>removeBatchFromList()</h2>
+<a id="aaa59d7db7521cbc4c921cad1aca15a40" name="aaa59d7db7521cbc4c921cad1aca15a40"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa59d7db7521cbc4c921cad1aca15a40">&#9670;&#160;</a></span>removeBatchFromList()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structpfn.html">pfn</a> * removeBatchFromList </td>
+          <td class="memname">bool removeBatchFromList </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a></td>          <td class="paramname"><span class="paramname"><em>headToRemove</em></span>, </td>
         </tr>
@@ -222,15 +223,24 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>This function removes a batch of pages off of one list onto another instead of removing them one by one. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">headToRemove</td><td>A list head to remove pages from </td></tr>
     <tr><td class="paramname">headToAdd</td><td>A list head to add the pages removed </td></tr>
-    <tr><td class="paramname">threadInfo</td><td></td></tr>
+    <tr><td class="paramname">threadInfo</td><td>The info of the calling thread </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<dl class="retval"><dt>Return values</dt><dd>
+  <table class="retval">
+    <tr><td class="paramname">True</td><td>if it was able to remove pages </td></tr>
+    <tr><td class="paramname">False</td><td>if the list to remove from was empty </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section post"><dt>Postcondition</dt><dd>All the pages added to the local list need to be unlocked </dd></dl>
 
 </div>
 </div>
