@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -143,21 +150,21 @@ $(function() {
 <div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span> </div>
 <div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
 <div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span><span class="preprocessor">#endif </span><span class="comment">//THREAD_UTILS_H</span></div>
-<div class="ttc" id="astructpfn_html"><div class="ttname"><a href="structpfn.html">pfn</a></div><div class="ttdef"><b>Definition</b> structures.h:206</div></div>
-<div class="ttc" id="astructshared_lock_html"><div class="ttname"><a href="structshared_lock.html">sharedLock</a></div><div class="ttdef"><b>Definition</b> structures.h:253</div></div>
+<div class="ttc" id="astructpfn_html"><div class="ttname"><a href="structpfn.html">pfn</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00206">structures.h:206</a></div></div>
+<div class="ttc" id="astructshared_lock_html"><div class="ttname"><a href="structshared_lock.html">sharedLock</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00253">structures.h:253</a></div></div>
 <div class="ttc" id="astructures_8h_html"><div class="ttname"><a href="structures_8h.html">structures.h</a></div></div>
-<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> structures.h:196</div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
 <div class="ttc" id="astructures_8h_html_a21e46ac33c16e9b75c519f62ceb1c9fe"><div class="ttname"><a href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a></div><div class="ttdeci">struct listHead * pListHead</div></div>
-<div class="ttc" id="athread__utils_8h_html_a0b65478cbff267e6e35c3c2090f9c21d"><div class="ttname"><a href="thread__utils_8h.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a></div><div class="ttdeci">VOID enterPageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> thread_utils.c:247</div></div>
-<div class="ttc" id="athread__utils_8h_html_a0f17ccd6bffa7fb86260af69a42b7ef6"><div class="ttname"><a href="thread__utils_8h.html#a0f17ccd6bffa7fb86260af69a42b7ef6">releaseLock</a></div><div class="ttdeci">void releaseLock(PULONG64 lock)</div><div class="ttdef"><b>Definition</b> thread_utils.c:129</div></div>
-<div class="ttc" id="athread__utils_8h_html_a15237c39cffac9b5ab0af5fc4414e168"><div class="ttname"><a href="thread__utils_8h.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a></div><div class="ttdeci">VOID acquire_srw_shared(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> thread_utils.c:145</div></div>
-<div class="ttc" id="athread__utils_8h_html_a1db2dc4187f63adf6556fbd6339700b2"><div class="ttname"><a href="thread__utils_8h.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a></div><div class="ttdeci">VOID leavePageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> thread_utils.c:257</div></div>
-<div class="ttc" id="athread__utils_8h_html_a43ace7ec0b78b479c5c81fd460b5e51c"><div class="ttname"><a href="thread__utils_8h.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a></div><div class="ttdeci">VOID release_srw_exclusive(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> thread_utils.c:169</div></div>
-<div class="ttc" id="athread__utils_8h_html_a5760d7851b54a6f3ad52ef61fdd2e317"><div class="ttname"><a href="thread__utils_8h.html#a5760d7851b54a6f3ad52ef61fdd2e317">acquireLock</a></div><div class="ttdeci">void acquireLock(PULONG64 lock)</div><div class="ttdef"><b>Definition</b> thread_utils.c:115</div></div>
-<div class="ttc" id="athread__utils_8h_html_a5dc8ae3adf26c08e32b1da93d165a34a"><div class="ttname"><a href="thread__utils_8h.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a></div><div class="ttdeci">VOID release_srw_shared(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> thread_utils.c:153</div></div>
-<div class="ttc" id="athread__utils_8h_html_ada2a56df112594780ba2b9578efb2278"><div class="ttname"><a href="thread__utils_8h.html#ada2a56df112594780ba2b9578efb2278">validateList</a></div><div class="ttdeci">VOID validateList(pListHead head)</div><div class="ttdef"><b>Definition</b> thread_utils.c:46</div></div>
-<div class="ttc" id="athread__utils_8h_html_aec03cb2efb5030c32bf350e08bf58612"><div class="ttname"><a href="thread__utils_8h.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a></div><div class="ttdeci">VOID acquire_srw_exclusive(sharedLock *lock, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> thread_utils.c:161</div></div>
-<div class="ttc" id="athread__utils_8h_html_af834a9800b975db7e48f17771473a002"><div class="ttname"><a href="thread__utils_8h.html#af834a9800b975db7e48f17771473a002">tryAcquireLock</a></div><div class="ttdeci">BOOL tryAcquireLock(PULONG64 lock)</div><div class="ttdef"><b>Definition</b> thread_utils.c:133</div></div>
+<div class="ttc" id="athread__utils_8h_html_a0b65478cbff267e6e35c3c2090f9c21d"><div class="ttname"><a href="thread__utils_8h.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a></div><div class="ttdeci">VOID enterPageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00247">thread_utils.c:247</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_a0f17ccd6bffa7fb86260af69a42b7ef6"><div class="ttname"><a href="thread__utils_8h.html#a0f17ccd6bffa7fb86260af69a42b7ef6">releaseLock</a></div><div class="ttdeci">void releaseLock(PULONG64 lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00129">thread_utils.c:129</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_a15237c39cffac9b5ab0af5fc4414e168"><div class="ttname"><a href="thread__utils_8h.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a></div><div class="ttdeci">VOID acquire_srw_shared(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00145">thread_utils.c:145</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_a1db2dc4187f63adf6556fbd6339700b2"><div class="ttname"><a href="thread__utils_8h.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a></div><div class="ttdeci">VOID leavePageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00257">thread_utils.c:257</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_a43ace7ec0b78b479c5c81fd460b5e51c"><div class="ttname"><a href="thread__utils_8h.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a></div><div class="ttdeci">VOID release_srw_exclusive(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00169">thread_utils.c:169</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_a5760d7851b54a6f3ad52ef61fdd2e317"><div class="ttname"><a href="thread__utils_8h.html#a5760d7851b54a6f3ad52ef61fdd2e317">acquireLock</a></div><div class="ttdeci">void acquireLock(PULONG64 lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00115">thread_utils.c:115</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_a5dc8ae3adf26c08e32b1da93d165a34a"><div class="ttname"><a href="thread__utils_8h.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a></div><div class="ttdeci">VOID release_srw_shared(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00153">thread_utils.c:153</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_ada2a56df112594780ba2b9578efb2278"><div class="ttname"><a href="thread__utils_8h.html#ada2a56df112594780ba2b9578efb2278">validateList</a></div><div class="ttdeci">VOID validateList(pListHead head)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00046">thread_utils.c:46</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_aec03cb2efb5030c32bf350e08bf58612"><div class="ttname"><a href="thread__utils_8h.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a></div><div class="ttdeci">VOID acquire_srw_exclusive(sharedLock *lock, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00161">thread_utils.c:161</a></div></div>
+<div class="ttc" id="athread__utils_8h_html_af834a9800b975db7e48f17771473a002"><div class="ttname"><a href="thread__utils_8h.html#af834a9800b975db7e48f17771473a002">tryAcquireLock</a></div><div class="ttdeci">BOOL tryAcquireLock(PULONG64 lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00133">thread_utils.c:133</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

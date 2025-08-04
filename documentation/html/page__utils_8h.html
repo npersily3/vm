@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -107,6 +114,18 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="structures_8h_source.html">../variables/structures.h</a>&quot;</code><br />
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for page_utils.h:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
 </div>
 <p><a href="page__utils_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -147,6 +166,134 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00360">360</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  360</span>                                                                       {</div>
+<div class="line"><span class="lineno">  361</span>    <span class="keywordtype">boolean</span> obtainedPageLocks = FALSE;</div>
+<div class="line"><span class="lineno">  362</span> </div>
+<div class="line"><span class="lineno">  363</span> </div>
+<div class="line"><span class="lineno">  364</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* nextPage;</div>
+<div class="line"><span class="lineno">  365</span> </div>
+<div class="line"><span class="lineno">  366</span> </div>
+<div class="line"><span class="lineno">  367</span>    <a class="code hl_function" href="thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  368</span> </div>
+<div class="line"><span class="lineno">  369</span> </div>
+<div class="line"><span class="lineno">  370</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; 5; ++i) {</div>
+<div class="line"><span class="lineno">  371</span>        <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  372</span> </div>
+<div class="line"><span class="lineno">  373</span>        <span class="comment">// this page is fine because we hold the heads pseudo page lock and the srw lock shared</span></div>
+<div class="line"><span class="lineno">  374</span>        nextPage = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  375</span> </div>
+<div class="line"><span class="lineno">  376</span>        <span class="keywordflow">if</span> (&amp;nextPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  377</span>            nextPage = NULL;</div>
+<div class="line"><span class="lineno">  378</span>            obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  379</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  380</span>        }</div>
+<div class="line"><span class="lineno">  381</span> </div>
+<div class="line"><span class="lineno">  382</span> </div>
+<div class="line"><span class="lineno">  383</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;nextPage-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">  384</span>            obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  385</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  386</span>        }</div>
+<div class="line"><span class="lineno">  387</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  388</span> </div>
+<div class="line"><span class="lineno">  389</span>    }</div>
+<div class="line"><span class="lineno">  390</span> </div>
+<div class="line"><span class="lineno">  391</span> </div>
+<div class="line"><span class="lineno">  392</span>    <span class="keywordflow">if</span> (obtainedPageLocks == FALSE) {</div>
+<div class="line"><span class="lineno">  393</span> </div>
+<div class="line"><span class="lineno">  394</span> </div>
+<div class="line"><span class="lineno">  395</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  396</span> </div>
+<div class="line"><span class="lineno">  397</span> </div>
+<div class="line"><span class="lineno">  398</span> </div>
+<div class="line"><span class="lineno">  399</span>        <a class="code hl_function" href="thread__utils_8c.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  400</span>        <span class="comment">//check if zero again</span></div>
+<div class="line"><span class="lineno">  401</span>        nextPage = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  402</span> </div>
+<div class="line"><span class="lineno">  403</span>        <span class="keywordflow">if</span> (&amp;nextPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  404</span>            nextPage = NULL;</div>
+<div class="line"><span class="lineno">  405</span>        }</div>
+<div class="line"><span class="lineno">  406</span>    }</div>
+<div class="line"><span class="lineno">  407</span> </div>
+<div class="line"><span class="lineno">  408</span> </div>
+<div class="line"><span class="lineno">  409</span> </div>
+<div class="line"><span class="lineno">  410</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  411</span>   <span class="comment">// validateList(head);</span></div>
+<div class="line"><span class="lineno">  412</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  413</span> </div>
+<div class="line"><span class="lineno">  414</span>    <span class="keywordflow">if</span> (nextPage == NULL) {</div>
+<div class="line"><span class="lineno">  415</span><span class="preprocessor">#if !useSharedLock</span></div>
+<div class="line"><span class="lineno">  416</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a> == 0);</div>
+<div class="line"><span class="lineno">  417</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  418</span> </div>
+<div class="line"><span class="lineno">  419</span>        head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink = &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  420</span>        head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink = &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  421</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  422</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  423</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  424</span> </div>
+<div class="line"><span class="lineno">  425</span> </div>
+<div class="line"><span class="lineno">  426</span>        head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink = &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  427</span>        nextPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink = &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  428</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink = &amp;nextPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  429</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  430</span>    }</div>
+<div class="line"><span class="lineno">  431</span> </div>
+<div class="line"><span class="lineno">  432</span> </div>
+<div class="line"><span class="lineno">  433</span>    InterlockedIncrement64(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a>);</div>
+<div class="line"><span class="lineno">  434</span> </div>
+<div class="line"><span class="lineno">  435</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  436</span>  <span class="comment">//  validateList(head);</span></div>
+<div class="line"><span class="lineno">  437</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  438</span> </div>
+<div class="line"><span class="lineno">  439</span> </div>
+<div class="line"><span class="lineno">  440</span> </div>
+<div class="line"><span class="lineno">  441</span>    <span class="keywordflow">if</span> (obtainedPageLocks == TRUE) {</div>
+<div class="line"><span class="lineno">  442</span> </div>
+<div class="line"><span class="lineno">  443</span> </div>
+<div class="line"><span class="lineno">  444</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  445</span> </div>
+<div class="line"><span class="lineno">  446</span>        <span class="keywordflow">if</span> (nextPage != NULL) {</div>
+<div class="line"><span class="lineno">  447</span>           <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(nextPage, threadInfo);</div>
+<div class="line"><span class="lineno">  448</span>        }</div>
+<div class="line"><span class="lineno">  449</span> </div>
+<div class="line"><span class="lineno">  450</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  451</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  452</span>        <a class="code hl_function" href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  453</span>    }</div>
+<div class="line"><span class="lineno">  454</span>}</div>
+<div class="ttc" id="astructlist_head_html_a1adaf6dfc0d2e0fb2b275f3557eca04a"><div class="ttname"><a href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">listHead::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00276">structures.h:276</a></div></div>
+<div class="ttc" id="astructlist_head_html_aa4a6d4735a6f994da0fbb892af5ca906"><div class="ttname"><a href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">listHead::page</a></div><div class="ttdeci">pfn page</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00280">structures.h:280</a></div></div>
+<div class="ttc" id="astructlist_head_html_ab804a0c0961e0898c9b690e9adc39dfe"><div class="ttname"><a href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">listHead::length</a></div><div class="ttdeci">volatile LONG64 length</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00277">structures.h:277</a></div></div>
+<div class="ttc" id="astructlist_head_html_ab82994491305327afe2643f568f738d5"><div class="ttname"><a href="structlist_head.html#ab82994491305327afe2643f568f738d5">listHead::sharedLock</a></div><div class="ttdeci">sharedLock sharedLock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00278">structures.h:278</a></div></div>
+<div class="ttc" id="astructpfn_html"><div class="ttname"><a href="structpfn.html">pfn</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00206">structures.h:206</a></div></div>
+<div class="ttc" id="astructpfn_html_a90e89efbad0a46c24ae279d79d2f8349"><div class="ttname"><a href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">pfn::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00212">structures.h:212</a></div></div>
+<div class="ttc" id="astructpfn_html_ab6ad595c698387fda8c17a768927abc7"><div class="ttname"><a href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">pfn::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00207">structures.h:207</a></div></div>
+<div class="ttc" id="astructures_8h_html_aca68c0d4ac8df0838e209fb5300f7be3"><div class="ttname"><a href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a></div><div class="ttdeci">#define ASSERT(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00019">structures.h:19</a></div></div>
+<div class="ttc" id="astructures_8h_html_af8c317a42292b61c93aae91e59118a46"><div class="ttname"><a href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a></div><div class="ttdeci">#define container_of(ptr, type, member)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00080">structures.h:80</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a0b65478cbff267e6e35c3c2090f9c21d"><div class="ttname"><a href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a></div><div class="ttdeci">VOID enterPageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00247">thread_utils.c:247</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a15237c39cffac9b5ab0af5fc4414e168"><div class="ttname"><a href="thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a></div><div class="ttdeci">VOID acquire_srw_shared(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00145">thread_utils.c:145</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a1db2dc4187f63adf6556fbd6339700b2"><div class="ttname"><a href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a></div><div class="ttdeci">VOID leavePageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00257">thread_utils.c:257</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a43ace7ec0b78b479c5c81fd460b5e51c"><div class="ttname"><a href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a></div><div class="ttdeci">VOID release_srw_exclusive(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00169">thread_utils.c:169</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a5dc8ae3adf26c08e32b1da93d165a34a"><div class="ttname"><a href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a></div><div class="ttdeci">VOID release_srw_shared(sharedLock *lock)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00153">thread_utils.c:153</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_aec03cb2efb5030c32bf350e08bf58612"><div class="ttname"><a href="thread__utils_8c.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a></div><div class="ttdeci">VOID acquire_srw_exclusive(sharedLock *lock, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00161">thread_utils.c:161</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="thread__utils_8c_source.html#l00161">acquire_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00145">acquire_srw_shared()</a>, <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00280">listHead::page</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="thread__utils_8c_source.html#l00169">release_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00153">release_srw_shared()</a>, and <a class="el" href="structures_8h_source.html#l00278">listHead::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00161">addBatchToModifiedList()</a>, <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, and <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+
 </div>
 </div>
 <a id="ae0a8c1717809fd2f938ee7917df6bd26" name="ae0a8c1717809fd2f938ee7917df6bd26"></a>
@@ -163,6 +310,22 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00019">19</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   19</span>                                 {</div>
+<div class="line"><span class="lineno">   20</span>    <span class="keywordflow">return</span> (ULONG64)(<a class="code hl_struct" href="structpfn.html">pfn</a> - <a class="code hl_variable" href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a>);</div>
+<div class="line"><span class="lineno">   21</span>}</div>
+<div class="ttc" id="ainit_8c_html_ab9a938255df813505ee77eef3cdc5aed"><div class="ttname"><a href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a></div><div class="ttdeci">pfn * pfnStart</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00041">init.c:41</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00041">pfnStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00209">getPagesFromModifiedList()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
 
 </div>
 </div>
@@ -181,6 +344,21 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00023">23</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   23</span>                                                {</div>
+<div class="line"><span class="lineno">   24</span>    <span class="keywordflow">return</span> <a class="code hl_variable" href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a> + frameNumber;</div>
+<div class="line"><span class="lineno">   25</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00041">pfnStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00073">unmapActivePage()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
+
 </div>
 </div>
 <a id="a2a74666cdf58cde00c607b14e5242e84" name="a2a74666cdf58cde00c607b14e5242e84"></a>
@@ -197,6 +375,16 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00014">14</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   14</span>                          {</div>
+<div class="line"><span class="lineno">   15</span>    <span class="keywordflow">if</span> (trimmed &lt; pfnStart || trimmed &gt;= <a class="code hl_variable" href="init_8c.html#a6714a26157ebdb9b9563bfb92ae3b5e0">endPFN</a>) {</div>
+<div class="line"><span class="lineno">   16</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">   17</span>    }</div>
+<div class="line"><span class="lineno">   18</span>}</div>
+<div class="ttc" id="ainit_8c_html_a6714a26157ebdb9b9563bfb92ae3b5e0"><div class="ttname"><a href="init_8c.html#a6714a26157ebdb9b9563bfb92ae3b5e0">endPFN</a></div><div class="ttdeci">pfn * endPFN</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00042">init.c:42</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00042">endPFN</a>.</p>
 
 </div>
 </div>
@@ -242,6 +430,109 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section post"><dt>Postcondition</dt><dd>All the pages added to the local list need to be unlocked </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00040">40</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   40</span>                                                                                               {</div>
+<div class="line"><span class="lineno">   41</span> </div>
+<div class="line"><span class="lineno">   42</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* firstPage;</div>
+<div class="line"><span class="lineno">   43</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* lastPage;</div>
+<div class="line"><span class="lineno">   44</span> </div>
+<div class="line"><span class="lineno">   45</span>    <a class="code hl_function" href="thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a>(&amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">   46</span>    <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(&amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">   47</span> </div>
+<div class="line"><span class="lineno">   48</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">   49</span> </div>
+<div class="line"><span class="lineno">   50</span>    <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(headToRemove);</div>
+<div class="line"><span class="lineno">   51</span> </div>
+<div class="line"><span class="lineno">   52</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">   53</span> </div>
+<div class="line"><span class="lineno">   54</span>    ULONG64 number_of_pages_removed = 0;</div>
+<div class="line"><span class="lineno">   55</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">   56</span> </div>
+<div class="line"><span class="lineno">   57</span>    InterlockedIncrement64((<span class="keyword">volatile</span> LONG64 *) &amp;<a class="code hl_variable" href="page__utils_8c.html#ab5cb92dc6edf08cab598a1e89d56c646">prunecount</a>);</div>
+<div class="line"><span class="lineno">   58</span> </div>
+<div class="line"><span class="lineno">   59</span>    page = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">   60</span>    <span class="comment">// lock all the pages you can up until the threshold</span></div>
+<div class="line"><span class="lineno">   61</span>    <span class="keywordflow">for</span> (; number_of_pages_removed &lt; <a class="code hl_define" href="structures_8h.html#ab4e4d302e884f71a7c20726b2bebb073">NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY</a>; number_of_pages_removed++) {</div>
+<div class="line"><span class="lineno">   62</span> </div>
+<div class="line"><span class="lineno">   63</span>        <span class="keywordflow">if</span> (&amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">   64</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   65</span>        }</div>
+<div class="line"><span class="lineno">   66</span> </div>
+<div class="line"><span class="lineno">   67</span>        <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">   68</span> </div>
+<div class="line"><span class="lineno">   69</span>        page = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">   70</span>    }</div>
+<div class="line"><span class="lineno">   71</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">   72</span>    InterlockedAdd64( (<span class="keyword">volatile</span> LONG64 *) &amp;<a class="code hl_variable" href="page__utils_8c.html#a4628968ff9143643f119b977e48a23e4">pagesremoved</a>,(LONG64) number_of_pages_removed);</div>
+<div class="line"><span class="lineno">   73</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">   74</span> </div>
+<div class="line"><span class="lineno">   75</span> </div>
+<div class="line"><span class="lineno">   76</span>    InterlockedAdd64(&amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a>, (LONG64)</div>
+<div class="line"><span class="lineno">   77</span>         (0 - number_of_pages_removed));</div>
+<div class="line"><span class="lineno">   78</span> </div>
+<div class="line"><span class="lineno">   79</span> </div>
+<div class="line"><span class="lineno">   80</span> </div>
+<div class="line"><span class="lineno">   81</span> </div>
+<div class="line"><span class="lineno">   82</span> </div>
+<div class="line"><span class="lineno">   83</span>    <span class="comment">// i can edit the flinks and blinks here because all the pages have been lock</span></div>
+<div class="line"><span class="lineno">   84</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">   85</span>    <span class="keywordflow">if</span> (number_of_pages_removed != 0) {</div>
+<div class="line"><span class="lineno">   86</span> </div>
+<div class="line"><span class="lineno">   87</span>        firstPage = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">   88</span>        lastPage = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">   89</span> </div>
+<div class="line"><span class="lineno">   90</span>        headToAdd-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink = &amp;firstPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">   91</span>        headToAdd-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink = &amp;lastPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">   92</span> </div>
+<div class="line"><span class="lineno">   93</span>        firstPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink = &amp;headToAdd-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">   94</span>        lastPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink = &amp;headToAdd-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">   95</span> </div>
+<div class="line"><span class="lineno">   96</span>        headToAdd-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a> = number_of_pages_removed;</div>
+<div class="line"><span class="lineno">   97</span> </div>
+<div class="line"><span class="lineno">   98</span>        headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink = &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">   99</span>        <span class="keywordflow">if</span> (&amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a> == &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>) {</div>
+<div class="line"><span class="lineno">  100</span>            headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink = &amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  101</span>        }</div>
+<div class="line"><span class="lineno">  102</span>    }</div>
+<div class="line"><span class="lineno">  103</span> </div>
+<div class="line"><span class="lineno">  104</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  105</span> </div>
+<div class="line"><span class="lineno">  106</span>    <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(headToRemove);</div>
+<div class="line"><span class="lineno">  107</span>    <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(headToAdd);</div>
+<div class="line"><span class="lineno">  108</span> </div>
+<div class="line"><span class="lineno">  109</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  110</span> </div>
+<div class="line"><span class="lineno">  111</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  112</span>    <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;headToRemove-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  113</span> </div>
+<div class="line"><span class="lineno">  114</span>    <span class="keywordflow">if</span> (number_of_pages_removed == 0) {</div>
+<div class="line"><span class="lineno">  115</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  116</span>    }</div>
+<div class="line"><span class="lineno">  117</span> </div>
+<div class="line"><span class="lineno">  118</span>    <span class="keywordflow">return</span> !<a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  119</span>}</div>
+<div class="ttc" id="apage__utils_8c_html_a4628968ff9143643f119b977e48a23e4"><div class="ttname"><a href="page__utils_8c.html#a4628968ff9143643f119b977e48a23e4">pagesremoved</a></div><div class="ttdeci">volatile ULONG64 pagesremoved</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00028">page_utils.c:28</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_ab5cb92dc6edf08cab598a1e89d56c646"><div class="ttname"><a href="page__utils_8c.html#ab5cb92dc6edf08cab598a1e89d56c646">prunecount</a></div><div class="ttdeci">volatile ULONG64 prunecount</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00027">page_utils.c:27</a></div></div>
+<div class="ttc" id="astructures_8h_html_a8c4c01cac35e54e00185c8c6ff6b0347"><div class="ttname"><a href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a></div><div class="ttdeci">#define LIST_IS_EMPTY</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00096">structures.h:96</a></div></div>
+<div class="ttc" id="astructures_8h_html_ab4e4d302e884f71a7c20726b2bebb073"><div class="ttname"><a href="structures_8h.html#ab4e4d302e884f71a7c20726b2bebb073">NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY</a></div><div class="ttdeci">#define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00120">structures.h:120</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_ada2a56df112594780ba2b9578efb2278"><div class="ttname"><a href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a></div><div class="ttdeci">VOID validateList(pListHead head)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00046">thread_utils.c:46</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="thread__utils_8c_source.html#l00145">acquire_srw_shared()</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00120">NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY</a>, <a class="el" href="structures_8h_source.html#l00280">listHead::page</a>, <a class="el" href="page__utils_8c_source.html#l00028">pagesremoved</a>, <a class="el" href="page__utils_8c_source.html#l00027">prunecount</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="thread__utils_8c_source.html#l00153">release_srw_shared()</a>, <a class="el" href="structures_8h_source.html#l00278">listHead::sharedLock</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>.</p>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
+<div id="dynsection-7" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-7-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-7-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 7 --></div>
+</div>
+
 </div>
 </div>
 <a id="a5f1ebc15a9e5f0561a2f02ae5e0aae93" name="a5f1ebc15a9e5f0561a2f02ae5e0aae93"></a>
@@ -263,6 +554,163 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00219">219</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  219</span>                                                                       {</div>
+<div class="line"><span class="lineno">  220</span> </div>
+<div class="line"><span class="lineno">  221</span> </div>
+<div class="line"><span class="lineno">  222</span> </div>
+<div class="line"><span class="lineno">  223</span> </div>
+<div class="line"><span class="lineno">  224</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* pageToRemove;</div>
+<div class="line"><span class="lineno">  225</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* flinkOfPageToRemove;</div>
+<div class="line"><span class="lineno">  226</span>    <span class="keywordtype">boolean</span> obtainedPageLocks;</div>
+<div class="line"><span class="lineno">  227</span> </div>
+<div class="line"><span class="lineno">  228</span>    obtainedPageLocks = FALSE;</div>
+<div class="line"><span class="lineno">  229</span> </div>
+<div class="line"><span class="lineno">  230</span> </div>
+<div class="line"><span class="lineno">  231</span> </div>
+<div class="line"><span class="lineno">  232</span>    <a class="code hl_function" href="thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  233</span> </div>
+<div class="line"><span class="lineno">  234</span> </div>
+<div class="line"><span class="lineno">  235</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; 5; ++i) {</div>
+<div class="line"><span class="lineno">  236</span> </div>
+<div class="line"><span class="lineno">  237</span>        <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  238</span>        pageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  239</span> </div>
+<div class="line"><span class="lineno">  240</span>        <span class="keywordflow">if</span> (&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  241</span> </div>
+<div class="line"><span class="lineno">  242</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  243</span>            <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  244</span>            <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  245</span>        }</div>
+<div class="line"><span class="lineno">  246</span> </div>
+<div class="line"><span class="lineno">  247</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == FALSE) {</div>
+<div class="line"><span class="lineno">  248</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  249</span>            <span class="keywordflow">continue</span>;</div>
+<div class="line"><span class="lineno">  250</span>        }</div>
+<div class="line"><span class="lineno">  251</span> </div>
+<div class="line"><span class="lineno">  252</span>        <span class="comment">// this is safe only because I hold the neighbors pagelock</span></div>
+<div class="line"><span class="lineno">  253</span>        flinkOfPageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  254</span> </div>
+<div class="line"><span class="lineno">  255</span>        <span class="comment">// if the list has one entry do not double acquire the listhead pagelock</span></div>
+<div class="line"><span class="lineno">  256</span>        <span class="keywordflow">if</span> (&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  257</span>            flinkOfPageToRemove = NULL;</div>
+<div class="line"><span class="lineno">  258</span>            obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  259</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  260</span>        }</div>
+<div class="line"><span class="lineno">  261</span> </div>
+<div class="line"><span class="lineno">  262</span> </div>
+<div class="line"><span class="lineno">  263</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">  264</span>            obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  265</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  266</span>        }</div>
+<div class="line"><span class="lineno">  267</span> </div>
+<div class="line"><span class="lineno">  268</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(pageToRemove, threadInfo);</div>
+<div class="line"><span class="lineno">  269</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  270</span>    }</div>
+<div class="line"><span class="lineno">  271</span> </div>
+<div class="line"><span class="lineno">  272</span> </div>
+<div class="line"><span class="lineno">  273</span>    <span class="keywordflow">if</span> (obtainedPageLocks == FALSE) {</div>
+<div class="line"><span class="lineno">  274</span> </div>
+<div class="line"><span class="lineno">  275</span> </div>
+<div class="line"><span class="lineno">  276</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  277</span> </div>
+<div class="line"><span class="lineno">  278</span> </div>
+<div class="line"><span class="lineno">  279</span>        <span class="comment">// keep trying to acquire the page lock then the list lock exclusive to maintain our order</span></div>
+<div class="line"><span class="lineno">  280</span>        <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">  281</span> </div>
+<div class="line"><span class="lineno">  282</span>            pageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  283</span> </div>
+<div class="line"><span class="lineno">  284</span>            <span class="keywordflow">if</span> (&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  285</span>                <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  286</span>            }</div>
+<div class="line"><span class="lineno">  287</span> </div>
+<div class="line"><span class="lineno">  288</span>            <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(pageToRemove, threadInfo);</div>
+<div class="line"><span class="lineno">  289</span> </div>
+<div class="line"><span class="lineno">  290</span>            <a class="code hl_function" href="thread__utils_8c.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  291</span> </div>
+<div class="line"><span class="lineno">  292</span>            <span class="keywordflow">if</span> (&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink) {</div>
+<div class="line"><span class="lineno">  293</span>                <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  294</span>            }</div>
+<div class="line"><span class="lineno">  295</span><span class="comment">//fggf</span></div>
+<div class="line"><span class="lineno">  296</span>            <a class="code hl_function" href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  297</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(pageToRemove, threadInfo);</div>
+<div class="line"><span class="lineno">  298</span>        }</div>
+<div class="line"><span class="lineno">  299</span> </div>
+<div class="line"><span class="lineno">  300</span>        flinkOfPageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  301</span> </div>
+<div class="line"><span class="lineno">  302</span>        <span class="keywordflow">if</span> (&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  303</span>           flinkOfPageToRemove = NULL;</div>
+<div class="line"><span class="lineno">  304</span>        }</div>
+<div class="line"><span class="lineno">  305</span>    }</div>
+<div class="line"><span class="lineno">  306</span> </div>
+<div class="line"><span class="lineno">  307</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(pageToRemove != NULL);</div>
+<div class="line"><span class="lineno">  308</span> </div>
+<div class="line"><span class="lineno">  309</span> </div>
+<div class="line"><span class="lineno">  310</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  311</span>   <span class="comment">// validateList(head);</span></div>
+<div class="line"><span class="lineno">  312</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  313</span> </div>
+<div class="line"><span class="lineno">  314</span>    LIST_ENTRY* ListHead = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  315</span>    LIST_ENTRY* Entry = &amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  316</span> </div>
+<div class="line"><span class="lineno">  317</span>    <span class="keywordflow">if</span> (flinkOfPageToRemove == NULL) {</div>
+<div class="line"><span class="lineno">  318</span>        ListHead-&gt;Flink = ListHead;</div>
+<div class="line"><span class="lineno">  319</span>        ListHead-&gt;Blink = ListHead;</div>
+<div class="line"><span class="lineno">  320</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  321</span>        LIST_ENTRY* Flink = &amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  322</span> </div>
+<div class="line"><span class="lineno">  323</span>        ListHead-&gt;Flink = Flink;</div>
+<div class="line"><span class="lineno">  324</span>        Flink-&gt;Blink = ListHead;</div>
+<div class="line"><span class="lineno">  325</span>    }</div>
+<div class="line"><span class="lineno">  326</span> </div>
+<div class="line"><span class="lineno">  327</span> </div>
+<div class="line"><span class="lineno">  328</span>    InterlockedDecrement64(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a>);</div>
+<div class="line"><span class="lineno">  329</span> </div>
+<div class="line"><span class="lineno">  330</span> </div>
+<div class="line"><span class="lineno">  331</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  332</span>   <span class="comment">// validateList(head);</span></div>
+<div class="line"><span class="lineno">  333</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  334</span> </div>
+<div class="line"><span class="lineno">  335</span>    <span class="keywordflow">if</span> (obtainedPageLocks == TRUE) {</div>
+<div class="line"><span class="lineno">  336</span> </div>
+<div class="line"><span class="lineno">  337</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(Entry != ListHead)</div>
+<div class="line"><span class="lineno">  338</span> </div>
+<div class="line"><span class="lineno">  339</span>       <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  340</span> </div>
+<div class="line"><span class="lineno">  341</span>        <span class="keywordflow">if</span> (flinkOfPageToRemove != NULL) {</div>
+<div class="line"><span class="lineno">  342</span>            LeaveCriticalSection(&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  343</span>        }</div>
+<div class="line"><span class="lineno">  344</span> </div>
+<div class="line"><span class="lineno">  345</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  346</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  347</span>        <a class="code hl_function" href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  348</span>    }</div>
+<div class="line"><span class="lineno">  349</span> </div>
+<div class="line"><span class="lineno">  350</span> </div>
+<div class="line"><span class="lineno">  351</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>((ULONG64)head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>.OwningThread != threadInfo-&gt;ThreadId);</div>
+<div class="line"><span class="lineno">  352</span> </div>
+<div class="line"><span class="lineno">  353</span>    <span class="comment">// leave with page lock held</span></div>
+<div class="line"><span class="lineno">  354</span> </div>
+<div class="line"><span class="lineno">  355</span>    <span class="keywordflow">return</span> pageToRemove;</div>
+<div class="line"><span class="lineno">  356</span> </div>
+<div class="line"><span class="lineno">  357</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="thread__utils_8c_source.html#l00161">acquire_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00145">acquire_srw_shared()</a>, <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00280">listHead::page</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="thread__utils_8c_source.html#l00169">release_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00153">release_srw_shared()</a>, and <a class="el" href="structures_8h_source.html#l00278">listHead::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00125">getActivePage()</a>, <a class="el" href="writer__thread_8c_source.html#l00209">getPagesFromModifiedList()</a>, and <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>.</p>
+<div id="dynsection-8" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-8-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-8-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 8 --></div>
+</div>
+<div id="dynsection-9" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-9-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-9-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 9 --></div>
+</div>
+
 </div>
 </div>
 <a id="ad2ed83806d65a3117c627067c053e8ce" name="ad2ed83806d65a3117c627067c053e8ce"></a>
@@ -283,6 +731,159 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00460">460</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  460</span>                                                                             {</div>
+<div class="line"><span class="lineno">  461</span> </div>
+<div class="line"><span class="lineno">  462</span> </div>
+<div class="line"><span class="lineno">  463</span> </div>
+<div class="line"><span class="lineno">  464</span> </div>
+<div class="line"><span class="lineno">  465</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* pageToRemove;</div>
+<div class="line"><span class="lineno">  466</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* flinkOfPageToRemove;</div>
+<div class="line"><span class="lineno">  467</span>    <span class="keywordtype">boolean</span> obtainedPageLocks;</div>
+<div class="line"><span class="lineno">  468</span>    <span class="keywordtype">boolean</span> holdingSharedLock;</div>
+<div class="line"><span class="lineno">  469</span> </div>
+<div class="line"><span class="lineno">  470</span>    holdingSharedLock = TRUE;</div>
+<div class="line"><span class="lineno">  471</span>    obtainedPageLocks = FALSE;</div>
+<div class="line"><span class="lineno">  472</span> </div>
+<div class="line"><span class="lineno">  473</span> </div>
+<div class="line"><span class="lineno">  474</span> </div>
+<div class="line"><span class="lineno">  475</span>    <a class="code hl_function" href="thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  476</span> </div>
+<div class="line"><span class="lineno">  477</span> </div>
+<div class="line"><span class="lineno">  478</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; 5; ++i) {</div>
+<div class="line"><span class="lineno">  479</span> </div>
+<div class="line"><span class="lineno">  480</span> </div>
+<div class="line"><span class="lineno">  481</span>        pageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  482</span> </div>
+<div class="line"><span class="lineno">  483</span>        <span class="keywordflow">if</span> (&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  484</span> </div>
+<div class="line"><span class="lineno">  485</span> </div>
+<div class="line"><span class="lineno">  486</span>            <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  487</span>            <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  488</span>        }</div>
+<div class="line"><span class="lineno">  489</span> </div>
+<div class="line"><span class="lineno">  490</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == FALSE) {</div>
+<div class="line"><span class="lineno">  491</span> </div>
+<div class="line"><span class="lineno">  492</span>            <span class="keywordflow">continue</span>;</div>
+<div class="line"><span class="lineno">  493</span>        }</div>
+<div class="line"><span class="lineno">  494</span> </div>
+<div class="line"><span class="lineno">  495</span>        <span class="comment">// this is safe only because I hold the neighbors pagelock</span></div>
+<div class="line"><span class="lineno">  496</span>        flinkOfPageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  497</span> </div>
+<div class="line"><span class="lineno">  498</span>        <span class="comment">// if the list has one entry do not double acquire the listhead pagelock</span></div>
+<div class="line"><span class="lineno">  499</span>        <span class="keywordflow">if</span> (&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  500</span>            flinkOfPageToRemove = NULL;</div>
+<div class="line"><span class="lineno">  501</span>            obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  502</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  503</span>        }</div>
+<div class="line"><span class="lineno">  504</span> </div>
+<div class="line"><span class="lineno">  505</span> </div>
+<div class="line"><span class="lineno">  506</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">  507</span>            obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  508</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  509</span>        }</div>
+<div class="line"><span class="lineno">  510</span> </div>
+<div class="line"><span class="lineno">  511</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(pageToRemove, threadInfo);</div>
+<div class="line"><span class="lineno">  512</span> </div>
+<div class="line"><span class="lineno">  513</span>    }</div>
+<div class="line"><span class="lineno">  514</span> </div>
+<div class="line"><span class="lineno">  515</span> </div>
+<div class="line"><span class="lineno">  516</span>    <span class="keywordflow">if</span> (obtainedPageLocks == FALSE) {</div>
+<div class="line"><span class="lineno">  517</span> </div>
+<div class="line"><span class="lineno">  518</span> </div>
+<div class="line"><span class="lineno">  519</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  520</span> </div>
+<div class="line"><span class="lineno">  521</span> </div>
+<div class="line"><span class="lineno">  522</span>        holdingSharedLock = FALSE;</div>
+<div class="line"><span class="lineno">  523</span> </div>
+<div class="line"><span class="lineno">  524</span>        <span class="comment">// keep trying to acquire the page lock then the list lock exclusive to maintain our order</span></div>
+<div class="line"><span class="lineno">  525</span>        <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">  526</span> </div>
+<div class="line"><span class="lineno">  527</span>            pageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  528</span> </div>
+<div class="line"><span class="lineno">  529</span>            <span class="keywordflow">if</span> (&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  530</span>                <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  531</span>            }</div>
+<div class="line"><span class="lineno">  532</span> </div>
+<div class="line"><span class="lineno">  533</span>            <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(pageToRemove, threadInfo);</div>
+<div class="line"><span class="lineno">  534</span> </div>
+<div class="line"><span class="lineno">  535</span>            <a class="code hl_function" href="thread__utils_8c.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  536</span> </div>
+<div class="line"><span class="lineno">  537</span>            <span class="keywordflow">if</span> (&amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink) {</div>
+<div class="line"><span class="lineno">  538</span>                <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  539</span>            }</div>
+<div class="line"><span class="lineno">  540</span><span class="comment">//fggf</span></div>
+<div class="line"><span class="lineno">  541</span>            <a class="code hl_function" href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  542</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(pageToRemove, threadInfo);</div>
+<div class="line"><span class="lineno">  543</span>        }</div>
+<div class="line"><span class="lineno">  544</span> </div>
+<div class="line"><span class="lineno">  545</span>        flinkOfPageToRemove = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  546</span> </div>
+<div class="line"><span class="lineno">  547</span>        <span class="keywordflow">if</span> (&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  548</span>           flinkOfPageToRemove = NULL;</div>
+<div class="line"><span class="lineno">  549</span>        }</div>
+<div class="line"><span class="lineno">  550</span>    }</div>
+<div class="line"><span class="lineno">  551</span> </div>
+<div class="line"><span class="lineno">  552</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(pageToRemove != NULL);</div>
+<div class="line"><span class="lineno">  553</span> </div>
+<div class="line"><span class="lineno">  554</span> </div>
+<div class="line"><span class="lineno">  555</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  556</span>   <span class="comment">// validateList(head);</span></div>
+<div class="line"><span class="lineno">  557</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  558</span> </div>
+<div class="line"><span class="lineno">  559</span>    LIST_ENTRY* ListHead = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  560</span>    LIST_ENTRY* Entry = &amp;pageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  561</span> </div>
+<div class="line"><span class="lineno">  562</span>    <span class="keywordflow">if</span> (flinkOfPageToRemove == NULL) {</div>
+<div class="line"><span class="lineno">  563</span>        ListHead-&gt;Flink = ListHead;</div>
+<div class="line"><span class="lineno">  564</span>        ListHead-&gt;Blink = ListHead;</div>
+<div class="line"><span class="lineno">  565</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  566</span>        LIST_ENTRY* Flink = &amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>;</div>
+<div class="line"><span class="lineno">  567</span> </div>
+<div class="line"><span class="lineno">  568</span>        ListHead-&gt;Flink = Flink;</div>
+<div class="line"><span class="lineno">  569</span>        Flink-&gt;Blink = ListHead;</div>
+<div class="line"><span class="lineno">  570</span>    }</div>
+<div class="line"><span class="lineno">  571</span> </div>
+<div class="line"><span class="lineno">  572</span> </div>
+<div class="line"><span class="lineno">  573</span>    InterlockedDecrement64(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a>);</div>
+<div class="line"><span class="lineno">  574</span> </div>
+<div class="line"><span class="lineno">  575</span> </div>
+<div class="line"><span class="lineno">  576</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  577</span>   <span class="comment">// validateList(head);</span></div>
+<div class="line"><span class="lineno">  578</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  579</span> </div>
+<div class="line"><span class="lineno">  580</span>    <span class="keywordflow">if</span> (obtainedPageLocks == TRUE) {</div>
+<div class="line"><span class="lineno">  581</span> </div>
+<div class="line"><span class="lineno">  582</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(Entry != ListHead)</div>
+<div class="line"><span class="lineno">  583</span> </div>
+<div class="line"><span class="lineno">  584</span> </div>
+<div class="line"><span class="lineno">  585</span> </div>
+<div class="line"><span class="lineno">  586</span>        <span class="keywordflow">if</span> (flinkOfPageToRemove != NULL) {</div>
+<div class="line"><span class="lineno">  587</span>            LeaveCriticalSection(&amp;flinkOfPageToRemove-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  588</span>        }</div>
+<div class="line"><span class="lineno">  589</span> </div>
+<div class="line"><span class="lineno">  590</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  591</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  592</span>        <a class="code hl_function" href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  593</span>    }</div>
+<div class="line"><span class="lineno">  594</span> </div>
+<div class="line"><span class="lineno">  595</span> </div>
+<div class="line"><span class="lineno">  596</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>((ULONG64)head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>.OwningThread != threadInfo-&gt;ThreadId);</div>
+<div class="line"><span class="lineno">  597</span> </div>
+<div class="line"><span class="lineno">  598</span>    <span class="comment">// leave with page lock held</span></div>
+<div class="line"><span class="lineno">  599</span> </div>
+<div class="line"><span class="lineno">  600</span>    <span class="keywordflow">return</span> pageToRemove;</div>
+<div class="line"><span class="lineno">  601</span> </div>
+<div class="line"><span class="lineno">  602</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="thread__utils_8c_source.html#l00161">acquire_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00145">acquire_srw_shared()</a>, <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00280">listHead::page</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="thread__utils_8c_source.html#l00169">release_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00153">release_srw_shared()</a>, and <a class="el" href="structures_8h_source.html#l00278">listHead::sharedLock</a>.</p>
+<div id="dynsection-10" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-10-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-10-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 10 --></div>
+</div>
 
 </div>
 </div>
@@ -309,6 +910,119 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="page__utils_8c_source.html#l00122">122</a> of file <a class="el" href="page__utils_8c_source.html">page_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  122</span>                                                                               {</div>
+<div class="line"><span class="lineno">  123</span> </div>
+<div class="line"><span class="lineno">  124</span> </div>
+<div class="line"><span class="lineno">  125</span> </div>
+<div class="line"><span class="lineno">  126</span> </div>
+<div class="line"><span class="lineno">  127</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* Flink;</div>
+<div class="line"><span class="lineno">  128</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* Blink;</div>
+<div class="line"><span class="lineno">  129</span>    <span class="keywordtype">boolean</span> obtainedPageLocks;</div>
+<div class="line"><span class="lineno">  130</span> </div>
+<div class="line"><span class="lineno">  131</span>    obtainedPageLocks = FALSE;</div>
+<div class="line"><span class="lineno">  132</span> </div>
+<div class="line"><span class="lineno">  133</span> </div>
+<div class="line"><span class="lineno">  134</span> </div>
+<div class="line"><span class="lineno">  135</span>    <a class="code hl_function" href="thread__utils_8c.html#a15237c39cffac9b5ab0af5fc4414e168">acquire_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  136</span> </div>
+<div class="line"><span class="lineno">  137</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; 5; ++i) {</div>
+<div class="line"><span class="lineno">  138</span> </div>
+<div class="line"><span class="lineno">  139</span>        <span class="comment">// reaching into the neighbors is safe because we have the pagelock</span></div>
+<div class="line"><span class="lineno">  140</span>        Flink = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  141</span>        Blink = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  142</span> </div>
+<div class="line"><span class="lineno">  143</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;Flink-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">  144</span>            <span class="comment">// set blink to null if there is only one page prevents double acquisitions</span></div>
+<div class="line"><span class="lineno">  145</span>            <span class="keywordflow">if</span> (Flink == Blink) {</div>
+<div class="line"><span class="lineno">  146</span>                Blink = NULL;</div>
+<div class="line"><span class="lineno">  147</span>                obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  148</span>                <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  149</span>            }</div>
+<div class="line"><span class="lineno">  150</span>            <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;Blink-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">  151</span>                obtainedPageLocks = TRUE;</div>
+<div class="line"><span class="lineno">  152</span>                <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  153</span>            }</div>
+<div class="line"><span class="lineno">  154</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(Flink, threadInfo);</div>
+<div class="line"><span class="lineno">  155</span>        }</div>
+<div class="line"><span class="lineno">  156</span> </div>
+<div class="line"><span class="lineno">  157</span>    }</div>
+<div class="line"><span class="lineno">  158</span> </div>
+<div class="line"><span class="lineno">  159</span> </div>
+<div class="line"><span class="lineno">  160</span>    <span class="keywordflow">if</span> (obtainedPageLocks == FALSE) {</div>
+<div class="line"><span class="lineno">  161</span> </div>
+<div class="line"><span class="lineno">  162</span> </div>
+<div class="line"><span class="lineno">  163</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  164</span> </div>
+<div class="line"><span class="lineno">  165</span> </div>
+<div class="line"><span class="lineno">  166</span>        <a class="code hl_function" href="thread__utils_8c.html#aec03cb2efb5030c32bf350e08bf58612">acquire_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  167</span>        <span class="comment">// we need to recalculate these because they could have changed inbetween the locks</span></div>
+<div class="line"><span class="lineno">  168</span>        <span class="comment">// another thread that acquires exclusively could have changed our page</span></div>
+<div class="line"><span class="lineno">  169</span>        Flink = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  170</span>        Blink = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  171</span>    }</div>
+<div class="line"><span class="lineno">  172</span> </div>
+<div class="line"><span class="lineno">  173</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  174</span> <span class="comment">//   validateList(head);</span></div>
+<div class="line"><span class="lineno">  175</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(Flink-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Blink == &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>)</div>
+<div class="line"><span class="lineno">  176</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(Blink-&gt;entry.Flink == &amp;page-&gt;entry)</div>
+<div class="line"><span class="lineno">  177</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  178</span> </div>
+<div class="line"><span class="lineno">  179</span> </div>
+<div class="line"><span class="lineno">  180</span> </div>
+<div class="line"><span class="lineno">  181</span>    <span class="keywordflow">if</span> (Blink == NULL) {</div>
+<div class="line"><span class="lineno">  182</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a> == 0)</div>
+<div class="line"><span class="lineno">  183</span> </div>
+<div class="line"><span class="lineno">  184</span>        head-&gt;entry.Flink = &amp;head-&gt;entry;</div>
+<div class="line"><span class="lineno">  185</span>        head-&gt;entry.Blink = &amp;head-&gt;entry;</div>
+<div class="line"><span class="lineno">  186</span>    } else {</div>
+<div class="line"><span class="lineno">  187</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a> &gt; 0)</div>
+<div class="line"><span class="lineno">  188</span> </div>
+<div class="line"><span class="lineno">  189</span>        LIST_ENTRY* prevEntry = &amp;Blink-&gt;entry;</div>
+<div class="line"><span class="lineno">  190</span>        LIST_ENTRY* nextEntry = &amp;Flink-&gt;entry;</div>
+<div class="line"><span class="lineno">  191</span>        prevEntry-&gt;Flink = nextEntry;</div>
+<div class="line"><span class="lineno">  192</span>        nextEntry-&gt;Blink = prevEntry;</div>
+<div class="line"><span class="lineno">  193</span>    }</div>
+<div class="line"><span class="lineno">  194</span> </div>
+<div class="line"><span class="lineno">  195</span> </div>
+<div class="line"><span class="lineno">  196</span>    InterlockedDecrement64(&amp;head-&gt;length);</div>
+<div class="line"><span class="lineno">  197</span> </div>
+<div class="line"><span class="lineno">  198</span> </div>
+<div class="line"><span class="lineno">  199</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  200</span>  <span class="comment">//  validateList(head);</span></div>
+<div class="line"><span class="lineno">  201</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  202</span> </div>
+<div class="line"><span class="lineno">  203</span> </div>
+<div class="line"><span class="lineno">  204</span>    <span class="keywordflow">if</span> (obtainedPageLocks == TRUE) {</div>
+<div class="line"><span class="lineno">  205</span> </div>
+<div class="line"><span class="lineno">  206</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(Flink, threadInfo);</div>
+<div class="line"><span class="lineno">  207</span>        <span class="keywordflow">if</span> (Blink != NULL) {</div>
+<div class="line"><span class="lineno">  208</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(Blink, threadInfo);</div>
+<div class="line"><span class="lineno">  209</span>        }</div>
+<div class="line"><span class="lineno">  210</span> </div>
+<div class="line"><span class="lineno">  211</span>        <a class="code hl_function" href="thread__utils_8c.html#a5dc8ae3adf26c08e32b1da93d165a34a">release_srw_shared</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  212</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  213</span>        <a class="code hl_function" href="thread__utils_8c.html#a43ace7ec0b78b479c5c81fd460b5e51c">release_srw_exclusive</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  214</span>    }</div>
+<div class="line"><span class="lineno">  215</span>    <span class="comment">// we must still hold the pagelock other wise a concurrent operation on the same page would corrupt data</span></div>
+<div class="line"><span class="lineno">  216</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="thread__utils_8c_source.html#l00161">acquire_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00145">acquire_srw_shared()</a>, <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="thread__utils_8c_source.html#l00169">release_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00153">release_srw_shared()</a>, and <a class="el" href="structures_8h_source.html#l00278">listHead::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00073">unmapActivePage()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
+<div id="dynsection-11" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-11-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-11-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 11 --></div>
+</div>
+<div id="dynsection-12" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-12-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-12-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 12 --></div>
+</div>
 
 </div>
 </div>

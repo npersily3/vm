@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -109,11 +116,23 @@ $(function() {
 <div class="textblock"><code>#include &lt;windows.h&gt;</code><br />
 <code>#include &lt;stdbool.h&gt;</code><br />
 <code>#include &lt;stddef.h&gt;</code><br />
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for structures.h:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
 </div>
 <p><a href="structures_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
-Data Structures</h2></td></tr>
+Classes</h2></td></tr>
 <tr class="memitem:validPte" id="r_validPte"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structvalid_pte.html">validPte</a></td></tr>
 <tr class="memitem:invalidPte" id="r_invalidPte"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinvalid_pte.html">invalidPte</a></td></tr>
 <tr class="memitem:transitionPte" id="r_transitionPte"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structtransition_pte.html">transitionPte</a></td></tr>
@@ -233,6 +252,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00019">19</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
 </div>
 </div>
 <a id="ad38003d1d75d1d8de702312f08906621" name="ad38003d1d75d1d8de702312f08906621"></a>
@@ -246,6 +269,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00055">55</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>.</p>
 
 </div>
 </div>
@@ -261,6 +288,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00219">219</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a9ae2958e436c566413867028fc829ec0" name="a9ae2958e436c566413867028fc829ec0"></a>
@@ -274,6 +303,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00093">93</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>, <a class="el" href="init_8c_source.html#l00406">initVA()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="zero__thread_8c_source.html#l00017">zeroingThread()</a>.</p>
 
 </div>
 </div>
@@ -302,6 +335,12 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((type *)((<span class="keywordtype">char</span> *)(ptr) - offsetof(type, member)))</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00080">80</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   80</span><span class="preprocessor">#define container_of(ptr, type, member) \</span></div>
+<div class="line"><span class="lineno">   81</span><span class="preprocessor">((type *)((char *)(ptr) - offsetof(type, member)))</span></div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, and <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>.</p>
+
 </div>
 </div>
 <a id="a0a60fdeee4a7f5f102de2142ea7f1ff4" name="a0a60fdeee4a7f5f102de2142ea7f1ff4"></a>
@@ -315,6 +354,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00095">95</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, and <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>.</p>
 
 </div>
 </div>
@@ -330,6 +373,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00015">15</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a33d210bae48d7d5e5efcc5b647d29094" name="a33d210bae48d7d5e5efcc5b647d29094"></a>
@@ -343,6 +388,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00061">61</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00156">createNewThread()</a>.</p>
 
 </div>
 </div>
@@ -358,6 +407,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00059">59</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00156">createNewThread()</a>.</p>
+
 </div>
 </div>
 <a id="a87dcbc4991a2a2fc4eb6fc6a24449f26" name="a87dcbc4991a2a2fc4eb6fc6a24449f26"></a>
@@ -371,6 +424,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00060">60</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00156">createNewThread()</a>.</p>
 
 </div>
 </div>
@@ -386,6 +443,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00150">150</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, and <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>.</p>
+
 </div>
 </div>
 <a id="a0f3b73c556102de7594460152532cea2" name="a0f3b73c556102de7594460152532cea2"></a>
@@ -399,6 +460,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00069">69</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00127">get_free_disk_bit()</a>, and <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>.</p>
 
 </div>
 </div>
@@ -414,6 +479,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00052">52</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>, and <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>.</p>
+
 </div>
 </div>
 <a id="aa670c1304332707e17d30ad4232d58b5" name="aa670c1304332707e17d30ad4232d58b5"></a>
@@ -427,6 +496,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00071">71</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -442,6 +513,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00050">50</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00196">init_disk()</a>.</p>
+
 </div>
 </div>
 <a id="afff34d9f7378c64b65819efe80b32070" name="afff34d9f7378c64b65819efe80b32070"></a>
@@ -455,6 +530,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00051">51</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>, and <a class="el" href="init_8c_source.html#l00256">init_num_open_slots()</a>.</p>
 
 </div>
 </div>
@@ -470,6 +549,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00222">222</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00048">hazardRate()</a>.</p>
+
 </div>
 </div>
 <a id="acc926dae11595da6dd20217b78c009a0" name="acc926dae11595da6dd20217b78c009a0"></a>
@@ -483,6 +566,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00053">53</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, and <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>.</p>
 
 </div>
 </div>
@@ -498,6 +585,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00104">104</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>.</p>
+
 </div>
 </div>
 <a id="a824af3fad4a112c67c6f5da0fad3493b" name="a824af3fad4a112c67c6f5da0fad3493b"></a>
@@ -511,6 +602,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00103">103</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -526,6 +619,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00028">28</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="ab07721c3e949f9dc3a0fb4f8c9ae08b9" name="ab07721c3e949f9dc3a0fb4f8c9ae08b9"></a>
@@ -539,6 +634,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00073">73</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, and <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>.</p>
 
 </div>
 </div>
@@ -558,6 +657,8 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((x) * 1024 * 1024 * 1024)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00031">31</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a7a80f8f5ee9281d2db93288382fc2c43" name="a7a80f8f5ee9281d2db93288382fc2c43"></a>
@@ -576,8 +677,15 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">(x) = malloc(<span class="keyword">sizeof</span>(CRITICAL_SECTION)); \</div>
 <div class="line">InitializeCriticalSectionAndSpinCount((x), <a class="code hl_define" href="#a25ca55840a4a71eccfb6f31654210859">SPIN_COUNT</a>)</div>
-<div class="ttc" id="astructures_8h_html_a25ca55840a4a71eccfb6f31654210859"><div class="ttname"><a href="#a25ca55840a4a71eccfb6f31654210859">SPIN_COUNT</a></div><div class="ttdeci">#define SPIN_COUNT</div><div class="ttdef"><b>Definition</b> structures.h:107</div></div>
+<div class="ttc" id="astructures_8h_html_a25ca55840a4a71eccfb6f31654210859"><div class="ttname"><a href="#a25ca55840a4a71eccfb6f31654210859">SPIN_COUNT</a></div><div class="ttdeci">#define SPIN_COUNT</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00107">structures.h:107</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00109">109</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  109</span><span class="preprocessor">#define INITIALIZE_LOCK(x) \</span></div>
+<div class="line"><span class="lineno">  110</span><span class="preprocessor">(x) = malloc(sizeof(CRITICAL_SECTION)); \</span></div>
+<div class="line"><span class="lineno">  111</span><span class="preprocessor">InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)</span></div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00131">initCriticalSections()</a>.</p>
+
 </div>
 </div>
 <a id="ae34e75e77ca075a7a2286d4308e38b42" name="ae34e75e77ca075a7a2286d4308e38b42"></a>
@@ -596,6 +704,12 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">InitializeCriticalSectionAndSpinCount(&amp;(x), <a class="code hl_define" href="#a25ca55840a4a71eccfb6f31654210859">SPIN_COUNT</a>)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00128">128</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  128</span><span class="preprocessor">#define INITIALIZE_LOCK_DIRECT(x) \</span></div>
+<div class="line"><span class="lineno">  129</span><span class="preprocessor">InitializeCriticalSectionAndSpinCount(&amp;(x), SPIN_COUNT)</span></div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00144">initializePageTableLocks()</a>.</p>
+
 </div>
 </div>
 <a id="a5c723c0cc71b83224ead557db3ab74dd" name="a5c723c0cc71b83224ead557db3ab74dd"></a>
@@ -614,6 +728,10 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">(x*1024)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00029">29</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
+
 </div>
 </div>
 <a id="a45db4429e1cde822c7989f74d6b5ac9d" name="a45db4429e1cde822c7989f74d6b5ac9d"></a>
@@ -627,6 +745,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00243">243</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00037">likelihoodOfAccess()</a>.</p>
 
 </div>
 </div>
@@ -642,6 +764,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00096">96</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00125">getActivePage()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="writer__thread_8c_source.html#l00209">getPagesFromModifiedList()</a>, <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, and <a class="el" href="macros_8h_source.html#l00053">RemoveHeadList()</a>.</p>
+
 </div>
 </div>
 <a id="a9327ceb25ca443e16fa09fcbb9f7449f" name="a9327ceb25ca443e16fa09fcbb9f7449f"></a>
@@ -655,6 +781,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00066">66</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="thread__utils_8c_source.html#l00115">acquireLock()</a>, <a class="el" href="thread__utils_8c_source.html#l00129">releaseLock()</a>, and <a class="el" href="thread__utils_8c_source.html#l00133">tryAcquireLock()</a>.</p>
 
 </div>
 </div>
@@ -670,6 +800,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00067">67</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="thread__utils_8c_source.html#l00115">acquireLock()</a>, and <a class="el" href="thread__utils_8c_source.html#l00133">tryAcquireLock()</a>.</p>
+
 </div>
 </div>
 <a id="acc479996d53bbaa99c23581d79f63e2f" name="acc479996d53bbaa99c23581d79f63e2f"></a>
@@ -683,6 +817,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00220">220</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00048">hazardRate()</a>.</p>
 
 </div>
 </div>
@@ -698,6 +836,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00056">56</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>.</p>
+
 </div>
 </div>
 <a id="ab00c6e7d045e0b3149476ec3f5f615ac" name="ab00c6e7d045e0b3149476ec3f5f615ac"></a>
@@ -711,6 +853,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00092">92</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -730,6 +874,10 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((x) * 1024 * 1024)</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00030">30</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
+
 </div>
 </div>
 <a id="aab53ed9cd9619846798e02612c94e641" name="aab53ed9cd9619846798e02612c94e641"></a>
@@ -743,6 +891,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00152">152</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00230">isRescue()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
 
 </div>
 </div>
@@ -758,6 +910,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00240">240</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a52fb748fa47a3f22fa9a41c7b4399432" name="a52fb748fa47a3f22fa9a41c7b4399432"></a>
@@ -771,6 +925,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00049">49</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>, <a class="el" href="init_8c_source.html#l00256">init_num_open_slots()</a>, <a class="el" href="disk_8c_source.html#l00011">most_free_disk_portion()</a>, and <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>.</p>
 
 </div>
 </div>
@@ -786,6 +944,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00121">121</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, and <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
+
 </div>
 </div>
 <a id="a999b7fc30c996b67673d7773ba13eb06" name="a999b7fc30c996b67673d7773ba13eb06"></a>
@@ -799,6 +961,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00175">175</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -814,6 +978,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00120">120</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>.</p>
+
 </div>
 </div>
 <a id="a1e905c2e2a948059f3414462c702fe2d" name="a1e905c2e2a948059f3414462c702fe2d"></a>
@@ -827,6 +995,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00041">41</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00472">getMaxFrameNumber()</a>, <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>, <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
 
 </div>
 </div>
@@ -842,6 +1014,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00242">242</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00176">init_pte_regions()</a>, <a class="el" href="init__threads_8c_source.html#l00144">initializePageTableLocks()</a>, and <a class="el" href="statistics_8c_source.html#l00014">recordProbability()</a>.</p>
+
 </div>
 </div>
 <a id="ae0de6f143afb3fecd3100c0960153815" name="ae0de6f143afb3fecd3100c0960153815"></a>
@@ -855,6 +1031,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00174">174</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -870,6 +1048,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00241">241</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="pte__utils_8c_source.html#l00027">getPTERegion()</a>.</p>
+
 </div>
 </div>
 <a id="aecd13cc61ec8ab92172ec6bbbcbe773c" name="aecd13cc61ec8ab92172ec6bbbcbe773c"></a>
@@ -883,6 +1065,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00090">90</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>.</p>
 
 </div>
 </div>
@@ -898,6 +1084,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00089">89</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+
 </div>
 </div>
 <a id="ae0536329bb5a3e3d83c005cde13ebc67" name="ae0536329bb5a3e3d83c005cde13ebc67"></a>
@@ -911,6 +1101,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00218">218</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00145">calculateDeltaAccessTimes()</a>, <a class="el" href="statistics__utils_8c_source.html#l00093">calculateDrift()</a>, <a class="el" href="statistics__utils_8c_source.html#l00084">calculateVolatility()</a>, <a class="el" href="statistics__utils_8c_source.html#l00048">hazardRate()</a>, and <a class="el" href="statistics__utils_8c_source.html#l00014">recordAccess()</a>.</p>
 
 </div>
 </div>
@@ -926,6 +1120,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00085">85</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+
 </div>
 </div>
 <a id="a6893ed9fb06f470b3c214434909d1a5e" name="a6893ed9fb06f470b3c214434909d1a5e"></a>
@@ -939,6 +1137,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00083">83</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>, <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="init_8c_source.html#l00406">initVA()</a>, and <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
 
 </div>
 </div>
@@ -954,6 +1156,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00086">86</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+
 </div>
 </div>
 <a id="ac51654038811d028b8e5b3060c6c3ae4" name="ac51654038811d028b8e5b3060c6c3ae4"></a>
@@ -967,6 +1173,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00084">84</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
 
 </div>
 </div>
@@ -982,6 +1192,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00026">26</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00277">getDiskAddressesFromDiskIndices()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, <a class="el" href="init_8c_source.html#l00406">initVA()</a>, <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, <a class="el" href="pte__utils_8c_source.html#l00017">pte_to_va()</a>, <a class="el" href="pte__utils_8c_source.html#l00010">va_to_pte()</a>, <a class="el" href="writer__thread_8c_source.html#l00179">writeToDisk()</a>, <a class="el" href="zero__thread_8c_source.html#l00061">zeroMultiplePages()</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+
 </div>
 </div>
 <a id="a03920fa04a85656fc2deac08e774e9fc" name="a03920fa04a85656fc2deac08e774e9fc"></a>
@@ -995,6 +1209,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00173">173</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00186">init_pageTable()</a>.</p>
 
 </div>
 </div>
@@ -1010,6 +1228,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00224">224</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00048">hazardRate()</a>.</p>
+
 </div>
 </div>
 <a id="a51048a012b81ba95e75649ea0bbe9d08" name="a51048a012b81ba95e75649ea0bbe9d08"></a>
@@ -1023,6 +1245,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00098">98</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, and <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
 
 </div>
 </div>
@@ -1038,6 +1264,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00099">99</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
+
 </div>
 </div>
 <a id="a626ca3a053b87d0977fba82fbda91e3c" name="a626ca3a053b87d0977fba82fbda91e3c"></a>
@@ -1052,6 +1282,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00077">77</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a6ae36b4ca49040c50aa53df957dfd721" name="a6ae36b4ca49040c50aa53df957dfd721"></a>
@@ -1065,6 +1297,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00076">76</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -1083,8 +1317,12 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((ULONG_PTR)(addr) &amp; ~(<a class="code hl_define" href="#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a> - 1))</div>
-<div class="ttc" id="astructures_8h_html_a7d467c1d283fdfa1f2081ba1e0d01b6e"><div class="ttname"><a href="#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a></div><div class="ttdeci">#define PAGE_SIZE</div><div class="ttdef"><b>Definition</b> structures.h:26</div></div>
+<div class="ttc" id="astructures_8h_html_a7d467c1d283fdfa1f2081ba1e0d01b6e"><div class="ttname"><a href="#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a></div><div class="ttdeci">#define PAGE_SIZE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00026">structures.h:26</a></div></div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00063">63</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
+
 </div>
 </div>
 <a id="ad38e45c58dd90983ecb2e10a199f66af" name="ad38e45c58dd90983ecb2e10a199f66af"></a>
@@ -1103,6 +1341,10 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">(((ULONG_PTR)(addr) + <a class="code hl_define" href="#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a> - 1) &amp; ~(<a class="code hl_define" href="#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a> - 1))</div>
 </div><!-- fragment -->
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00064">64</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
+
 </div>
 </div>
 <a id="abacff3056116d9f06e75a53ee54c6bac" name="abacff3056116d9f06e75a53ee54c6bac"></a>
@@ -1116,6 +1358,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00176">176</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -1131,6 +1375,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00118">118</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00149">freeThreadMapping()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, and <a class="el" href="init_8c_source.html#l00406">initVA()</a>.</p>
+
 </div>
 </div>
 <a id="a25ca55840a4a71eccfb6f31654210859" name="a25ca55840a4a71eccfb6f31654210859"></a>
@@ -1144,6 +1392,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00107">107</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -1159,6 +1409,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00106">106</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a127376a1173ffab6d2a81c1846a9df8b" name="a127376a1173ffab6d2a81c1846a9df8b"></a>
@@ -1172,6 +1424,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00123">123</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -1187,6 +1441,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00153">153</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00230">isRescue()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>, and <a class="el" href="writer__thread_8c_source.html#l00263">updatePage()</a>.</p>
+
 </div>
 </div>
 <a id="a74a896e61b7fcbe2dc1f4f305a556bf2" name="a74a896e61b7fcbe2dc1f4f305a556bf2"></a>
@@ -1200,6 +1458,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00119">119</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>.</p>
 
 </div>
 </div>
@@ -1215,6 +1477,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00021">21</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a7f2a734b84f750bb35708fd8f3d0121e" name="a7f2a734b84f750bb35708fd8f3d0121e"></a>
@@ -1228,6 +1492,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00151">151</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>.</p>
 
 </div>
 </div>
@@ -1243,6 +1511,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00285">285</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a29c944fb3ec4de60614a00568176a4e5" name="a29c944fb3ec4de60614a00568176a4e5"></a>
@@ -1256,6 +1526,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00070">70</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -1271,6 +1543,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00040">40</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00406">initVA()</a>.</p>
+
 </div>
 </div>
 <a id="a8f84682134486247673ba0b44ba7968a" name="a8f84682134486247673ba0b44ba7968a"></a>
@@ -1284,6 +1560,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00045">45</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
 
 </div>
 </div>
@@ -1299,6 +1579,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00223">223</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00048">hazardRate()</a>.</p>
+
 </div>
 </div>
 <a id="abc05de8f119aa19208c90dd4941e2c02" name="abc05de8f119aa19208c90dd4941e2c02"></a>
@@ -1313,6 +1597,8 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00057">57</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a12cb120cf20b81cb428d32b69d19b7f5" name="a12cb120cf20b81cb428d32b69d19b7f5"></a>
@@ -1326,6 +1612,8 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00058">58</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -1360,6 +1648,20 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00001">1</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  188</span>                                       {</div>
+<div class="line"><span class="lineno">  189</span>    ULONG ThreadNumber;</div>
+<div class="line"><span class="lineno">  190</span>    ULONG ThreadId;</div>
+<div class="line"><span class="lineno">  191</span>    ULONG64 TransferVaIndex;</div>
+<div class="line"><span class="lineno">  192</span>    HANDLE ThreadHandle;</div>
+<div class="line"><span class="lineno">  193</span>    <a class="code hl_struct" href="struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e.html">THREAD_RNG_STATE</a> rng;</div>
+<div class="line"><span class="lineno">  194</span> </div>
+<div class="line"><span class="lineno">  195</span> </div>
+<div class="line"><span class="lineno">  196</span>} <a class="code hl_variable" href="#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a>, *<a class="code hl_variable" href="#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a>;</div>
+<div class="ttc" id="astruct_t_h_r_e_a_d___r_n_g___s_t_a_t_e_html"><div class="ttname"><a href="struct_t_h_r_e_a_d___r_n_g___s_t_a_t_e.html">THREAD_RNG_STATE</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00182">structures.h:182</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+<div class="ttc" id="astructures_8h_html_a6a51703cda40a61f356163e521dfe4ec"><div class="ttname"><a href="#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a></div><div class="ttdeci">THREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+</div><!-- fragment -->
 </div>
 </div>
 <a name="doc-var-members" id="doc-var-members"></a><h2 id="header-doc-var-members" class="groupheader">Variable Documentation</h2>
@@ -1375,6 +1677,10 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00196">196</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="thread__utils_8c_source.html#l00161">acquire_srw_exclusive()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00161">addBatchToModifiedList()</a>, <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="init__threads_8c_source.html#l00156">createNewThread()</a>, <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="user__thread_8c_source.html#l00149">freeThreadMapping()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00125">getActivePage()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="writer__thread_8h.html#a35e935e312d3a0dd5426a5f2c4e97f0e">getPageFromModifiedList()</a>, <a class="el" href="writer__thread_8c_source.html#l00209">getPagesFromModifiedList()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>, <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="vm_8c_source.html#l00076">testVM()</a>, <a class="el" href="user__free_8c_source.html#l00073">unmapActivePage()</a>, <a class="el" href="user__free_8c_source.html#l00158">unmapDiskFormatPTE()</a>, <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>, <a class="el" href="zero__thread_8c_source.html#l00017">zeroingThread()</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+
 </div>
 </div>
 <a id="a6a51703cda40a61f356163e521dfe4ec" name="a6a51703cda40a61f356163e521dfe4ec"></a>
@@ -1388,6 +1694,10 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00196">196</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
 
 </div>
 </div>

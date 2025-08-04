@@ -1,12 +1,13 @@
 var indexSectionsWithContent =
 {
-  0: "_abcdefghiklmnprstuvwz",
+  0: "3_abcdefghiklmnoprstuvwz🌟🎯🏗📈📊📚📝🔧🙏🚀🤝🧪",
   1: "ilpstv",
-  2: "dgimprstuvwz",
+  2: "adgimprstuvwz",
   3: "_abcdefghilmprstuvwz",
   4: "_acdefghilmnpstuvwz",
   5: "p",
-  6: "abcdefgiklmnprsuvw"
+  6: "abcdefgiklmnprsuvw",
+  7: "3abcdefghiklmoprstuv🌟🎯🏗📈📊📚📝🔧🙏🚀🤝🧪"
 };
 
 var indexSectionNames =
@@ -17,17 +18,19 @@ var indexSectionNames =
   3: "functions",
   4: "variables",
   5: "typedefs",
-  6: "defines"
+  6: "defines",
+  7: "pages"
 };
 
 var indexSectionLabels =
 {
   0: "All",
-  1: "Data Structures",
+  1: "Classes",
   2: "Files",
   3: "Functions",
   4: "Variables",
   5: "Typedefs",
-  6: "Macros"
+  6: "Macros",
+  7: "Pages"
 };
 

@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -117,11 +124,19 @@ $(function() {
 <code>#include &quot;<a class="el" href="pte__utils_8h_source.html">../../include/utils/pte_utils.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="page__utils_8h_source.html">../../include/utils/page_utils.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="thread__utils_8h_source.html">../../include/utils/thread_utils.h</a>&quot;</code><br />
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for trimmer_thread.c:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
+<p><a href="trimmer__thread_8c_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ad435722c9283c37221db5ee47f172da9" id="r_ad435722c9283c37221db5ee47f172da9"><td class="memItemLeft" align="right" valign="top">DWORD&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad435722c9283c37221db5ee47f172da9">page_trimmer</a> (LPVOID info)</td></tr>
-<tr class="memdesc:ad435722c9283c37221db5ee47f172da9"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the function that deals with unmapping pages. It will pop a page off the active list and add it to the modified list. It will batch unmap if the consecutive pages are in the same page table entry region.  <br /></td></tr>
+<tr class="memdesc:ad435722c9283c37221db5ee47f172da9"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is the function that deals with unmapping pages.  <br /></td></tr>
 <tr class="memitem:a66447264f92e1fef2cf4a1496ac42760" id="r_a66447264f92e1fef2cf4a1496ac42760"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a66447264f92e1fef2cf4a1496ac42760">getActivePage</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
 <tr class="memdesc:a66447264f92e1fef2cf4a1496ac42760"><td class="mdescLeft">&#160;</td><td class="mdescRight">This functions pops a page off the active list and returns it unlocked.  <br /></td></tr>
 <tr class="memitem:aefb918ee98100baec9ed6e9bf1b8e58b" id="r_aefb918ee98100baec9ed6e9bf1b8e58b"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aefb918ee98100baec9ed6e9bf1b8e58b">unmapBatch</a> (PULONG64 virtualAddresses, ULONG64 batchSize)</td></tr>
@@ -134,6 +149,8 @@ Functions</h2></td></tr>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This file containsa protocal for unmapping active pages and adding them to a modified list. </p>
 <dl class="section author"><dt>Author</dt><dd>Noah Persily </dd></dl>
+
+<p class="definition">Definition in file <a class="el" href="trimmer__thread_8c_source.html">trimmer_thread.c</a>.</p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a9f5290d354fd250aaa561208846ed337" name="a9f5290d354fd250aaa561208846ed337"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a9f5290d354fd250aaa561208846ed337">&#9670;&#160;</a></span>addBatchToModifiedList()</h2>
@@ -169,6 +186,40 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="trimmer__thread_8c_source.html#l00161">161</a> of file <a class="el" href="trimmer__thread_8c_source.html">trimmer_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  161</span>                                                                                         {</div>
+<div class="line"><span class="lineno">  162</span> </div>
+<div class="line"><span class="lineno">  163</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  164</span> </div>
+<div class="line"><span class="lineno">  165</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; batchSize; ++i) {</div>
+<div class="line"><span class="lineno">  166</span>        page = pages[i];</div>
+<div class="line"><span class="lineno">  167</span>        <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(page, threadContext);</div>
+<div class="line"><span class="lineno">  168</span>        <a class="code hl_function" href="page__utils_8c.html#a81bc32fad7e2392ab7737db66ed14a4f">addPageToTail</a>(&amp;<a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>, page, threadContext);</div>
+<div class="line"><span class="lineno">  169</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadContext);</div>
+<div class="line"><span class="lineno">  170</span>    }</div>
+<div class="line"><span class="lineno">  171</span>}</div>
+<div class="ttc" id="ainit_8c_html_acd57aa13d337da1922deec378258ca32"><div class="ttname"><a href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a></div><div class="ttdeci">listHead headModifiedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00036">init.c:36</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_a81bc32fad7e2392ab7737db66ed14a4f"><div class="ttname"><a href="page__utils_8c.html#a81bc32fad7e2392ab7737db66ed14a4f">addPageToTail</a></div><div class="ttdeci">VOID addPageToTail(pListHead head, pfn *page, PTHREAD_INFO threadInfo)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00360">page_utils.c:360</a></div></div>
+<div class="ttc" id="astructpfn_html"><div class="ttname"><a href="structpfn.html">pfn</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00206">structures.h:206</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a0b65478cbff267e6e35c3c2090f9c21d"><div class="ttname"><a href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a></div><div class="ttdeci">VOID enterPageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00247">thread_utils.c:247</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a1db2dc4187f63adf6556fbd6339700b2"><div class="ttname"><a href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a></div><div class="ttdeci">VOID leavePageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00257">thread_utils.c:257</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, and <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+
 </div>
 </div>
 <a id="a66447264f92e1fef2cf4a1496ac42760" name="a66447264f92e1fef2cf4a1496ac42760"></a>
@@ -194,6 +245,41 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Returns an active page. If the list is empty, it returns null. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="trimmer__thread_8c_source.html#l00125">125</a> of file <a class="el" href="trimmer__thread_8c_source.html">trimmer_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  125</span>                                               {</div>
+<div class="line"><span class="lineno">  126</span> </div>
+<div class="line"><span class="lineno">  127</span> </div>
+<div class="line"><span class="lineno">  128</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  129</span> </div>
+<div class="line"><span class="lineno">  130</span>    page = <a class="code hl_function" href="page__utils_8c.html#a5f1ebc15a9e5f0561a2f02ae5e0aae93">RemoveFromHeadofPageList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>, threadContext);</div>
+<div class="line"><span class="lineno">  131</span> </div>
+<div class="line"><span class="lineno">  132</span> </div>
+<div class="line"><span class="lineno">  133</span>    <span class="keywordflow">if</span> (page == <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>) {</div>
+<div class="line"><span class="lineno">  134</span>        <span class="keywordflow">return</span> NULL;</div>
+<div class="line"><span class="lineno">  135</span>    }</div>
+<div class="line"><span class="lineno">  136</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadContext);</div>
+<div class="line"><span class="lineno">  137</span>    <span class="keywordflow">return</span> page;</div>
+<div class="line"><span class="lineno">  138</span>}</div>
+<div class="ttc" id="ainit_8c_html_a94fe7d15f3121ceb68cee2c8fa317bad"><div class="ttname"><a href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a></div><div class="ttdeci">listHead headActiveList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00035">init.c:35</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_a5f1ebc15a9e5f0561a2f02ae5e0aae93"><div class="ttname"><a href="page__utils_8c.html#a5f1ebc15a9e5f0561a2f02ae5e0aae93">RemoveFromHeadofPageList</a></div><div class="ttdeci">pfn * RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00219">page_utils.c:219</a></div></div>
+<div class="ttc" id="astructures_8h_html_a8c4c01cac35e54e00185c8c6ff6b0347"><div class="ttname"><a href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a></div><div class="ttdeci">#define LIST_IS_EMPTY</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00096">structures.h:96</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, and <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
 
 </div>
 </div>
@@ -226,6 +312,52 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Returns true if the next page's corresponding page table entry is in the region passed in. </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="trimmer__thread_8c_source.html#l00179">179</a> of file <a class="el" href="trimmer__thread_8c_source.html">trimmer_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  179</span>                                                                   {</div>
+<div class="line"><span class="lineno">  180</span> </div>
+<div class="line"><span class="lineno">  181</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* nextPage;</div>
+<div class="line"><span class="lineno">  182</span>    <a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* nextRegion;</div>
+<div class="line"><span class="lineno">  183</span>    <a class="code hl_struct" href="structshared_lock.html">sharedLock</a>* lock;</div>
+<div class="line"><span class="lineno">  184</span>    lock = &amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.sharedLock;</div>
+<div class="line"><span class="lineno">  185</span> </div>
+<div class="line"><span class="lineno">  186</span>    <span class="comment">// Peek ahead</span></div>
+<div class="line"><span class="lineno">  187</span>    <span class="comment">// TODO make this a no fence on the entry</span></div>
+<div class="line"><span class="lineno">  188</span>    <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.page, info);</div>
+<div class="line"><span class="lineno">  189</span>    nextPage = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.entry.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  190</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.page, info);</div>
+<div class="line"><span class="lineno">  191</span> </div>
+<div class="line"><span class="lineno">  192</span> </div>
+<div class="line"><span class="lineno">  193</span>    <span class="keywordflow">if</span> (&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.entry == &amp;nextPage-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>) {</div>
+<div class="line"><span class="lineno">  194</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  195</span>    }</div>
+<div class="line"><span class="lineno">  196</span> </div>
+<div class="line"><span class="lineno">  197</span>    nextRegion = <a class="code hl_function" href="pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a>(nextPage-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>);</div>
+<div class="line"><span class="lineno">  198</span> </div>
+<div class="line"><span class="lineno">  199</span>    <span class="keywordflow">return</span> nextRegion == region;</div>
+<div class="line"><span class="lineno">  200</span>}</div>
+<div class="ttc" id="apte__utils_8c_html_abcda62fe13c85a36a83bf5b2294436b7"><div class="ttname"><a href="pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a></div><div class="ttdeci">PTE_REGION * getPTERegion(pte *pte)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00027">pte_utils.c:27</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00245">structures.h:245</a></div></div>
+<div class="ttc" id="astructpfn_html_ab6ad595c698387fda8c17a768927abc7"><div class="ttname"><a href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">pfn::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00207">structures.h:207</a></div></div>
+<div class="ttc" id="astructpfn_html_ae2e24bb0e467c948348fd35010dec4e5"><div class="ttname"><a href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pfn::pte</a></div><div class="ttdeci">pte * pte</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00208">structures.h:208</a></div></div>
+<div class="ttc" id="astructshared_lock_html"><div class="ttname"><a href="structshared_lock.html">sharedLock</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00253">structures.h:253</a></div></div>
+<div class="ttc" id="astructures_8h_html_af8c317a42292b61c93aae91e59118a46"><div class="ttname"><a href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a></div><div class="ttdeci">#define container_of(ptr, type, member)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00080">structures.h:80</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="pte__utils_8c_source.html#l00027">getPTERegion()</a>, <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00208">pfn::pte</a>, and <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
+
 </div>
 </div>
 <a id="ad435722c9283c37221db5ee47f172da9" name="ad435722c9283c37221db5ee47f172da9"></a>
@@ -243,7 +375,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This is the function that deals with unmapping pages. It will pop a page off the active list and add it to the modified list. It will batch unmap if the consecutive pages are in the same page table entry region. </p>
+<p>This is the function that deals with unmapping pages. </p>
+<p>It will pop a page off the active list and add it to the modified list. It will batch unmap if the consecutive pages are in the same page table entry region.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">info</td><td>A pointer to a thread info struct. Passed in during the function CreateThread </td></tr>
@@ -256,6 +389,131 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="trimmer__thread_8c_source.html#l00029">29</a> of file <a class="el" href="trimmer__thread_8c_source.html">trimmer_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   29</span>                                {</div>
+<div class="line"><span class="lineno">   30</span>    ULONG64 BatchIndex;</div>
+<div class="line"><span class="lineno">   31</span>    BOOL doubleBreak;</div>
+<div class="line"><span class="lineno">   32</span>    PCRITICAL_SECTION trimmedPageTableLock;</div>
+<div class="line"><span class="lineno">   33</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">   34</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* pages[<a class="code hl_define" href="structures_8h.html#a9ae2958e436c566413867028fc829ec0">BATCH_SIZE</a>];</div>
+<div class="line"><span class="lineno">   35</span>    ULONG64 virtualAddresses[<a class="code hl_define" href="structures_8h.html#a9ae2958e436c566413867028fc829ec0">BATCH_SIZE</a>];</div>
+<div class="line"><span class="lineno">   36</span>    <a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* region;</div>
+<div class="line"><span class="lineno">   37</span>    <a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext;</div>
+<div class="line"><span class="lineno">   38</span>    threadContext = (<a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a>)info;</div>
+<div class="line"><span class="lineno">   39</span> </div>
+<div class="line"><span class="lineno">   40</span>    HANDLE events[2];</div>
+<div class="line"><span class="lineno">   41</span>    DWORD returnEvent;</div>
+<div class="line"><span class="lineno">   42</span>    events[0] = <a class="code hl_variable" href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a>;</div>
+<div class="line"><span class="lineno">   43</span>    events[1] = <a class="code hl_variable" href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a>;</div>
+<div class="line"><span class="lineno">   44</span> </div>
+<div class="line"><span class="lineno">   45</span> </div>
+<div class="line"><span class="lineno">   46</span>    <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">   47</span>        BatchIndex = 0;</div>
+<div class="line"><span class="lineno">   48</span>        doubleBreak = FALSE;</div>
+<div class="line"><span class="lineno">   49</span>        trimmedPageTableLock = NULL;</div>
+<div class="line"><span class="lineno">   50</span> </div>
+<div class="line"><span class="lineno">   51</span>        returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);</div>
+<div class="line"><span class="lineno">   52</span> </div>
+<div class="line"><span class="lineno">   53</span>        <span class="comment">//if the system shutdown event was signaled, exit</span></div>
+<div class="line"><span class="lineno">   54</span>        <span class="keywordflow">if</span> (returnEvent - WAIT_OBJECT_0 == 1) {</div>
+<div class="line"><span class="lineno">   55</span>            <span class="keywordflow">return</span> 0;</div>
+<div class="line"><span class="lineno">   56</span>        }</div>
+<div class="line"><span class="lineno">   57</span> </div>
+<div class="line"><span class="lineno">   58</span>        <span class="comment">// while there is still stuff to trim and the arrays are not at capacity</span></div>
+<div class="line"><span class="lineno">   59</span>        <span class="keywordflow">while</span> (<a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>.length &lt; <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a> / 4 &amp;&amp; BatchIndex &lt; <a class="code hl_define" href="structures_8h.html#a9ae2958e436c566413867028fc829ec0">BATCH_SIZE</a>) {</div>
+<div class="line"><span class="lineno">   60</span> </div>
+<div class="line"><span class="lineno">   61</span>            page = <a class="code hl_function" href="#a66447264f92e1fef2cf4a1496ac42760">getActivePage</a>(threadContext);</div>
+<div class="line"><span class="lineno">   62</span> </div>
+<div class="line"><span class="lineno">   63</span>            <span class="keywordflow">if</span> (page == NULL) {</div>
+<div class="line"><span class="lineno">   64</span>                <span class="keywordflow">if</span> (BatchIndex == 0) {</div>
+<div class="line"><span class="lineno">   65</span>                    doubleBreak = TRUE;</div>
+<div class="line"><span class="lineno">   66</span>                }</div>
+<div class="line"><span class="lineno">   67</span>                <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">   68</span>            }</div>
+<div class="line"><span class="lineno">   69</span> </div>
+<div class="line"><span class="lineno">   70</span>            <span class="comment">// if we are not on a streak we need to get a new region a lock the ptes</span></div>
+<div class="line"><span class="lineno">   71</span>            <span class="keywordflow">if</span> (trimmedPageTableLock == NULL) {</div>
+<div class="line"><span class="lineno">   72</span> </div>
+<div class="line"><span class="lineno">   73</span>                region = <a class="code hl_function" href="pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>);</div>
+<div class="line"><span class="lineno">   74</span>                trimmedPageTableLock = &amp;region-&gt;<a class="code hl_variable" href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">lock</a>;</div>
+<div class="line"><span class="lineno">   75</span>                EnterCriticalSection(trimmedPageTableLock);</div>
+<div class="line"><span class="lineno">   76</span>            } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">   77</span>                <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(region == <a class="code hl_function" href="pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>))</div>
+<div class="line"><span class="lineno">   78</span>            }</div>
+<div class="line"><span class="lineno">   79</span> </div>
+<div class="line"><span class="lineno">   80</span> </div>
+<div class="line"><span class="lineno">   81</span>            virtualAddresses[BatchIndex] = (ULONG64) <a class="code hl_function" href="pte__utils_8c.html#a064a8281ff67659403b71b6c9b2ae426">pte_to_va</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>);</div>
+<div class="line"><span class="lineno">   82</span>            pages[BatchIndex] = page;</div>
+<div class="line"><span class="lineno">   83</span>            pages[BatchIndex]-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#af579e18d1f9820b8c0fd733dc53e62c7">mustBeZero</a> = 0;</div>
+<div class="line"><span class="lineno">   84</span>            pages[BatchIndex]-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">contentsLocation</a> = <a class="code hl_define" href="structures_8h.html#aab53ed9cd9619846798e02612c94e641">MODIFIED_LIST</a>;</div>
+<div class="line"><span class="lineno">   85</span>            BatchIndex++;</div>
+<div class="line"><span class="lineno">   86</span> </div>
+<div class="line"><span class="lineno">   87</span>            <span class="keywordflow">if</span> (<a class="code hl_function" href="#a7ab4b49f6892ee10915cb0ea079b3529">isNextPageInSameRegion</a>(region, threadContext) == FALSE) {</div>
+<div class="line"><span class="lineno">   88</span>                <a class="code hl_function" href="#aefb918ee98100baec9ed6e9bf1b8e58b">unmapBatch</a>(virtualAddresses, BatchIndex);</div>
+<div class="line"><span class="lineno">   89</span>                <a class="code hl_function" href="#a9f5290d354fd250aaa561208846ed337">addBatchToModifiedList</a>(pages, BatchIndex,  threadContext);</div>
+<div class="line"><span class="lineno">   90</span> </div>
+<div class="line"><span class="lineno">   91</span>                LeaveCriticalSection(trimmedPageTableLock);</div>
+<div class="line"><span class="lineno">   92</span>                <span class="comment">// Setting this to null tells the next loop to get a new region</span></div>
+<div class="line"><span class="lineno">   93</span>                trimmedPageTableLock = NULL;</div>
+<div class="line"><span class="lineno">   94</span>                BatchIndex = 0;</div>
+<div class="line"><span class="lineno">   95</span> </div>
+<div class="line"><span class="lineno">   96</span>            }</div>
+<div class="line"><span class="lineno">   97</span>        }</div>
+<div class="line"><span class="lineno">   98</span>        <span class="keywordflow">if</span> (doubleBreak == TRUE) {</div>
+<div class="line"><span class="lineno">   99</span>            SetEvent(<a class="code hl_variable" href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a>);</div>
+<div class="line"><span class="lineno">  100</span>            <span class="keywordflow">continue</span>;</div>
+<div class="line"><span class="lineno">  101</span>        }</div>
+<div class="line"><span class="lineno">  102</span>        <span class="keywordflow">if</span> (BatchIndex == 0) {</div>
+<div class="line"><span class="lineno">  103</span>            SetEvent(<a class="code hl_variable" href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a>);</div>
+<div class="line"><span class="lineno">  104</span>            <span class="keywordflow">continue</span>;</div>
+<div class="line"><span class="lineno">  105</span>        }</div>
+<div class="line"><span class="lineno">  106</span> </div>
+<div class="line"><span class="lineno">  107</span>        <span class="comment">//this just handles the last batch</span></div>
+<div class="line"><span class="lineno">  108</span>        <a class="code hl_function" href="#aefb918ee98100baec9ed6e9bf1b8e58b">unmapBatch</a>(virtualAddresses, BatchIndex);</div>
+<div class="line"><span class="lineno">  109</span>        <a class="code hl_function" href="#a9f5290d354fd250aaa561208846ed337">addBatchToModifiedList</a>(pages, BatchIndex, (<a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a>) threadContext);</div>
+<div class="line"><span class="lineno">  110</span> </div>
+<div class="line"><span class="lineno">  111</span>        LeaveCriticalSection(trimmedPageTableLock);</div>
+<div class="line"><span class="lineno">  112</span> </div>
+<div class="line"><span class="lineno">  113</span>        <span class="comment">//nptodo add a condition around this</span></div>
+<div class="line"><span class="lineno">  114</span>        SetEvent(<a class="code hl_variable" href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a>);</div>
+<div class="line"><span class="lineno">  115</span> </div>
+<div class="line"><span class="lineno">  116</span> </div>
+<div class="line"><span class="lineno">  117</span>    }</div>
+<div class="line"><span class="lineno">  118</span>}</div>
+<div class="ttc" id="ainit_8c_html_a6d400d90f983c4790d1853579b259cd9"><div class="ttname"><a href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a></div><div class="ttdeci">HANDLE systemShutdownEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00085">init.c:85</a></div></div>
+<div class="ttc" id="ainit_8c_html_ad27b5858a32d7c89137c68150f36c0ea"><div class="ttname"><a href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a></div><div class="ttdeci">HANDLE writingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00080">init.c:80</a></div></div>
+<div class="ttc" id="ainit_8c_html_adff0a60b8e4254e817f619ccc8d5a105"><div class="ttname"><a href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a></div><div class="ttdeci">HANDLE trimmingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00079">init.c:79</a></div></div>
+<div class="ttc" id="apte__utils_8c_html_a064a8281ff67659403b71b6c9b2ae426"><div class="ttname"><a href="pte__utils_8c.html#a064a8281ff67659403b71b6c9b2ae426">pte_to_va</a></div><div class="ttdeci">PVOID pte_to_va(pte *pte)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00017">pte_utils.c:17</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html_a5a47700edae0d01d18370739954e9860"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">PTE_REGION::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00248">structures.h:248</a></div></div>
+<div class="ttc" id="astructpte_html_a6382aa31ee89fcdd5524083024925ebc"><div class="ttname"><a href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">pte::transitionFormat</a></div><div class="ttdeci">transitionPte transitionFormat</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00165">structures.h:165</a></div></div>
+<div class="ttc" id="astructtransition_pte_html_a10b3e72c49cd4c23663bc3bdf09412c8"><div class="ttname"><a href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">transitionPte::contentsLocation</a></div><div class="ttdeci">ULONG64 contentsLocation</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00157">structures.h:157</a></div></div>
+<div class="ttc" id="astructtransition_pte_html_af579e18d1f9820b8c0fd733dc53e62c7"><div class="ttname"><a href="structtransition_pte.html#af579e18d1f9820b8c0fd733dc53e62c7">transitionPte::mustBeZero</a></div><div class="ttdeci">ULONG64 mustBeZero</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00156">structures.h:156</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+<div class="ttc" id="astructures_8h_html_a1e905c2e2a948059f3414462c702fe2d"><div class="ttname"><a href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a></div><div class="ttdeci">#define NUMBER_OF_PHYSICAL_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00041">structures.h:41</a></div></div>
+<div class="ttc" id="astructures_8h_html_a9ae2958e436c566413867028fc829ec0"><div class="ttname"><a href="structures_8h.html#a9ae2958e436c566413867028fc829ec0">BATCH_SIZE</a></div><div class="ttdeci">#define BATCH_SIZE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00093">structures.h:93</a></div></div>
+<div class="ttc" id="astructures_8h_html_aab53ed9cd9619846798e02612c94e641"><div class="ttname"><a href="structures_8h.html#aab53ed9cd9619846798e02612c94e641">MODIFIED_LIST</a></div><div class="ttdeci">#define MODIFIED_LIST</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00152">structures.h:152</a></div></div>
+<div class="ttc" id="astructures_8h_html_aca68c0d4ac8df0838e209fb5300f7be3"><div class="ttname"><a href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a></div><div class="ttdeci">#define ASSERT(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00019">structures.h:19</a></div></div>
+<div class="ttc" id="atrimmer__thread_8c_html_a66447264f92e1fef2cf4a1496ac42760"><div class="ttname"><a href="#a66447264f92e1fef2cf4a1496ac42760">getActivePage</a></div><div class="ttdeci">pfn * getActivePage(PTHREAD_INFO threadContext)</div><div class="ttdoc">This functions pops a page off the active list and returns it unlocked.</div><div class="ttdef"><b>Definition</b> <a href="trimmer__thread_8c_source.html#l00125">trimmer_thread.c:125</a></div></div>
+<div class="ttc" id="atrimmer__thread_8c_html_a7ab4b49f6892ee10915cb0ea079b3529"><div class="ttname"><a href="#a7ab4b49f6892ee10915cb0ea079b3529">isNextPageInSameRegion</a></div><div class="ttdeci">BOOL isNextPageInSameRegion(PTE_REGION *region, PTHREAD_INFO info)</div><div class="ttdoc">This function peeks into the head of the active list and sees if the next page is in the same pte reg...</div><div class="ttdef"><b>Definition</b> <a href="trimmer__thread_8c_source.html#l00179">trimmer_thread.c:179</a></div></div>
+<div class="ttc" id="atrimmer__thread_8c_html_a9f5290d354fd250aaa561208846ed337"><div class="ttname"><a href="#a9f5290d354fd250aaa561208846ed337">addBatchToModifiedList</a></div><div class="ttdeci">VOID addBatchToModifiedList(pfn **pages, ULONG64 batchSize, PTHREAD_INFO threadContext)</div><div class="ttdoc">This function adds a batch of pages to the modified list.</div><div class="ttdef"><b>Definition</b> <a href="trimmer__thread_8c_source.html#l00161">trimmer_thread.c:161</a></div></div>
+<div class="ttc" id="atrimmer__thread_8c_html_aefb918ee98100baec9ed6e9bf1b8e58b"><div class="ttname"><a href="#aefb918ee98100baec9ed6e9bf1b8e58b">unmapBatch</a></div><div class="ttdeci">VOID unmapBatch(PULONG64 virtualAddresses, ULONG64 batchSize)</div><div class="ttdoc">Simple wrapper for a MapUserPhysicalPagesScatter call.</div><div class="ttdef"><b>Definition</b> <a href="trimmer__thread_8c_source.html#l00145">trimmer_thread.c:145</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="trimmer__thread_8c_source.html#l00161">addBatchToModifiedList()</a>, <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00093">BATCH_SIZE</a>, <a class="el" href="structures_8h_source.html#l00157">transitionPte::contentsLocation</a>, <a class="el" href="trimmer__thread_8c_source.html#l00125">getActivePage()</a>, <a class="el" href="pte__utils_8c_source.html#l00027">getPTERegion()</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="structures_8h_source.html#l00248">PTE_REGION::lock</a>, <a class="el" href="structures_8h_source.html#l00152">MODIFIED_LIST</a>, <a class="el" href="structures_8h_source.html#l00156">transitionPte::mustBeZero</a>, <a class="el" href="structures_8h_source.html#l00041">NUMBER_OF_PHYSICAL_PAGES</a>, <a class="el" href="structures_8h_source.html#l00208">pfn::pte</a>, <a class="el" href="pte__utils_8c_source.html#l00017">pte_to_va()</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="init_8c_source.html#l00085">systemShutdownEvent</a>, <a class="el" href="structures_8h_source.html#l00165">pte::transitionFormat</a>, <a class="el" href="init_8c_source.html#l00079">trimmingStartEvent</a>, <a class="el" href="trimmer__thread_8c_source.html#l00145">unmapBatch()</a>, and <a class="el" href="init_8c_source.html#l00080">writingStartEvent</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+<div id="dynsection-7" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-7-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-7-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 7 --></div>
+</div>
+<div id="dynsection-8" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-8-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-8-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 8 --></div>
+</div>
 
 </div>
 </div>
@@ -286,6 +544,27 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="trimmer__thread_8c_source.html#l00145">145</a> of file <a class="el" href="trimmer__thread_8c_source.html">trimmer_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  145</span>                                                               {</div>
+<div class="line"><span class="lineno">  146</span> </div>
+<div class="line"><span class="lineno">  147</span>    <span class="keywordflow">if</span> (MapUserPhysicalPagesScatter((PVOID)virtualAddresses, batchSize, NULL) == FALSE) {</div>
+<div class="line"><span class="lineno">  148</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">  149</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not unmap VA %p\n&quot;</span>, <a class="code hl_variable" href="init_8c.html#a0e3ed94c0d8426754bbe064cb62d8756">transferVaWriting</a>);</div>
+<div class="line"><span class="lineno">  150</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  151</span>    }</div>
+<div class="line"><span class="lineno">  152</span>}</div>
+<div class="ttc" id="ainit_8c_html_a0e3ed94c0d8426754bbe064cb62d8756"><div class="ttname"><a href="init_8c.html#a0e3ed94c0d8426754bbe064cb62d8756">transferVaWriting</a></div><div class="ttdeci">PVOID transferVaWriting</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00045">init.c:45</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00045">transferVaWriting</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>.</p>
+<div id="dynsection-9" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-9-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-9-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 9 --></div>
+</div>
 
 </div>
 </div>

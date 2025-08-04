@@ -25,17 +25,75 @@
 var NAVTREE =
 [
   [ "Virtual Memory Manager", "index.html", [
-    [ "Data Structures", "annotated.html", [
-      [ "Data Structures", "annotated.html", "annotated_dup" ],
-      [ "Data Structure Index", "classes.html", null ],
-      [ "Data Fields", "functions.html", [
+    [ "Virtual Memory Manager", "md__r_e_a_d_m_e.html", [
+      [ "🌟 Features", "md__r_e_a_d_m_e.html#autotoc_md1", [
+        [ "Core Memory Management", "md__r_e_a_d_m_e.html#autotoc_md2", null ],
+        [ "Advanced Visualization", "md__r_e_a_d_m_e.html#autotoc_md3", null ],
+        [ "Performance Characteristics", "md__r_e_a_d_m_e.html#autotoc_md4", null ]
+      ] ],
+      [ "🏗️ Architecture", "md__r_e_a_d_m_e.html#autotoc_md5", null ],
+      [ "🚀 Getting Started", "md__r_e_a_d_m_e.html#autotoc_md6", [
+        [ "Prerequisites", "md__r_e_a_d_m_e.html#autotoc_md7", null ],
+        [ "Building the Project", "md__r_e_a_d_m_e.html#autotoc_md8", null ],
+        [ "Running the System", "md__r_e_a_d_m_e.html#autotoc_md9", null ]
+      ] ],
+      [ "📊 Performance Benchmarks", "md__r_e_a_d_m_e.html#autotoc_md10", null ],
+      [ "🔧 Configuration", "md__r_e_a_d_m_e.html#autotoc_md11", null ],
+      [ "🎯 Key Algorithms", "md__r_e_a_d_m_e.html#autotoc_md12", [
+        [ "Page Fault Resolution", "md__r_e_a_d_m_e.html#autotoc_md13", null ],
+        [ "Memory Trimming", "md__r_e_a_d_m_e.html#autotoc_md14", null ]
+      ] ],
+      [ "📈 Monitoring &amp; Debugging", "md__r_e_a_d_m_e.html#autotoc_md15", [
+        [ "3D Visualization Features", "md__r_e_a_d_m_e.html#autotoc_md16", null ],
+        [ "Performance Metrics", "md__r_e_a_d_m_e.html#autotoc_md17", null ]
+      ] ],
+      [ "🧪 Testing", "md__r_e_a_d_m_e.html#autotoc_md18", null ],
+      [ "📚 Documentation", "md__r_e_a_d_m_e.html#autotoc_md19", [
+        [ "Key Documentation Sections", "md__r_e_a_d_m_e.html#autotoc_md20", null ]
+      ] ],
+      [ "🤝 Contributing", "md__r_e_a_d_m_e.html#autotoc_md21", null ],
+      [ "📝 License", "md__r_e_a_d_m_e.html#autotoc_md22", null ],
+      [ "🙏 Acknowledgments", "md__r_e_a_d_m_e.html#autotoc_md23", null ]
+    ] ],
+    [ "System Architecture", "architecture.html", [
+      [ "Overview", "architecture.html#autotoc_md24", null ],
+      [ "Thread Architecture", "architecture.html#autotoc_md25", [
+        [ "User Threads", "architecture.html#autotoc_md26", null ],
+        [ "System Threads", "architecture.html#autotoc_md27", null ]
+      ] ],
+      [ "Memory Management Layers", "architecture.html#autotoc_md28", [
+        [ "Virtual Address Management", "architecture.html#autotoc_md29", null ],
+        [ "Physical Memory Management", "architecture.html#autotoc_md30", null ],
+        [ "Backing Store Management", "architecture.html#autotoc_md31", null ]
+      ] ],
+      [ "Synchronization Design", "architecture.html#autotoc_md32", [
+        [ "Lock Hierarchy", "architecture.html#autotoc_md33", null ],
+        [ "Performance Optimizations", "architecture.html#autotoc_md34", null ]
+      ] ]
+    ] ],
+    [ "Performance Analysis", "performance.html", [
+      [ "Benchmark Results", "performance.html#autotoc_md35", [
+        [ "Page Fault Performance", "performance.html#autotoc_md36", null ],
+        [ "Threading Scalability", "performance.html#autotoc_md37", null ],
+        [ "Memory Efficiency", "performance.html#autotoc_md38", null ]
+      ] ],
+      [ "Optimization Techniques", "performance.html#autotoc_md39", [
+        [ "Lock Contention Reduction", "performance.html#autotoc_md40", null ],
+        [ "Cache Optimization", "performance.html#autotoc_md41", null ],
+        [ "I/O Optimization", "performance.html#autotoc_md42", null ]
+      ] ]
+    ] ],
+    [ "Classes", "annotated.html", [
+      [ "Class List", "annotated.html", "annotated_dup" ],
+      [ "Class Index", "classes.html", null ],
+      [ "Class Members", "functions.html", [
         [ "All", "functions.html", null ],
         [ "Variables", "functions_vars.html", null ]
       ] ]
     ] ],
     [ "Files", "files.html", [
       [ "File List", "files.html", "files_dup" ],
-      [ "Globals", "globals.html", [
+      [ "File Members", "globals.html", [
         [ "All", "globals.html", "globals_dup" ],
         [ "Functions", "globals_func.html", "globals_func" ],
         [ "Variables", "globals_vars.html", null ],
@@ -49,8 +107,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "annotated.html",
-"page__utils_8c.html#a81bc32fad7e2392ab7737db66ed14a4f",
-"user__thread_8c.html#a6601998c57f4c3d80891bfcab071441d"
+"init__threads_8h.html#ac46fe8c321a8fcd2217bb5a738a7f09e",
+"structvalid_pte.html#a58bedc14359873650418bc99f7cd9897"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronization';

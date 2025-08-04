@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -106,17 +113,23 @@ $(function() {
   <div class="headertitle"><div class="title">threads Directory Reference</div></div>
 </div><!--header-->
 <div class="contents">
+<div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Directory dependency graph for threads:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-files" class="groupheader"><a id="files" name="files"></a>
 Files</h2></td></tr>
-<tr class="memitem:statistics_2Ec" id="r_statistics_2Ec"><td class="memItemLeft" align="right" valign="top"><span class="icondoc"><div class="doc-icon"></div></span>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="statistics_8c.html">statistics.c</a></td></tr>
-<tr class="memitem:trimmer_5Fthread_2Ec" id="r_trimmer_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><span class="icondoc"><div class="doc-icon"></div></span>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="trimmer__thread_8c.html">trimmer_thread.c</a></td></tr>
+<tr class="memitem:statistics_2Ec" id="r_statistics_2Ec"><td class="memItemLeft" align="right" valign="top"><a href="statistics_8c_source.html"><span class="icondoc"><div class="doc-icon"></div></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="statistics_8c.html">statistics.c</a></td></tr>
+<tr class="memitem:trimmer_5Fthread_2Ec" id="r_trimmer_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><a href="trimmer__thread_8c_source.html"><span class="icondoc"><div class="doc-icon"></div></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="trimmer__thread_8c.html">trimmer_thread.c</a></td></tr>
 <tr class="memdesc:trimmer__thread_8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file containsa protocal for unmapping active pages and adding them to a modified list. <br /></td></tr>
-<tr class="memitem:user_5Ffree_2Ec" id="r_user_5Ffree_2Ec"><td class="memItemLeft" align="right" valign="top"><span class="icondoc"><div class="doc-icon"></div></span>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="user__free_8c.html">user_free.c</a></td></tr>
-<tr class="memitem:user_5Fthread_2Ec" id="r_user_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><span class="icondoc"><div class="doc-icon"></div></span>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="user__thread_8c.html">user_thread.c</a></td></tr>
-<tr class="memitem:writer_5Fthread_2Ec" id="r_writer_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><span class="icondoc"><div class="doc-icon"></div></span>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="writer__thread_8c.html">writer_thread.c</a></td></tr>
+<tr class="memitem:user_5Ffree_2Ec" id="r_user_5Ffree_2Ec"><td class="memItemLeft" align="right" valign="top"><a href="user__free_8c_source.html"><span class="icondoc"><div class="doc-icon"></div></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="user__free_8c.html">user_free.c</a></td></tr>
+<tr class="memitem:user_5Fthread_2Ec" id="r_user_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><a href="user__thread_8c_source.html"><span class="icondoc"><div class="doc-icon"></div></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="user__thread_8c.html">user_thread.c</a></td></tr>
+<tr class="memitem:writer_5Fthread_2Ec" id="r_writer_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><a href="writer__thread_8c_source.html"><span class="icondoc"><div class="doc-icon"></div></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="writer__thread_8c.html">writer_thread.c</a></td></tr>
 <tr class="memdesc:writer__thread_8c"><td class="mdescLeft">&#160;</td><td class="mdescRight">This file contains all the functions associated with writing to page that have been recently trimmed to disk. <br /></td></tr>
-<tr class="memitem:zero_5Fthread_2Ec" id="r_zero_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><span class="icondoc"><div class="doc-icon"></div></span>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="zero__thread_8c.html">zero_thread.c</a></td></tr>
+<tr class="memitem:zero_5Fthread_2Ec" id="r_zero_5Fthread_2Ec"><td class="memItemLeft" align="right" valign="top"><a href="zero__thread_8c_source.html"><span class="icondoc"><div class="doc-icon"></div></span></a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="zero__thread_8c.html">zero_thread.c</a></td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

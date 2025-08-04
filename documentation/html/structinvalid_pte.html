@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -70,7 +77,7 @@ $(function() { codefold.init(); });
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('structinvalid_pte.html','',''); });
+$(function(){initNavTree('structinvalid_pte.html','','structinvalid_pte-members'); });
 </script>
 <script type="text/javascript" src="menudata.js"></script>
 <script type="text/javascript" src="menu.js"></script>
@@ -110,12 +117,15 @@ $(function() {
 <p><code>#include &lt;<a class="el" href="structures_8h_source.html">structures.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
-Data Fields</h2></td></tr>
+Public Attributes</h2></td></tr>
 <tr class="memitem:ac7820cd9bf10193112ee5c617bf3a67b" id="r_ac7820cd9bf10193112ee5c617bf3a67b"><td class="memItemLeft" align="right" valign="top">ULONG64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac7820cd9bf10193112ee5c617bf3a67b">mustBeZero</a>: 1</td></tr>
 <tr class="memitem:a7c17f9d8d2b30428513aaa853d2b51f2" id="r_a7c17f9d8d2b30428513aaa853d2b51f2"><td class="memItemLeft" align="right" valign="top">ULONG64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a7c17f9d8d2b30428513aaa853d2b51f2">transition</a>: 2</td></tr>
 <tr class="memitem:abbf271d7576a2bf1ac5c2c2a7633ee3c" id="r_abbf271d7576a2bf1ac5c2c2a7633ee3c"><td class="memItemLeft" align="right" valign="top">ULONG64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abbf271d7576a2bf1ac5c2c2a7633ee3c">diskIndex</a>: <a class="el" href="structures_8h.html#a4f8e33efe08ed40ace91397906173136">frame_number_size</a></td></tr>
 </table>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00144">144</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="abbf271d7576a2bf1ac5c2c2a7633ee3c" name="abbf271d7576a2bf1ac5c2c2a7633ee3c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abbf271d7576a2bf1ac5c2c2a7633ee3c">&#9670;&#160;</a></span>diskIndex</h2>
 
@@ -127,6 +137,10 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00147">147</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>, <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, and <a class="el" href="user__free_8c_source.html#l00158">unmapDiskFormatPTE()</a>.</p>
 
 </div>
 </div>
@@ -142,6 +156,8 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00145">145</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
 </div>
 </div>
 <a id="a7c17f9d8d2b30428513aaa853d2b51f2" name="a7c17f9d8d2b30428513aaa853d2b51f2"></a>
@@ -155,6 +171,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00146">146</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>

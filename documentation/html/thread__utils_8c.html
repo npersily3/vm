@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -110,7 +117,15 @@ $(function() {
 <code>#include &lt;stdio.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="structures_8h_source.html">../../include/variables/structures.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="globals_8h_source.html">variables/globals.h</a>&quot;</code><br />
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for thread_utils.c:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
+<p><a href="thread__utils_8c_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ada2a56df112594780ba2b9578efb2278" id="r_ada2a56df112594780ba2b9578efb2278"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ada2a56df112594780ba2b9578efb2278">validateList</a> (<a class="el" href="structures_8h.html#a21e46ac33c16e9b75c519f62ceb1c9fe">pListHead</a> head)</td></tr>
@@ -144,6 +159,32 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00161">161</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  161</span>                                                                {</div>
+<div class="line"><span class="lineno">  162</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  163</span>    debug_acquire_srw_exclusive(lock, info);</div>
+<div class="line"><span class="lineno">  164</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  165</span>    AcquireSRWLockExclusive(&amp;lock-&gt;<a class="code hl_variable" href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  166</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  167</span>}</div>
+<div class="ttc" id="astructshared_lock_html_a73cf768bc4d7ce3a69565122245e8051"><div class="ttname"><a href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock::sharedLock</a></div><div class="ttdeci">SRWLOCK sharedLock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00254">structures.h:254</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, and <a class="el" href="structures_8h_source.html#l00254">sharedLock::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, and <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+
 </div>
 </div>
 <a id="a15237c39cffac9b5ab0af5fc4414e168" name="a15237c39cffac9b5ab0af5fc4414e168"></a>
@@ -161,6 +202,31 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00145">145</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  145</span>                                          {</div>
+<div class="line"><span class="lineno">  146</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  147</span>    debug_acquire_srw_shared(lock, <span class="stringliteral">&quot;unknown&quot;</span>, 0);</div>
+<div class="line"><span class="lineno">  148</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  149</span>    AcquireSRWLockShared(&amp;lock-&gt;<a class="code hl_variable" href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  150</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  151</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00254">sharedLock::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, and <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
+
 </div>
 </div>
 <a id="a5760d7851b54a6f3ad52ef61fdd2e317" name="a5760d7851b54a6f3ad52ef61fdd2e317"></a>
@@ -177,6 +243,26 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00115">115</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  115</span>                                {</div>
+<div class="line"><span class="lineno">  116</span> </div>
+<div class="line"><span class="lineno">  117</span>    ULONG64 oldValueComparator;</div>
+<div class="line"><span class="lineno">  118</span> </div>
+<div class="line"><span class="lineno">  119</span> </div>
+<div class="line"><span class="lineno">  120</span>    <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">  121</span> </div>
+<div class="line"><span class="lineno">  122</span>        oldValueComparator =  InterlockedCompareExchange((<span class="keyword">volatile</span> LONG *) lock, <a class="code hl_define" href="structures_8h.html#a9168dd836ed5be45dfcf6d8fd598a66c">LOCK_HELD</a>, <a class="code hl_define" href="structures_8h.html#a9327ceb25ca443e16fa09fcbb9f7449f">LOCK_FREE</a>);</div>
+<div class="line"><span class="lineno">  123</span> </div>
+<div class="line"><span class="lineno">  124</span>        <span class="keywordflow">if</span> (oldValueComparator == <a class="code hl_define" href="structures_8h.html#a9327ceb25ca443e16fa09fcbb9f7449f">LOCK_FREE</a>) {</div>
+<div class="line"><span class="lineno">  125</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  126</span>        }</div>
+<div class="line"><span class="lineno">  127</span>    }</div>
+<div class="line"><span class="lineno">  128</span>}</div>
+<div class="ttc" id="astructures_8h_html_a9168dd836ed5be45dfcf6d8fd598a66c"><div class="ttname"><a href="structures_8h.html#a9168dd836ed5be45dfcf6d8fd598a66c">LOCK_HELD</a></div><div class="ttdeci">#define LOCK_HELD</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00067">structures.h:67</a></div></div>
+<div class="ttc" id="astructures_8h_html_a9327ceb25ca443e16fa09fcbb9f7449f"><div class="ttname"><a href="structures_8h.html#a9327ceb25ca443e16fa09fcbb9f7449f">LOCK_FREE</a></div><div class="ttdeci">#define LOCK_FREE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00066">structures.h:66</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00066">LOCK_FREE</a>, and <a class="el" href="structures_8h_source.html#l00067">LOCK_HELD</a>.</p>
 
 </div>
 </div>
@@ -199,6 +285,30 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00247">247</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  247</span>                                                 {</div>
+<div class="line"><span class="lineno">  248</span> </div>
+<div class="line"><span class="lineno">  249</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(info-&gt;ThreadId != (ULONG64) page-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>.OwningThread)</div>
+<div class="line"><span class="lineno">  250</span> </div>
+<div class="line"><span class="lineno">  251</span>    <span class="comment">//ASSERT((ULONG64) page-&gt;lock.DebugInfo == MAXULONG_PTR)</span></div>
+<div class="line"><span class="lineno">  252</span>    EnterCriticalSection(&amp;page-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  253</span>    <span class="comment">//ASSERT((ULONG64) page-&gt;lock.DebugInfo == MAXULONG_PTR)</span></div>
+<div class="line"><span class="lineno">  254</span> </div>
+<div class="line"><span class="lineno">  255</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(info-&gt;ThreadId == (ULONG64) page-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>.OwningThread)</div>
+<div class="line"><span class="lineno">  256</span>}</div>
+<div class="ttc" id="astructpfn_html_a90e89efbad0a46c24ae279d79d2f8349"><div class="ttname"><a href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">pfn::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00212">structures.h:212</a></div></div>
+<div class="ttc" id="astructures_8h_html_aca68c0d4ac8df0838e209fb5300f7be3"><div class="ttname"><a href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a></div><div class="ttdeci">#define ASSERT(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00019">structures.h:19</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, and <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00161">addBatchToModifiedList()</a>, <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00073">unmapActivePage()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
+
 </div>
 </div>
 <a id="a1db2dc4187f63adf6556fbd6339700b2" name="a1db2dc4187f63adf6556fbd6339700b2"></a>
@@ -220,6 +330,27 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00257">257</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  257</span>                                                 {</div>
+<div class="line"><span class="lineno">  258</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(info-&gt;ThreadId == (ULONG64) page-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>.OwningThread)</div>
+<div class="line"><span class="lineno">  259</span>    <span class="comment">//ASSERT((ULONG64) page-&gt;lock.DebugInfo == MAXULONG_PTR)</span></div>
+<div class="line"><span class="lineno">  260</span> </div>
+<div class="line"><span class="lineno">  261</span>    LeaveCriticalSection(&amp;page-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  262</span> </div>
+<div class="line"><span class="lineno">  263</span> </div>
+<div class="line"><span class="lineno">  264</span> </div>
+<div class="line"><span class="lineno">  265</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, and <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00161">addBatchToModifiedList()</a>, <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00125">getActivePage()</a>, <a class="el" href="writer__thread_8c_source.html#l00209">getPagesFromModifiedList()</a>, <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
+
 </div>
 </div>
 <a id="a43ace7ec0b78b479c5c81fd460b5e51c" name="a43ace7ec0b78b479c5c81fd460b5e51c"></a>
@@ -236,6 +367,31 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00169">169</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  169</span>                                             {</div>
+<div class="line"><span class="lineno">  170</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  171</span>    debug_release_srw_exclusive(lock);</div>
+<div class="line"><span class="lineno">  172</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  173</span>    ReleaseSRWLockExclusive(&amp;lock-&gt;<a class="code hl_variable" href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  174</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  175</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00254">sharedLock::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, and <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>.</p>
+<div id="dynsection-7" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-7-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-7-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 7 --></div>
+</div>
+<div id="dynsection-8" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-8-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-8-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 8 --></div>
+</div>
 
 </div>
 </div>
@@ -254,6 +410,31 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00153">153</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  153</span>                                          {</div>
+<div class="line"><span class="lineno">  154</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  155</span>    debug_release_srw_shared(lock, <span class="stringliteral">&quot;unknown&quot;</span>, 0);</div>
+<div class="line"><span class="lineno">  156</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  157</span>    ReleaseSRWLockShared(&amp;lock-&gt;<a class="code hl_variable" href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  158</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  159</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00254">sharedLock::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, <a class="el" href="page__utils_8c_source.html#l00460">RemoveFromHeadWithListLockHeld()</a>, and <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>.</p>
+<div id="dynsection-9" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-9-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-9-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 9 --></div>
+</div>
+<div id="dynsection-10" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-10-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-10-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 10 --></div>
+</div>
+
 </div>
 </div>
 <a id="a0f17ccd6bffa7fb86260af69a42b7ef6" name="a0f17ccd6bffa7fb86260af69a42b7ef6"></a>
@@ -270,6 +451,14 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00129">129</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  129</span>                                {</div>
+<div class="line"><span class="lineno">  130</span> </div>
+<div class="line"><span class="lineno">  131</span>    InterlockedExchange((<span class="keyword">volatile</span> LONG *) lock, <a class="code hl_define" href="structures_8h.html#a9327ceb25ca443e16fa09fcbb9f7449f">LOCK_FREE</a>);</div>
+<div class="line"><span class="lineno">  132</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00066">LOCK_FREE</a>.</p>
 
 </div>
 </div>
@@ -288,6 +477,21 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00133">133</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  133</span>                                   {</div>
+<div class="line"><span class="lineno">  134</span> </div>
+<div class="line"><span class="lineno">  135</span>    ULONG64 oldValue;</div>
+<div class="line"><span class="lineno">  136</span> </div>
+<div class="line"><span class="lineno">  137</span>    oldValue =  InterlockedCompareExchange( (<span class="keyword">volatile</span> LONG *) lock, <a class="code hl_define" href="structures_8h.html#a9168dd836ed5be45dfcf6d8fd598a66c">LOCK_HELD</a>, <a class="code hl_define" href="structures_8h.html#a9327ceb25ca443e16fa09fcbb9f7449f">LOCK_FREE</a>);</div>
+<div class="line"><span class="lineno">  138</span> </div>
+<div class="line"><span class="lineno">  139</span>    <span class="keywordflow">if</span> (oldValue == <a class="code hl_define" href="structures_8h.html#a9327ceb25ca443e16fa09fcbb9f7449f">LOCK_FREE</a>) {</div>
+<div class="line"><span class="lineno">  140</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  141</span>    }</div>
+<div class="line"><span class="lineno">  142</span>    <span class="keywordflow">return</span> TRUE;</div>
+<div class="line"><span class="lineno">  143</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00066">LOCK_FREE</a>, and <a class="el" href="structures_8h_source.html#l00067">LOCK_HELD</a>.</p>
+
 </div>
 </div>
 <a id="ada2a56df112594780ba2b9578efb2278" name="ada2a56df112594780ba2b9578efb2278"></a>
@@ -304,6 +508,93 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="thread__utils_8c_source.html#l00046">46</a> of file <a class="el" href="thread__utils_8c_source.html">thread_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   46</span>                                  {</div>
+<div class="line"><span class="lineno">   47</span>    LIST_ENTRY* currentEntry;</div>
+<div class="line"><span class="lineno">   48</span>    ULONG64 forwardLength = 0;</div>
+<div class="line"><span class="lineno">   49</span>    ULONG64 backwardLength = 0;</div>
+<div class="line"><span class="lineno">   50</span> </div>
+<div class="line"><span class="lineno">   51</span> </div>
+<div class="line"><span class="lineno">   52</span>    <span class="keyword">const</span> ULONG64 MAX_EXPECTED_LENGTH = <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a> + 10; <span class="comment">// Safety limit</span></div>
+<div class="line"><span class="lineno">   53</span> </div>
+<div class="line"><span class="lineno">   54</span>    <span class="comment">// Check empty list case</span></div>
+<div class="line"><span class="lineno">   55</span>    <span class="keywordflow">if</span> (head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a> == 0) {</div>
+<div class="line"><span class="lineno">   56</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a> (head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a> &amp;&amp; head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink == &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>);</div>
+<div class="line"><span class="lineno">   57</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   58</span>    }</div>
+<div class="line"><span class="lineno">   59</span> </div>
+<div class="line"><span class="lineno">   60</span> </div>
+<div class="line"><span class="lineno">   61</span>    <span class="comment">// Validate forward traversal with cycle detection</span></div>
+<div class="line"><span class="lineno">   62</span>    currentEntry = head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink;</div>
+<div class="line"><span class="lineno">   63</span>    <span class="keywordflow">while</span> (currentEntry != &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a> &amp;&amp; forwardLength &lt; MAX_EXPECTED_LENGTH) {</div>
+<div class="line"><span class="lineno">   64</span>        <span class="comment">// Check for cross-list corruption</span></div>
+<div class="line"><span class="lineno">   65</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(currentEntry != &amp;<a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>.entry &amp;&amp;</div>
+<div class="line"><span class="lineno">   66</span>               currentEntry != &amp;<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>.entry &amp;&amp;</div>
+<div class="line"><span class="lineno">   67</span>               currentEntry != &amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.entry &amp;&amp;</div>
+<div class="line"><span class="lineno">   68</span>              <span class="comment">// currentEntry != &amp;headFreeList.entry &amp;&amp;</span></div>
+<div class="line"><span class="lineno">   69</span>               currentEntry != &amp;<a class="code hl_variable" href="init_8c.html#a29264284e4818cecfacb8d88bb123275">headToBeZeroedList</a>.entry);</div>
+<div class="line"><span class="lineno">   70</span> </div>
+<div class="line"><span class="lineno">   71</span>        <span class="comment">// Validate bidirectional linking</span></div>
+<div class="line"><span class="lineno">   72</span>        <span class="keywordflow">if</span> (currentEntry-&gt;Blink-&gt;Flink != currentEntry) {</div>
+<div class="line"><span class="lineno">   73</span>            <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(FALSE); <span class="comment">// Broken bidirectional link</span></div>
+<div class="line"><span class="lineno">   74</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   75</span>        }</div>
+<div class="line"><span class="lineno">   76</span>        <span class="keywordflow">if</span> (currentEntry-&gt;Flink-&gt;Blink != currentEntry) {</div>
+<div class="line"><span class="lineno">   77</span>            <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(FALSE); <span class="comment">// Broken bidirectional link</span></div>
+<div class="line"><span class="lineno">   78</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   79</span>        }</div>
+<div class="line"><span class="lineno">   80</span> </div>
+<div class="line"><span class="lineno">   81</span>        currentEntry = currentEntry-&gt;Flink;</div>
+<div class="line"><span class="lineno">   82</span>        forwardLength++;</div>
+<div class="line"><span class="lineno">   83</span>    }</div>
+<div class="line"><span class="lineno">   84</span> </div>
+<div class="line"><span class="lineno">   85</span>    <span class="comment">// Check for infinite loop</span></div>
+<div class="line"><span class="lineno">   86</span>    <span class="keywordflow">if</span> (forwardLength &gt;= MAX_EXPECTED_LENGTH) {</div>
+<div class="line"><span class="lineno">   87</span>        <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(FALSE); <span class="comment">// Possible infinite loop detected</span></div>
+<div class="line"><span class="lineno">   88</span>        return ;</div>
+<div class="line"><span class="lineno">   89</span>    }</div>
+<div class="line"><span class="lineno">   90</span> </div>
+<div class="line"><span class="lineno">   91</span>    <span class="comment">// Validate backward traversal</span></div>
+<div class="line"><span class="lineno">   92</span>    currentEntry = head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink;</div>
+<div class="line"><span class="lineno">   93</span>    <span class="keywordflow">while</span> (currentEntry != &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a> &amp;&amp; backwardLength &lt; MAX_EXPECTED_LENGTH) {</div>
+<div class="line"><span class="lineno">   94</span> </div>
+<div class="line"><span class="lineno">   95</span>        <span class="keywordflow">if</span> (currentEntry-&gt;Blink-&gt;Flink != currentEntry) {</div>
+<div class="line"><span class="lineno">   96</span>            <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(FALSE); <span class="comment">// Broken bidirectional link</span></div>
+<div class="line"><span class="lineno">   97</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   98</span>        }</div>
+<div class="line"><span class="lineno">   99</span>        <span class="keywordflow">if</span> (currentEntry-&gt;Flink-&gt;Blink != currentEntry) {</div>
+<div class="line"><span class="lineno">  100</span>            <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(FALSE); <span class="comment">// Broken bidirectional link</span></div>
+<div class="line"><span class="lineno">  101</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  102</span>        }</div>
+<div class="line"><span class="lineno">  103</span> </div>
+<div class="line"><span class="lineno">  104</span>        currentEntry = currentEntry-&gt;Blink;</div>
+<div class="line"><span class="lineno">  105</span> </div>
+<div class="line"><span class="lineno">  106</span>        backwardLength++;</div>
+<div class="line"><span class="lineno">  107</span>    }</div>
+<div class="line"><span class="lineno">  108</span> </div>
+<div class="line"><span class="lineno">  109</span>    <span class="comment">// Verify all lengths match</span></div>
+<div class="line"><span class="lineno">  110</span>    BOOL valid = (forwardLength == backwardLength &amp;&amp; forwardLength == head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a>);</div>
+<div class="line"><span class="lineno">  111</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(valid);</div>
+<div class="line"><span class="lineno">  112</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  113</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2104c2f630ec691446eb83024e5eb897"><div class="ttname"><a href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a></div><div class="ttdeci">listHead headStandByList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00037">init.c:37</a></div></div>
+<div class="ttc" id="ainit_8c_html_a29264284e4818cecfacb8d88bb123275"><div class="ttname"><a href="init_8c.html#a29264284e4818cecfacb8d88bb123275">headToBeZeroedList</a></div><div class="ttdeci">listHead headToBeZeroedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00038">init.c:38</a></div></div>
+<div class="ttc" id="ainit_8c_html_a94fe7d15f3121ceb68cee2c8fa317bad"><div class="ttname"><a href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a></div><div class="ttdeci">listHead headActiveList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00035">init.c:35</a></div></div>
+<div class="ttc" id="ainit_8c_html_acd57aa13d337da1922deec378258ca32"><div class="ttname"><a href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a></div><div class="ttdeci">listHead headModifiedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00036">init.c:36</a></div></div>
+<div class="ttc" id="astructlist_head_html_a1adaf6dfc0d2e0fb2b275f3557eca04a"><div class="ttname"><a href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">listHead::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00276">structures.h:276</a></div></div>
+<div class="ttc" id="astructlist_head_html_ab804a0c0961e0898c9b690e9adc39dfe"><div class="ttname"><a href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">listHead::length</a></div><div class="ttdeci">volatile LONG64 length</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00277">structures.h:277</a></div></div>
+<div class="ttc" id="astructures_8h_html_a1e905c2e2a948059f3414462c702fe2d"><div class="ttname"><a href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a></div><div class="ttdeci">#define NUMBER_OF_PHYSICAL_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00041">structures.h:41</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="init_8c_source.html#l00038">headToBeZeroedList</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, and <a class="el" href="structures_8h_source.html#l00041">NUMBER_OF_PHYSICAL_PAGES</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, and <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>.</p>
+<div id="dynsection-11" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-11-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-11-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 11 --></div>
+</div>
 
 </div>
 </div>

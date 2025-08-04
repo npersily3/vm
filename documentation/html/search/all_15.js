@@ -1,11 +1,22 @@
 var searchData=
 [
-  ['zero_5fthread_2ec_0',['zero_thread.c',['../zero__thread_8c.html',1,'']]],
-  ['zero_5fthread_2eh_1',['zero_thread.h',['../zero__thread_8h.html',1,'']]],
-  ['zeroingstartevent_2',['zeroingStartEvent',['../init_8c.html#a94c076359309b0aa7014248aa5718aad',1,'zeroingStartEvent:&#160;init.c'],['../globals_8h.html#a94c076359309b0aa7014248aa5718aad',1,'zeroingStartEvent:&#160;init.c']]],
-  ['zeroingthread_3',['zeroingThread',['../zero__thread_8c.html#a96bdf5c27edbefd5b7797ae6e402bedf',1,'zeroingThread(LPVOID threadContext):&#160;zero_thread.c'],['../zero__thread_8h.html#a96bdf5c27edbefd5b7797ae6e402bedf',1,'zeroingThread(LPVOID threadContext):&#160;zero_thread.c']]],
-  ['zeroingthreadinfo_4',['ZeroingThreadInfo',['../globals_8h.html#abd676eac265f24a883f06242347d0584',1,'globals.h']]],
-  ['zeromultiplepages_5',['zeroMultiplePages',['../zero__thread_8c.html#ad5e0516e644e6ce02824a3716bc3c26d',1,'zeroMultiplePages(PULONG64 frameNumbers, ULONG64 batchSize):&#160;zero_thread.c'],['../zero__thread_8h.html#ad5e0516e644e6ce02824a3716bc3c26d',1,'zeroMultiplePages(PULONG64 frameNumbers, ULONG64 batchSize):&#160;zero_thread.c']]],
-  ['zeroonepage_6',['zeroOnePage',['../user__thread_8c.html#af2a00908cb7f283fa07f7372f2533d6d',1,'zeroOnePage(pfn *page, PTHREAD_INFO threadContext):&#160;user_thread.c'],['../user__thread_8h.html#af1205a343835cc29fa5cbaf2916603bd',1,'zeroOnePage(pfn *page, PTHREAD_INFO threadInfo):&#160;user_thread.c']]],
-  ['zerothreadtransferva_7',['zeroThreadTransferVa',['../init_8c.html#aea8eb8024cc46acb883918c96f259d91',1,'zeroThreadTransferVa:&#160;init.c'],['../globals_8h.html#aea8eb8024cc46acb883918c96f259d91',1,'zeroThreadTransferVa:&#160;init.c']]]
+  ['va_5fto_5fpte_0',['va_to_pte',['../pte__utils_8c.html#af1bc0b9029ce9be426fd21c5400c7bbb',1,'va_to_pte(ULONG64 va):&#160;pte_utils.c'],['../pte__utils_8h.html#af1bc0b9029ce9be426fd21c5400c7bbb',1,'va_to_pte(ULONG64 va):&#160;pte_utils.c']]],
+  ['vaend_1',['vaEnd',['../init_8c.html#a725d904e3cf158b59c18626a4a6f8df5',1,'vaEnd:&#160;init.c'],['../globals_8h.html#a725d904e3cf158b59c18626a4a6f8df5',1,'vaEnd:&#160;init.c']]],
+  ['valid_2',['valid',['../structvalid_pte.html#ab69d0644ffe76adc8155ea74fdfb1044',1,'validPte']]],
+  ['validatelist_3',['validateList',['../thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278',1,'validateList(pListHead head):&#160;thread_utils.c'],['../thread__utils_8h.html#ada2a56df112594780ba2b9578efb2278',1,'validateList(pListHead head):&#160;thread_utils.c']]],
+  ['validformat_4',['validFormat',['../structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9',1,'pte']]],
+  ['validpte_5',['validPte',['../structvalid_pte.html',1,'']]],
+  ['variable_5fdid_5fnot_5fchange_6',['VARIABLE_DID_NOT_CHANGE',['../structures_8h.html#a29c944fb3ec4de60614a00568176a4e5',1,'structures.h']]],
+  ['variance_7',['variance',['../statistics__utils_8c.html#a8d3b2efc05e3e8783a04aeaf6c93e91d',1,'variance(double *numbers, ULONG64 number_of_entries, double mean):&#160;statistics_utils.c'],['../statistics__utils_8h.html#a8d3b2efc05e3e8783a04aeaf6c93e91d',1,'variance(double *numbers, ULONG64 number_of_entries, double mean):&#160;statistics_utils.c']]],
+  ['vastart_8',['vaStart',['../init_8c.html#aaaf4624300194b91a31836695b593a30',1,'vaStart:&#160;init.c'],['../globals_8h.html#aaaf4624300194b91a31836695b593a30',1,'vaStart:&#160;init.c']]],
+  ['virtual_20address_20management_9',['Virtual Address Management',['../architecture.html#autotoc_md29',1,'']]],
+  ['virtual_20memory_20manager_10',['Virtual Memory Manager',['../md__r_e_a_d_m_e.html',1,'']]],
+  ['virtual_5faddress_5fsize_11',['VIRTUAL_ADDRESS_SIZE',['../structures_8h.html#a9a8d97e13ab816495b154d3bb9826016',1,'structures.h']]],
+  ['virtual_5faddress_5fsize_5fin_5funsigned_5fchunks_12',['VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS',['../structures_8h.html#a8f84682134486247673ba0b44ba7968a',1,'structures.h']]],
+  ['visualization_13',['Advanced Visualization',['../md__r_e_a_d_m_e.html#autotoc_md3',1,'']]],
+  ['visualization_20features_14',['3D Visualization Features',['../md__r_e_a_d_m_e.html#autotoc_md16',1,'']]],
+  ['vm_2ec_15',['vm.c',['../vm_8c.html',1,'']]],
+  ['vm_2eh_16',['vm.h',['../vm_8h.html',1,'']]],
+  ['volatility_17',['volatility',['../structstochastic__data.html#a14c061f5cd6ac4d489656528f1a99e3f',1,'stochastic_data']]],
+  ['volatility_5fcoefficent_18',['VOLATILITY_COEFFICENT',['../structures_8h.html#afbcb9f48d7229e0ba0ede4dad3d8585c',1,'structures.h']]]
 ];

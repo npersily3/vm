@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -119,8 +126,8 @@ $(function() {
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span>VOID <a class="code hl_function" href="vm_8h.html#a146a3ced98c4fba2f0493395b0455046">full_virtual_memory_test</a>(VOID);</div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#endif </span><span class="comment">//VM_H</span></div>
-<div class="ttc" id="avm_8h_html_a146a3ced98c4fba2f0493395b0455046"><div class="ttname"><a href="vm_8h.html#a146a3ced98c4fba2f0493395b0455046">full_virtual_memory_test</a></div><div class="ttdeci">VOID full_virtual_memory_test(VOID)</div><div class="ttdef"><b>Definition</b> vm.c:22</div></div>
-<div class="ttc" id="avm_8h_html_a1758db79c1f8634a1bbcb278ae08fc8b"><div class="ttname"><a href="vm_8h.html#a1758db79c1f8634a1bbcb278ae08fc8b">testVM</a></div><div class="ttdeci">DWORD testVM(LPVOID lpParam)</div><div class="ttdef"><b>Definition</b> vm.c:76</div></div>
+<div class="ttc" id="avm_8h_html_a146a3ced98c4fba2f0493395b0455046"><div class="ttname"><a href="vm_8h.html#a146a3ced98c4fba2f0493395b0455046">full_virtual_memory_test</a></div><div class="ttdeci">VOID full_virtual_memory_test(VOID)</div><div class="ttdef"><b>Definition</b> <a href="vm_8c_source.html#l00022">vm.c:22</a></div></div>
+<div class="ttc" id="avm_8h_html_a1758db79c1f8634a1bbcb278ae08fc8b"><div class="ttname"><a href="vm_8h.html#a1758db79c1f8634a1bbcb278ae08fc8b">testVM</a></div><div class="ttdeci">DWORD testVM(LPVOID lpParam)</div><div class="ttdef"><b>Definition</b> <a href="vm_8c_source.html#l00076">vm.c:76</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

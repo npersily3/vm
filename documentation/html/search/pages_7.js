@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['they_20actually_20protect_0',['Exceptions and What they Actually Protect',['../md_conventions.html#autotoc_md2',1,'']]]
+  ['getting_20started_0',['🚀 Getting Started',['../md__r_e_a_d_m_e.html#autotoc_md6',1,'']]]
 ];

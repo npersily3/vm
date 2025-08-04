@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -117,7 +124,15 @@ $(function() {
 <code>#include &quot;<a class="el" href="vm_8h_source.html">../../include/vm.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="statistics_8h_source.html">threads/statistics.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="random__utils_8h_source.html">utils/random_utils.h</a>&quot;</code><br />
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for init_threads.c:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
+<p><a href="init__threads_8c_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:aab1b5789118354c27bf39d29b3338509" id="r_aab1b5789118354c27bf39d29b3338509"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aab1b5789118354c27bf39d29b3338509">initThreads</a> (VOID)</td></tr>
@@ -143,6 +158,38 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00121">121</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  121</span>                        {</div>
+<div class="line"><span class="lineno">  122</span> </div>
+<div class="line"><span class="lineno">  123</span>    <a class="code hl_variable" href="init_8c.html#a1f77d91812324575a3bd55f9ba07b4d1">userStartEvent</a> = CreateEvent (NULL, <a class="code hl_define" href="structures_8h.html#a4c495faae0071bbff4120433bb0bb166">MANUAL_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  124</span>    <a class="code hl_variable" href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a> = CreateEvent(NULL, <a class="code hl_define" href="structures_8h.html#ad38003d1d75d1d8de702312f08906621">AUTO_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  125</span>    <a class="code hl_variable" href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a> = CreateEvent(NULL, <a class="code hl_define" href="structures_8h.html#ad38003d1d75d1d8de702312f08906621">AUTO_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  126</span>    <a class="code hl_variable" href="init_8c.html#a80e48e2103f402bb77050723a5c053e5">writingEndEvent</a> = CreateEvent(NULL, <a class="code hl_define" href="structures_8h.html#a4c495faae0071bbff4120433bb0bb166">MANUAL_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  127</span>    <a class="code hl_variable" href="init_8c.html#acefd683d0ec814a5f35e5e63e6744aac">userEndEvent</a> = CreateEvent(NULL, <a class="code hl_define" href="structures_8h.html#a4c495faae0071bbff4120433bb0bb166">MANUAL_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  128</span>    <a class="code hl_variable" href="init_8c.html#a94c076359309b0aa7014248aa5718aad">zeroingStartEvent</a> = CreateEvent(NULL, <a class="code hl_define" href="structures_8h.html#ad38003d1d75d1d8de702312f08906621">AUTO_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  129</span>    <a class="code hl_variable" href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a> = CreateEvent(NULL, <a class="code hl_define" href="structures_8h.html#a4c495faae0071bbff4120433bb0bb166">MANUAL_RESET</a>, <a class="code hl_define" href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a>, NULL);</div>
+<div class="line"><span class="lineno">  130</span>}</div>
+<div class="ttc" id="ainit_8c_html_a1f77d91812324575a3bd55f9ba07b4d1"><div class="ttname"><a href="init_8c.html#a1f77d91812324575a3bd55f9ba07b4d1">userStartEvent</a></div><div class="ttdeci">HANDLE userStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00082">init.c:82</a></div></div>
+<div class="ttc" id="ainit_8c_html_a6d400d90f983c4790d1853579b259cd9"><div class="ttname"><a href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a></div><div class="ttdeci">HANDLE systemShutdownEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00085">init.c:85</a></div></div>
+<div class="ttc" id="ainit_8c_html_a80e48e2103f402bb77050723a5c053e5"><div class="ttname"><a href="init_8c.html#a80e48e2103f402bb77050723a5c053e5">writingEndEvent</a></div><div class="ttdeci">HANDLE writingEndEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00081">init.c:81</a></div></div>
+<div class="ttc" id="ainit_8c_html_a94c076359309b0aa7014248aa5718aad"><div class="ttname"><a href="init_8c.html#a94c076359309b0aa7014248aa5718aad">zeroingStartEvent</a></div><div class="ttdeci">HANDLE zeroingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00084">init.c:84</a></div></div>
+<div class="ttc" id="ainit_8c_html_acefd683d0ec814a5f35e5e63e6744aac"><div class="ttname"><a href="init_8c.html#acefd683d0ec814a5f35e5e63e6744aac">userEndEvent</a></div><div class="ttdeci">HANDLE userEndEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00083">init.c:83</a></div></div>
+<div class="ttc" id="ainit_8c_html_ad27b5858a32d7c89137c68150f36c0ea"><div class="ttname"><a href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a></div><div class="ttdeci">HANDLE writingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00080">init.c:80</a></div></div>
+<div class="ttc" id="ainit_8c_html_adff0a60b8e4254e817f619ccc8d5a105"><div class="ttname"><a href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a></div><div class="ttdeci">HANDLE trimmingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00079">init.c:79</a></div></div>
+<div class="ttc" id="astructures_8h_html_a4c495faae0071bbff4120433bb0bb166"><div class="ttname"><a href="structures_8h.html#a4c495faae0071bbff4120433bb0bb166">MANUAL_RESET</a></div><div class="ttdeci">#define MANUAL_RESET</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00056">structures.h:56</a></div></div>
+<div class="ttc" id="astructures_8h_html_a59db202542246f88b2d4ee100197a104"><div class="ttname"><a href="structures_8h.html#a59db202542246f88b2d4ee100197a104">EVENT_START_OFF</a></div><div class="ttdeci">#define EVENT_START_OFF</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00104">structures.h:104</a></div></div>
+<div class="ttc" id="astructures_8h_html_ad38003d1d75d1d8de702312f08906621"><div class="ttname"><a href="structures_8h.html#ad38003d1d75d1d8de702312f08906621">AUTO_RESET</a></div><div class="ttdeci">#define AUTO_RESET</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00055">structures.h:55</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00055">AUTO_RESET</a>, <a class="el" href="structures_8h_source.html#l00104">EVENT_START_OFF</a>, <a class="el" href="structures_8h_source.html#l00056">MANUAL_RESET</a>, <a class="el" href="init_8c_source.html#l00085">systemShutdownEvent</a>, <a class="el" href="init_8c_source.html#l00079">trimmingStartEvent</a>, <a class="el" href="init_8c_source.html#l00083">userEndEvent</a>, <a class="el" href="init_8c_source.html#l00082">userStartEvent</a>, <a class="el" href="init_8c_source.html#l00081">writingEndEvent</a>, <a class="el" href="init_8c_source.html#l00080">writingStartEvent</a>, and <a class="el" href="init_8c_source.html#l00084">zeroingStartEvent</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00021">initThreads()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+
 </div>
 </div>
 <a id="a6dcc007f243c01c1c0dd02d3fe3e5c43" name="a6dcc007f243c01c1c0dd02d3fe3e5c43"></a>
@@ -164,6 +211,39 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00156">156</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  156</span>                                                                                          {</div>
+<div class="line"><span class="lineno">  157</span>    HANDLE Handle;</div>
+<div class="line"><span class="lineno">  158</span>    BOOL ReturnValue;</div>
+<div class="line"><span class="lineno">  159</span> </div>
+<div class="line"><span class="lineno">  160</span>    Handle = CreateThread(<a class="code hl_define" href="structures_8h.html#a83e0e77b48801e8a522f0918325b18ef">DEFAULT_SECURITY</a>,</div>
+<div class="line"><span class="lineno">  161</span>                           <a class="code hl_define" href="structures_8h.html#a87dcbc4991a2a2fc4eb6fc6a24449f26">DEFAULT_STACK_SIZE</a>,</div>
+<div class="line"><span class="lineno">  162</span>                           ThreadFunction,</div>
+<div class="line"><span class="lineno">  163</span>                           ThreadContext,</div>
+<div class="line"><span class="lineno">  164</span>                           <a class="code hl_define" href="structures_8h.html#a33d210bae48d7d5e5efcc5b647d29094">DEFAULT_CREATION_FLAGS</a>,</div>
+<div class="line"><span class="lineno">  165</span>                           &amp;ThreadContext-&gt;ThreadId);</div>
+<div class="line"><span class="lineno">  166</span>    <span class="keywordflow">if</span> (Handle == NULL) {</div>
+<div class="line"><span class="lineno">  167</span>        ReturnValue = GetLastError ();</div>
+<div class="line"><span class="lineno">  168</span>        printf (<span class="stringliteral">&quot;could not create thread %x\n&quot;</span>, ReturnValue);</div>
+<div class="line"><span class="lineno">  169</span>        <span class="keywordflow">return</span> NULL;</div>
+<div class="line"><span class="lineno">  170</span>    }</div>
+<div class="line"><span class="lineno">  171</span> </div>
+<div class="line"><span class="lineno">  172</span>    <span class="keywordflow">return</span> Handle;</div>
+<div class="line"><span class="lineno">  173</span>}</div>
+<div class="ttc" id="astructures_8h_html_a33d210bae48d7d5e5efcc5b647d29094"><div class="ttname"><a href="structures_8h.html#a33d210bae48d7d5e5efcc5b647d29094">DEFAULT_CREATION_FLAGS</a></div><div class="ttdeci">#define DEFAULT_CREATION_FLAGS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00061">structures.h:61</a></div></div>
+<div class="ttc" id="astructures_8h_html_a83e0e77b48801e8a522f0918325b18ef"><div class="ttname"><a href="structures_8h.html#a83e0e77b48801e8a522f0918325b18ef">DEFAULT_SECURITY</a></div><div class="ttdeci">#define DEFAULT_SECURITY</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00059">structures.h:59</a></div></div>
+<div class="ttc" id="astructures_8h_html_a87dcbc4991a2a2fc4eb6fc6a24449f26"><div class="ttname"><a href="structures_8h.html#a87dcbc4991a2a2fc4eb6fc6a24449f26">DEFAULT_STACK_SIZE</a></div><div class="ttdeci">#define DEFAULT_STACK_SIZE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00060">structures.h:60</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00061">DEFAULT_CREATION_FLAGS</a>, <a class="el" href="structures_8h_source.html#l00059">DEFAULT_SECURITY</a>, <a class="el" href="structures_8h_source.html#l00060">DEFAULT_STACK_SIZE</a>, and <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+
 </div>
 </div>
 <a id="a86159e994d33f90d79e149463ecbeb11" name="a86159e994d33f90d79e149463ecbeb11"></a>
@@ -180,6 +260,135 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00027">27</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   27</span>                         {</div>
+<div class="line"><span class="lineno">   28</span> </div>
+<div class="line"><span class="lineno">   29</span> </div>
+<div class="line"><span class="lineno">   30</span>    <a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> ThreadContext;</div>
+<div class="line"><span class="lineno">   31</span>    HANDLE Handle;</div>
+<div class="line"><span class="lineno">   32</span> </div>
+<div class="line"><span class="lineno">   33</span>    <a class="code hl_variable" href="structures_8h.html#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a> ThreadInfo[<a class="code hl_define" href="structures_8h.html#a13521bb0f1dfd16021b5638c96c48572">NUMBER_OF_THREADS</a>] = {0};</div>
+<div class="line"><span class="lineno">   34</span> </div>
+<div class="line"><span class="lineno">   35</span>    <a class="code hl_variable" href="structures_8h.html#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a> <a class="code hl_variable" href="globals_8h.html#a096ca6650a575f46a9f8b820926c5c35">UserThreadInfo</a>[<a class="code hl_define" href="structures_8h.html#a6893ed9fb06f470b3c214434909d1a5e">NUMBER_OF_USER_THREADS</a>] = {0};</div>
+<div class="line"><span class="lineno">   36</span>    <a class="code hl_variable" href="structures_8h.html#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a> <a class="code hl_variable" href="globals_8h.html#ac00dd1b49e4f977036ec20197964e126">TrimmerThreadInfo</a>[<a class="code hl_define" href="structures_8h.html#acbc07915dcf4bdb65b8ac73b8ca92133">NUMBER_OF_TRIMMING_THREADS</a>] = {0};</div>
+<div class="line"><span class="lineno">   37</span>    <a class="code hl_variable" href="structures_8h.html#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a> <a class="code hl_variable" href="globals_8h.html#a56e17a4cf397e5bd8e1a175aa2f3a4e2">WriterThreadInfo</a>[<a class="code hl_define" href="structures_8h.html#aae22bfcc5318d230d5cdd8b46e84f3b1">NUMBER_OF_WRITING_THREADS</a>] = {0};</div>
+<div class="line"><span class="lineno">   38</span>    <a class="code hl_variable" href="structures_8h.html#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a> ZeroIngThreadInfo[<a class="code hl_define" href="structures_8h.html#ac51654038811d028b8e5b3060c6c3ae4">NUMBER_OF_ZEROING_THREADS</a>] = {0};</div>
+<div class="line"><span class="lineno">   39</span>   <span class="comment">// THREAD_INFO SchedulerThreadInfo[NUMBER_OF_SCHEDULING_THREADS] = {0};</span></div>
+<div class="line"><span class="lineno">   40</span> </div>
+<div class="line"><span class="lineno">   41</span>    ULONG maxThread = 0;</div>
+<div class="line"><span class="lineno">   42</span>    ULONG threadHandleArrayOffset;</div>
+<div class="line"><span class="lineno">   43</span> </div>
+<div class="line"><span class="lineno">   44</span> </div>
+<div class="line"><span class="lineno">   45</span> </div>
+<div class="line"><span class="lineno">   46</span> </div>
+<div class="line"><span class="lineno">   47</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#a6893ed9fb06f470b3c214434909d1a5e">NUMBER_OF_USER_THREADS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   48</span>        ThreadContext = &amp;<a class="code hl_variable" href="globals_8h.html#a096ca6650a575f46a9f8b820926c5c35">UserThreadInfo</a>[i];</div>
+<div class="line"><span class="lineno">   49</span>        ThreadContext-&gt;ThreadNumber = maxThread;</div>
+<div class="line"><span class="lineno">   50</span>        ThreadContext-&gt;TransferVaIndex = 0;</div>
+<div class="line"><span class="lineno">   51</span> </div>
+<div class="line"><span class="lineno">   52</span> </div>
+<div class="line"><span class="lineno">   53</span>        Handle = <a class="code hl_function" href="#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a>(<a class="code hl_function" href="vm_8c.html#a1758db79c1f8634a1bbcb278ae08fc8b">testVM</a>, ThreadContext);</div>
+<div class="line"><span class="lineno">   54</span>        ThreadContext-&gt;ThreadHandle = Handle;</div>
+<div class="line"><span class="lineno">   55</span> </div>
+<div class="line"><span class="lineno">   56</span> </div>
+<div class="line"><span class="lineno">   57</span>        <a class="code hl_variable" href="init_8c.html#a3a15fee53bd0c64b27452389031f7513">userThreadHandles</a>[i] = Handle;</div>
+<div class="line"><span class="lineno">   58</span> </div>
+<div class="line"><span class="lineno">   59</span>        maxThread++;</div>
+<div class="line"><span class="lineno">   60</span>    }</div>
+<div class="line"><span class="lineno">   61</span> </div>
+<div class="line"><span class="lineno">   62</span> </div>
+<div class="line"><span class="lineno">   63</span>    threadHandleArrayOffset = maxThread;</div>
+<div class="line"><span class="lineno">   64</span> </div>
+<div class="line"><span class="lineno">   65</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#acbc07915dcf4bdb65b8ac73b8ca92133">NUMBER_OF_TRIMMING_THREADS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   66</span>        ThreadContext = &amp;<a class="code hl_variable" href="globals_8h.html#ac00dd1b49e4f977036ec20197964e126">TrimmerThreadInfo</a>[i];</div>
+<div class="line"><span class="lineno">   67</span>        ThreadContext-&gt;ThreadNumber = maxThread;</div>
+<div class="line"><span class="lineno">   68</span> </div>
+<div class="line"><span class="lineno">   69</span> </div>
+<div class="line"><span class="lineno">   70</span>        Handle = <a class="code hl_function" href="#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a>(<a class="code hl_function" href="trimmer__thread_8c.html#ad435722c9283c37221db5ee47f172da9">page_trimmer</a>, ThreadContext);</div>
+<div class="line"><span class="lineno">   71</span> </div>
+<div class="line"><span class="lineno">   72</span> </div>
+<div class="line"><span class="lineno">   73</span>        ThreadContext-&gt;ThreadHandle = Handle;</div>
+<div class="line"><span class="lineno">   74</span> </div>
+<div class="line"><span class="lineno">   75</span>        <a class="code hl_variable" href="init_8c.html#ad53a830ad07de85db0b1c8aed436e94e">systemThreadHandles</a>[maxThread-threadHandleArrayOffset] = Handle;</div>
+<div class="line"><span class="lineno">   76</span> </div>
+<div class="line"><span class="lineno">   77</span>        maxThread++;</div>
+<div class="line"><span class="lineno">   78</span>    }</div>
+<div class="line"><span class="lineno">   79</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#aae22bfcc5318d230d5cdd8b46e84f3b1">NUMBER_OF_WRITING_THREADS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   80</span>        ThreadContext = &amp;<a class="code hl_variable" href="globals_8h.html#a56e17a4cf397e5bd8e1a175aa2f3a4e2">WriterThreadInfo</a>[i];</div>
+<div class="line"><span class="lineno">   81</span>        ThreadContext-&gt;ThreadNumber = maxThread;</div>
+<div class="line"><span class="lineno">   82</span> </div>
+<div class="line"><span class="lineno">   83</span>        Handle = <a class="code hl_function" href="#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a>(<a class="code hl_function" href="writer__thread_8c.html#a96b6b33fb62f38da93e526858136ae04">diskWriter</a>,ThreadContext);</div>
+<div class="line"><span class="lineno">   84</span> </div>
+<div class="line"><span class="lineno">   85</span>        ThreadContext-&gt;ThreadHandle = Handle;</div>
+<div class="line"><span class="lineno">   86</span> </div>
+<div class="line"><span class="lineno">   87</span>        <a class="code hl_variable" href="init_8c.html#ad53a830ad07de85db0b1c8aed436e94e">systemThreadHandles</a>[maxThread-threadHandleArrayOffset] = Handle;</div>
+<div class="line"><span class="lineno">   88</span> </div>
+<div class="line"><span class="lineno">   89</span>        maxThread++;</div>
+<div class="line"><span class="lineno">   90</span>    }</div>
+<div class="line"><span class="lineno">   91</span> </div>
+<div class="line"><span class="lineno">   92</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#ac51654038811d028b8e5b3060c6c3ae4">NUMBER_OF_ZEROING_THREADS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   93</span>        ThreadContext = &amp;ZeroIngThreadInfo[i];</div>
+<div class="line"><span class="lineno">   94</span>        ThreadContext-&gt;ThreadNumber = maxThread;</div>
+<div class="line"><span class="lineno">   95</span> </div>
+<div class="line"><span class="lineno">   96</span> </div>
+<div class="line"><span class="lineno">   97</span>        Handle = <a class="code hl_function" href="#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a>(<a class="code hl_function" href="zero__thread_8c.html#a96bdf5c27edbefd5b7797ae6e402bedf">zeroingThread</a>,ThreadContext);</div>
+<div class="line"><span class="lineno">   98</span> </div>
+<div class="line"><span class="lineno">   99</span>        ThreadContext-&gt;ThreadHandle = Handle;</div>
+<div class="line"><span class="lineno">  100</span> </div>
+<div class="line"><span class="lineno">  101</span>        <a class="code hl_variable" href="init_8c.html#ad53a830ad07de85db0b1c8aed436e94e">systemThreadHandles</a>[maxThread-threadHandleArrayOffset] = Handle;</div>
+<div class="line"><span class="lineno">  102</span> </div>
+<div class="line"><span class="lineno">  103</span>        maxThread++;</div>
+<div class="line"><span class="lineno">  104</span>    }</div>
+<div class="line"><span class="lineno">  105</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  106</span>    <span class="comment">// for (int i = 0; i &lt; NUMBER_OF_SCHEDULING_THREADS; ++i) {</span></div>
+<div class="line"><span class="lineno">  107</span>    <span class="comment">//     ThreadContext = &amp;SchedulerThreadInfo[i];</span></div>
+<div class="line"><span class="lineno">  108</span>    <span class="comment">//     ThreadContext-&gt;ThreadNumber = maxThread;</span></div>
+<div class="line"><span class="lineno">  109</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  110</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  111</span>    <span class="comment">//     Handle = createNewThread(recordProbability,ThreadContext);</span></div>
+<div class="line"><span class="lineno">  112</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  113</span>    <span class="comment">//     ThreadContext-&gt;ThreadHandle = Handle;</span></div>
+<div class="line"><span class="lineno">  114</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  115</span>    <span class="comment">//     systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;</span></div>
+<div class="line"><span class="lineno">  116</span>    <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  117</span>    <span class="comment">//     maxThread++;</span></div>
+<div class="line"><span class="lineno">  118</span>    <span class="comment">// }</span></div>
+<div class="line"><span class="lineno">  119</span> </div>
+<div class="line"><span class="lineno">  120</span>}</div>
+<div class="ttc" id="aglobals_8h_html_a096ca6650a575f46a9f8b820926c5c35"><div class="ttname"><a href="globals_8h.html#a096ca6650a575f46a9f8b820926c5c35">UserThreadInfo</a></div><div class="ttdeci">THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS]</div></div>
+<div class="ttc" id="aglobals_8h_html_a56e17a4cf397e5bd8e1a175aa2f3a4e2"><div class="ttname"><a href="globals_8h.html#a56e17a4cf397e5bd8e1a175aa2f3a4e2">WriterThreadInfo</a></div><div class="ttdeci">THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS]</div></div>
+<div class="ttc" id="aglobals_8h_html_ac00dd1b49e4f977036ec20197964e126"><div class="ttname"><a href="globals_8h.html#ac00dd1b49e4f977036ec20197964e126">TrimmerThreadInfo</a></div><div class="ttdeci">THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS]</div></div>
+<div class="ttc" id="ainit_8c_html_a3a15fee53bd0c64b27452389031f7513"><div class="ttname"><a href="init_8c.html#a3a15fee53bd0c64b27452389031f7513">userThreadHandles</a></div><div class="ttdeci">HANDLE userThreadHandles[NUMBER_OF_USER_THREADS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00061">init.c:61</a></div></div>
+<div class="ttc" id="ainit_8c_html_ad53a830ad07de85db0b1c8aed436e94e"><div class="ttname"><a href="init_8c.html#ad53a830ad07de85db0b1c8aed436e94e">systemThreadHandles</a></div><div class="ttdeci">HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00062">init.c:62</a></div></div>
+<div class="ttc" id="ainit__threads_8c_html_a6dcc007f243c01c1c0dd02d3fe3e5c43"><div class="ttname"><a href="#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a></div><div class="ttdeci">HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00156">init_threads.c:156</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+<div class="ttc" id="astructures_8h_html_a13521bb0f1dfd16021b5638c96c48572"><div class="ttname"><a href="structures_8h.html#a13521bb0f1dfd16021b5638c96c48572">NUMBER_OF_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00089">structures.h:89</a></div></div>
+<div class="ttc" id="astructures_8h_html_a6893ed9fb06f470b3c214434909d1a5e"><div class="ttname"><a href="structures_8h.html#a6893ed9fb06f470b3c214434909d1a5e">NUMBER_OF_USER_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_USER_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00083">structures.h:83</a></div></div>
+<div class="ttc" id="astructures_8h_html_a6a51703cda40a61f356163e521dfe4ec"><div class="ttname"><a href="structures_8h.html#a6a51703cda40a61f356163e521dfe4ec">THREAD_INFO</a></div><div class="ttdeci">THREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+<div class="ttc" id="astructures_8h_html_aae22bfcc5318d230d5cdd8b46e84f3b1"><div class="ttname"><a href="structures_8h.html#aae22bfcc5318d230d5cdd8b46e84f3b1">NUMBER_OF_WRITING_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_WRITING_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00086">structures.h:86</a></div></div>
+<div class="ttc" id="astructures_8h_html_ac51654038811d028b8e5b3060c6c3ae4"><div class="ttname"><a href="structures_8h.html#ac51654038811d028b8e5b3060c6c3ae4">NUMBER_OF_ZEROING_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_ZEROING_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00084">structures.h:84</a></div></div>
+<div class="ttc" id="astructures_8h_html_acbc07915dcf4bdb65b8ac73b8ca92133"><div class="ttname"><a href="structures_8h.html#acbc07915dcf4bdb65b8ac73b8ca92133">NUMBER_OF_TRIMMING_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_TRIMMING_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00085">structures.h:85</a></div></div>
+<div class="ttc" id="atrimmer__thread_8c_html_ad435722c9283c37221db5ee47f172da9"><div class="ttname"><a href="trimmer__thread_8c.html#ad435722c9283c37221db5ee47f172da9">page_trimmer</a></div><div class="ttdeci">DWORD page_trimmer(LPVOID info)</div><div class="ttdoc">This is the function that deals with unmapping pages.</div><div class="ttdef"><b>Definition</b> <a href="trimmer__thread_8c_source.html#l00029">trimmer_thread.c:29</a></div></div>
+<div class="ttc" id="avm_8c_html_a1758db79c1f8634a1bbcb278ae08fc8b"><div class="ttname"><a href="vm_8c.html#a1758db79c1f8634a1bbcb278ae08fc8b">testVM</a></div><div class="ttdeci">DWORD testVM(LPVOID lpParam)</div><div class="ttdef"><b>Definition</b> <a href="vm_8c_source.html#l00076">vm.c:76</a></div></div>
+<div class="ttc" id="awriter__thread_8c_html_a96b6b33fb62f38da93e526858136ae04"><div class="ttname"><a href="writer__thread_8c.html#a96b6b33fb62f38da93e526858136ae04">diskWriter</a></div><div class="ttdeci">DWORD diskWriter(LPVOID info)</div><div class="ttdoc">This function takes pages off the modified list and tries to write them to disk.</div><div class="ttdef"><b>Definition</b> <a href="writer__thread_8c_source.html#l00024">writer_thread.c:24</a></div></div>
+<div class="ttc" id="azero__thread_8c_html_a96bdf5c27edbefd5b7797ae6e402bedf"><div class="ttname"><a href="zero__thread_8c.html#a96bdf5c27edbefd5b7797ae6e402bedf">zeroingThread</a></div><div class="ttdeci">DWORD zeroingThread(LPVOID threadContext)</div><div class="ttdef"><b>Definition</b> <a href="zero__thread_8c_source.html#l00017">zero_thread.c:17</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init__threads_8c_source.html#l00156">createNewThread()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="structures_8h_source.html#l00089">NUMBER_OF_THREADS</a>, <a class="el" href="structures_8h_source.html#l00085">NUMBER_OF_TRIMMING_THREADS</a>, <a class="el" href="structures_8h_source.html#l00083">NUMBER_OF_USER_THREADS</a>, <a class="el" href="structures_8h_source.html#l00086">NUMBER_OF_WRITING_THREADS</a>, <a class="el" href="structures_8h_source.html#l00084">NUMBER_OF_ZEROING_THREADS</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="init_8c_source.html#l00062">systemThreadHandles</a>, <a class="el" href="vm_8c_source.html#l00076">testVM()</a>, <a class="el" href="structures_8h_source.html#l00196">THREAD_INFO</a>, <a class="el" href="globals_8h.html#ac00dd1b49e4f977036ec20197964e126">TrimmerThreadInfo</a>, <a class="el" href="init_8c_source.html#l00061">userThreadHandles</a>, <a class="el" href="globals_8h.html#a096ca6650a575f46a9f8b820926c5c35">UserThreadInfo</a>, <a class="el" href="globals_8h.html#a56e17a4cf397e5bd8e1a175aa2f3a4e2">WriterThreadInfo</a>, and <a class="el" href="zero__thread_8c_source.html#l00017">zeroingThread()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00021">initThreads()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
 
 </div>
 </div>
@@ -198,6 +407,41 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00131">131</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  131</span>                                {</div>
+<div class="line"><span class="lineno">  132</span> </div>
+<div class="line"><span class="lineno">  133</span>    <a class="code hl_define" href="structures_8h.html#a7a80f8f5ee9281d2db93288382fc2c43">INITIALIZE_LOCK</a>(<a class="code hl_variable" href="init_8c.html#ace953395f45a735a3424dbbca3717906">lockDiskActive</a>);</div>
+<div class="line"><span class="lineno">  134</span>    <a class="code hl_define" href="structures_8h.html#a7a80f8f5ee9281d2db93288382fc2c43">INITIALIZE_LOCK</a>(<a class="code hl_variable" href="init_8c.html#a8c02eda8b512a6c6aeb976f2f1d50b5c">lockNumberOfSlots</a>);</div>
+<div class="line"><span class="lineno">  135</span>    InitializeCriticalSection(&amp;<a class="code hl_variable" href="init_8c.html#ac74251c606c49c2437751b911e77a0f6">serializeWriterandUser</a>);</div>
+<div class="line"><span class="lineno">  136</span> </div>
+<div class="line"><span class="lineno">  137</span><span class="comment">//    lockModList = LOCK_FREE;</span></div>
+<div class="line"><span class="lineno">  138</span><span class="comment">//    lockToBeZeroedList = LOCK_FREE;</span></div>
+<div class="line"><span class="lineno">  139</span> </div>
+<div class="line"><span class="lineno">  140</span>    <a class="code hl_function" href="#a9bd070d2ab0bdb93ced23c5af39fa1b0">initializePageTableLocks</a>();</div>
+<div class="line"><span class="lineno">  141</span> </div>
+<div class="line"><span class="lineno">  142</span>}</div>
+<div class="ttc" id="ainit_8c_html_a8c02eda8b512a6c6aeb976f2f1d50b5c"><div class="ttname"><a href="init_8c.html#a8c02eda8b512a6c6aeb976f2f1d50b5c">lockNumberOfSlots</a></div><div class="ttdeci">PCRITICAL_SECTION lockNumberOfSlots</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00069">init.c:69</a></div></div>
+<div class="ttc" id="ainit_8c_html_ac74251c606c49c2437751b911e77a0f6"><div class="ttname"><a href="init_8c.html#ac74251c606c49c2437751b911e77a0f6">serializeWriterandUser</a></div><div class="ttdeci">CRITICAL_SECTION serializeWriterandUser</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00071">init.c:71</a></div></div>
+<div class="ttc" id="ainit_8c_html_ace953395f45a735a3424dbbca3717906"><div class="ttname"><a href="init_8c.html#ace953395f45a735a3424dbbca3717906">lockDiskActive</a></div><div class="ttdeci">PCRITICAL_SECTION lockDiskActive</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00068">init.c:68</a></div></div>
+<div class="ttc" id="ainit__threads_8c_html_a9bd070d2ab0bdb93ced23c5af39fa1b0"><div class="ttname"><a href="#a9bd070d2ab0bdb93ced23c5af39fa1b0">initializePageTableLocks</a></div><div class="ttdeci">VOID initializePageTableLocks(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00144">init_threads.c:144</a></div></div>
+<div class="ttc" id="astructures_8h_html_a7a80f8f5ee9281d2db93288382fc2c43"><div class="ttname"><a href="structures_8h.html#a7a80f8f5ee9281d2db93288382fc2c43">INITIALIZE_LOCK</a></div><div class="ttdeci">#define INITIALIZE_LOCK(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00109">structures.h:109</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00109">INITIALIZE_LOCK</a>, <a class="el" href="init__threads_8c_source.html#l00144">initializePageTableLocks()</a>, <a class="el" href="init_8c_source.html#l00068">lockDiskActive</a>, <a class="el" href="init_8c_source.html#l00069">lockNumberOfSlots</a>, and <a class="el" href="init_8c_source.html#l00071">serializeWriterandUser</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00021">initThreads()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
+
 </div>
 </div>
 <a id="a9bd070d2ab0bdb93ced23c5af39fa1b0" name="a9bd070d2ab0bdb93ced23c5af39fa1b0"></a>
@@ -215,6 +459,32 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00144">144</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  144</span>                                    {</div>
+<div class="line"><span class="lineno">  145</span>    <a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* p;</div>
+<div class="line"><span class="lineno">  146</span> </div>
+<div class="line"><span class="lineno">  147</span>    p = <a class="code hl_variable" href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a>;</div>
+<div class="line"><span class="lineno">  148</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a>; ++i) {</div>
+<div class="line"><span class="lineno">  149</span>        <a class="code hl_define" href="structures_8h.html#ae34e75e77ca075a7a2286d4308e38b42">INITIALIZE_LOCK_DIRECT</a>(p-&gt;<a class="code hl_variable" href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">lock</a>);</div>
+<div class="line"><span class="lineno">  150</span>        p++;</div>
+<div class="line"><span class="lineno">  151</span>    }</div>
+<div class="line"><span class="lineno">  152</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2e8469f2378cb4430554fbacc3c5b7a4"><div class="ttname"><a href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a></div><div class="ttdeci">PTE_REGION * pteRegionsBase</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00050">init.c:50</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00245">structures.h:245</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html_a5a47700edae0d01d18370739954e9860"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">PTE_REGION::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00248">structures.h:248</a></div></div>
+<div class="ttc" id="astructures_8h_html_ac89673676f0f8705c99b84e72534f9ef"><div class="ttname"><a href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a></div><div class="ttdeci">#define NUMBER_OF_PTE_REGIONS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00242">structures.h:242</a></div></div>
+<div class="ttc" id="astructures_8h_html_ae34e75e77ca075a7a2286d4308e38b42"><div class="ttname"><a href="structures_8h.html#ae34e75e77ca075a7a2286d4308e38b42">INITIALIZE_LOCK_DIRECT</a></div><div class="ttdeci">#define INITIALIZE_LOCK_DIRECT(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00128">structures.h:128</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00128">INITIALIZE_LOCK_DIRECT</a>, <a class="el" href="structures_8h_source.html#l00248">PTE_REGION::lock</a>, <a class="el" href="structures_8h_source.html#l00242">NUMBER_OF_PTE_REGIONS</a>, and <a class="el" href="init_8c_source.html#l00050">pteRegionsBase</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00131">initCriticalSections()</a>.</p>
+<div id="dynsection-7" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-7-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-7-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 7 --></div>
+</div>
+
 </div>
 </div>
 <a id="aab1b5789118354c27bf39d29b3338509" name="aab1b5789118354c27bf39d29b3338509"></a>
@@ -231,6 +501,32 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00021">21</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   21</span>                       {</div>
+<div class="line"><span class="lineno">   22</span>    <a class="code hl_function" href="#a1c045e7187f8f9c0bf2ba68de5a10bca">createEvents</a>();</div>
+<div class="line"><span class="lineno">   23</span>    <a class="code hl_function" href="#ac46fe8c321a8fcd2217bb5a738a7f09e">initCriticalSections</a>();</div>
+<div class="line"><span class="lineno">   24</span>    <a class="code hl_function" href="#a86159e994d33f90d79e149463ecbeb11">createThreads</a>();</div>
+<div class="line"><span class="lineno">   25</span>}</div>
+<div class="ttc" id="ainit__threads_8c_html_a1c045e7187f8f9c0bf2ba68de5a10bca"><div class="ttname"><a href="#a1c045e7187f8f9c0bf2ba68de5a10bca">createEvents</a></div><div class="ttdeci">VOID createEvents(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00121">init_threads.c:121</a></div></div>
+<div class="ttc" id="ainit__threads_8c_html_a86159e994d33f90d79e149463ecbeb11"><div class="ttname"><a href="#a86159e994d33f90d79e149463ecbeb11">createThreads</a></div><div class="ttdeci">VOID createThreads(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00027">init_threads.c:27</a></div></div>
+<div class="ttc" id="ainit__threads_8c_html_ac46fe8c321a8fcd2217bb5a738a7f09e"><div class="ttname"><a href="#ac46fe8c321a8fcd2217bb5a738a7f09e">initCriticalSections</a></div><div class="ttdeci">VOID initCriticalSections(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00131">init_threads.c:131</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>, and <a class="el" href="init__threads_8c_source.html#l00131">initCriticalSections()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00166">init_virtual_memory()</a>.</p>
+<div id="dynsection-8" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-8-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-8-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 8 --></div>
+</div>
+<div id="dynsection-9" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-9-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-9-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 9 --></div>
+</div>
 
 </div>
 </div>

@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -110,7 +117,15 @@ $(function() {
 <code>#include &quot;<a class="el" href="structures_8h_source.html">variables/structures.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="globals_8h_source.html">variables/globals.h</a>&quot;</code><br />
 <code>#include &lt;stdio.h&gt;</code><br />
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for disk.c:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
+<p><a href="disk_8c_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a947f0fa4d5a7fbfa8ea31376670ff063" id="r_a947f0fa4d5a7fbfa8ea31376670ff063"><td class="memItemLeft" align="right" valign="top">ULONG64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a947f0fa4d5a7fbfa8ea31376670ff063">most_free_disk_portion</a> (VOID)</td></tr>
@@ -135,6 +150,54 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="disk_8c_source.html#l00127">127</a> of file <a class="el" href="disk_8c_source.html">disk.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  127</span>                                             {</div>
+<div class="line"><span class="lineno">  128</span>    ULONG64 oldDiskSlotContents;</div>
+<div class="line"><span class="lineno">  129</span>    ULONG64 newDiskSlotContents;</div>
+<div class="line"><span class="lineno">  130</span>    ULONG64 oldDiskSlotComparator;</div>
+<div class="line"><span class="lineno">  131</span>    ULONG64 modifiedDiskSlotContents;</div>
+<div class="line"><span class="lineno">  132</span> </div>
+<div class="line"><span class="lineno">  133</span>    ULONG64 i;</div>
+<div class="line"><span class="lineno">  134</span>    ULONG64 newBit;</div>
+<div class="line"><span class="lineno">  135</span> </div>
+<div class="line"><span class="lineno">  136</span>    oldDiskSlotContents = *diskSlot;</div>
+<div class="line"><span class="lineno">  137</span>    modifiedDiskSlotContents = oldDiskSlotContents;</div>
+<div class="line"><span class="lineno">  138</span> </div>
+<div class="line"><span class="lineno">  139</span> </div>
+<div class="line"><span class="lineno">  140</span>    <span class="keywordflow">for</span> (i = 0; i &lt; 64; i++) {</div>
+<div class="line"><span class="lineno">  141</span>        <span class="keywordflow">if</span> ((modifiedDiskSlotContents &amp; 1) == <a class="code hl_define" href="structures_8h.html#a0f3b73c556102de7594460152532cea2">DISK_ACTIVE</a>) {</div>
+<div class="line"><span class="lineno">  142</span>            modifiedDiskSlotContents &gt;&gt;= 1;</div>
+<div class="line"><span class="lineno">  143</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  144</span>            newBit = ((ULONG64) 1) &lt;&lt; i;</div>
+<div class="line"><span class="lineno">  145</span>            newDiskSlotContents = oldDiskSlotContents | newBit;</div>
+<div class="line"><span class="lineno">  146</span> </div>
+<div class="line"><span class="lineno">  147</span>            oldDiskSlotComparator = InterlockedCompareExchange64((<span class="keyword">volatile</span> LONG64 *) diskSlot,</div>
+<div class="line"><span class="lineno">  148</span>                (LONG64)newDiskSlotContents,</div>
+<div class="line"><span class="lineno">  149</span>                (LONG64) oldDiskSlotContents);</div>
+<div class="line"><span class="lineno">  150</span> </div>
+<div class="line"><span class="lineno">  151</span>            <span class="keywordflow">if</span> (oldDiskSlotComparator == oldDiskSlotContents) {</div>
+<div class="line"><span class="lineno">  152</span>                <span class="keywordflow">return</span> i;</div>
+<div class="line"><span class="lineno">  153</span>            } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  154</span>                oldDiskSlotContents = oldDiskSlotComparator;</div>
+<div class="line"><span class="lineno">  155</span>                modifiedDiskSlotContents = oldDiskSlotContents;</div>
+<div class="line"><span class="lineno">  156</span>                i = MAXULONG64;</div>
+<div class="line"><span class="lineno">  157</span>            }</div>
+<div class="line"><span class="lineno">  158</span>        }</div>
+<div class="line"><span class="lineno">  159</span>    }</div>
+<div class="line"><span class="lineno">  160</span>    <span class="keywordflow">return</span> i;</div>
+<div class="line"><span class="lineno">  161</span>}</div>
+<div class="ttc" id="astructures_8h_html_a0f3b73c556102de7594460152532cea2"><div class="ttname"><a href="structures_8h.html#a0f3b73c556102de7594460152532cea2">DISK_ACTIVE</a></div><div class="ttdeci">#define DISK_ACTIVE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00069">structures.h:69</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00069">DISK_ACTIVE</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, and <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+
 </div>
 </div>
 <a id="a0c495de036a2228b7d464a0032c61234" name="a0c495de036a2228b7d464a0032c61234"></a>
@@ -151,6 +214,66 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="disk_8c_source.html#l00085">85</a> of file <a class="el" href="disk_8c_source.html">disk.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   85</span>                                  {</div>
+<div class="line"><span class="lineno">   86</span>    ULONG64 freePortion;</div>
+<div class="line"><span class="lineno">   87</span>    PULONG64 start;</div>
+<div class="line"><span class="lineno">   88</span>    PULONG64 end;</div>
+<div class="line"><span class="lineno">   89</span>    ULONG64 bitOffset;</div>
+<div class="line"><span class="lineno">   90</span>    ULONG64 returnValue;</div>
+<div class="line"><span class="lineno">   91</span> </div>
+<div class="line"><span class="lineno">   92</span>    freePortion = <a class="code hl_function" href="#a947f0fa4d5a7fbfa8ea31376670ff063">most_free_disk_portion</a>();</div>
+<div class="line"><span class="lineno">   93</span> </div>
+<div class="line"><span class="lineno">   94</span> </div>
+<div class="line"><span class="lineno">   95</span>    start = <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a> + freePortion * (<a class="code hl_define" href="structures_8h.html#a9fbd244277b89b7c4ce31aea73ec76e5">DISK_DIVISION_SIZE_IN_PAGES</a>/64);</div>
+<div class="line"><span class="lineno">   96</span> </div>
+<div class="line"><span class="lineno">   97</span>    <span class="keywordflow">if</span>(<a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[freePortion] == 0) {</div>
+<div class="line"><span class="lineno">   98</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a0a60fdeee4a7f5f102de2142ea7f1ff4">COULD_NOT_FIND_SLOT</a>;</div>
+<div class="line"><span class="lineno">   99</span>    }</div>
+<div class="line"><span class="lineno">  100</span> </div>
+<div class="line"><span class="lineno">  101</span> </div>
+<div class="line"><span class="lineno">  102</span>    <span class="comment">// accounts for extra slot case</span></div>
+<div class="line"><span class="lineno">  103</span>    end = start + <a class="code hl_define" href="structures_8h.html#a9fbd244277b89b7c4ce31aea73ec76e5">DISK_DIVISION_SIZE_IN_PAGES</a>/64;</div>
+<div class="line"><span class="lineno">  104</span>    <span class="keywordflow">if</span> (freePortion == <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a> - 1) {</div>
+<div class="line"><span class="lineno">  105</span>        end += 1;</div>
+<div class="line"><span class="lineno">  106</span>    }</div>
+<div class="line"><span class="lineno">  107</span> </div>
+<div class="line"><span class="lineno">  108</span>    <span class="comment">//for every ULONG in the section</span></div>
+<div class="line"><span class="lineno">  109</span>    <span class="keywordflow">for</span> (; start &lt; end; start++) {</div>
+<div class="line"><span class="lineno">  110</span>        <span class="keywordflow">if</span> (*start != <a class="code hl_define" href="structures_8h.html#ab07721c3e949f9dc3a0fb4f8c9ae08b9">FULL_DISK_SPACE</a>) {</div>
+<div class="line"><span class="lineno">  111</span> </div>
+<div class="line"><span class="lineno">  112</span>            bitOffset = <a class="code hl_function" href="#aeff64864f072e28a6fdeaf68260de746">get_free_disk_bit</a>(start);</div>
+<div class="line"><span class="lineno">  113</span> </div>
+<div class="line"><span class="lineno">  114</span>            <span class="keywordflow">if</span> (bitOffset == 64) {</div>
+<div class="line"><span class="lineno">  115</span>                <span class="keywordflow">continue</span>;</div>
+<div class="line"><span class="lineno">  116</span>            }</div>
+<div class="line"><span class="lineno">  117</span> </div>
+<div class="line"><span class="lineno">  118</span>            InterlockedDecrement64((<span class="keyword">volatile</span> LONG64 *) &amp;<a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[freePortion]);</div>
+<div class="line"><span class="lineno">  119</span>            returnValue = 8 * <span class="keyword">sizeof</span>(ULONG64) * (start - <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a>) + bitOffset;</div>
+<div class="line"><span class="lineno">  120</span> </div>
+<div class="line"><span class="lineno">  121</span>            <span class="keywordflow">return</span> returnValue;</div>
+<div class="line"><span class="lineno">  122</span>        }</div>
+<div class="line"><span class="lineno">  123</span>    }</div>
+<div class="line"><span class="lineno">  124</span> </div>
+<div class="line"><span class="lineno">  125</span>    <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a0a60fdeee4a7f5f102de2142ea7f1ff4">COULD_NOT_FIND_SLOT</a>;</div>
+<div class="line"><span class="lineno">  126</span>}</div>
+<div class="ttc" id="adisk_8c_html_a947f0fa4d5a7fbfa8ea31376670ff063"><div class="ttname"><a href="#a947f0fa4d5a7fbfa8ea31376670ff063">most_free_disk_portion</a></div><div class="ttdeci">ULONG64 most_free_disk_portion(VOID)</div><div class="ttdef"><b>Definition</b> <a href="disk_8c_source.html#l00011">disk.c:11</a></div></div>
+<div class="ttc" id="adisk_8c_html_aeff64864f072e28a6fdeaf68260de746"><div class="ttname"><a href="#aeff64864f072e28a6fdeaf68260de746">get_free_disk_bit</a></div><div class="ttdeci">ULONG64 get_free_disk_bit(PULONG64 diskSlot)</div><div class="ttdef"><b>Definition</b> <a href="disk_8c_source.html#l00127">disk.c:127</a></div></div>
+<div class="ttc" id="ainit_8c_html_a9f446154d095c72a73761fdcec055e28"><div class="ttname"><a href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a></div><div class="ttdeci">ULONG64 * number_of_open_slots</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00058">init.c:58</a></div></div>
+<div class="ttc" id="ainit_8c_html_ae0db0ae49376aafded2a89d3773100fb"><div class="ttname"><a href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a></div><div class="ttdeci">PULONG64 diskActive</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00055">init.c:55</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0a60fdeee4a7f5f102de2142ea7f1ff4"><div class="ttname"><a href="structures_8h.html#a0a60fdeee4a7f5f102de2142ea7f1ff4">COULD_NOT_FIND_SLOT</a></div><div class="ttdeci">#define COULD_NOT_FIND_SLOT</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00095">structures.h:95</a></div></div>
+<div class="ttc" id="astructures_8h_html_a52fb748fa47a3f22fa9a41c7b4399432"><div class="ttname"><a href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a></div><div class="ttdeci">#define NUMBER_OF_DISK_DIVISIONS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00049">structures.h:49</a></div></div>
+<div class="ttc" id="astructures_8h_html_a9fbd244277b89b7c4ce31aea73ec76e5"><div class="ttname"><a href="structures_8h.html#a9fbd244277b89b7c4ce31aea73ec76e5">DISK_DIVISION_SIZE_IN_PAGES</a></div><div class="ttdeci">#define DISK_DIVISION_SIZE_IN_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00052">structures.h:52</a></div></div>
+<div class="ttc" id="astructures_8h_html_ab07721c3e949f9dc3a0fb4f8c9ae08b9"><div class="ttname"><a href="structures_8h.html#ab07721c3e949f9dc3a0fb4f8c9ae08b9">FULL_DISK_SPACE</a></div><div class="ttdeci">#define FULL_DISK_SPACE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00073">structures.h:73</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00095">COULD_NOT_FIND_SLOT</a>, <a class="el" href="structures_8h_source.html#l00052">DISK_DIVISION_SIZE_IN_PAGES</a>, <a class="el" href="init_8c_source.html#l00055">diskActive</a>, <a class="el" href="structures_8h_source.html#l00073">FULL_DISK_SPACE</a>, <a class="el" href="disk_8c_source.html#l00127">get_free_disk_bit()</a>, <a class="el" href="disk_8c_source.html#l00011">most_free_disk_portion()</a>, <a class="el" href="structures_8h_source.html#l00049">NUMBER_OF_DISK_DIVISIONS</a>, and <a class="el" href="init_8c_source.html#l00058">number_of_open_slots</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
 
 </div>
 </div>
@@ -169,6 +292,82 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="disk_8c_source.html#l00027">27</a> of file <a class="el" href="disk_8c_source.html">disk.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   27</span>                                                     {</div>
+<div class="line"><span class="lineno">   28</span>    ULONG64 freePortion;</div>
+<div class="line"><span class="lineno">   29</span>    PULONG64 start;</div>
+<div class="line"><span class="lineno">   30</span>    PULONG64 end;</div>
+<div class="line"><span class="lineno">   31</span>    ULONG64 bitOffset;</div>
+<div class="line"><span class="lineno">   32</span>    ULONG64 returnValue;</div>
+<div class="line"><span class="lineno">   33</span>    ULONG64 numDiskSlotsFilled = 0;</div>
+<div class="line"><span class="lineno">   34</span> </div>
+<div class="line"><span class="lineno">   35</span>    BOOL isNotAtEnd = TRUE;</div>
+<div class="line"><span class="lineno">   36</span>    BOOL arrayIsNotFull = TRUE;</div>
+<div class="line"><span class="lineno">   37</span>    freePortion = <a class="code hl_function" href="#a947f0fa4d5a7fbfa8ea31376670ff063">most_free_disk_portion</a>();</div>
+<div class="line"><span class="lineno">   38</span> </div>
+<div class="line"><span class="lineno">   39</span> </div>
+<div class="line"><span class="lineno">   40</span>    start = <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a> + freePortion * (<a class="code hl_define" href="structures_8h.html#a9fbd244277b89b7c4ce31aea73ec76e5">DISK_DIVISION_SIZE_IN_PAGES</a>/64);</div>
+<div class="line"><span class="lineno">   41</span> </div>
+<div class="line"><span class="lineno">   42</span>    <span class="keywordflow">if</span>(<a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[freePortion] == 0) {</div>
+<div class="line"><span class="lineno">   43</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a0a60fdeee4a7f5f102de2142ea7f1ff4">COULD_NOT_FIND_SLOT</a>;</div>
+<div class="line"><span class="lineno">   44</span>    }</div>
+<div class="line"><span class="lineno">   45</span> </div>
+<div class="line"><span class="lineno">   46</span> </div>
+<div class="line"><span class="lineno">   47</span>    <span class="comment">// accounts for extra slot case</span></div>
+<div class="line"><span class="lineno">   48</span>    end = start + <a class="code hl_define" href="structures_8h.html#a9fbd244277b89b7c4ce31aea73ec76e5">DISK_DIVISION_SIZE_IN_PAGES</a>/64;</div>
+<div class="line"><span class="lineno">   49</span>    <span class="keywordflow">if</span> (freePortion == <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a> - 1) {</div>
+<div class="line"><span class="lineno">   50</span>        end += 1;</div>
+<div class="line"><span class="lineno">   51</span>    }</div>
+<div class="line"><span class="lineno">   52</span> </div>
+<div class="line"><span class="lineno">   53</span> </div>
+<div class="line"><span class="lineno">   54</span> </div>
+<div class="line"><span class="lineno">   55</span>    <span class="comment">// TODO make it wrap and have a writer thread ulong past in that is the last location</span></div>
+<div class="line"><span class="lineno">   56</span>    <span class="keywordflow">while</span> (isNotAtEnd &amp;&amp; arrayIsNotFull) {</div>
+<div class="line"><span class="lineno">   57</span> </div>
+<div class="line"><span class="lineno">   58</span>        <span class="keywordflow">if</span> (*start != <a class="code hl_define" href="structures_8h.html#ab07721c3e949f9dc3a0fb4f8c9ae08b9">FULL_DISK_SPACE</a>) {</div>
+<div class="line"><span class="lineno">   59</span> </div>
+<div class="line"><span class="lineno">   60</span>            bitOffset = <a class="code hl_function" href="#aeff64864f072e28a6fdeaf68260de746">get_free_disk_bit</a>(start);</div>
+<div class="line"><span class="lineno">   61</span> </div>
+<div class="line"><span class="lineno">   62</span>            <span class="keywordflow">if</span> (bitOffset == 64) {</div>
+<div class="line"><span class="lineno">   63</span>                 start++;</div>
+<div class="line"><span class="lineno">   64</span>            }</div>
+<div class="line"><span class="lineno">   65</span> </div>
+<div class="line"><span class="lineno">   66</span>            InterlockedDecrement64((<span class="keyword">volatile</span> LONG64 *)&amp;<a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[freePortion]);</div>
+<div class="line"><span class="lineno">   67</span>            returnValue = 8 * <span class="keyword">sizeof</span>(ULONG64) * (start - <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a>) + bitOffset;</div>
+<div class="line"><span class="lineno">   68</span>            diskIndices[numDiskSlotsFilled] = returnValue;</div>
+<div class="line"><span class="lineno">   69</span>            numDiskSlotsFilled++;</div>
+<div class="line"><span class="lineno">   70</span> </div>
+<div class="line"><span class="lineno">   71</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">   72</span>            start++;</div>
+<div class="line"><span class="lineno">   73</span>        }</div>
+<div class="line"><span class="lineno">   74</span>        isNotAtEnd = start &lt; end ;</div>
+<div class="line"><span class="lineno">   75</span>        arrayIsNotFull =  numDiskSlotsFilled &lt;  <a class="code hl_define" href="structures_8h.html#a9ae2958e436c566413867028fc829ec0">BATCH_SIZE</a>;</div>
+<div class="line"><span class="lineno">   76</span> </div>
+<div class="line"><span class="lineno">   77</span>    }</div>
+<div class="line"><span class="lineno">   78</span>    <span class="keywordflow">if</span> (isNotAtEnd == FALSE) {</div>
+<div class="line"><span class="lineno">   79</span>      <span class="keywordflow">if</span> ( numDiskSlotsFilled == 0) {</div>
+<div class="line"><span class="lineno">   80</span>          <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a0a60fdeee4a7f5f102de2142ea7f1ff4">COULD_NOT_FIND_SLOT</a>;</div>
+<div class="line"><span class="lineno">   81</span>      }</div>
+<div class="line"><span class="lineno">   82</span>    }   <span class="keywordflow">return</span> numDiskSlotsFilled;</div>
+<div class="line"><span class="lineno">   83</span>}</div>
+<div class="ttc" id="astructures_8h_html_a9ae2958e436c566413867028fc829ec0"><div class="ttname"><a href="structures_8h.html#a9ae2958e436c566413867028fc829ec0">BATCH_SIZE</a></div><div class="ttdeci">#define BATCH_SIZE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00093">structures.h:93</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00093">BATCH_SIZE</a>, <a class="el" href="structures_8h_source.html#l00095">COULD_NOT_FIND_SLOT</a>, <a class="el" href="structures_8h_source.html#l00052">DISK_DIVISION_SIZE_IN_PAGES</a>, <a class="el" href="init_8c_source.html#l00055">diskActive</a>, <a class="el" href="structures_8h_source.html#l00073">FULL_DISK_SPACE</a>, <a class="el" href="disk_8c_source.html#l00127">get_free_disk_bit()</a>, <a class="el" href="disk_8c_source.html#l00011">most_free_disk_portion()</a>, <a class="el" href="structures_8h_source.html#l00049">NUMBER_OF_DISK_DIVISIONS</a>, and <a class="el" href="init_8c_source.html#l00058">number_of_open_slots</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
+
 </div>
 </div>
 <a id="a947f0fa4d5a7fbfa8ea31376670ff063" name="a947f0fa4d5a7fbfa8ea31376670ff063"></a>
@@ -186,6 +385,34 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="disk_8c_source.html#l00011">11</a> of file <a class="el" href="disk_8c_source.html">disk.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   11</span>                             {</div>
+<div class="line"><span class="lineno">   12</span>    ULONG64 max = 0;</div>
+<div class="line"><span class="lineno">   13</span>    ULONG64 index = 0;</div>
+<div class="line"><span class="lineno">   14</span> </div>
+<div class="line"><span class="lineno">   15</span>    EnterCriticalSection(<a class="code hl_variable" href="init_8c.html#a8c02eda8b512a6c6aeb976f2f1d50b5c">lockNumberOfSlots</a>);</div>
+<div class="line"><span class="lineno">   16</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   17</span>        <span class="keywordflow">if</span> (max &lt;= <a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[i]) {</div>
+<div class="line"><span class="lineno">   18</span>            max = <a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[i];</div>
+<div class="line"><span class="lineno">   19</span>            index = i;</div>
+<div class="line"><span class="lineno">   20</span>        }</div>
+<div class="line"><span class="lineno">   21</span>    }</div>
+<div class="line"><span class="lineno">   22</span>    LeaveCriticalSection(<a class="code hl_variable" href="init_8c.html#a8c02eda8b512a6c6aeb976f2f1d50b5c">lockNumberOfSlots</a>);</div>
+<div class="line"><span class="lineno">   23</span> </div>
+<div class="line"><span class="lineno">   24</span>    <span class="keywordflow">return</span> index;</div>
+<div class="line"><span class="lineno">   25</span>}</div>
+<div class="ttc" id="ainit_8c_html_a8c02eda8b512a6c6aeb976f2f1d50b5c"><div class="ttname"><a href="init_8c.html#a8c02eda8b512a6c6aeb976f2f1d50b5c">lockNumberOfSlots</a></div><div class="ttdeci">PCRITICAL_SECTION lockNumberOfSlots</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00069">init.c:69</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00069">lockNumberOfSlots</a>, <a class="el" href="structures_8h_source.html#l00049">NUMBER_OF_DISK_DIVISIONS</a>, and <a class="el" href="init_8c_source.html#l00058">number_of_open_slots</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, and <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
+
 </div>
 </div>
 <a id="a7dfe0615aa76e5354d65a2d9b62b46dc" name="a7dfe0615aa76e5354d65a2d9b62b46dc"></a>
@@ -202,6 +429,83 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="disk_8c_source.html#l00166">166</a> of file <a class="el" href="disk_8c_source.html">disk.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  166</span>                                       {</div>
+<div class="line"><span class="lineno">  167</span> </div>
+<div class="line"><span class="lineno">  168</span>    ULONG64 diskMetaDataIndex;</div>
+<div class="line"><span class="lineno">  169</span>    ULONG64 newDiskSlotContents;</div>
+<div class="line"><span class="lineno">  170</span>    PULONG64 diskMetaDateAddress;</div>
+<div class="line"><span class="lineno">  171</span>    ULONG64 oldDiskSlotContents;</div>
+<div class="line"><span class="lineno">  172</span> </div>
+<div class="line"><span class="lineno">  173</span>    ULONG64 bitOffset;</div>
+<div class="line"><span class="lineno">  174</span>    ULONG64 diskHasChanged;</div>
+<div class="line"><span class="lineno">  175</span> </div>
+<div class="line"><span class="lineno">  176</span> </div>
+<div class="line"><span class="lineno">  177</span>    ULONG64 diskIndexSection;</div>
+<div class="line"><span class="lineno">  178</span>    <span class="comment">// this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that</span></div>
+<div class="line"><span class="lineno">  179</span>    <span class="comment">// there is truncation when stuff cant go in easily</span></div>
+<div class="line"><span class="lineno">  180</span> </div>
+<div class="line"><span class="lineno">  181</span> </div>
+<div class="line"><span class="lineno">  182</span>    diskIndexSection = diskIndex / <a class="code hl_define" href="structures_8h.html#a9fbd244277b89b7c4ce31aea73ec76e5">DISK_DIVISION_SIZE_IN_PAGES</a>;</div>
+<div class="line"><span class="lineno">  183</span> </div>
+<div class="line"><span class="lineno">  184</span>    <span class="keywordflow">if</span> (diskIndexSection &gt;= <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a>) {</div>
+<div class="line"><span class="lineno">  185</span>        diskIndexSection = <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a> - 1;</div>
+<div class="line"><span class="lineno">  186</span>    }</div>
+<div class="line"><span class="lineno">  187</span> </div>
+<div class="line"><span class="lineno">  188</span> </div>
+<div class="line"><span class="lineno">  189</span>    <span class="comment">// round down to the nearest ULONG64</span></div>
+<div class="line"><span class="lineno">  190</span>    diskMetaDataIndex = (diskIndex &gt;&gt; 6);</div>
+<div class="line"><span class="lineno">  191</span> </div>
+<div class="line"><span class="lineno">  192</span>    diskMetaDateAddress = <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a> + diskMetaDataIndex;</div>
+<div class="line"><span class="lineno">  193</span> </div>
+<div class="line"><span class="lineno">  194</span>    oldDiskSlotContents = *diskMetaDateAddress;</div>
+<div class="line"><span class="lineno">  195</span> </div>
+<div class="line"><span class="lineno">  196</span> </div>
+<div class="line"><span class="lineno">  197</span>    bitOffset = diskIndex &amp; (63);</div>
+<div class="line"><span class="lineno">  198</span>    newDiskSlotContents = oldDiskSlotContents &amp; ~((ULONG64)1 &lt;&lt; bitOffset);</div>
+<div class="line"><span class="lineno">  199</span> </div>
+<div class="line"><span class="lineno">  200</span>    <span class="comment">//T1</span></div>
+<div class="line"><span class="lineno">  201</span>        <span class="comment">//oldDiskSlotContents 1111</span></div>
+<div class="line"><span class="lineno">  202</span>        <span class="comment">//NewDiskSlotContents 1110</span></div>
+<div class="line"><span class="lineno">  203</span>    <span class="comment">//T2</span></div>
+<div class="line"><span class="lineno">  204</span>        <span class="comment">//oldDiskSlotContents 1111</span></div>
+<div class="line"><span class="lineno">  205</span>        <span class="comment">//new diskSlotsContents 1101</span></div>
+<div class="line"><span class="lineno">  206</span> </div>
+<div class="line"><span class="lineno">  207</span> </div>
+<div class="line"><span class="lineno">  208</span> </div>
+<div class="line"><span class="lineno">  209</span> </div>
+<div class="line"><span class="lineno">  210</span>    <span class="comment">//dASSERT(FALSE)</span></div>
+<div class="line"><span class="lineno">  211</span>    <span class="keywordflow">while</span> (<span class="keyword">true</span>) {</div>
+<div class="line"><span class="lineno">  212</span>        diskHasChanged = InterlockedCompareExchange64((PLONG64) diskMetaDateAddress,</div>
+<div class="line"><span class="lineno">  213</span>            (LONG64) newDiskSlotContents,</div>
+<div class="line"><span class="lineno">  214</span>            (LONG64) oldDiskSlotContents);</div>
+<div class="line"><span class="lineno">  215</span> </div>
+<div class="line"><span class="lineno">  216</span>        <span class="comment">//t1</span></div>
+<div class="line"><span class="lineno">  217</span>        <span class="comment">//diskhasChanged = 1111</span></div>
+<div class="line"><span class="lineno">  218</span>        <span class="keywordflow">if</span> (diskHasChanged == oldDiskSlotContents) {</div>
+<div class="line"><span class="lineno">  219</span>            <span class="keywordflow">break</span>;</div>
+<div class="line"><span class="lineno">  220</span>        }</div>
+<div class="line"><span class="lineno">  221</span>        oldDiskSlotContents = diskHasChanged;</div>
+<div class="line"><span class="lineno">  222</span>    }</div>
+<div class="line"><span class="lineno">  223</span> </div>
+<div class="line"><span class="lineno">  224</span> </div>
+<div class="line"><span class="lineno">  225</span>    <span class="comment">//if the disk previously had zero slots</span></div>
+<div class="line"><span class="lineno">  226</span>    <span class="keywordflow">if</span> (InterlockedIncrement64((PLONG64) &amp;<a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[diskIndexSection]) == 1) {</div>
+<div class="line"><span class="lineno">  227</span>        SetEvent(<a class="code hl_variable" href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a>);</div>
+<div class="line"><span class="lineno">  228</span>    }</div>
+<div class="line"><span class="lineno">  229</span>}</div>
+<div class="ttc" id="ainit_8c_html_ad27b5858a32d7c89137c68150f36c0ea"><div class="ttname"><a href="init_8c.html#ad27b5858a32d7c89137c68150f36c0ea">writingStartEvent</a></div><div class="ttdeci">HANDLE writingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00080">init.c:80</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00052">DISK_DIVISION_SIZE_IN_PAGES</a>, <a class="el" href="init_8c_source.html#l00055">diskActive</a>, <a class="el" href="structures_8h_source.html#l00049">NUMBER_OF_DISK_DIVISIONS</a>, <a class="el" href="init_8c_source.html#l00058">number_of_open_slots</a>, and <a class="el" href="init_8c_source.html#l00080">writingStartEvent</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, <a class="el" href="writer__thread_8c_source.html#l00122">freeUnusedDiskSlots()</a>, <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00158">unmapDiskFormatPTE()</a>, and <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>.</p>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
 
 </div>
 </div>

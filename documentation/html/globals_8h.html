@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -107,6 +114,18 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="structures_8h_source.html">structures.h</a>&quot;</code><br />
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for globals.h:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
 </div>
 <p><a href="globals_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -182,6 +201,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00055">55</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>, <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>, and <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>.</p>
+
 </div>
 </div>
 <a id="acfd88af492b8882572108d2c8c71351f" name="acfd88af492b8882572108d2c8c71351f"></a>
@@ -203,6 +226,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00056">56</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>.</p>
 
 </div>
 </div>
@@ -226,6 +253,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00057">57</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>.</p>
+
 </div>
 </div>
 <a id="a444c05823db77df8673c6b9e3a7bdfac" name="a444c05823db77df8673c6b9e3a7bdfac"></a>
@@ -247,6 +278,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00054">54</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00196">init_disk()</a>.</p>
 
 </div>
 </div>
@@ -270,6 +305,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00053">53</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00277">getDiskAddressesFromDiskIndices()</a>, <a class="el" href="init_8c_source.html#l00196">init_disk()</a>, and <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>.</p>
+
 </div>
 </div>
 <a id="a6714a26157ebdb9b9563bfb92ae3b5e0" name="a6714a26157ebdb9b9563bfb92ae3b5e0"></a>
@@ -291,6 +330,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00042">42</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00277">init_pfns()</a>, and <a class="el" href="page__utils_8c_source.html#l00014">pfnInbounds()</a>.</p>
 
 </div>
 </div>
@@ -314,6 +357,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00030">30</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, and <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
+
 </div>
 </div>
 <a id="a3798be30b1f648b1b1de8c1d6560c533" name="a3798be30b1f648b1b1de8c1d6560c533"></a>
@@ -335,6 +382,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00032">32</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>, and <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>.</p>
 
 </div>
 </div>
@@ -358,6 +409,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00031">31</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, and <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
+
 </div>
 </div>
 <a id="a1c302bfa8283e1fd3ac07b41cbec4793" name="a1c302bfa8283e1fd3ac07b41cbec4793"></a>
@@ -379,6 +434,8 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00078">78</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
 
 </div>
 </div>
@@ -402,6 +459,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00035">35</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00125">getActivePage()</a>, <a class="el" href="init_8c_source.html#l00330">init_lists()</a>, <a class="el" href="macros_8h_source.html#l00098">InsertTailList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00073">unmapActivePage()</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
 </div>
 </div>
 <a id="a52984f5994ddf0c0360c085b79b9023b" name="a52984f5994ddf0c0360c085b79b9023b"></a>
@@ -423,6 +484,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00029">29</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, and <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
 
 </div>
 </div>
@@ -446,6 +511,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00036">36</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00161">addBatchToModifiedList()</a>, <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="writer__thread_8c_source.html#l00209">getPagesFromModifiedList()</a>, <a class="el" href="init_8c_source.html#l00330">init_lists()</a>, <a class="el" href="macros_8h_source.html#l00098">InsertTailList()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
 </div>
 </div>
 <a id="a2104c2f630ec691446eb83024e5eb897" name="a2104c2f630ec691446eb83024e5eb897"></a>
@@ -467,6 +536,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00037">37</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>, <a class="el" href="init_8c_source.html#l00330">init_lists()</a>, <a class="el" href="macros_8h_source.html#l00098">InsertTailList()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="user__free_8c_source.html#l00098">unmapRescuePage()</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
 
 </div>
 </div>
@@ -490,6 +563,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00038">38</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00330">init_lists()</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
 </div>
 </div>
 <a id="ace953395f45a735a3424dbbca3717906" name="ace953395f45a735a3424dbbca3717906"></a>
@@ -511,6 +588,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00068">68</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00131">initCriticalSections()</a>.</p>
 
 </div>
 </div>
@@ -534,6 +615,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00069">69</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00131">initCriticalSections()</a>, and <a class="el" href="disk_8c_source.html#l00011">most_free_disk_portion()</a>.</p>
+
 </div>
 </div>
 <a id="a7f548e4b4ba5df0c29b855268d0d868f" name="a7f548e4b4ba5df0c29b855268d0d868f"></a>
@@ -555,6 +640,8 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00070">70</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
 
 </div>
 </div>
@@ -578,6 +665,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00058">58</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="disk_8c_source.html#l00085">get_free_disk_index()</a>, <a class="el" href="disk_8c_source.html#l00027">getMultipleDiskIndices()</a>, <a class="el" href="init_8c_source.html#l00256">init_num_open_slots()</a>, <a class="el" href="disk_8c_source.html#l00011">most_free_disk_portion()</a>, and <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>.</p>
+
 </div>
 </div>
 <a id="a377cadc3f3505d5777cad6f2deb856cf" name="a377cadc3f3505d5777cad6f2deb856cf"></a>
@@ -599,6 +690,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00040">40</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="pte__utils_8c_source.html#l00027">getPTERegion()</a>, <a class="el" href="init_8c_source.html#l00186">init_pageTable()</a>, <a class="el" href="pte__utils_8c_source.html#l00017">pte_to_va()</a>, and <a class="el" href="pte__utils_8c_source.html#l00010">va_to_pte()</a>.</p>
 
 </div>
 </div>
@@ -622,6 +717,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00041">41</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="page__utils_8c_source.html#l00019">getFrameNumber()</a>, <a class="el" href="page__utils_8c_source.html#l00023">getPFNfromFrameNumber()</a>, <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>, and <a class="el" href="init_8c_source.html#l00277">init_pfns()</a>.</p>
+
 </div>
 </div>
 <a id="ab03733558cb372455cf304fbe3557898" name="ab03733558cb372455cf304fbe3557898"></a>
@@ -643,6 +742,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00048">48</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>, and <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
 
 </div>
 </div>
@@ -666,6 +769,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00089">89</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>, and <a class="el" href="init_8c_source.html#l00406">initVA()</a>.</p>
+
 </div>
 </div>
 <a id="a18a3a8092de1ecdffeb9169cd922ec55" name="a18a3a8092de1ecdffeb9169cd922ec55"></a>
@@ -687,6 +794,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00049">49</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00472">getMaxFrameNumber()</a>, <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>, and <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
 
 </div>
 </div>
@@ -710,6 +821,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00050">50</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="pte__utils_8c_source.html#l00027">getPTERegion()</a>, <a class="el" href="init_8c_source.html#l00176">init_pte_regions()</a>, <a class="el" href="init__threads_8c_source.html#l00144">initializePageTableLocks()</a>, and <a class="el" href="statistics_8c_source.html#l00014">recordProbability()</a>.</p>
+
 </div>
 </div>
 <a id="ac74251c606c49c2437751b911e77a0f6" name="ac74251c606c49c2437751b911e77a0f6"></a>
@@ -732,6 +847,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00071">71</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00131">initCriticalSections()</a>.</p>
+
 </div>
 </div>
 <a id="a3ee8727f68de6ca78ffbc6bea01512cd" name="a3ee8727f68de6ca78ffbc6bea01512cd"></a>
@@ -753,6 +872,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00033">33</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, and <a class="el" href="init_8c_source.html#l00330">init_lists()</a>.</p>
 
 </div>
 </div>
@@ -798,6 +921,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00085">85</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="zero__thread_8c_source.html#l00017">zeroingThread()</a>.</p>
+
 </div>
 </div>
 <a id="ad53a830ad07de85db0b1c8aed436e94e" name="ad53a830ad07de85db0b1c8aed436e94e"></a>
@@ -819,6 +946,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00062">62</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>, and <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>.</p>
 
 </div>
 </div>
@@ -864,6 +995,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00045">45</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00406">initVA()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00145">unmapBatch()</a>, and <a class="el" href="writer__thread_8c_source.html#l00179">writeToDisk()</a>.</p>
+
 </div>
 </div>
 <a id="ac00dd1b49e4f977036ec20197964e126" name="ac00dd1b49e4f977036ec20197964e126"></a>
@@ -885,6 +1020,8 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
 
 </div>
 </div>
@@ -908,6 +1045,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00079">79</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, and <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>.</p>
+
 </div>
 </div>
 <a id="acefd683d0ec814a5f35e5e63e6744aac" name="acefd683d0ec814a5f35e5e63e6744aac"></a>
@@ -929,6 +1070,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00083">83</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, and <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
 
 </div>
 </div>
@@ -952,6 +1097,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00082">82</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, and <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
+
 </div>
 </div>
 <a id="a3a15fee53bd0c64b27452389031f7513" name="a3a15fee53bd0c64b27452389031f7513"></a>
@@ -973,6 +1122,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00061">61</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>, and <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>.</p>
 
 </div>
 </div>
@@ -996,6 +1149,8 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+
 </div>
 </div>
 <a id="a17f39208d3a7e2889b13d9cb79b3a7b9" name="a17f39208d3a7e2889b13d9cb79b3a7b9"></a>
@@ -1017,6 +1172,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00046">46</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00149">freeThreadMapping()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, and <a class="el" href="init_8c_source.html#l00406">initVA()</a>.</p>
 
 </div>
 </div>
@@ -1040,6 +1199,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00044">44</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00406">initVA()</a>, and <a class="el" href="pte__utils_8c_source.html#l00023">isVaValid()</a>.</p>
+
 </div>
 </div>
 <a id="aaaf4624300194b91a31836695b593a30" name="aaaf4624300194b91a31836695b593a30"></a>
@@ -1061,6 +1224,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00043">43</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, <a class="el" href="init_8c_source.html#l00406">initVA()</a>, <a class="el" href="pte__utils_8c_source.html#l00023">isVaValid()</a>, <a class="el" href="pte__utils_8c_source.html#l00017">pte_to_va()</a>, <a class="el" href="vm_8c_source.html#l00076">testVM()</a>, and <a class="el" href="pte__utils_8c_source.html#l00010">va_to_pte()</a>.</p>
 
 </div>
 </div>
@@ -1084,6 +1251,8 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00060">60</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
 </div>
 </div>
 <a id="a56e17a4cf397e5bd8e1a175aa2f3a4e2" name="a56e17a4cf397e5bd8e1a175aa2f3a4e2"></a>
@@ -1105,6 +1274,8 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
 
 </div>
 </div>
@@ -1128,6 +1299,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00081">81</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, and <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>.</p>
+
 </div>
 </div>
 <a id="ad27b5858a32d7c89137c68150f36c0ea" name="ad27b5858a32d7c89137c68150f36c0ea"></a>
@@ -1150,6 +1325,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00080">80</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, <a class="el" href="writer__thread_8c_source.html#l00024">diskWriter()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>.</p>
+
 </div>
 </div>
 <a id="a94c076359309b0aa7014248aa5718aad" name="a94c076359309b0aa7014248aa5718aad"></a>
@@ -1171,6 +1350,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00084">84</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00121">createEvents()</a>, and <a class="el" href="zero__thread_8c_source.html#l00017">zeroingThread()</a>.</p>
 
 </div>
 </div>
@@ -1215,6 +1398,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00047">47</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00406">initVA()</a>, and <a class="el" href="zero__thread_8c_source.html#l00061">zeroMultiplePages()</a>.</p>
 
 </div>
 </div>

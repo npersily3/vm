@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -122,13 +129,13 @@ $(function() {
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* <a class="code hl_function" href="pte__utils_8h.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a>(<a class="code hl_struct" href="structpte.html">pte</a>* <a class="code hl_struct" href="structpte.html">pte</a>);</div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#endif </span><span class="comment">//PTE_UTILS_H</span></div>
-<div class="ttc" id="apte__utils_8h_html_a064a8281ff67659403b71b6c9b2ae426"><div class="ttname"><a href="pte__utils_8h.html#a064a8281ff67659403b71b6c9b2ae426">pte_to_va</a></div><div class="ttdeci">PVOID pte_to_va(pte *pte)</div><div class="ttdef"><b>Definition</b> pte_utils.c:17</div></div>
+<div class="ttc" id="apte__utils_8h_html_a064a8281ff67659403b71b6c9b2ae426"><div class="ttname"><a href="pte__utils_8h.html#a064a8281ff67659403b71b6c9b2ae426">pte_to_va</a></div><div class="ttdeci">PVOID pte_to_va(pte *pte)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00017">pte_utils.c:17</a></div></div>
 <div class="ttc" id="apte__utils_8h_html_a6163604d51ab86e3f83c36a048a97d0f"><div class="ttname"><a href="pte__utils_8h.html#a6163604d51ab86e3f83c36a048a97d0f">getPageTableLock</a></div><div class="ttdeci">PCRITICAL_SECTION getPageTableLock(pte *pte)</div></div>
-<div class="ttc" id="apte__utils_8h_html_abcda62fe13c85a36a83bf5b2294436b7"><div class="ttname"><a href="pte__utils_8h.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a></div><div class="ttdeci">PTE_REGION * getPTERegion(pte *pte)</div><div class="ttdef"><b>Definition</b> pte_utils.c:27</div></div>
-<div class="ttc" id="apte__utils_8h_html_af1bc0b9029ce9be426fd21c5400c7bbb"><div class="ttname"><a href="pte__utils_8h.html#af1bc0b9029ce9be426fd21c5400c7bbb">va_to_pte</a></div><div class="ttdeci">pte * va_to_pte(ULONG64 va)</div><div class="ttdef"><b>Definition</b> pte_utils.c:10</div></div>
-<div class="ttc" id="apte__utils_8h_html_af7fcf9214d3e31047ed3fd41a34df2e0"><div class="ttname"><a href="pte__utils_8h.html#af7fcf9214d3e31047ed3fd41a34df2e0">isVaValid</a></div><div class="ttdeci">BOOL isVaValid(ULONG64 va)</div><div class="ttdef"><b>Definition</b> pte_utils.c:23</div></div>
-<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> structures.h:245</div></div>
-<div class="ttc" id="astructpte_html"><div class="ttname"><a href="structpte.html">pte</a></div><div class="ttdef"><b>Definition</b> structures.h:161</div></div>
+<div class="ttc" id="apte__utils_8h_html_abcda62fe13c85a36a83bf5b2294436b7"><div class="ttname"><a href="pte__utils_8h.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a></div><div class="ttdeci">PTE_REGION * getPTERegion(pte *pte)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00027">pte_utils.c:27</a></div></div>
+<div class="ttc" id="apte__utils_8h_html_af1bc0b9029ce9be426fd21c5400c7bbb"><div class="ttname"><a href="pte__utils_8h.html#af1bc0b9029ce9be426fd21c5400c7bbb">va_to_pte</a></div><div class="ttdeci">pte * va_to_pte(ULONG64 va)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00010">pte_utils.c:10</a></div></div>
+<div class="ttc" id="apte__utils_8h_html_af7fcf9214d3e31047ed3fd41a34df2e0"><div class="ttname"><a href="pte__utils_8h.html#af7fcf9214d3e31047ed3fd41a34df2e0">isVaValid</a></div><div class="ttdeci">BOOL isVaValid(ULONG64 va)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00023">pte_utils.c:23</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00245">structures.h:245</a></div></div>
+<div class="ttc" id="astructpte_html"><div class="ttname"><a href="structpte.html">pte</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00161">structures.h:161</a></div></div>
 <div class="ttc" id="astructures_8h_html"><div class="ttname"><a href="structures_8h.html">structures.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

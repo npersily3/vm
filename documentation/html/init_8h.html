@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -108,6 +115,18 @@ $(function() {
 <div class="contents">
 <div class="textblock"><code>#include &lt;windows.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="structures_8h_source.html">../variables/structures.h</a>&quot;</code><br />
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for init.h:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
 </div>
 <p><a href="init_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -152,6 +171,36 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00143">143</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  143</span>                                {</div>
+<div class="line"><span class="lineno">  144</span>    HANDLE section;</div>
+<div class="line"><span class="lineno">  145</span>    MEM_EXTENDED_PARAMETER parameter = { 0 };</div>
+<div class="line"><span class="lineno">  146</span> </div>
+<div class="line"><span class="lineno">  147</span>    <span class="comment">// Create an AWE section. Later we deposit pages into it and/or return them.</span></div>
+<div class="line"><span class="lineno">  148</span>    parameter.Type = MemSectionExtendedParameterUserPhysicalFlags;</div>
+<div class="line"><span class="lineno">  149</span>    parameter.ULong = 0;</div>
+<div class="line"><span class="lineno">  150</span> </div>
+<div class="line"><span class="lineno">  151</span>    section = CreateFileMapping2(INVALID_HANDLE_VALUE,</div>
+<div class="line"><span class="lineno">  152</span>                                 NULL,</div>
+<div class="line"><span class="lineno">  153</span>                                 SECTION_MAP_READ | SECTION_MAP_WRITE,</div>
+<div class="line"><span class="lineno">  154</span>                                 PAGE_READWRITE,</div>
+<div class="line"><span class="lineno">  155</span>                                 SEC_RESERVE,</div>
+<div class="line"><span class="lineno">  156</span>                                 0,</div>
+<div class="line"><span class="lineno">  157</span>                                 NULL,</div>
+<div class="line"><span class="lineno">  158</span>                                 &amp;parameter,</div>
+<div class="line"><span class="lineno">  159</span>                                 1);</div>
+<div class="line"><span class="lineno">  160</span> </div>
+<div class="line"><span class="lineno">  161</span>    <span class="keywordflow">return</span> section;</div>
+<div class="line"><span class="lineno">  162</span>}</div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+
 </div>
 </div>
 <a id="aa298b9446869fc2d050a719120cb9539" name="aa298b9446869fc2d050a719120cb9539"></a>
@@ -168,6 +217,31 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00472">472</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  472</span>                                {</div>
+<div class="line"><span class="lineno">  473</span>    ULONG64 maxFrameNumber;</div>
+<div class="line"><span class="lineno">  474</span>    maxFrameNumber = 0;</div>
+<div class="line"><span class="lineno">  475</span> </div>
+<div class="line"><span class="lineno">  476</span>    ULONG64 i;</div>
+<div class="line"><span class="lineno">  477</span> </div>
+<div class="line"><span class="lineno">  478</span>    <span class="keywordflow">for</span> (i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a>; ++i) {</div>
+<div class="line"><span class="lineno">  479</span>        maxFrameNumber = max(maxFrameNumber, <a class="code hl_variable" href="init_8c.html#a18a3a8092de1ecdffeb9169cd922ec55">physical_page_numbers</a>[i]);</div>
+<div class="line"><span class="lineno">  480</span>    }</div>
+<div class="line"><span class="lineno">  481</span>    <span class="keywordflow">return</span> maxFrameNumber;</div>
+<div class="line"><span class="lineno">  482</span>}</div>
+<div class="ttc" id="ainit_8c_html_a18a3a8092de1ecdffeb9169cd922ec55"><div class="ttname"><a href="init_8c.html#a18a3a8092de1ecdffeb9169cd922ec55">physical_page_numbers</a></div><div class="ttdeci">PULONG_PTR physical_page_numbers</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00049">init.c:49</a></div></div>
+<div class="ttc" id="astructures_8h_html_a1e905c2e2a948059f3414462c702fe2d"><div class="ttname"><a href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a></div><div class="ttdeci">#define NUMBER_OF_PHYSICAL_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00041">structures.h:41</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00041">NUMBER_OF_PHYSICAL_PAGES</a>, and <a class="el" href="init_8c_source.html#l00049">physical_page_numbers</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00277">init_pfns()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
 
 </div>
 </div>
@@ -186,6 +260,77 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00354">354</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  354</span>                             {</div>
+<div class="line"><span class="lineno">  355</span> </div>
+<div class="line"><span class="lineno">  356</span>    BOOL allocated;</div>
+<div class="line"><span class="lineno">  357</span>    BOOL privilege;</div>
+<div class="line"><span class="lineno">  358</span> </div>
+<div class="line"><span class="lineno">  359</span>    <span class="comment">// Allocate the physical pages that we will be managing.</span></div>
+<div class="line"><span class="lineno">  360</span>    <span class="comment">// First acquire privilege to do this since physical page control</span></div>
+<div class="line"><span class="lineno">  361</span>    <span class="comment">// is typically something the operating system reserves the sole</span></div>
+<div class="line"><span class="lineno">  362</span>    <span class="comment">// right to do.</span></div>
+<div class="line"><span class="lineno">  363</span>    privilege = <a class="code hl_function" href="init_8c.html#a0c9e77a2b25b5860e244091021684d60">GetPrivilege</a>();</div>
+<div class="line"><span class="lineno">  364</span> </div>
+<div class="line"><span class="lineno">  365</span>    <span class="keywordflow">if</span> (privilege == FALSE) {</div>
+<div class="line"><span class="lineno">  366</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not get privilege\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  367</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  368</span>    }</div>
+<div class="line"><span class="lineno">  369</span> </div>
+<div class="line"><span class="lineno">  370</span> </div>
+<div class="line"><span class="lineno">  371</span>    <a class="code hl_variable" href="init_8c.html#af6cfe28afd9e7bc72619e8836cb9fc03">physical_page_handle</a> = <a class="code hl_function" href="init_8c.html#a4d2f5117b6c262e13d5d752b524cd3d7">CreateSharedMemorySection</a>();</div>
+<div class="line"><span class="lineno">  372</span> </div>
+<div class="line"><span class="lineno">  373</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="init_8c.html#af6cfe28afd9e7bc72619e8836cb9fc03">physical_page_handle</a> == NULL) {</div>
+<div class="line"><span class="lineno">  374</span>        printf(<span class="stringliteral">&quot;CreateFileMapping2 failed, error %#x\n&quot;</span>, GetLastError());</div>
+<div class="line"><span class="lineno">  375</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  376</span>    }</div>
+<div class="line"><span class="lineno">  377</span> </div>
+<div class="line"><span class="lineno">  378</span>    <a class="code hl_variable" href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a> = <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a>;</div>
+<div class="line"><span class="lineno">  379</span>    <a class="code hl_variable" href="init_8c.html#a18a3a8092de1ecdffeb9169cd922ec55">physical_page_numbers</a> = (PULONG_PTR)malloc(<a class="code hl_variable" href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a> * <span class="keyword">sizeof</span>(ULONG_PTR));</div>
+<div class="line"><span class="lineno">  380</span> </div>
+<div class="line"><span class="lineno">  381</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="init_8c.html#a18a3a8092de1ecdffeb9169cd922ec55">physical_page_numbers</a> == NULL) {</div>
+<div class="line"><span class="lineno">  382</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not allocate array to hold physical page numbers\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  383</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  384</span>    }</div>
+<div class="line"><span class="lineno">  385</span> </div>
+<div class="line"><span class="lineno">  386</span>    allocated = AllocateUserPhysicalPages(<a class="code hl_variable" href="init_8c.html#af6cfe28afd9e7bc72619e8836cb9fc03">physical_page_handle</a>,</div>
+<div class="line"><span class="lineno">  387</span>                                          &amp;<a class="code hl_variable" href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a>,</div>
+<div class="line"><span class="lineno">  388</span>                                          <a class="code hl_variable" href="init_8c.html#a18a3a8092de1ecdffeb9169cd922ec55">physical_page_numbers</a>);</div>
+<div class="line"><span class="lineno">  389</span> </div>
+<div class="line"><span class="lineno">  390</span>    <span class="keywordflow">if</span> (allocated == FALSE) {</div>
+<div class="line"><span class="lineno">  391</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not allocate physical pages\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  392</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  393</span>    }</div>
+<div class="line"><span class="lineno">  394</span> </div>
+<div class="line"><span class="lineno">  395</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a> != <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a>) {</div>
+<div class="line"><span class="lineno">  396</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : allocated only %llu pages out of %u pages requested\n&quot;</span>,</div>
+<div class="line"><span class="lineno">  397</span>               <a class="code hl_variable" href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a>,</div>
+<div class="line"><span class="lineno">  398</span>               <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a>);</div>
+<div class="line"><span class="lineno">  399</span>    }</div>
+<div class="line"><span class="lineno">  400</span> </div>
+<div class="line"><span class="lineno">  401</span>    <span class="keywordflow">return</span> TRUE;</div>
+<div class="line"><span class="lineno">  402</span>}</div>
+<div class="ttc" id="ainit_8c_html_a0c9e77a2b25b5860e244091021684d60"><div class="ttname"><a href="init_8c.html#a0c9e77a2b25b5860e244091021684d60">GetPrivilege</a></div><div class="ttdeci">BOOL GetPrivilege(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00092">init.c:92</a></div></div>
+<div class="ttc" id="ainit_8c_html_a4d2f5117b6c262e13d5d752b524cd3d7"><div class="ttname"><a href="init_8c.html#a4d2f5117b6c262e13d5d752b524cd3d7">CreateSharedMemorySection</a></div><div class="ttdeci">HANDLE CreateSharedMemorySection(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00143">init.c:143</a></div></div>
+<div class="ttc" id="ainit_8c_html_ab03733558cb372455cf304fbe3557898"><div class="ttname"><a href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a></div><div class="ttdeci">ULONG_PTR physical_page_count</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00048">init.c:48</a></div></div>
+<div class="ttc" id="ainit_8c_html_af6cfe28afd9e7bc72619e8836cb9fc03"><div class="ttname"><a href="init_8c.html#af6cfe28afd9e7bc72619e8836cb9fc03">physical_page_handle</a></div><div class="ttdeci">HANDLE physical_page_handle</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00089">init.c:89</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00143">CreateSharedMemorySection()</a>, <a class="el" href="init_8c_source.html#l00092">GetPrivilege()</a>, <a class="el" href="structures_8h_source.html#l00041">NUMBER_OF_PHYSICAL_PAGES</a>, <a class="el" href="init_8c_source.html#l00048">physical_page_count</a>, <a class="el" href="init_8c_source.html#l00089">physical_page_handle</a>, and <a class="el" href="init_8c_source.html#l00049">physical_page_numbers</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00166">init_virtual_memory()</a>.</p>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
+
 </div>
 </div>
 <a id="a0c9e77a2b25b5860e244091021684d60" name="a0c9e77a2b25b5860e244091021684d60"></a>
@@ -202,6 +347,64 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00092">92</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   92</span>                   {</div>
+<div class="line"><span class="lineno">   93</span>    <span class="keyword">struct </span>{</div>
+<div class="line"><span class="lineno">   94</span>        DWORD Count;</div>
+<div class="line"><span class="lineno">   95</span>        LUID_AND_ATTRIBUTES Privilege[1];</div>
+<div class="line"><span class="lineno">   96</span>    } Info;</div>
+<div class="line"><span class="lineno">   97</span> </div>
+<div class="line"><span class="lineno">   98</span>    HANDLE hProcess;</div>
+<div class="line"><span class="lineno">   99</span>    HANDLE Token;</div>
+<div class="line"><span class="lineno">  100</span>    BOOL Result;</div>
+<div class="line"><span class="lineno">  101</span> </div>
+<div class="line"><span class="lineno">  102</span>    <span class="comment">// Open the token</span></div>
+<div class="line"><span class="lineno">  103</span>    hProcess = GetCurrentProcess();</div>
+<div class="line"><span class="lineno">  104</span>    Result = OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &amp;Token);</div>
+<div class="line"><span class="lineno">  105</span> </div>
+<div class="line"><span class="lineno">  106</span>    <span class="keywordflow">if</span> (Result == FALSE) {</div>
+<div class="line"><span class="lineno">  107</span>        printf(<span class="stringliteral">&quot;Cannot open process token.\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  108</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  109</span>    }</div>
+<div class="line"><span class="lineno">  110</span> </div>
+<div class="line"><span class="lineno">  111</span>    <span class="comment">// Enable the privilege</span></div>
+<div class="line"><span class="lineno">  112</span>    Info.Count = 1;</div>
+<div class="line"><span class="lineno">  113</span>    Info.Privilege[0].Attributes = SE_PRIVILEGE_ENABLED;</div>
+<div class="line"><span class="lineno">  114</span> </div>
+<div class="line"><span class="lineno">  115</span>    <span class="comment">// Get the LUID</span></div>
+<div class="line"><span class="lineno">  116</span>    Result = LookupPrivilegeValue(NULL, SE_LOCK_MEMORY_NAME, &amp;(Info.Privilege[0].Luid));</div>
+<div class="line"><span class="lineno">  117</span> </div>
+<div class="line"><span class="lineno">  118</span>    <span class="keywordflow">if</span> (Result == FALSE) {</div>
+<div class="line"><span class="lineno">  119</span>        printf(<span class="stringliteral">&quot;Cannot get privilege\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  120</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  121</span>    }</div>
+<div class="line"><span class="lineno">  122</span> </div>
+<div class="line"><span class="lineno">  123</span>    <span class="comment">// Adjust the privilege</span></div>
+<div class="line"><span class="lineno">  124</span>    Result = AdjustTokenPrivileges(Token, FALSE, (PTOKEN_PRIVILEGES) &amp;Info, 0, NULL, NULL);</div>
+<div class="line"><span class="lineno">  125</span> </div>
+<div class="line"><span class="lineno">  126</span>    <span class="comment">// Check the result</span></div>
+<div class="line"><span class="lineno">  127</span>    <span class="keywordflow">if</span> (Result == FALSE) {</div>
+<div class="line"><span class="lineno">  128</span>        printf(<span class="stringliteral">&quot;Cannot adjust token privileges %u\n&quot;</span>, GetLastError());</div>
+<div class="line"><span class="lineno">  129</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  130</span>    }</div>
+<div class="line"><span class="lineno">  131</span> </div>
+<div class="line"><span class="lineno">  132</span>    <span class="keywordflow">if</span> (GetLastError() != ERROR_SUCCESS) {</div>
+<div class="line"><span class="lineno">  133</span>        printf(<span class="stringliteral">&quot;Cannot enable the SE_LOCK_MEMORY_NAME privilege - check local policy\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  134</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  135</span>    }</div>
+<div class="line"><span class="lineno">  136</span> </div>
+<div class="line"><span class="lineno">  137</span>    CloseHandle(Token);</div>
+<div class="line"><span class="lineno">  138</span>    <span class="keywordflow">return</span> TRUE;</div>
+<div class="line"><span class="lineno">  139</span>}</div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>.</p>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
 
 </div>
 </div>
@@ -220,6 +423,40 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00196">196</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  196</span>                     {</div>
+<div class="line"><span class="lineno">  197</span>    ULONG64 numBytes;</div>
+<div class="line"><span class="lineno">  198</span>    <span class="comment">// Initialize disk structures</span></div>
+<div class="line"><span class="lineno">  199</span>    numBytes = <a class="code hl_define" href="structures_8h.html#abec7e3ffc9d6f42812e23c2b708a6660">DISK_SIZE_IN_BYTES</a>;</div>
+<div class="line"><span class="lineno">  200</span>    <a class="code hl_variable" href="init_8c.html#a7e828d4a313bca81b6bae08f803ad50e">diskStart</a> = <a class="code hl_function" href="init_8c.html#a63ea90e5d68efe47281012ba0bb76111">init_memory</a>(numBytes);</div>
+<div class="line"><span class="lineno">  201</span>    <a class="code hl_variable" href="init_8c.html#a444c05823db77df8673c6b9e3a7bdfac">diskEnd</a> = (ULONG64) <a class="code hl_variable" href="init_8c.html#a7e828d4a313bca81b6bae08f803ad50e">diskStart</a> + numBytes;</div>
+<div class="line"><span class="lineno">  202</span> </div>
+<div class="line"><span class="lineno">  203</span>    <a class="code hl_function" href="init_8c.html#a822b9dabc0a8be9f581135cbd5ba8dfd">init_disk_active</a>();</div>
+<div class="line"><span class="lineno">  204</span>    <a class="code hl_function" href="init_8c.html#ad31c55307ec3cbe6533db805a599740a">init_num_open_slots</a>();</div>
+<div class="line"><span class="lineno">  205</span>}</div>
+<div class="ttc" id="ainit_8c_html_a444c05823db77df8673c6b9e3a7bdfac"><div class="ttname"><a href="init_8c.html#a444c05823db77df8673c6b9e3a7bdfac">diskEnd</a></div><div class="ttdeci">ULONG64 diskEnd</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00054">init.c:54</a></div></div>
+<div class="ttc" id="ainit_8c_html_a63ea90e5d68efe47281012ba0bb76111"><div class="ttname"><a href="init_8c.html#a63ea90e5d68efe47281012ba0bb76111">init_memory</a></div><div class="ttdeci">PVOID init_memory(ULONG64 numBytes)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00484">init.c:484</a></div></div>
+<div class="ttc" id="ainit_8c_html_a7e828d4a313bca81b6bae08f803ad50e"><div class="ttname"><a href="init_8c.html#a7e828d4a313bca81b6bae08f803ad50e">diskStart</a></div><div class="ttdeci">PVOID diskStart</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00053">init.c:53</a></div></div>
+<div class="ttc" id="ainit_8c_html_a822b9dabc0a8be9f581135cbd5ba8dfd"><div class="ttname"><a href="init_8c.html#a822b9dabc0a8be9f581135cbd5ba8dfd">init_disk_active</a></div><div class="ttdeci">VOID init_disk_active(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00207">init.c:207</a></div></div>
+<div class="ttc" id="ainit_8c_html_ad31c55307ec3cbe6533db805a599740a"><div class="ttname"><a href="init_8c.html#ad31c55307ec3cbe6533db805a599740a">init_num_open_slots</a></div><div class="ttdeci">VOID init_num_open_slots(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00256">init.c:256</a></div></div>
+<div class="ttc" id="astructures_8h_html_abec7e3ffc9d6f42812e23c2b708a6660"><div class="ttname"><a href="structures_8h.html#abec7e3ffc9d6f42812e23c2b708a6660">DISK_SIZE_IN_BYTES</a></div><div class="ttdeci">#define DISK_SIZE_IN_BYTES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00050">structures.h:50</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00050">DISK_SIZE_IN_BYTES</a>, <a class="el" href="init_8c_source.html#l00054">diskEnd</a>, <a class="el" href="init_8c_source.html#l00053">diskStart</a>, <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>, <a class="el" href="init_8c_source.html#l00484">init_memory()</a>, and <a class="el" href="init_8c_source.html#l00256">init_num_open_slots()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00166">init_virtual_memory()</a>.</p>
+<div id="dynsection-7" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-7-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-7-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 7 --></div>
+</div>
+<div id="dynsection-8" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-8-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-8-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 8 --></div>
+</div>
+
 </div>
 </div>
 <a id="a822b9dabc0a8be9f581135cbd5ba8dfd" name="a822b9dabc0a8be9f581135cbd5ba8dfd"></a>
@@ -236,6 +473,76 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00207">207</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  207</span>                            {</div>
+<div class="line"><span class="lineno">  208</span> </div>
+<div class="line"><span class="lineno">  209</span>    ULONG64 numEntries;</div>
+<div class="line"><span class="lineno">  210</span> </div>
+<div class="line"><span class="lineno">  211</span> </div>
+<div class="line"><span class="lineno">  212</span><span class="comment">// depending on our disk size check if our bits will go in evenly</span></div>
+<div class="line"><span class="lineno">  213</span><span class="preprocessor">#if DISK_SIZE_IN_PAGES % 64 != 0</span></div>
+<div class="line"><span class="lineno">  214</span> </div>
+<div class="line"><span class="lineno">  215</span>    numEntries = <a class="code hl_define" href="structures_8h.html#afff34d9f7378c64b65819efe80b32070">DISK_SIZE_IN_PAGES</a> / 64 + 1;</div>
+<div class="line"><span class="lineno">  216</span> </div>
+<div class="line"><span class="lineno">  217</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  218</span> </div>
+<div class="line"><span class="lineno">  219</span>    numEntries = <a class="code hl_define" href="structures_8h.html#afff34d9f7378c64b65819efe80b32070">DISK_SIZE_IN_PAGES</a> / 64;</div>
+<div class="line"><span class="lineno">  220</span> </div>
+<div class="line"><span class="lineno">  221</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  222</span> </div>
+<div class="line"><span class="lineno">  223</span> </div>
+<div class="line"><span class="lineno">  224</span> </div>
+<div class="line"><span class="lineno">  225</span>    <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a> = (PULONG64)<a class="code hl_function" href="init_8c.html#a63ea90e5d68efe47281012ba0bb76111">init_memory</a>(numEntries * <span class="keyword">sizeof</span>(ULONG64));</div>
+<div class="line"><span class="lineno">  226</span> </div>
+<div class="line"><span class="lineno">  227</span>    <span class="comment">//make the first slot in valid</span></div>
+<div class="line"><span class="lineno">  228</span>    <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a>[0] = <a class="code hl_define" href="structures_8h.html#a0f3b73c556102de7594460152532cea2">DISK_ACTIVE</a>;</div>
+<div class="line"><span class="lineno">  229</span> </div>
+<div class="line"><span class="lineno">  230</span>    <span class="comment">//makes it so that the out of bounds portion that exists in our diskMeta data is never accessed</span></div>
+<div class="line"><span class="lineno">  231</span> </div>
+<div class="line"><span class="lineno">  232</span><span class="preprocessor">#if DISK_SIZE_IN_PAGES % 64 != 0</span></div>
+<div class="line"><span class="lineno">  233</span>    ULONG64 number_of_usable_bits;</div>
+<div class="line"><span class="lineno">  234</span>    ULONG64 bitMask;</div>
+<div class="line"><span class="lineno">  235</span>    bitMask = MAXULONG64;</div>
+<div class="line"><span class="lineno">  236</span> </div>
+<div class="line"><span class="lineno">  237</span>    number_of_usable_bits = (<a class="code hl_define" href="structures_8h.html#afff34d9f7378c64b65819efe80b32070">DISK_SIZE_IN_PAGES</a> % 64) - 1;</div>
+<div class="line"><span class="lineno">  238</span> </div>
+<div class="line"><span class="lineno">  239</span>    bitMask &amp;= (1 &lt;&lt; (1 + number_of_usable_bits)) - 1;</div>
+<div class="line"><span class="lineno">  240</span> </div>
+<div class="line"><span class="lineno">  241</span> </div>
+<div class="line"><span class="lineno">  242</span> </div>
+<div class="line"><span class="lineno">  243</span>    <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a>[numEntries - 1] = ~bitMask;</div>
+<div class="line"><span class="lineno">  244</span> </div>
+<div class="line"><span class="lineno">  245</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  246</span>    <a class="code hl_variable" href="init_8c.html#acfd88af492b8882572108d2c8c71351f">diskActiveEnd</a> = (PULONG64)((ULONG64) <a class="code hl_variable" href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a> + numEntries);</div>
+<div class="line"><span class="lineno">  247</span> </div>
+<div class="line"><span class="lineno">  248</span> </div>
+<div class="line"><span class="lineno">  249</span> </div>
+<div class="line"><span class="lineno">  250</span> </div>
+<div class="line"><span class="lineno">  251</span>    <a class="code hl_variable" href="init_8c.html#ab66e3a5dafd02f83268a845ad87e3acc">diskActiveVa</a> = <a class="code hl_function" href="init_8c.html#a63ea90e5d68efe47281012ba0bb76111">init_memory</a>(numEntries * <span class="keyword">sizeof</span>(ULONG64));</div>
+<div class="line"><span class="lineno">  252</span> </div>
+<div class="line"><span class="lineno">  253</span>}</div>
+<div class="ttc" id="ainit_8c_html_ab66e3a5dafd02f83268a845ad87e3acc"><div class="ttname"><a href="init_8c.html#ab66e3a5dafd02f83268a845ad87e3acc">diskActiveVa</a></div><div class="ttdeci">PULONG64 * diskActiveVa</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00057">init.c:57</a></div></div>
+<div class="ttc" id="ainit_8c_html_acfd88af492b8882572108d2c8c71351f"><div class="ttname"><a href="init_8c.html#acfd88af492b8882572108d2c8c71351f">diskActiveEnd</a></div><div class="ttdeci">PULONG64 diskActiveEnd</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00056">init.c:56</a></div></div>
+<div class="ttc" id="ainit_8c_html_ae0db0ae49376aafded2a89d3773100fb"><div class="ttname"><a href="init_8c.html#ae0db0ae49376aafded2a89d3773100fb">diskActive</a></div><div class="ttdeci">PULONG64 diskActive</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00055">init.c:55</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0f3b73c556102de7594460152532cea2"><div class="ttname"><a href="structures_8h.html#a0f3b73c556102de7594460152532cea2">DISK_ACTIVE</a></div><div class="ttdeci">#define DISK_ACTIVE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00069">structures.h:69</a></div></div>
+<div class="ttc" id="astructures_8h_html_afff34d9f7378c64b65819efe80b32070"><div class="ttname"><a href="structures_8h.html#afff34d9f7378c64b65819efe80b32070">DISK_SIZE_IN_PAGES</a></div><div class="ttdeci">#define DISK_SIZE_IN_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00051">structures.h:51</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00069">DISK_ACTIVE</a>, <a class="el" href="structures_8h_source.html#l00051">DISK_SIZE_IN_PAGES</a>, <a class="el" href="init_8c_source.html#l00055">diskActive</a>, <a class="el" href="init_8c_source.html#l00056">diskActiveEnd</a>, <a class="el" href="init_8c_source.html#l00057">diskActiveVa</a>, and <a class="el" href="init_8c_source.html#l00484">init_memory()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00196">init_disk()</a>.</p>
+<div id="dynsection-9" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-9-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-9-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 9 --></div>
+</div>
+<div id="dynsection-10" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-10-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-10-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 10 --></div>
+</div>
 
 </div>
 </div>
@@ -254,6 +561,72 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00295">295</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  295</span>                          {</div>
+<div class="line"><span class="lineno">  296</span> </div>
+<div class="line"><span class="lineno">  297</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>; ++i) {</div>
+<div class="line"><span class="lineno">  298</span>        <a class="code hl_function" href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[i]);</div>
+<div class="line"><span class="lineno">  299</span>    }</div>
+<div class="line"><span class="lineno">  300</span>    <a class="code hl_variable" href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a> = 0;</div>
+<div class="line"><span class="lineno">  301</span>    <a class="code hl_variable" href="init_8c.html#afebe9a4d0644fedfcee04e8bd67554de">freeListRemoveIndex</a> = 0;</div>
+<div class="line"><span class="lineno">  302</span>    <a class="code hl_variable" href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a> = <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a>;</div>
+<div class="line"><span class="lineno">  303</span> </div>
+<div class="line"><span class="lineno">  304</span>    <span class="comment">// Add every page to the free list</span></div>
+<div class="line"><span class="lineno">  305</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_variable" href="init_8c.html#ab03733558cb372455cf304fbe3557898">physical_page_count</a>; ++i) {</div>
+<div class="line"><span class="lineno">  306</span> </div>
+<div class="line"><span class="lineno">  307</span> </div>
+<div class="line"><span class="lineno">  308</span>        <a class="code hl_struct" href="structpfn.html">pfn</a> *new_pfn = (<a class="code hl_struct" href="structpfn.html">pfn</a>*)(<a class="code hl_variable" href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a> + <a class="code hl_variable" href="init_8c.html#a18a3a8092de1ecdffeb9169cd922ec55">physical_page_numbers</a>[i]);</div>
+<div class="line"><span class="lineno">  309</span> </div>
+<div class="line"><span class="lineno">  310</span>        <span class="comment">// Calculate the page-aligned range that contains this pfn structure</span></div>
+<div class="line"><span class="lineno">  311</span>         PVOID startPage = (PVOID)<a class="code hl_define" href="structures_8h.html#abe6329f1be7e1699ab49800ae148dca5">ROUND_DOWN_TO_PAGE</a>(new_pfn);</div>
+<div class="line"><span class="lineno">  312</span>         PVOID endPage = (PVOID)<a class="code hl_define" href="structures_8h.html#ad38e45c58dd90983ecb2e10a199f66af">ROUND_UP_TO_PAGE</a>((ULONG_PTR)new_pfn + <span class="keyword">sizeof</span>(<a class="code hl_struct" href="structpfn.html">pfn</a>));</div>
+<div class="line"><span class="lineno">  313</span>        SIZE_T commitSize = (ULONG_PTR)endPage - (ULONG_PTR)startPage;</div>
+<div class="line"><span class="lineno">  314</span> </div>
+<div class="line"><span class="lineno">  315</span>        <span class="comment">// Commit the full page(s) that contain this pfn structure</span></div>
+<div class="line"><span class="lineno">  316</span>        <span class="keywordflow">if</span> (VirtualAlloc(startPage, commitSize, MEM_COMMIT, PAGE_READWRITE) != startPage) {</div>
+<div class="line"><span class="lineno">  317</span>            printf(<span class="stringliteral">&quot;Failed to commit at expected address\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  318</span>        }</div>
+<div class="line"><span class="lineno">  319</span> </div>
+<div class="line"><span class="lineno">  320</span>        <span class="comment">// Now initialize the pfn structure</span></div>
+<div class="line"><span class="lineno">  321</span>        memset(new_pfn, 0, <span class="keyword">sizeof</span>(<a class="code hl_struct" href="structpfn.html">pfn</a>));</div>
+<div class="line"><span class="lineno">  322</span> </div>
+<div class="line"><span class="lineno">  323</span>        InitializeCriticalSection(&amp;new_pfn-&gt;<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  324</span>        <a class="code hl_function" href="macros_8h.html#ae9f8be34081522b2afef70bb45a18672">InsertTailList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[<a class="code hl_variable" href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a>], &amp;new_pfn-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>);</div>
+<div class="line"><span class="lineno">  325</span> </div>
+<div class="line"><span class="lineno">  326</span>        <a class="code hl_variable" href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a>++;</div>
+<div class="line"><span class="lineno">  327</span>        <a class="code hl_variable" href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a> %= <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>;</div>
+<div class="line"><span class="lineno">  328</span>    }</div>
+<div class="line"><span class="lineno">  329</span>}</div>
+<div class="ttc" id="ainit_8c_html_a3798be30b1f648b1b1de8c1d6560c533"><div class="ttname"><a href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a></div><div class="ttdeci">volatile ULONG64 freeListLength</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00032">init.c:32</a></div></div>
+<div class="ttc" id="ainit_8c_html_a43109329be1b09d2231295e71232c648"><div class="ttname"><a href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a></div><div class="ttdeci">volatile LONG freeListAddIndex</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00030">init.c:30</a></div></div>
+<div class="ttc" id="ainit_8c_html_a52984f5994ddf0c0360c085b79b9023b"><div class="ttname"><a href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a></div><div class="ttdeci">listHead headFreeLists[NUMBER_OF_FREE_LISTS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00029">init.c:29</a></div></div>
+<div class="ttc" id="ainit_8c_html_a9ce66c35f161c7dd184eccf32832d6bf"><div class="ttname"><a href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a></div><div class="ttdeci">VOID init_list_head(pListHead head)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00339">init.c:339</a></div></div>
+<div class="ttc" id="ainit_8c_html_ab9a938255df813505ee77eef3cdc5aed"><div class="ttname"><a href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a></div><div class="ttdeci">pfn * pfnStart</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00041">init.c:41</a></div></div>
+<div class="ttc" id="ainit_8c_html_afebe9a4d0644fedfcee04e8bd67554de"><div class="ttname"><a href="init_8c.html#afebe9a4d0644fedfcee04e8bd67554de">freeListRemoveIndex</a></div><div class="ttdeci">volatile LONG freeListRemoveIndex</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00031">init.c:31</a></div></div>
+<div class="ttc" id="amacros_8h_html_ae9f8be34081522b2afef70bb45a18672"><div class="ttname"><a href="macros_8h.html#ae9f8be34081522b2afef70bb45a18672">InsertTailList</a></div><div class="ttdeci">FORCEINLINE VOID InsertTailList(__inout pListHead ListHead, __inout __drv_aliasesMem PLIST_ENTRY Entry)</div><div class="ttdef"><b>Definition</b> <a href="macros_8h_source.html#l00098">macros.h:98</a></div></div>
+<div class="ttc" id="astructpfn_html"><div class="ttname"><a href="structpfn.html">pfn</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00206">structures.h:206</a></div></div>
+<div class="ttc" id="astructpfn_html_a90e89efbad0a46c24ae279d79d2f8349"><div class="ttname"><a href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">pfn::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00212">structures.h:212</a></div></div>
+<div class="ttc" id="astructpfn_html_ab6ad595c698387fda8c17a768927abc7"><div class="ttname"><a href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">pfn::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00207">structures.h:207</a></div></div>
+<div class="ttc" id="astructures_8h_html_a498bbf40c65552f824c46efcd3496669"><div class="ttname"><a href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a></div><div class="ttdeci">#define NUMBER_OF_FREE_LISTS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00121">structures.h:121</a></div></div>
+<div class="ttc" id="astructures_8h_html_abe6329f1be7e1699ab49800ae148dca5"><div class="ttname"><a href="structures_8h.html#abe6329f1be7e1699ab49800ae148dca5">ROUND_DOWN_TO_PAGE</a></div><div class="ttdeci">#define ROUND_DOWN_TO_PAGE(addr)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00063">structures.h:63</a></div></div>
+<div class="ttc" id="astructures_8h_html_ad38e45c58dd90983ecb2e10a199f66af"><div class="ttname"><a href="structures_8h.html#ad38e45c58dd90983ecb2e10a199f66af">ROUND_UP_TO_PAGE</a></div><div class="ttdeci">#define ROUND_UP_TO_PAGE(addr)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00064">structures.h:64</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="init_8c_source.html#l00030">freeListAddIndex</a>, <a class="el" href="init_8c_source.html#l00032">freeListLength</a>, <a class="el" href="init_8c_source.html#l00031">freeListRemoveIndex</a>, <a class="el" href="init_8c_source.html#l00029">headFreeLists</a>, <a class="el" href="init_8c_source.html#l00339">init_list_head()</a>, <a class="el" href="macros_8h_source.html#l00098">InsertTailList()</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00121">NUMBER_OF_FREE_LISTS</a>, <a class="el" href="structures_8h_source.html#l00041">NUMBER_OF_PHYSICAL_PAGES</a>, <a class="el" href="init_8c_source.html#l00041">pfnStart</a>, <a class="el" href="init_8c_source.html#l00048">physical_page_count</a>, <a class="el" href="init_8c_source.html#l00049">physical_page_numbers</a>, <a class="el" href="structures_8h_source.html#l00063">ROUND_DOWN_TO_PAGE</a>, and <a class="el" href="structures_8h_source.html#l00064">ROUND_UP_TO_PAGE</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00277">init_pfns()</a>.</p>
+<div id="dynsection-11" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-11-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-11-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 11 --></div>
+</div>
+<div id="dynsection-12" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-12-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-12-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 12 --></div>
+</div>
+
 </div>
 </div>
 <a id="a9ce66c35f161c7dd184eccf32832d6bf" name="a9ce66c35f161c7dd184eccf32832d6bf"></a>
@@ -270,6 +643,45 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00339">339</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  339</span>                                    {</div>
+<div class="line"><span class="lineno">  340</span>    head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  341</span>    head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Blink = &amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>;</div>
+<div class="line"><span class="lineno">  342</span>    head-&gt;<a class="code hl_variable" href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">length</a> = 0;</div>
+<div class="line"><span class="lineno">  343</span>    InitializeSRWLock(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>.<a class="code hl_variable" href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock</a>);</div>
+<div class="line"><span class="lineno">  344</span> </div>
+<div class="line"><span class="lineno">  345</span>    InitializeCriticalSection(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">page</a>.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  346</span> </div>
+<div class="line"><span class="lineno">  347</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  348</span>    head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>.numHeldShared = 0;</div>
+<div class="line"><span class="lineno">  349</span>    head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>.threadId = -1;</div>
+<div class="line"><span class="lineno">  350</span>    <a class="code hl_function" href="macros_8h.html#afa8f00416a027788c25c09317cfa9ab6">InitializeListHead</a>(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>.sharedHolders);</div>
+<div class="line"><span class="lineno">  351</span>    InitializeCriticalSection(&amp;head-&gt;<a class="code hl_variable" href="structlist_head.html#ab82994491305327afe2643f568f738d5">sharedLock</a>.debugLock);</div>
+<div class="line"><span class="lineno">  352</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  353</span>}</div>
+<div class="ttc" id="amacros_8h_html_afa8f00416a027788c25c09317cfa9ab6"><div class="ttname"><a href="macros_8h.html#afa8f00416a027788c25c09317cfa9ab6">InitializeListHead</a></div><div class="ttdeci">FORCEINLINE VOID InitializeListHead(__out PLIST_ENTRY ListHead)</div><div class="ttdef"><b>Definition</b> <a href="macros_8h_source.html#l00014">macros.h:14</a></div></div>
+<div class="ttc" id="astructlist_head_html_a1adaf6dfc0d2e0fb2b275f3557eca04a"><div class="ttname"><a href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">listHead::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00276">structures.h:276</a></div></div>
+<div class="ttc" id="astructlist_head_html_aa4a6d4735a6f994da0fbb892af5ca906"><div class="ttname"><a href="structlist_head.html#aa4a6d4735a6f994da0fbb892af5ca906">listHead::page</a></div><div class="ttdeci">pfn page</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00280">structures.h:280</a></div></div>
+<div class="ttc" id="astructlist_head_html_ab804a0c0961e0898c9b690e9adc39dfe"><div class="ttname"><a href="structlist_head.html#ab804a0c0961e0898c9b690e9adc39dfe">listHead::length</a></div><div class="ttdeci">volatile LONG64 length</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00277">structures.h:277</a></div></div>
+<div class="ttc" id="astructlist_head_html_ab82994491305327afe2643f568f738d5"><div class="ttname"><a href="structlist_head.html#ab82994491305327afe2643f568f738d5">listHead::sharedLock</a></div><div class="ttdeci">sharedLock sharedLock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00278">structures.h:278</a></div></div>
+<div class="ttc" id="astructshared_lock_html_a73cf768bc4d7ce3a69565122245e8051"><div class="ttname"><a href="structshared_lock.html#a73cf768bc4d7ce3a69565122245e8051">sharedLock::sharedLock</a></div><div class="ttdeci">SRWLOCK sharedLock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00254">structures.h:254</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="macros_8h_source.html#l00014">InitializeListHead()</a>, <a class="el" href="structures_8h_source.html#l00277">listHead::length</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00280">listHead::page</a>, <a class="el" href="structures_8h_source.html#l00278">listHead::sharedLock</a>, and <a class="el" href="structures_8h_source.html#l00254">sharedLock::sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>, and <a class="el" href="init_8c_source.html#l00330">init_lists()</a>.</p>
+<div id="dynsection-13" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-13-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-13-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 13 --></div>
+</div>
+<div id="dynsection-14" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-14-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-14-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 14 --></div>
+</div>
 
 </div>
 </div>
@@ -288,6 +700,38 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00330">330</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  330</span>                      {</div>
+<div class="line"><span class="lineno">  331</span> </div>
+<div class="line"><span class="lineno">  332</span>    <a class="code hl_function" href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a>(&amp;<a class="code hl_variable" href="init_8c.html#a29264284e4818cecfacb8d88bb123275">headToBeZeroedList</a>);</div>
+<div class="line"><span class="lineno">  333</span>    <a class="code hl_function" href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a>(&amp;<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>);</div>
+<div class="line"><span class="lineno">  334</span>    <a class="code hl_function" href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a>(&amp;<a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>);</div>
+<div class="line"><span class="lineno">  335</span>    <a class="code hl_function" href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a>(&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>);</div>
+<div class="line"><span class="lineno">  336</span> </div>
+<div class="line"><span class="lineno">  337</span>    <a class="code hl_variable" href="init_8c.html#a3ee8727f68de6ca78ffbc6bea01512cd">standByPruningInProgress</a> = <span class="keyword">false</span>;</div>
+<div class="line"><span class="lineno">  338</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2104c2f630ec691446eb83024e5eb897"><div class="ttname"><a href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a></div><div class="ttdeci">listHead headStandByList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00037">init.c:37</a></div></div>
+<div class="ttc" id="ainit_8c_html_a29264284e4818cecfacb8d88bb123275"><div class="ttname"><a href="init_8c.html#a29264284e4818cecfacb8d88bb123275">headToBeZeroedList</a></div><div class="ttdeci">listHead headToBeZeroedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00038">init.c:38</a></div></div>
+<div class="ttc" id="ainit_8c_html_a3ee8727f68de6ca78ffbc6bea01512cd"><div class="ttname"><a href="init_8c.html#a3ee8727f68de6ca78ffbc6bea01512cd">standByPruningInProgress</a></div><div class="ttdeci">volatile boolean standByPruningInProgress</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00033">init.c:33</a></div></div>
+<div class="ttc" id="ainit_8c_html_a94fe7d15f3121ceb68cee2c8fa317bad"><div class="ttname"><a href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a></div><div class="ttdeci">listHead headActiveList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00035">init.c:35</a></div></div>
+<div class="ttc" id="ainit_8c_html_acd57aa13d337da1922deec378258ca32"><div class="ttname"><a href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a></div><div class="ttdeci">listHead headModifiedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00036">init.c:36</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="init_8c_source.html#l00038">headToBeZeroedList</a>, <a class="el" href="init_8c_source.html#l00339">init_list_head()</a>, and <a class="el" href="init_8c_source.html#l00033">standByPruningInProgress</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00277">init_pfns()</a>.</p>
+<div id="dynsection-15" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-15-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-15-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 15 --></div>
+</div>
+<div id="dynsection-16" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-16-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-16-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 16 --></div>
+</div>
+
 </div>
 </div>
 <a id="a63ea90e5d68efe47281012ba0bb76111" name="a63ea90e5d68efe47281012ba0bb76111"></a>
@@ -304,6 +748,28 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00484">484</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  484</span>                                    {</div>
+<div class="line"><span class="lineno">  485</span>    PVOID <span class="keyword">new</span>;</div>
+<div class="line"><span class="lineno">  486</span>    <span class="keyword">new</span> = malloc(numBytes);</div>
+<div class="line"><span class="lineno">  487</span> </div>
+<div class="line"><span class="lineno">  488</span>    <span class="keywordflow">if</span> (<span class="keyword">new</span> == NULL) {</div>
+<div class="line"><span class="lineno">  489</span>        printf(<span class="stringliteral">&quot;malloc failed\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  490</span>        exit(1);</div>
+<div class="line"><span class="lineno">  491</span>    }</div>
+<div class="line"><span class="lineno">  492</span> </div>
+<div class="line"><span class="lineno">  493</span>    memset(<span class="keyword">new</span>, 0, numBytes);</div>
+<div class="line"><span class="lineno">  494</span>    <span class="keywordflow">return</span> <span class="keyword">new</span>;</div>
+<div class="line"><span class="lineno">  495</span>}</div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00196">init_disk()</a>, <a class="el" href="init_8c_source.html#l00207">init_disk_active()</a>, <a class="el" href="init_8c_source.html#l00186">init_pageTable()</a>, and <a class="el" href="init_8c_source.html#l00176">init_pte_regions()</a>.</p>
+<div id="dynsection-17" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-17-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-17-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 17 --></div>
+</div>
 
 </div>
 </div>
@@ -322,6 +788,38 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00256">256</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  256</span>                               {</div>
+<div class="line"><span class="lineno">  257</span>    ULONG64 numBytes;</div>
+<div class="line"><span class="lineno">  258</span> </div>
+<div class="line"><span class="lineno">  259</span>    numBytes = <span class="keyword">sizeof</span>(ULONG64) * <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a>;</div>
+<div class="line"><span class="lineno">  260</span>    <a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a> = (ULONG64*)malloc(numBytes);</div>
+<div class="line"><span class="lineno">  261</span> </div>
+<div class="line"><span class="lineno">  262</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a> == NULL) {</div>
+<div class="line"><span class="lineno">  263</span>        printf(<span class="stringliteral">&quot;Failed to allocate memory for number_of_open_slots\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  264</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  265</span>    }</div>
+<div class="line"><span class="lineno">  266</span> </div>
+<div class="line"><span class="lineno">  267</span>    <span class="comment">// if you switch back to more regions, change this back</span></div>
+<div class="line"><span class="lineno">  268</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a>; ++i) {</div>
+<div class="line"><span class="lineno">  269</span>        <a class="code hl_variable" href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a>[i] = <a class="code hl_define" href="structures_8h.html#afff34d9f7378c64b65819efe80b32070">DISK_SIZE_IN_PAGES</a> - 1;</div>
+<div class="line"><span class="lineno">  270</span>    }</div>
+<div class="line"><span class="lineno">  271</span>    <span class="comment">// number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 2;</span></div>
+<div class="line"><span class="lineno">  272</span>    <span class="comment">// number_of_open_slots[0] -= 1;</span></div>
+<div class="line"><span class="lineno">  273</span>}</div>
+<div class="ttc" id="ainit_8c_html_a9f446154d095c72a73761fdcec055e28"><div class="ttname"><a href="init_8c.html#a9f446154d095c72a73761fdcec055e28">number_of_open_slots</a></div><div class="ttdeci">ULONG64 * number_of_open_slots</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00058">init.c:58</a></div></div>
+<div class="ttc" id="astructures_8h_html_a52fb748fa47a3f22fa9a41c7b4399432"><div class="ttname"><a href="structures_8h.html#a52fb748fa47a3f22fa9a41c7b4399432">NUMBER_OF_DISK_DIVISIONS</a></div><div class="ttdeci">#define NUMBER_OF_DISK_DIVISIONS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00049">structures.h:49</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00051">DISK_SIZE_IN_PAGES</a>, <a class="el" href="structures_8h_source.html#l00049">NUMBER_OF_DISK_DIVISIONS</a>, and <a class="el" href="init_8c_source.html#l00058">number_of_open_slots</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00196">init_disk()</a>.</p>
+<div id="dynsection-18" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-18-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-18-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 18 --></div>
+</div>
+
 </div>
 </div>
 <a id="a84f4576fe95cedeef28cdc4d0a9496d8" name="a84f4576fe95cedeef28cdc4d0a9496d8"></a>
@@ -338,6 +836,37 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00186">186</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  186</span>                          {</div>
+<div class="line"><span class="lineno">  187</span>    ULONG64 numBytes;</div>
+<div class="line"><span class="lineno">  188</span>    <span class="comment">// Initialize the page table</span></div>
+<div class="line"><span class="lineno">  189</span>    numBytes = <a class="code hl_define" href="structures_8h.html#a03920fa04a85656fc2deac08e774e9fc">PAGE_TABLE_SIZE_IN_BYTES</a>;</div>
+<div class="line"><span class="lineno">  190</span>    <a class="code hl_variable" href="init_8c.html#a377cadc3f3505d5777cad6f2deb856cf">pageTable</a> = (<a class="code hl_struct" href="structpte.html">pte</a>*)<a class="code hl_function" href="init_8c.html#a63ea90e5d68efe47281012ba0bb76111">init_memory</a>(numBytes);</div>
+<div class="line"><span class="lineno">  191</span> </div>
+<div class="line"><span class="lineno">  192</span>    <a class="code hl_function" href="init_8c.html#a3946185081bbb14bbde6e08f8572928b">init_pte_regions</a>();</div>
+<div class="line"><span class="lineno">  193</span> </div>
+<div class="line"><span class="lineno">  194</span>}</div>
+<div class="ttc" id="ainit_8c_html_a377cadc3f3505d5777cad6f2deb856cf"><div class="ttname"><a href="init_8c.html#a377cadc3f3505d5777cad6f2deb856cf">pageTable</a></div><div class="ttdeci">pte * pageTable</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00040">init.c:40</a></div></div>
+<div class="ttc" id="ainit_8c_html_a3946185081bbb14bbde6e08f8572928b"><div class="ttname"><a href="init_8c.html#a3946185081bbb14bbde6e08f8572928b">init_pte_regions</a></div><div class="ttdeci">VOID init_pte_regions(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00176">init.c:176</a></div></div>
+<div class="ttc" id="astructpte_html"><div class="ttname"><a href="structpte.html">pte</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00161">structures.h:161</a></div></div>
+<div class="ttc" id="astructures_8h_html_a03920fa04a85656fc2deac08e774e9fc"><div class="ttname"><a href="structures_8h.html#a03920fa04a85656fc2deac08e774e9fc">PAGE_TABLE_SIZE_IN_BYTES</a></div><div class="ttdeci">#define PAGE_TABLE_SIZE_IN_BYTES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00173">structures.h:173</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00484">init_memory()</a>, <a class="el" href="init_8c_source.html#l00176">init_pte_regions()</a>, <a class="el" href="structures_8h_source.html#l00173">PAGE_TABLE_SIZE_IN_BYTES</a>, and <a class="el" href="init_8c_source.html#l00040">pageTable</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00166">init_virtual_memory()</a>.</p>
+<div id="dynsection-19" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-19-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-19-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 19 --></div>
+</div>
+<div id="dynsection-20" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-20-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-20-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 20 --></div>
+</div>
 
 </div>
 </div>
@@ -356,6 +885,46 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00277">277</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  277</span>                     {</div>
+<div class="line"><span class="lineno">  278</span> </div>
+<div class="line"><span class="lineno">  279</span>    ULONG64 max = <a class="code hl_function" href="init_8c.html#aa298b9446869fc2d050a719120cb9539">getMaxFrameNumber</a>();</div>
+<div class="line"><span class="lineno">  280</span>    max += 1;</div>
+<div class="line"><span class="lineno">  281</span>    <a class="code hl_variable" href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a> = VirtualAlloc(NULL,<span class="keyword">sizeof</span>(<a class="code hl_struct" href="structpfn.html">pfn</a>)*max,MEM_RESERVE,PAGE_READWRITE);</div>
+<div class="line"><span class="lineno">  282</span> </div>
+<div class="line"><span class="lineno">  283</span>    <span class="keywordflow">if</span> (<a class="code hl_variable" href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a> == NULL) {</div>
+<div class="line"><span class="lineno">  284</span>        printf(<span class="stringliteral">&quot;Failed to reserve memory for PFN database\n&quot;</span>);</div>
+<div class="line"><span class="lineno">  285</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  286</span>    }</div>
+<div class="line"><span class="lineno">  287</span>    <a class="code hl_variable" href="init_8c.html#a6714a26157ebdb9b9563bfb92ae3b5e0">endPFN</a> = <a class="code hl_variable" href="init_8c.html#ab9a938255df813505ee77eef3cdc5aed">pfnStart</a> + max;</div>
+<div class="line"><span class="lineno">  288</span> </div>
+<div class="line"><span class="lineno">  289</span>    <a class="code hl_function" href="init_8c.html#a6b4b0d965a12cb6a4fa0e81d6e336758">init_lists</a>();</div>
+<div class="line"><span class="lineno">  290</span> </div>
+<div class="line"><span class="lineno">  291</span>    <a class="code hl_function" href="init_8c.html#a078f5aba4625a546574b183c704d8e38">init_free_list</a>();</div>
+<div class="line"><span class="lineno">  292</span> </div>
+<div class="line"><span class="lineno">  293</span> </div>
+<div class="line"><span class="lineno">  294</span>}</div>
+<div class="ttc" id="ainit_8c_html_a078f5aba4625a546574b183c704d8e38"><div class="ttname"><a href="init_8c.html#a078f5aba4625a546574b183c704d8e38">init_free_list</a></div><div class="ttdeci">VOID init_free_list(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00295">init.c:295</a></div></div>
+<div class="ttc" id="ainit_8c_html_a6714a26157ebdb9b9563bfb92ae3b5e0"><div class="ttname"><a href="init_8c.html#a6714a26157ebdb9b9563bfb92ae3b5e0">endPFN</a></div><div class="ttdeci">pfn * endPFN</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00042">init.c:42</a></div></div>
+<div class="ttc" id="ainit_8c_html_a6b4b0d965a12cb6a4fa0e81d6e336758"><div class="ttname"><a href="init_8c.html#a6b4b0d965a12cb6a4fa0e81d6e336758">init_lists</a></div><div class="ttdeci">VOID init_lists(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00330">init.c:330</a></div></div>
+<div class="ttc" id="ainit_8c_html_aa298b9446869fc2d050a719120cb9539"><div class="ttname"><a href="init_8c.html#aa298b9446869fc2d050a719120cb9539">getMaxFrameNumber</a></div><div class="ttdeci">ULONG64 getMaxFrameNumber(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00472">init.c:472</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00042">endPFN</a>, <a class="el" href="init_8c_source.html#l00472">getMaxFrameNumber()</a>, <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>, <a class="el" href="init_8c_source.html#l00330">init_lists()</a>, and <a class="el" href="init_8c_source.html#l00041">pfnStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00166">init_virtual_memory()</a>.</p>
+<div id="dynsection-21" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-21-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-21-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 21 --></div>
+</div>
+<div id="dynsection-22" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-22-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-22-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 22 --></div>
+</div>
+
 </div>
 </div>
 <a id="a3946185081bbb14bbde6e08f8572928b" name="a3946185081bbb14bbde6e08f8572928b"></a>
@@ -372,6 +941,36 @@ Variables</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00176">176</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  176</span>                            {</div>
+<div class="line"><span class="lineno">  177</span> </div>
+<div class="line"><span class="lineno">  178</span>    <span class="comment">//nptodo add the case where NUMPTES is not divisible by 64</span></div>
+<div class="line"><span class="lineno">  179</span> </div>
+<div class="line"><span class="lineno">  180</span> </div>
+<div class="line"><span class="lineno">  181</span>    <a class="code hl_variable" href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a> = (<a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>*) <a class="code hl_function" href="init_8c.html#a63ea90e5d68efe47281012ba0bb76111">init_memory</a>(<a class="code hl_define" href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a> * <span class="keyword">sizeof</span>(<a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>));</div>
+<div class="line"><span class="lineno">  182</span> </div>
+<div class="line"><span class="lineno">  183</span> </div>
+<div class="line"><span class="lineno">  184</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2e8469f2378cb4430554fbacc3c5b7a4"><div class="ttname"><a href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a></div><div class="ttdeci">PTE_REGION * pteRegionsBase</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00050">init.c:50</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00245">structures.h:245</a></div></div>
+<div class="ttc" id="astructures_8h_html_ac89673676f0f8705c99b84e72534f9ef"><div class="ttname"><a href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a></div><div class="ttdeci">#define NUMBER_OF_PTE_REGIONS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00242">structures.h:242</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00484">init_memory()</a>, <a class="el" href="structures_8h_source.html#l00242">NUMBER_OF_PTE_REGIONS</a>, and <a class="el" href="init_8c_source.html#l00050">pteRegionsBase</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00186">init_pageTable()</a>.</p>
+<div id="dynsection-23" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-23-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-23-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 23 --></div>
+</div>
+<div id="dynsection-24" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-24-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-24-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 24 --></div>
+</div>
 
 </div>
 </div>
@@ -390,6 +989,40 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00166">166</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  166</span>                          {</div>
+<div class="line"><span class="lineno">  167</span> </div>
+<div class="line"><span class="lineno">  168</span>    <a class="code hl_function" href="init_8c.html#a8b2c639850bfa092726592380b96793d">getPhysicalPages</a>();</div>
+<div class="line"><span class="lineno">  169</span>    <a class="code hl_function" href="init_8c.html#a70143d9a4a7923d239acad3ad4f587ce">initVA</a>();</div>
+<div class="line"><span class="lineno">  170</span>    <a class="code hl_function" href="init_8c.html#a3b30a5be9b508508041da8ac419ca003">init_pfns</a>();</div>
+<div class="line"><span class="lineno">  171</span>    <a class="code hl_function" href="init_8c.html#a84f4576fe95cedeef28cdc4d0a9496d8">init_pageTable</a>();</div>
+<div class="line"><span class="lineno">  172</span>    <a class="code hl_function" href="init_8c.html#aafb639d2ea6780be13d3dd463d7d1241">init_disk</a>();</div>
+<div class="line"><span class="lineno">  173</span>   <a class="code hl_function" href="init__threads_8c.html#aab1b5789118354c27bf39d29b3338509">initThreads</a>();</div>
+<div class="line"><span class="lineno">  174</span> </div>
+<div class="line"><span class="lineno">  175</span>}</div>
+<div class="ttc" id="ainit_8c_html_a3b30a5be9b508508041da8ac419ca003"><div class="ttname"><a href="init_8c.html#a3b30a5be9b508508041da8ac419ca003">init_pfns</a></div><div class="ttdeci">VOID init_pfns(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00277">init.c:277</a></div></div>
+<div class="ttc" id="ainit_8c_html_a70143d9a4a7923d239acad3ad4f587ce"><div class="ttname"><a href="init_8c.html#a70143d9a4a7923d239acad3ad4f587ce">initVA</a></div><div class="ttdeci">BOOL initVA()</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00406">init.c:406</a></div></div>
+<div class="ttc" id="ainit_8c_html_a84f4576fe95cedeef28cdc4d0a9496d8"><div class="ttname"><a href="init_8c.html#a84f4576fe95cedeef28cdc4d0a9496d8">init_pageTable</a></div><div class="ttdeci">VOID init_pageTable(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00186">init.c:186</a></div></div>
+<div class="ttc" id="ainit_8c_html_a8b2c639850bfa092726592380b96793d"><div class="ttname"><a href="init_8c.html#a8b2c639850bfa092726592380b96793d">getPhysicalPages</a></div><div class="ttdeci">BOOL getPhysicalPages(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00354">init.c:354</a></div></div>
+<div class="ttc" id="ainit_8c_html_aafb639d2ea6780be13d3dd463d7d1241"><div class="ttname"><a href="init_8c.html#aafb639d2ea6780be13d3dd463d7d1241">init_disk</a></div><div class="ttdeci">VOID init_disk(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00196">init.c:196</a></div></div>
+<div class="ttc" id="ainit__threads_8c_html_aab1b5789118354c27bf39d29b3338509"><div class="ttname"><a href="init__threads_8c.html#aab1b5789118354c27bf39d29b3338509">initThreads</a></div><div class="ttdeci">VOID initThreads(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00021">init_threads.c:21</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00354">getPhysicalPages()</a>, <a class="el" href="init_8c_source.html#l00196">init_disk()</a>, <a class="el" href="init_8c_source.html#l00186">init_pageTable()</a>, <a class="el" href="init_8c_source.html#l00277">init_pfns()</a>, <a class="el" href="init__threads_8c_source.html#l00021">initThreads()</a>, and <a class="el" href="init_8c_source.html#l00406">initVA()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>.</p>
+<div id="dynsection-25" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-25-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-25-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 25 --></div>
+</div>
+<div id="dynsection-26" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-26-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-26-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 26 --></div>
+</div>
+
 </div>
 </div>
 <a id="a9bd070d2ab0bdb93ced23c5af39fa1b0" name="a9bd070d2ab0bdb93ced23c5af39fa1b0"></a>
@@ -407,6 +1040,19 @@ Variables</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init__threads_8c_source.html#l00144">144</a> of file <a class="el" href="init__threads_8c_source.html">init_threads.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  144</span>                                    {</div>
+<div class="line"><span class="lineno">  145</span>    <a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* p;</div>
+<div class="line"><span class="lineno">  146</span> </div>
+<div class="line"><span class="lineno">  147</span>    p = <a class="code hl_variable" href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a>;</div>
+<div class="line"><span class="lineno">  148</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a>; ++i) {</div>
+<div class="line"><span class="lineno">  149</span>        <a class="code hl_define" href="structures_8h.html#ae34e75e77ca075a7a2286d4308e38b42">INITIALIZE_LOCK_DIRECT</a>(p-&gt;<a class="code hl_variable" href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">lock</a>);</div>
+<div class="line"><span class="lineno">  150</span>        p++;</div>
+<div class="line"><span class="lineno">  151</span>    }</div>
+<div class="line"><span class="lineno">  152</span>}</div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html_a5a47700edae0d01d18370739954e9860"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">PTE_REGION::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00248">structures.h:248</a></div></div>
+<div class="ttc" id="astructures_8h_html_ae34e75e77ca075a7a2286d4308e38b42"><div class="ttname"><a href="structures_8h.html#ae34e75e77ca075a7a2286d4308e38b42">INITIALIZE_LOCK_DIRECT</a></div><div class="ttdeci">#define INITIALIZE_LOCK_DIRECT(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00128">structures.h:128</a></div></div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="aff702f29284682a44388dec8bb01dc0e" name="aff702f29284682a44388dec8bb01dc0e"></a>
@@ -447,6 +1093,10 @@ Variables</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00023">23</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, and <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>.</p>
+
 </div>
 </div>
 <a id="adbc56ab37cb1acc59cad16b92848af82" name="adbc56ab37cb1acc59cad16b92848af82"></a>
@@ -468,6 +1118,10 @@ Variables</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="init_8c_source.html#l00024">24</a> of file <a class="el" href="init_8c_source.html">init.c</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00022">full_virtual_memory_test()</a>, and <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>.</p>
 
 </div>
 </div>

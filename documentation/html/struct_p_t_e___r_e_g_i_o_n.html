@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -70,7 +77,7 @@ $(function() { codefold.init(); });
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('struct_p_t_e___r_e_g_i_o_n.html','',''); });
+$(function(){initNavTree('struct_p_t_e___r_e_g_i_o_n.html','','struct_p_t_e___r_e_g_i_o_n-members'); });
 </script>
 <script type="text/javascript" src="menudata.js"></script>
 <script type="text/javascript" src="menu.js"></script>
@@ -108,16 +115,25 @@ $(function() {
 <div class="contents">
 
 <p><code>#include &lt;<a class="el" href="structures_8h_source.html">structures.h</a>&gt;</code></p>
+<div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Collaboration diagram for PTE_REGION:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+<center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
-Data Fields</h2></td></tr>
+Public Attributes</h2></td></tr>
 <tr class="memitem:a8e9d703126bf047faa3ba9308d59dd54" id="r_a8e9d703126bf047faa3ba9308d59dd54"><td class="memItemLeft" align="right" valign="top">LIST_ENTRY&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8e9d703126bf047faa3ba9308d59dd54">entry</a></td></tr>
 <tr class="memitem:a8cbe3157665c7d070617627b7495083a" id="r_a8cbe3157665c7d070617627b7495083a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structstochastic__data.html">stochastic_data</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8cbe3157665c7d070617627b7495083a">statistics</a></td></tr>
 <tr class="memitem:a5a47700edae0d01d18370739954e9860" id="r_a5a47700edae0d01d18370739954e9860"><td class="memItemLeft" align="right" valign="top">CRITICAL_SECTION&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5a47700edae0d01d18370739954e9860">lock</a></td></tr>
 <tr class="memitem:a3c627e059705990e1c58665e7054ff1a" id="r_a3c627e059705990e1c58665e7054ff1a"><td class="memItemLeft" align="right" valign="top">ULONG64&#160;</td><td class="memItemRight" valign="bottom">:1</td></tr>
 <tr class="memitem:ada745bb656ec1860d15cf226cc18a099" id="r_ada745bb656ec1860d15cf226cc18a099"><td class="memItemLeft" align="right" valign="top">ULONG64&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ada745bb656ec1860d15cf226cc18a099">accessed</a></td></tr>
 </table>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00245">245</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a3c627e059705990e1c58665e7054ff1a" name="a3c627e059705990e1c58665e7054ff1a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3c627e059705990e1c58665e7054ff1a">&#9670;&#160;</a></span>__pad0__</h2>
 
@@ -129,6 +145,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00250">250</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -144,6 +162,10 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00250">250</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00014">recordAccess()</a>, and <a class="el" href="statistics_8c_source.html#l00014">recordProbability()</a>.</p>
+
 </div>
 </div>
 <a id="a8e9d703126bf047faa3ba9308d59dd54" name="a8e9d703126bf047faa3ba9308d59dd54"></a>
@@ -157,6 +179,8 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00246">246</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
 
 </div>
 </div>
@@ -172,6 +196,10 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00248">248</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="init__threads_8c_source.html#l00144">initializePageTableLocks()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>.</p>
+
 </div>
 </div>
 <a id="a8cbe3157665c7d070617627b7495083a" name="a8cbe3157665c7d070617627b7495083a"></a>
@@ -185,6 +213,10 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00247">247</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="statistics__utils_8c_source.html#l00048">hazardRate()</a>, and <a class="el" href="statistics__utils_8c_source.html#l00014">recordAccess()</a>.</p>
 
 </div>
 </div>

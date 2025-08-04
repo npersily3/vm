@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -118,7 +125,7 @@ $(function() {
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span>DWORD <a class="code hl_function" href="statistics_8h.html#a4ddc0a65e7af3f2142a69df8132a4eee">recordProbability</a>(LPVOID lpParameter);</div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#endif </span><span class="comment">//STATISTICS_H</span></div>
-<div class="ttc" id="astatistics_8h_html_a4ddc0a65e7af3f2142a69df8132a4eee"><div class="ttname"><a href="statistics_8h.html#a4ddc0a65e7af3f2142a69df8132a4eee">recordProbability</a></div><div class="ttdeci">DWORD recordProbability(LPVOID lpParameter)</div><div class="ttdef"><b>Definition</b> statistics.c:14</div></div>
+<div class="ttc" id="astatistics_8h_html_a4ddc0a65e7af3f2142a69df8132a4eee"><div class="ttname"><a href="statistics_8h.html#a4ddc0a65e7af3f2142a69df8132a4eee">recordProbability</a></div><div class="ttdeci">DWORD recordProbability(LPVOID lpParameter)</div><div class="ttdef"><b>Definition</b> <a href="statistics_8c_source.html#l00014">statistics.c:14</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

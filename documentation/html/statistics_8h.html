@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -107,6 +114,18 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;windows.h&gt;</code><br />
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for statistics.h:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
 </div>
 <p><a href="statistics_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -129,6 +148,54 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="statistics_8c_source.html#l00014">14</a> of file <a class="el" href="statistics_8c_source.html">statistics.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   14</span>                                      {</div>
+<div class="line"><span class="lineno">   15</span> </div>
+<div class="line"><span class="lineno">   16</span>    ULONG64 start, end;</div>
+<div class="line"><span class="lineno">   17</span>    <a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* region;</div>
+<div class="line"><span class="lineno">   18</span> </div>
+<div class="line"><span class="lineno">   19</span> <span class="comment">//   DebugBreak();</span></div>
+<div class="line"><span class="lineno">   20</span>    <span class="keywordtype">double</span> hazard;</div>
+<div class="line"><span class="lineno">   21</span> </div>
+<div class="line"><span class="lineno">   22</span>    Sleep(1000 * 30);</div>
+<div class="line"><span class="lineno">   23</span> </div>
+<div class="line"><span class="lineno">   24</span> </div>
+<div class="line"><span class="lineno">   25</span>    <span class="comment">//DebugBreak();</span></div>
+<div class="line"><span class="lineno">   26</span>    start = GetTickCount64();</div>
+<div class="line"><span class="lineno">   27</span> </div>
+<div class="line"><span class="lineno">   28</span>    region = <a class="code hl_variable" href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a>;</div>
+<div class="line"><span class="lineno">   29</span>    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; <a class="code hl_define" href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a>; i++) {</div>
+<div class="line"><span class="lineno">   30</span> </div>
+<div class="line"><span class="lineno">   31</span>        <span class="keywordflow">if</span> (region-&gt;<a class="code hl_variable" href="struct_p_t_e___r_e_g_i_o_n.html#ada745bb656ec1860d15cf226cc18a099">accessed</a> == 1) {</div>
+<div class="line"><span class="lineno">   32</span>            hazard = <a class="code hl_function" href="statistics__utils_8c.html#af353d6e64421860f88aca425fbc497f7">likelihoodOfAccess</a>(region);</div>
+<div class="line"><span class="lineno">   33</span>            printf(<span class="stringliteral">&quot;iteration %i:This is the likelihood of a pte region being acces in the next 10 seconds: %d\n&quot;</span>,i, hazard);</div>
+<div class="line"><span class="lineno">   34</span> </div>
+<div class="line"><span class="lineno">   35</span>          <span class="comment">//  DebugBreak();</span></div>
+<div class="line"><span class="lineno">   36</span>        }</div>
+<div class="line"><span class="lineno">   37</span>        region++;</div>
+<div class="line"><span class="lineno">   38</span>    }</div>
+<div class="line"><span class="lineno">   39</span>    end = GetTickCount64();</div>
+<div class="line"><span class="lineno">   40</span> </div>
+<div class="line"><span class="lineno">   41</span>    ULONGLONG totalTime = end - start;</div>
+<div class="line"><span class="lineno">   42</span> </div>
+<div class="line"><span class="lineno">   43</span> </div>
+<div class="line"><span class="lineno">   44</span> </div>
+<div class="line"><span class="lineno">   45</span>    <span class="keywordflow">return</span> 0;</div>
+<div class="line"><span class="lineno">   46</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2e8469f2378cb4430554fbacc3c5b7a4"><div class="ttname"><a href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a></div><div class="ttdeci">PTE_REGION * pteRegionsBase</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00050">init.c:50</a></div></div>
+<div class="ttc" id="astatistics__utils_8c_html_af353d6e64421860f88aca425fbc497f7"><div class="ttname"><a href="statistics__utils_8c.html#af353d6e64421860f88aca425fbc497f7">likelihoodOfAccess</a></div><div class="ttdeci">double likelihoodOfAccess(PTE_REGION *region)</div><div class="ttdef"><b>Definition</b> <a href="statistics__utils_8c_source.html#l00037">statistics_utils.c:37</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00245">structures.h:245</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html_ada745bb656ec1860d15cf226cc18a099"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html#ada745bb656ec1860d15cf226cc18a099">PTE_REGION::accessed</a></div><div class="ttdeci">ULONG64 accessed</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00250">structures.h:250</a></div></div>
+<div class="ttc" id="astructures_8h_html_ac89673676f0f8705c99b84e72534f9ef"><div class="ttname"><a href="structures_8h.html#ac89673676f0f8705c99b84e72534f9ef">NUMBER_OF_PTE_REGIONS</a></div><div class="ttdeci">#define NUMBER_OF_PTE_REGIONS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00242">structures.h:242</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00250">PTE_REGION::accessed</a>, <a class="el" href="statistics__utils_8c_source.html#l00037">likelihoodOfAccess()</a>, <a class="el" href="structures_8h_source.html#l00242">NUMBER_OF_PTE_REGIONS</a>, and <a class="el" href="init_8c_source.html#l00050">pteRegionsBase</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
 
 </div>
 </div>

@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -128,14 +135,14 @@ $(function() {
 <div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span> </div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
 <div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#endif </span><span class="comment">//INIT_THREADS_H</span></div>
-<div class="ttc" id="ainit__threads_8h_html_a1c045e7187f8f9c0bf2ba68de5a10bca"><div class="ttname"><a href="init__threads_8h.html#a1c045e7187f8f9c0bf2ba68de5a10bca">createEvents</a></div><div class="ttdeci">VOID createEvents(VOID)</div><div class="ttdef"><b>Definition</b> init_threads.c:121</div></div>
-<div class="ttc" id="ainit__threads_8h_html_a6dcc007f243c01c1c0dd02d3fe3e5c43"><div class="ttname"><a href="init__threads_8h.html#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a></div><div class="ttdeci">HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext)</div><div class="ttdef"><b>Definition</b> init_threads.c:156</div></div>
-<div class="ttc" id="ainit__threads_8h_html_a86159e994d33f90d79e149463ecbeb11"><div class="ttname"><a href="init__threads_8h.html#a86159e994d33f90d79e149463ecbeb11">createThreads</a></div><div class="ttdeci">VOID createThreads(VOID)</div><div class="ttdef"><b>Definition</b> init_threads.c:27</div></div>
-<div class="ttc" id="ainit__threads_8h_html_a9bd070d2ab0bdb93ced23c5af39fa1b0"><div class="ttname"><a href="init__threads_8h.html#a9bd070d2ab0bdb93ced23c5af39fa1b0">initializePageTableLocks</a></div><div class="ttdeci">VOID initializePageTableLocks(VOID)</div><div class="ttdef"><b>Definition</b> init_threads.c:144</div></div>
-<div class="ttc" id="ainit__threads_8h_html_aab1b5789118354c27bf39d29b3338509"><div class="ttname"><a href="init__threads_8h.html#aab1b5789118354c27bf39d29b3338509">initThreads</a></div><div class="ttdeci">VOID initThreads(VOID)</div><div class="ttdef"><b>Definition</b> init_threads.c:21</div></div>
-<div class="ttc" id="ainit__threads_8h_html_ac46fe8c321a8fcd2217bb5a738a7f09e"><div class="ttname"><a href="init__threads_8h.html#ac46fe8c321a8fcd2217bb5a738a7f09e">initCriticalSections</a></div><div class="ttdeci">VOID initCriticalSections(VOID)</div><div class="ttdef"><b>Definition</b> init_threads.c:131</div></div>
+<div class="ttc" id="ainit__threads_8h_html_a1c045e7187f8f9c0bf2ba68de5a10bca"><div class="ttname"><a href="init__threads_8h.html#a1c045e7187f8f9c0bf2ba68de5a10bca">createEvents</a></div><div class="ttdeci">VOID createEvents(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00121">init_threads.c:121</a></div></div>
+<div class="ttc" id="ainit__threads_8h_html_a6dcc007f243c01c1c0dd02d3fe3e5c43"><div class="ttname"><a href="init__threads_8h.html#a6dcc007f243c01c1c0dd02d3fe3e5c43">createNewThread</a></div><div class="ttdeci">HANDLE createNewThread(LPTHREAD_START_ROUTINE ThreadFunction, PTHREAD_INFO ThreadContext)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00156">init_threads.c:156</a></div></div>
+<div class="ttc" id="ainit__threads_8h_html_a86159e994d33f90d79e149463ecbeb11"><div class="ttname"><a href="init__threads_8h.html#a86159e994d33f90d79e149463ecbeb11">createThreads</a></div><div class="ttdeci">VOID createThreads(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00027">init_threads.c:27</a></div></div>
+<div class="ttc" id="ainit__threads_8h_html_a9bd070d2ab0bdb93ced23c5af39fa1b0"><div class="ttname"><a href="init__threads_8h.html#a9bd070d2ab0bdb93ced23c5af39fa1b0">initializePageTableLocks</a></div><div class="ttdeci">VOID initializePageTableLocks(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00144">init_threads.c:144</a></div></div>
+<div class="ttc" id="ainit__threads_8h_html_aab1b5789118354c27bf39d29b3338509"><div class="ttname"><a href="init__threads_8h.html#aab1b5789118354c27bf39d29b3338509">initThreads</a></div><div class="ttdeci">VOID initThreads(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00021">init_threads.c:21</a></div></div>
+<div class="ttc" id="ainit__threads_8h_html_ac46fe8c321a8fcd2217bb5a738a7f09e"><div class="ttname"><a href="init__threads_8h.html#ac46fe8c321a8fcd2217bb5a738a7f09e">initCriticalSections</a></div><div class="ttdeci">VOID initCriticalSections(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init__threads_8c_source.html#l00131">init_threads.c:131</a></div></div>
 <div class="ttc" id="astructures_8h_html"><div class="ttname"><a href="structures_8h.html">structures.h</a></div></div>
-<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> structures.h:196</div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

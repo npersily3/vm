@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -116,7 +123,15 @@ $(function() {
 <code>#include &quot;<a class="el" href="disk_8h_source.html">../../include/disk/disk.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="thread__utils_8h_source.html">../../include/utils/thread_utils.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="init_8h_source.html">initialization/init.h</a>&quot;</code><br />
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for user_thread.c:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
+<p><a href="user__thread_8c_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a448eb2bbcbf9ade5e09d3af9b2bb0ea3" id="r_a448eb2bbcbf9ade5e09d3af9b2bb0ea3"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a448eb2bbcbf9ade5e09d3af9b2bb0ea3">addPageToFreeList</a> (<a class="el" href="structpfn.html">pfn</a> *page, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
@@ -126,26 +141,26 @@ Functions</h2></td></tr>
 <tr class="memitem:a6601998c57f4c3d80891bfcab071441d" id="r_a6601998c57f4c3d80891bfcab071441d"><td class="memItemLeft" align="right" valign="top">PVOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6601998c57f4c3d80891bfcab071441d">getThreadMapping</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
 <tr class="memdesc:a6601998c57f4c3d80891bfcab071441d"><td class="mdescLeft">&#160;</td><td class="mdescRight">A function that gets the current transfer virtual address that a thread needs.  <br /></td></tr>
 <tr class="memitem:a9a16d9a9c52782f31f8cbe5ee8fd14e9" id="r_a9a16d9a9c52782f31f8cbe5ee8fd14e9"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9a16d9a9c52782f31f8cbe5ee8fd14e9">freeThreadMapping</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
-<tr class="memdesc:a9a16d9a9c52782f31f8cbe5ee8fd14e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unmaps the thread's transfer virtual address space if it has all mapped. Batching it in this way saves a lot of time spent mapping and flushing.  <br /></td></tr>
+<tr class="memdesc:a9a16d9a9c52782f31f8cbe5ee8fd14e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unmaps the thread's transfer virtual address space if it has all mapped.  <br /></td></tr>
 <tr class="memitem:a15daaf165c91aa6784d5c54ea0acef75" id="r_a15daaf165c91aa6784d5c54ea0acef75"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a15daaf165c91aa6784d5c54ea0acef75">pageFault</a> (PULONG_PTR arbitrary_va, LPVOID threadContext)</td></tr>
-<tr class="memdesc:a15daaf165c91aa6784d5c54ea0acef75"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function is the core of the program. It will culminate in the mapping of a physical page to the passed in virtual address.  <br /></td></tr>
+<tr class="memdesc:a15daaf165c91aa6784d5c54ea0acef75"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function is the core of the program.  <br /></td></tr>
 <tr class="memitem:a054a809045b98743dd633e71b528a419" id="r_a054a809045b98743dd633e71b528a419"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a054a809045b98743dd633e71b528a419">isRescue</a> (<a class="el" href="structpte.html">pte</a> *currentPTE)</td></tr>
 <tr class="memitem:a77064328a04d35d501edae073abba4e7" id="r_a77064328a04d35d501edae073abba4e7"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a77064328a04d35d501edae073abba4e7">rescue_page</a> (ULONG64 arbitrary_va, <a class="el" href="structpte.html">pte</a> *currentPTE, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
-<tr class="memdesc:a77064328a04d35d501edae073abba4e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page. If the page corresponding to the virtual address is on the modified list, this function just simply removes it from the middle. If the page is on the standby list, this function removes it from the middle of the list and sets the corresponding disk space free. Lastly, If the page is not on any list, but in the process of being written out, just mark it as no longer being written out. The writer will see this and free the corresponding disk space.  <br /></td></tr>
+<tr class="memdesc:a77064328a04d35d501edae073abba4e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page.  <br /></td></tr>
 <tr class="memitem:a09f6bd7a22266dc562f57a1c51d67320" id="r_a09f6bd7a22266dc562f57a1c51d67320"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a09f6bd7a22266dc562f57a1c51d67320">mapPage</a> (ULONG64 arbitrary_va, <a class="el" href="structpte.html">pte</a> *currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock)</td></tr>
-<tr class="memdesc:a09f6bd7a22266dc562f57a1c51d67320"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk. First this thread will attempt to map from the free list; then it will try to map from standby. If none of those succeed it will wake up the trimmer and wait to redo the fault. If this thread notices that usable pages are getting low, it will wake up the trimmer.  <br /></td></tr>
+<tr class="memdesc:a09f6bd7a22266dc562f57a1c51d67320"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk.  <br /></td></tr>
 <tr class="memitem:a39091ec036a9c3ade72645232a6c655b" id="r_a39091ec036a9c3ade72645232a6c655b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a39091ec036a9c3ade72645232a6c655b">mapPageFromFreeList</a> (<a class="el" href="structpte.html">pte</a> *currentPTE, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
-<tr class="memdesc:a39091ec036a9c3ade72645232a6c655b"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function tries to get a physical page of a free list. It will also detect if the number of free pages is running low, and take some from the standby list.  <br /></td></tr>
+<tr class="memdesc:a39091ec036a9c3ade72645232a6c655b"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function tries to get a physical page of a free list.  <br /></td></tr>
 <tr class="memitem:abe86a2d11f81fe2a1b903588bffd3972" id="r_abe86a2d11f81fe2a1b903588bffd3972"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abe86a2d11f81fe2a1b903588bffd3972">mapPageFromStandByList</a> (<a class="el" href="structpte.html">pte</a> *currentPTE, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
-<tr class="memdesc:abe86a2d11f81fe2a1b903588bffd3972"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function attempts to take a page from the standby list. If there is a page to take, this function will update the page's pagetable entry to reflect that it is no longer on standby, but on disk.  <br /></td></tr>
+<tr class="memdesc:abe86a2d11f81fe2a1b903588bffd3972"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function attempts to take a page from the standby list.  <br /></td></tr>
 <tr class="memitem:adf110e8fee1dab537a5b4a22909843d5" id="r_adf110e8fee1dab537a5b4a22909843d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#adf110e8fee1dab537a5b4a22909843d5">getVictimFromStandByList</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo)</td></tr>
-<tr class="memdesc:adf110e8fee1dab537a5b4a22909843d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry of the page without holding a page table lock. It can do this because the page table entry's corresponding page lock protects it from being rescued at the same. However, this means that in the rescue or other functions relating to standby pages, the page table entry could be changing.  <br /></td></tr>
+<tr class="memdesc:adf110e8fee1dab537a5b4a22909843d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function pops a page off the standby list and updates its pte.  <br /></td></tr>
 <tr class="memitem:aa4d5559bed59f8700f4e332ffedd6064" id="r_aa4d5559bed59f8700f4e332ffedd6064"><td class="memItemLeft" align="right" valign="top">VOID&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aa4d5559bed59f8700f4e332ffedd6064">modified_read</a> (<a class="el" href="structpte.html">pte</a> *currentPTE, ULONG64 frameNumber, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
-<tr class="memdesc:aa4d5559bed59f8700f4e332ffedd6064"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function reads in the contents of a disk page onto a physical page. It uses an interim transfer virtual address to complete this task. Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls, a lot of time spent flushing and unmapping is saved.  <br /></td></tr>
+<tr class="memdesc:aa4d5559bed59f8700f4e332ffedd6064"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function reads in the contents of a disk page onto a physical page.  <br /></td></tr>
 <tr class="memitem:af2a00908cb7f283fa07f7372f2533d6d" id="r_af2a00908cb7f283fa07f7372f2533d6d"><td class="memItemLeft" align="right" valign="top">BOOL&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af2a00908cb7f283fa07f7372f2533d6d">zeroOnePage</a> (<a class="el" href="structpfn.html">pfn</a> *page, <a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
-<tr class="memdesc:af2a00908cb7f283fa07f7372f2533d6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function zeroes a physical page. It uses an interim transfer virtual address to complete this task. Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls, a lot of time spent flushing and unmapping is saved.  <br /></td></tr>
+<tr class="memdesc:af2a00908cb7f283fa07f7372f2533d6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function zeroes a physical page.  <br /></td></tr>
 <tr class="memitem:aaac03443ad63f63ed80d86cbfcc6bec0" id="r_aaac03443ad63f63ed80d86cbfcc6bec0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpfn.html">pfn</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaac03443ad63f63ed80d86cbfcc6bec0">getPageFromFreeList</a> (<a class="el" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadContext)</td></tr>
-<tr class="memdesc:aaac03443ad63f63ed80d86cbfcc6bec0"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function gets a page off of one of the free lists. It returns with the page locked.  <br /></td></tr>
+<tr class="memdesc:aaac03443ad63f63ed80d86cbfcc6bec0"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function gets a page off of one of the free lists.  <br /></td></tr>
 </table>
 <a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
 <a id="a448eb2bbcbf9ade5e09d3af9b2bb0ea3" name="a448eb2bbcbf9ade5e09d3af9b2bb0ea3"></a>
@@ -178,6 +193,70 @@ Functions</h2></td></tr>
 <dl class="section pre"><dt>Precondition</dt><dd>The page must be locked. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must release the page lock. </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00047">47</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   47</span>                                                           {</div>
+<div class="line"><span class="lineno">   48</span>    ULONG64 localFreeListIndex;</div>
+<div class="line"><span class="lineno">   49</span> </div>
+<div class="line"><span class="lineno">   50</span> </div>
+<div class="line"><span class="lineno">   51</span>    <span class="comment">// Increment the global index which is a guess as to what free list most likely is available and has pages</span></div>
+<div class="line"><span class="lineno">   52</span>    localFreeListIndex = InterlockedIncrement(&amp;<a class="code hl_variable" href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a>);</div>
+<div class="line"><span class="lineno">   53</span>    localFreeListIndex %= <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>;</div>
+<div class="line"><span class="lineno">   54</span>    InterlockedIncrement64((<span class="keyword">volatile</span> LONG64 *)&amp;<a class="code hl_variable" href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a>);</div>
+<div class="line"><span class="lineno">   55</span> </div>
+<div class="line"><span class="lineno">   56</span>    <span class="comment">// iterate through the freelists starting at the index calculated above and try to lock it</span></div>
+<div class="line"><span class="lineno">   57</span>    <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">   58</span>        <span class="comment">// once you lock a free list insert it at the head</span></div>
+<div class="line"><span class="lineno">   59</span>        <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex].page.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">   60</span> </div>
+<div class="line"><span class="lineno">   61</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">   62</span>            <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex]);</div>
+<div class="line"><span class="lineno">   63</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">   64</span> </div>
+<div class="line"><span class="lineno">   65</span> </div>
+<div class="line"><span class="lineno">   66</span>            <a class="code hl_function" href="macros_8h.html#a47aa8dee2f7a2d1e5e9a517d0a07a6ba">InsertHeadList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex], &amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> );</div>
+<div class="line"><span class="lineno">   67</span> </div>
+<div class="line"><span class="lineno">   68</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">   69</span>            <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex]);</div>
+<div class="line"><span class="lineno">   70</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">   71</span> </div>
+<div class="line"><span class="lineno">   72</span>            <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex].page, threadInfo);</div>
+<div class="line"><span class="lineno">   73</span> </div>
+<div class="line"><span class="lineno">   74</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   75</span> </div>
+<div class="line"><span class="lineno">   76</span>        }</div>
+<div class="line"><span class="lineno">   77</span>        <span class="comment">// increment and wrap</span></div>
+<div class="line"><span class="lineno">   78</span>        localFreeListIndex = (localFreeListIndex + 1) % <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>;</div>
+<div class="line"><span class="lineno">   79</span>    }</div>
+<div class="line"><span class="lineno">   80</span> </div>
+<div class="line"><span class="lineno">   81</span> </div>
+<div class="line"><span class="lineno">   82</span> </div>
+<div class="line"><span class="lineno">   83</span>}</div>
+<div class="ttc" id="ainit_8c_html_a3798be30b1f648b1b1de8c1d6560c533"><div class="ttname"><a href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a></div><div class="ttdeci">volatile ULONG64 freeListLength</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00032">init.c:32</a></div></div>
+<div class="ttc" id="ainit_8c_html_a43109329be1b09d2231295e71232c648"><div class="ttname"><a href="init_8c.html#a43109329be1b09d2231295e71232c648">freeListAddIndex</a></div><div class="ttdeci">volatile LONG freeListAddIndex</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00030">init.c:30</a></div></div>
+<div class="ttc" id="ainit_8c_html_a52984f5994ddf0c0360c085b79b9023b"><div class="ttname"><a href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a></div><div class="ttdeci">listHead headFreeLists[NUMBER_OF_FREE_LISTS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00029">init.c:29</a></div></div>
+<div class="ttc" id="amacros_8h_html_a47aa8dee2f7a2d1e5e9a517d0a07a6ba"><div class="ttname"><a href="macros_8h.html#a47aa8dee2f7a2d1e5e9a517d0a07a6ba">InsertHeadList</a></div><div class="ttdeci">FORCEINLINE VOID InsertHeadList(__inout pListHead ListHead, __inout __drv_aliasesMem PLIST_ENTRY Entry)</div><div class="ttdef"><b>Definition</b> <a href="macros_8h_source.html#l00121">macros.h:121</a></div></div>
+<div class="ttc" id="astructpfn_html_a90e89efbad0a46c24ae279d79d2f8349"><div class="ttname"><a href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">pfn::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00212">structures.h:212</a></div></div>
+<div class="ttc" id="astructpfn_html_ab6ad595c698387fda8c17a768927abc7"><div class="ttname"><a href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">pfn::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00207">structures.h:207</a></div></div>
+<div class="ttc" id="astructures_8h_html_a498bbf40c65552f824c46efcd3496669"><div class="ttname"><a href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a></div><div class="ttdeci">#define NUMBER_OF_FREE_LISTS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00121">structures.h:121</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a1db2dc4187f63adf6556fbd6339700b2"><div class="ttname"><a href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a></div><div class="ttdeci">VOID leavePageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00257">thread_utils.c:257</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_ada2a56df112594780ba2b9578efb2278"><div class="ttname"><a href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a></div><div class="ttdeci">VOID validateList(pListHead head)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00046">thread_utils.c:46</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="init_8c_source.html#l00030">freeListAddIndex</a>, <a class="el" href="init_8c_source.html#l00032">freeListLength</a>, <a class="el" href="init_8c_source.html#l00029">headFreeLists</a>, <a class="el" href="macros_8h_source.html#l00121">InsertHeadList()</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00121">NUMBER_OF_FREE_LISTS</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="writer__thread_8c_source.html#l00135">addToStandBy()</a>, and <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+
 </div>
 </div>
 <a id="a6730003fb29092de5ffafa988d59deac" name="a6730003fb29092de5ffafa988d59deac"></a>
@@ -203,6 +282,78 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00089">89</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   89</span>                                                          {</div>
+<div class="line"><span class="lineno">   90</span>    <a class="code hl_struct" href="structlist_head.html">listHead</a> localList;</div>
+<div class="line"><span class="lineno">   91</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">   92</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* nextPage;</div>
+<div class="line"><span class="lineno">   93</span> </div>
+<div class="line"><span class="lineno">   94</span> </div>
+<div class="line"><span class="lineno">   95</span>    <a class="code hl_function" href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a>(&amp;localList);</div>
+<div class="line"><span class="lineno">   96</span> </div>
+<div class="line"><span class="lineno">   97</span> </div>
+<div class="line"><span class="lineno">   98</span>    <span class="comment">// adds pages onto the local list from the standby list but does not update them</span></div>
+<div class="line"><span class="lineno">   99</span>    <span class="comment">// returns with all the pages locked</span></div>
+<div class="line"><span class="lineno">  100</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="page__utils_8c.html#aaa59d7db7521cbc4c921cad1aca15a40">removeBatchFromList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>, &amp;localList, threadInfo) == <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>) {</div>
+<div class="line"><span class="lineno">  101</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  102</span>    }</div>
+<div class="line"><span class="lineno">  103</span> </div>
+<div class="line"><span class="lineno">  104</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  105</span>    <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(&amp;localList);</div>
+<div class="line"><span class="lineno">  106</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  107</span> </div>
+<div class="line"><span class="lineno">  108</span> </div>
+<div class="line"><span class="lineno">  109</span>    page = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(localList.<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  110</span>    <span class="comment">// For every page on the local list</span></div>
+<div class="line"><span class="lineno">  111</span> </div>
+<div class="line"><span class="lineno">  112</span>    <span class="keywordflow">while</span> (&amp;page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a> != &amp;localList.<a class="code hl_variable" href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">entry</a>) {</div>
+<div class="line"><span class="lineno">  113</span> </div>
+<div class="line"><span class="lineno">  114</span>        <span class="comment">// We can do this without a pte lock because the page lock protects it from rescues</span></div>
+<div class="line"><span class="lineno">  115</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">contentsLocation</a> = <a class="code hl_define" href="structures_8h.html#a8f119a4753d0e5933da10e933942e1cd">DISK</a>;</div>
+<div class="line"><span class="lineno">  116</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>-&gt;<a class="code hl_variable" href="structpte.html#adf4cf10e70f271c69b50e12ded45c02f">invalidFormat</a>.<a class="code hl_variable" href="structinvalid_pte.html#abbf271d7576a2bf1ac5c2c2a7633ee3c">diskIndex</a> = page-&gt;<a class="code hl_variable" href="structpfn.html#a573f579df22566e2dbedc20535dda482">diskIndex</a>;</div>
+<div class="line"><span class="lineno">  117</span> </div>
+<div class="line"><span class="lineno">  118</span>        <span class="comment">// add it to the list and manage locks</span></div>
+<div class="line"><span class="lineno">  119</span>        nextPage = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#ab6ad595c698387fda8c17a768927abc7">entry</a>.Flink, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  120</span>        <a class="code hl_function" href="#a448eb2bbcbf9ade5e09d3af9b2bb0ea3">addPageToFreeList</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  121</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  122</span>        page = nextPage;</div>
+<div class="line"><span class="lineno">  123</span> </div>
+<div class="line"><span class="lineno">  124</span>    }</div>
+<div class="line"><span class="lineno">  125</span> </div>
+<div class="line"><span class="lineno">  126</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2104c2f630ec691446eb83024e5eb897"><div class="ttname"><a href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a></div><div class="ttdeci">listHead headStandByList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00037">init.c:37</a></div></div>
+<div class="ttc" id="ainit_8c_html_a9ce66c35f161c7dd184eccf32832d6bf"><div class="ttname"><a href="init_8c.html#a9ce66c35f161c7dd184eccf32832d6bf">init_list_head</a></div><div class="ttdeci">VOID init_list_head(pListHead head)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00339">init.c:339</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_aaa59d7db7521cbc4c921cad1aca15a40"><div class="ttname"><a href="page__utils_8c.html#aaa59d7db7521cbc4c921cad1aca15a40">removeBatchFromList</a></div><div class="ttdeci">bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo)</div><div class="ttdoc">This function removes a batch of pages off of one list onto another instead of removing them one by o...</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00040">page_utils.c:40</a></div></div>
+<div class="ttc" id="astructinvalid_pte_html_abbf271d7576a2bf1ac5c2c2a7633ee3c"><div class="ttname"><a href="structinvalid_pte.html#abbf271d7576a2bf1ac5c2c2a7633ee3c">invalidPte::diskIndex</a></div><div class="ttdeci">ULONG64 diskIndex</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00147">structures.h:147</a></div></div>
+<div class="ttc" id="astructlist_head_html"><div class="ttname"><a href="structlist_head.html">listHead</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00275">structures.h:275</a></div></div>
+<div class="ttc" id="astructlist_head_html_a1adaf6dfc0d2e0fb2b275f3557eca04a"><div class="ttname"><a href="structlist_head.html#a1adaf6dfc0d2e0fb2b275f3557eca04a">listHead::entry</a></div><div class="ttdeci">LIST_ENTRY entry</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00276">structures.h:276</a></div></div>
+<div class="ttc" id="astructpfn_html"><div class="ttname"><a href="structpfn.html">pfn</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00206">structures.h:206</a></div></div>
+<div class="ttc" id="astructpfn_html_a573f579df22566e2dbedc20535dda482"><div class="ttname"><a href="structpfn.html#a573f579df22566e2dbedc20535dda482">pfn::diskIndex</a></div><div class="ttdeci">ULONG64 diskIndex</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00209">structures.h:209</a></div></div>
+<div class="ttc" id="astructpfn_html_ae2e24bb0e467c948348fd35010dec4e5"><div class="ttname"><a href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pfn::pte</a></div><div class="ttdeci">pte * pte</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00208">structures.h:208</a></div></div>
+<div class="ttc" id="astructpte_html_a6382aa31ee89fcdd5524083024925ebc"><div class="ttname"><a href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">pte::transitionFormat</a></div><div class="ttdeci">transitionPte transitionFormat</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00165">structures.h:165</a></div></div>
+<div class="ttc" id="astructpte_html_adf4cf10e70f271c69b50e12ded45c02f"><div class="ttname"><a href="structpte.html#adf4cf10e70f271c69b50e12ded45c02f">pte::invalidFormat</a></div><div class="ttdeci">invalidPte invalidFormat</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00164">structures.h:164</a></div></div>
+<div class="ttc" id="astructtransition_pte_html_a10b3e72c49cd4c23663bc3bdf09412c8"><div class="ttname"><a href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">transitionPte::contentsLocation</a></div><div class="ttdeci">ULONG64 contentsLocation</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00157">structures.h:157</a></div></div>
+<div class="ttc" id="astructures_8h_html_a8c4c01cac35e54e00185c8c6ff6b0347"><div class="ttname"><a href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a></div><div class="ttdeci">#define LIST_IS_EMPTY</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00096">structures.h:96</a></div></div>
+<div class="ttc" id="astructures_8h_html_a8f119a4753d0e5933da10e933942e1cd"><div class="ttname"><a href="structures_8h.html#a8f119a4753d0e5933da10e933942e1cd">DISK</a></div><div class="ttdeci">#define DISK</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00150">structures.h:150</a></div></div>
+<div class="ttc" id="astructures_8h_html_af8c317a42292b61c93aae91e59118a46"><div class="ttname"><a href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a></div><div class="ttdeci">#define container_of(ptr, type, member)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00080">structures.h:80</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a448eb2bbcbf9ade5e09d3af9b2bb0ea3"><div class="ttname"><a href="#a448eb2bbcbf9ade5e09d3af9b2bb0ea3">addPageToFreeList</a></div><div class="ttdeci">VOID addPageToFreeList(pfn *page, PTHREAD_INFO threadInfo)</div><div class="ttdoc">Adds a page to any available freelist.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00047">user_thread.c:47</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="structures_8h_source.html#l00157">transitionPte::contentsLocation</a>, <a class="el" href="structures_8h_source.html#l00150">DISK</a>, <a class="el" href="structures_8h_source.html#l00147">invalidPte::diskIndex</a>, <a class="el" href="structures_8h_source.html#l00209">pfn::diskIndex</a>, <a class="el" href="structures_8h_source.html#l00276">listHead::entry</a>, <a class="el" href="structures_8h_source.html#l00207">pfn::entry</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="init_8c_source.html#l00339">init_list_head()</a>, <a class="el" href="structures_8h_source.html#l00164">pte::invalidFormat</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00208">pfn::pte</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="page__utils_8c_source.html#l00040">removeBatchFromList()</a>, <a class="el" href="structures_8h_source.html#l00165">pte::transitionFormat</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
+
 </div>
 </div>
 <a id="a9a16d9a9c52782f31f8cbe5ee8fd14e9" name="a9a16d9a9c52782f31f8cbe5ee8fd14e9"></a>
@@ -220,13 +371,40 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Unmaps the thread's transfer virtual address space if it has all mapped. Batching it in this way saves a lot of time spent mapping and flushing. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>Unmaps the thread's transfer virtual address space if it has all mapped. </p>
+<p>Batching it in this way saves a lot of time spent mapping and flushing. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">threadContext</td><td>The thread info of the caller. It is used to index into the correct transfer virtual address space. </td></tr>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00149">149</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  149</span>                                                   {</div>
+<div class="line"><span class="lineno">  150</span> </div>
+<div class="line"><span class="lineno">  151</span>    <span class="comment">// If we are at the end, reset and unmap everything</span></div>
+<div class="line"><span class="lineno">  152</span>    <span class="keywordflow">if</span> (threadContext-&gt;TransferVaIndex == <a class="code hl_define" href="structures_8h.html#a9eefb250bd0434821972a6f427a64ea9">SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</a>) {</div>
+<div class="line"><span class="lineno">  153</span>        threadContext-&gt;TransferVaIndex = 0;</div>
+<div class="line"><span class="lineno">  154</span> </div>
+<div class="line"><span class="lineno">  155</span>        <span class="keywordflow">if</span> (MapUserPhysicalPages(<a class="code hl_variable" href="init_8c.html#a17f39208d3a7e2889b13d9cb79b3a7b9">userThreadTransferVa</a>[threadContext-&gt;ThreadNumber], <a class="code hl_define" href="structures_8h.html#a9eefb250bd0434821972a6f427a64ea9">SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</a>, NULL) == FALSE) {</div>
+<div class="line"><span class="lineno">  156</span>            DebugBreak();</div>
+<div class="line"><span class="lineno">  157</span>            printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not unmap VA %p\n&quot;</span>, <a class="code hl_variable" href="init_8c.html#a17f39208d3a7e2889b13d9cb79b3a7b9">userThreadTransferVa</a>[threadContext-&gt;ThreadNumber]);</div>
+<div class="line"><span class="lineno">  158</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  159</span>        }</div>
+<div class="line"><span class="lineno">  160</span>    }</div>
+<div class="line"><span class="lineno">  161</span>}</div>
+<div class="ttc" id="ainit_8c_html_a17f39208d3a7e2889b13d9cb79b3a7b9"><div class="ttname"><a href="init_8c.html#a17f39208d3a7e2889b13d9cb79b3a7b9">userThreadTransferVa</a></div><div class="ttdeci">PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00046">init.c:46</a></div></div>
+<div class="ttc" id="astructures_8h_html_a9eefb250bd0434821972a6f427a64ea9"><div class="ttname"><a href="structures_8h.html#a9eefb250bd0434821972a6f427a64ea9">SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</a></div><div class="ttdeci">#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00118">structures.h:118</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="structures_8h_source.html#l00118">SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</a>, and <a class="el" href="init_8c_source.html#l00046">userThreadTransferVa</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
 
 </div>
 </div>
@@ -245,8 +423,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function gets a page off of one of the free lists. It returns with the page locked. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function gets a page off of one of the free lists. </p>
+<p>It returns with the page locked. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">threadContext</td><td>The thread info of the caller. </td></tr>
   </table>
@@ -254,6 +432,118 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Returns a free page. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must release the page lock of the returned page. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00637">637</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  637</span>                                                     {</div>
+<div class="line"><span class="lineno">  638</span>    ULONG64 localFreeListIndex;</div>
+<div class="line"><span class="lineno">  639</span>    PLIST_ENTRY entry;</div>
+<div class="line"><span class="lineno">  640</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  641</span>    ULONG64 localTotalFreeListLength;</div>
+<div class="line"><span class="lineno">  642</span>    <span class="keywordtype">boolean</span> pruneInProgress = FALSE;</div>
+<div class="line"><span class="lineno">  643</span>    <span class="keywordtype">boolean</span> gotFreeListLock = FALSE;</div>
+<div class="line"><span class="lineno">  644</span>    ULONG64 counter;</div>
+<div class="line"><span class="lineno">  645</span> </div>
+<div class="line"><span class="lineno">  646</span> </div>
+<div class="line"><span class="lineno">  647</span> </div>
+<div class="line"><span class="lineno">  648</span>    counter = 0;</div>
+<div class="line"><span class="lineno">  649</span> </div>
+<div class="line"><span class="lineno">  650</span>    <span class="comment">// Increment global data that approximates what free list should be the most full/least contended</span></div>
+<div class="line"><span class="lineno">  651</span>    localFreeListIndex = InterlockedIncrement(&amp;<a class="code hl_variable" href="init_8c.html#afebe9a4d0644fedfcee04e8bd67554de">freeListRemoveIndex</a>) % <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>;</div>
+<div class="line"><span class="lineno">  652</span> </div>
+<div class="line"><span class="lineno">  653</span> </div>
+<div class="line"><span class="lineno">  654</span>    <span class="comment">// Iterate through the freelists starting at the index calculated above and try to lock it</span></div>
+<div class="line"><span class="lineno">  655</span> </div>
+<div class="line"><span class="lineno">  656</span>    <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">  657</span>        <span class="comment">// In our first run through, just try to enter a freelist lock</span></div>
+<div class="line"><span class="lineno">  658</span>        <span class="keywordflow">if</span> (counter &lt; <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>) {</div>
+<div class="line"><span class="lineno">  659</span>            <span class="keywordflow">if</span> (TryEnterCriticalSection(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex].page.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>) == TRUE) {</div>
+<div class="line"><span class="lineno">  660</span>                gotFreeListLock = TRUE;</div>
+<div class="line"><span class="lineno">  661</span>            }</div>
+<div class="line"><span class="lineno">  662</span>            <span class="comment">// if all of them were empty at the time we checked</span></div>
+<div class="line"><span class="lineno">  663</span>        } <span class="keywordflow">else</span> <span class="keywordflow">if</span> (counter == 2* <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>) {</div>
+<div class="line"><span class="lineno">  664</span>            <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  665</span>            <span class="comment">// acquire a freelist lock exclusive</span></div>
+<div class="line"><span class="lineno">  666</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  667</span>            EnterCriticalSection(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex].page.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  668</span>            gotFreeListLock = TRUE;</div>
+<div class="line"><span class="lineno">  669</span>        }</div>
+<div class="line"><span class="lineno">  670</span> </div>
+<div class="line"><span class="lineno">  671</span> </div>
+<div class="line"><span class="lineno">  672</span>        <span class="keywordflow">if</span> (gotFreeListLock) {</div>
+<div class="line"><span class="lineno">  673</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  674</span>        <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex]);</div>
+<div class="line"><span class="lineno">  675</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  676</span>            <span class="comment">// now we have a locked page</span></div>
+<div class="line"><span class="lineno">  677</span>            entry = <a class="code hl_function" href="macros_8h.html#a0d33293ffc5eed4d8fafc9de60f7579f">RemoveHeadList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex]);</div>
+<div class="line"><span class="lineno">  678</span> </div>
+<div class="line"><span class="lineno">  679</span>            <span class="keywordflow">if</span> (entry == <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>) {</div>
+<div class="line"><span class="lineno">  680</span>                page = <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;</div>
+<div class="line"><span class="lineno">  681</span>            } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  682</span>                page = <a class="code hl_define" href="structures_8h.html#af8c317a42292b61c93aae91e59118a46">container_of</a>(entry, <a class="code hl_struct" href="structpfn.html">pfn</a>, entry);</div>
+<div class="line"><span class="lineno">  683</span>            }</div>
+<div class="line"><span class="lineno">  684</span><span class="preprocessor">#if DBG</span></div>
+<div class="line"><span class="lineno">  685</span>            <a class="code hl_function" href="thread__utils_8c.html#ada2a56df112594780ba2b9578efb2278">validateList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex]);</div>
+<div class="line"><span class="lineno">  686</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  687</span> </div>
+<div class="line"><span class="lineno">  688</span>            <span class="comment">// now that the page is off the list we no longer need to lock the list</span></div>
+<div class="line"><span class="lineno">  689</span>            LeaveCriticalSection(&amp;<a class="code hl_variable" href="init_8c.html#a52984f5994ddf0c0360c085b79b9023b">headFreeLists</a>[localFreeListIndex].page.<a class="code hl_variable" href="structpfn.html#a90e89efbad0a46c24ae279d79d2f8349">lock</a>);</div>
+<div class="line"><span class="lineno">  690</span> </div>
+<div class="line"><span class="lineno">  691</span>            <span class="keywordflow">if</span> (page == <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>) {</div>
+<div class="line"><span class="lineno">  692</span>                gotFreeListLock = FALSE;</div>
+<div class="line"><span class="lineno">  693</span>                counter++;</div>
+<div class="line"><span class="lineno">  694</span>                localFreeListIndex = (localFreeListIndex + 1) % <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>;</div>
+<div class="line"><span class="lineno">  695</span>                <span class="keywordflow">continue</span>;</div>
+<div class="line"><span class="lineno">  696</span>            } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  697</span> </div>
+<div class="line"><span class="lineno">  698</span>                <span class="comment">// The following code calls the standby pruner.</span></div>
+<div class="line"><span class="lineno">  699</span>                localTotalFreeListLength = InterlockedDecrement64((<span class="keyword">volatile</span> LONG64 *) &amp;<a class="code hl_variable" href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a>);</div>
+<div class="line"><span class="lineno">  700</span> </div>
+<div class="line"><span class="lineno">  701</span>               <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(localTotalFreeListLength != MAXULONG64);</div>
+<div class="line"><span class="lineno">  702</span>                <span class="comment">// check to see if we have enough pages on the free list</span></div>
+<div class="line"><span class="lineno">  703</span>                <span class="keywordflow">if</span> (localTotalFreeListLength &lt;= <a class="code hl_define" href="structures_8h.html#a74a896e61b7fcbe2dc1f4f305a556bf2">STAND_BY_TRIM_THRESHOLD</a>) {</div>
+<div class="line"><span class="lineno">  704</span>                    <span class="comment">// if there is not a pruning mission already happening</span></div>
+<div class="line"><span class="lineno">  705</span>                    pruneInProgress = InterlockedCompareExchange((<span class="keyword">volatile</span> LONG *)&amp;<a class="code hl_variable" href="init_8c.html#a3ee8727f68de6ca78ffbc6bea01512cd">standByPruningInProgress</a>, TRUE, FALSE);</div>
+<div class="line"><span class="lineno">  706</span> </div>
+<div class="line"><span class="lineno">  707</span>                    <span class="keywordflow">if</span> (pruneInProgress == FALSE) {</div>
+<div class="line"><span class="lineno">  708</span>                        <a class="code hl_function" href="#a6730003fb29092de5ffafa988d59deac">batchVictimsFromStandByList</a>(threadContext);</div>
+<div class="line"><span class="lineno">  709</span>                    }</div>
+<div class="line"><span class="lineno">  710</span> </div>
+<div class="line"><span class="lineno">  711</span>                    InterlockedExchange(&amp;<a class="code hl_variable" href="init_8c.html#a3ee8727f68de6ca78ffbc6bea01512cd">standByPruningInProgress</a>, FALSE);</div>
+<div class="line"><span class="lineno">  712</span>                }</div>
+<div class="line"><span class="lineno">  713</span>                <span class="comment">// return a locked page</span></div>
+<div class="line"><span class="lineno">  714</span>                <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(page, threadContext);</div>
+<div class="line"><span class="lineno">  715</span>                <span class="keywordflow">return</span> page;</div>
+<div class="line"><span class="lineno">  716</span>            }</div>
+<div class="line"><span class="lineno">  717</span>        }</div>
+<div class="line"><span class="lineno">  718</span> </div>
+<div class="line"><span class="lineno">  719</span>        <span class="comment">// go around in a circle</span></div>
+<div class="line"><span class="lineno">  720</span>        localFreeListIndex = (localFreeListIndex + 1) % <a class="code hl_define" href="structures_8h.html#a498bbf40c65552f824c46efcd3496669">NUMBER_OF_FREE_LISTS</a>;</div>
+<div class="line"><span class="lineno">  721</span>        counter++;</div>
+<div class="line"><span class="lineno">  722</span>    }</div>
+<div class="line"><span class="lineno">  723</span>}</div>
+<div class="ttc" id="ainit_8c_html_a3ee8727f68de6ca78ffbc6bea01512cd"><div class="ttname"><a href="init_8c.html#a3ee8727f68de6ca78ffbc6bea01512cd">standByPruningInProgress</a></div><div class="ttdeci">volatile boolean standByPruningInProgress</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00033">init.c:33</a></div></div>
+<div class="ttc" id="ainit_8c_html_afebe9a4d0644fedfcee04e8bd67554de"><div class="ttname"><a href="init_8c.html#afebe9a4d0644fedfcee04e8bd67554de">freeListRemoveIndex</a></div><div class="ttdeci">volatile LONG freeListRemoveIndex</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00031">init.c:31</a></div></div>
+<div class="ttc" id="amacros_8h_html_a0d33293ffc5eed4d8fafc9de60f7579f"><div class="ttname"><a href="macros_8h.html#a0d33293ffc5eed4d8fafc9de60f7579f">RemoveHeadList</a></div><div class="ttdeci">FORCEINLINE PLIST_ENTRY RemoveHeadList(__inout pListHead ListHead)</div><div class="ttdef"><b>Definition</b> <a href="macros_8h_source.html#l00053">macros.h:53</a></div></div>
+<div class="ttc" id="astructures_8h_html_a74a896e61b7fcbe2dc1f4f305a556bf2"><div class="ttname"><a href="structures_8h.html#a74a896e61b7fcbe2dc1f4f305a556bf2">STAND_BY_TRIM_THRESHOLD</a></div><div class="ttdeci">#define STAND_BY_TRIM_THRESHOLD</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00119">structures.h:119</a></div></div>
+<div class="ttc" id="astructures_8h_html_aca68c0d4ac8df0838e209fb5300f7be3"><div class="ttname"><a href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a></div><div class="ttdeci">#define ASSERT(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00019">structures.h:19</a></div></div>
+<div class="ttc" id="athread__utils_8c_html_a0b65478cbff267e6e35c3c2090f9c21d"><div class="ttname"><a href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a></div><div class="ttdeci">VOID enterPageLock(pfn *page, PTHREAD_INFO info)</div><div class="ttdef"><b>Definition</b> <a href="thread__utils_8c_source.html#l00247">thread_utils.c:247</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a6730003fb29092de5ffafa988d59deac"><div class="ttname"><a href="#a6730003fb29092de5ffafa988d59deac">batchVictimsFromStandByList</a></div><div class="ttdeci">VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo)</div><div class="ttdoc">Removes a batch of victims from the standby list and puts them on the free list.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00089">user_thread.c:89</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="user__thread_8c_source.html#l00089">batchVictimsFromStandByList()</a>, <a class="el" href="structures_8h_source.html#l00080">container_of</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="init_8c_source.html#l00032">freeListLength</a>, <a class="el" href="init_8c_source.html#l00031">freeListRemoveIndex</a>, <a class="el" href="init_8c_source.html#l00029">headFreeLists</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00212">pfn::lock</a>, <a class="el" href="structures_8h_source.html#l00121">NUMBER_OF_FREE_LISTS</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="macros_8h_source.html#l00053">RemoveHeadList()</a>, <a class="el" href="structures_8h_source.html#l00119">STAND_BY_TRIM_THRESHOLD</a>, <a class="el" href="init_8c_source.html#l00033">standByPruningInProgress</a>, and <a class="el" href="thread__utils_8c_source.html#l00046">validateList()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>.</p>
+<div id="dynsection-6" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-6-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-6-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 6 --></div>
+</div>
+<div id="dynsection-7" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-7-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-7-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 7 --></div>
+</div>
 
 </div>
 </div>
@@ -281,6 +571,30 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A pointer to a page of unmapped transfer virtual address space. </dd></dl>
 
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00133">133</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  133</span>                                                   {</div>
+<div class="line"><span class="lineno">  134</span>    <span class="comment">// Get the current thread&#39;s transfer va space</span></div>
+<div class="line"><span class="lineno">  135</span>    PVOID currentTransferVa = <a class="code hl_variable" href="init_8c.html#a17f39208d3a7e2889b13d9cb79b3a7b9">userThreadTransferVa</a>[threadContext-&gt;ThreadNumber];</div>
+<div class="line"><span class="lineno">  136</span>    <span class="comment">// Index into it</span></div>
+<div class="line"><span class="lineno">  137</span>    PVOID va = (PVOID) ((ULONG64) currentTransferVa + <a class="code hl_define" href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a>  * threadContext-&gt;TransferVaIndex);</div>
+<div class="line"><span class="lineno">  138</span> </div>
+<div class="line"><span class="lineno">  139</span>    threadContext-&gt;TransferVaIndex += 1;</div>
+<div class="line"><span class="lineno">  140</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(threadContext-&gt;TransferVaIndex &lt;= <a class="code hl_define" href="structures_8h.html#a9eefb250bd0434821972a6f427a64ea9">SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</a>);</div>
+<div class="line"><span class="lineno">  141</span> </div>
+<div class="line"><span class="lineno">  142</span>    <span class="keywordflow">return</span> va;</div>
+<div class="line"><span class="lineno">  143</span>}</div>
+<div class="ttc" id="astructures_8h_html_a7d467c1d283fdfa1f2081ba1e0d01b6e"><div class="ttname"><a href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a></div><div class="ttdeci">#define PAGE_SIZE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00026">structures.h:26</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00026">PAGE_SIZE</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="structures_8h_source.html#l00118">SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES</a>, and <a class="el" href="init_8c_source.html#l00046">userThreadTransferVa</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+<div id="dynsection-8" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-8-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-8-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 8 --></div>
+</div>
+
 </div>
 </div>
 <a id="adf110e8fee1dab537a5b4a22909843d5" name="adf110e8fee1dab537a5b4a22909843d5"></a>
@@ -298,14 +612,64 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry of the page without holding a page table lock. It can do this because the page table entry's corresponding page lock protects it from being rescued at the same. However, this means that in the rescue or other functions relating to standby pages, the page table entry could be changing. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function pops a page off the standby list and updates its pte. </p>
+<p>Important note, it updates the page table entry of the page without holding a page table lock. It can do this because the page table entry's corresponding page lock protects it from being rescued at the same. However, this means that in the rescue or other functions relating to standby pages, the page table entry could be changing. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">threadInfo</td><td>The thread info of the caller. </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Return a page from the standby list. If the list is empty return NULL </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00536">536</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  536</span>                                                        {</div>
+<div class="line"><span class="lineno">  537</span> </div>
+<div class="line"><span class="lineno">  538</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  539</span>    <a class="code hl_struct" href="structpte.html">pte</a> local;</div>
+<div class="line"><span class="lineno">  540</span> </div>
+<div class="line"><span class="lineno">  541</span> </div>
+<div class="line"><span class="lineno">  542</span>    <span class="comment">// Exits with page lock held</span></div>
+<div class="line"><span class="lineno">  543</span>    page = <a class="code hl_function" href="page__utils_8c.html#a5f1ebc15a9e5f0561a2f02ae5e0aae93">RemoveFromHeadofPageList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>, threadInfo);</div>
+<div class="line"><span class="lineno">  544</span> </div>
+<div class="line"><span class="lineno">  545</span>    <span class="keywordflow">if</span> (page == <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>) {</div>
+<div class="line"><span class="lineno">  546</span>        <span class="keywordflow">return</span> NULL;</div>
+<div class="line"><span class="lineno">  547</span>    }</div>
+<div class="line"><span class="lineno">  548</span> </div>
+<div class="line"><span class="lineno">  549</span> </div>
+<div class="line"><span class="lineno">  550</span>    <span class="comment">// we can edit the pte without a lock because the page lock protects it</span></div>
+<div class="line"><span class="lineno">  551</span>    <span class="comment">// if another faulter tries to get this the pagelock will stop it in the rescue</span></div>
+<div class="line"><span class="lineno">  552</span>    <span class="comment">// if the rescue sees a change in the pte it will redo the fault</span></div>
+<div class="line"><span class="lineno">  553</span>    <span class="comment">// We have to write no fence here in order to avoid tearing</span></div>
+<div class="line"><span class="lineno">  554</span> </div>
+<div class="line"><span class="lineno">  555</span>    local.<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">contentsLocation</a> = <a class="code hl_define" href="structures_8h.html#a8f119a4753d0e5933da10e933942e1cd">DISK</a>;</div>
+<div class="line"><span class="lineno">  556</span>    local.<a class="code hl_variable" href="structpte.html#adf4cf10e70f271c69b50e12ded45c02f">invalidFormat</a>.<a class="code hl_variable" href="structinvalid_pte.html#abbf271d7576a2bf1ac5c2c2a7633ee3c">diskIndex</a> = page-&gt;<a class="code hl_variable" href="structpfn.html#a573f579df22566e2dbedc20535dda482">diskIndex</a>;</div>
+<div class="line"><span class="lineno">  557</span> </div>
+<div class="line"><span class="lineno">  558</span>    WriteULong64NoFence(page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>,  local.<a class="code hl_variable" href="structpte.html#ae8c26fcaf4191b5b94504b99ba4c5adf">entireFormat</a>);</div>
+<div class="line"><span class="lineno">  559</span> </div>
+<div class="line"><span class="lineno">  560</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  561</span> </div>
+<div class="line"><span class="lineno">  562</span> </div>
+<div class="line"><span class="lineno">  563</span>    <span class="keywordflow">return</span> page;</div>
+<div class="line"><span class="lineno">  564</span>}</div>
+<div class="ttc" id="apage__utils_8c_html_a5f1ebc15a9e5f0561a2f02ae5e0aae93"><div class="ttname"><a href="page__utils_8c.html#a5f1ebc15a9e5f0561a2f02ae5e0aae93">RemoveFromHeadofPageList</a></div><div class="ttdeci">pfn * RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00219">page_utils.c:219</a></div></div>
+<div class="ttc" id="astructpte_html"><div class="ttname"><a href="structpte.html">pte</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00161">structures.h:161</a></div></div>
+<div class="ttc" id="astructpte_html_ae8c26fcaf4191b5b94504b99ba4c5adf"><div class="ttname"><a href="structpte.html#ae8c26fcaf4191b5b94504b99ba4c5adf">pte::entireFormat</a></div><div class="ttdeci">ULONG64 entireFormat</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00166">structures.h:166</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00157">transitionPte::contentsLocation</a>, <a class="el" href="structures_8h_source.html#l00150">DISK</a>, <a class="el" href="structures_8h_source.html#l00147">invalidPte::diskIndex</a>, <a class="el" href="structures_8h_source.html#l00209">pfn::diskIndex</a>, <a class="el" href="structures_8h_source.html#l00166">pte::entireFormat</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="structures_8h_source.html#l00164">pte::invalidFormat</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="structures_8h_source.html#l00208">pfn::pte</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="page__utils_8c_source.html#l00219">RemoveFromHeadofPageList()</a>, and <a class="el" href="structures_8h_source.html#l00165">pte::transitionFormat</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>.</p>
+<div id="dynsection-9" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-9-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-9-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 9 --></div>
+</div>
+<div id="dynsection-10" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-10-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-10-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 10 --></div>
+</div>
 
 </div>
 </div>
@@ -332,6 +696,24 @@ Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>It returns true if the currentPTE is signaled as transition.</dd></dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must release the lock of the page table entry. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00230">230</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  230</span>                               {</div>
+<div class="line"><span class="lineno">  231</span>    <span class="keywordflow">return</span> (currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">contentsLocation</a> == <a class="code hl_define" href="structures_8h.html#aab53ed9cd9619846798e02612c94e641">MODIFIED_LIST</a>) ||</div>
+<div class="line"><span class="lineno">  232</span>            (currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">contentsLocation</a> == <a class="code hl_define" href="structures_8h.html#ad18aeed9e566dea67bf439d46d857998">STAND_BY_LIST</a>);</div>
+<div class="line"><span class="lineno">  233</span>}</div>
+<div class="ttc" id="astructures_8h_html_aab53ed9cd9619846798e02612c94e641"><div class="ttname"><a href="structures_8h.html#aab53ed9cd9619846798e02612c94e641">MODIFIED_LIST</a></div><div class="ttdeci">#define MODIFIED_LIST</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00152">structures.h:152</a></div></div>
+<div class="ttc" id="astructures_8h_html_ad18aeed9e566dea67bf439d46d857998"><div class="ttname"><a href="structures_8h.html#ad18aeed9e566dea67bf439d46d857998">STAND_BY_LIST</a></div><div class="ttdeci">#define STAND_BY_LIST</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00153">structures.h:153</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00157">transitionPte::contentsLocation</a>, <a class="el" href="structures_8h_source.html#l00152">MODIFIED_LIST</a>, <a class="el" href="structures_8h_source.html#l00153">STAND_BY_LIST</a>, and <a class="el" href="structures_8h_source.html#l00165">pte::transitionFormat</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>, and <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>.</p>
+<div id="dynsection-11" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-11-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-11-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 11 --></div>
+</div>
 
 </div>
 </div>
@@ -364,8 +746,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk. First this thread will attempt to map from the free list; then it will try to map from standby. If none of those succeed it will wake up the trimmer and wait to redo the fault. If this thread notices that usable pages are getting low, it will wake up the trimmer. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function handles the first time a virtual address is accessed, and if a virtual address contents are on disk. </p>
+<p>First this thread will attempt to map from the free list; then it will try to map from standby. If none of those succeed it will wake up the trimmer and wait to redo the fault. If this thread notices that usable pages are getting low, it will wake up the trimmer. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">arbitrary_va</td><td>The virtual address being accessed. </td></tr>
     <tr><td class="paramname">currentPTE</td><td>The page table entry of the virtual address being accessed. </td></tr>
@@ -377,6 +759,126 @@ Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>Returns true if we need to redo the fault, false otherwise. </dd></dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00351">351</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  351</span>                                                                                                                  {</div>
+<div class="line"><span class="lineno">  352</span> </div>
+<div class="line"><span class="lineno">  353</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>** page_pointer;</div>
+<div class="line"><span class="lineno">  354</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  355</span>    ULONG64 frameNumber;</div>
+<div class="line"><span class="lineno">  356</span>    <a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> threadInfo;</div>
+<div class="line"><span class="lineno">  357</span> </div>
+<div class="line"><span class="lineno">  358</span> </div>
+<div class="line"><span class="lineno">  359</span>    threadInfo = (<a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a>)threadContext;</div>
+<div class="line"><span class="lineno">  360</span> </div>
+<div class="line"><span class="lineno">  361</span> </div>
+<div class="line"><span class="lineno">  362</span>    page = NULL;</div>
+<div class="line"><span class="lineno">  363</span> </div>
+<div class="line"><span class="lineno">  364</span>    <span class="comment">// Attempt to get a page from the free list and standby list</span></div>
+<div class="line"><span class="lineno">  365</span>    <span class="comment">// NULL means the page could not be found</span></div>
+<div class="line"><span class="lineno">  366</span>     page = <a class="code hl_function" href="#a39091ec036a9c3ade72645232a6c655b">mapPageFromFreeList</a>(currentPTE, threadInfo);</div>
+<div class="line"><span class="lineno">  367</span> </div>
+<div class="line"><span class="lineno">  368</span> </div>
+<div class="line"><span class="lineno">  369</span>     <span class="keywordflow">if</span> (page == NULL) {</div>
+<div class="line"><span class="lineno">  370</span>         page = <a class="code hl_function" href="#abe86a2d11f81fe2a1b903588bffd3972">mapPageFromStandByList</a>(currentPTE,  threadInfo);</div>
+<div class="line"><span class="lineno">  371</span> </div>
+<div class="line"><span class="lineno">  372</span>         <span class="keywordflow">if</span> (page == NULL) {</div>
+<div class="line"><span class="lineno">  373</span> </div>
+<div class="line"><span class="lineno">  374</span>            <span class="comment">// If we are not able to get a page, start the trimmer and sleep</span></div>
+<div class="line"><span class="lineno">  375</span> </div>
+<div class="line"><span class="lineno">  376</span>            LeaveCriticalSection(currentPageTableLock);</div>
+<div class="line"><span class="lineno">  377</span> </div>
+<div class="line"><span class="lineno">  378</span>            <span class="comment">//TODO find a way to resolve the case where it resets writing end event and there is a deadlock</span></div>
+<div class="line"><span class="lineno">  379</span> </div>
+<div class="line"><span class="lineno">  380</span>            ResetEvent(<a class="code hl_variable" href="init_8c.html#a80e48e2103f402bb77050723a5c053e5">writingEndEvent</a>);</div>
+<div class="line"><span class="lineno">  381</span>            SetEvent(<a class="code hl_variable" href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a>);</div>
+<div class="line"><span class="lineno">  382</span> </div>
+<div class="line"><span class="lineno">  383</span> </div>
+<div class="line"><span class="lineno">  384</span>            <a class="code hl_variable" href="init_8c.html#a433a3b7b95392ee63bcfbfe382673e00">pageWaits</a>++;</div>
+<div class="line"><span class="lineno">  385</span> </div>
+<div class="line"><span class="lineno">  386</span>            ULONG64 start;</div>
+<div class="line"><span class="lineno">  387</span>            ULONG64 end;</div>
+<div class="line"><span class="lineno">  388</span> </div>
+<div class="line"><span class="lineno">  389</span>            start = ReadTimeStampCounter();</div>
+<div class="line"><span class="lineno">  390</span><span class="preprocessor">#if spinEvents</span></div>
+<div class="line"><span class="lineno">  391</span>            spinWhileWaiting();</div>
+<div class="line"><span class="lineno">  392</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  393</span>            WaitForSingleObject(<a class="code hl_variable" href="init_8c.html#a80e48e2103f402bb77050723a5c053e5">writingEndEvent</a>, INFINITE);</div>
+<div class="line"><span class="lineno">  394</span> </div>
+<div class="line"><span class="lineno">  395</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  396</span> </div>
+<div class="line"><span class="lineno">  397</span>           end = ReadTimeStampCounter();</div>
+<div class="line"><span class="lineno">  398</span> </div>
+<div class="line"><span class="lineno">  399</span>            InterlockedAdd64((<span class="keyword">volatile</span> LONG64 *) &amp;<a class="code hl_variable" href="init_8c.html#adbc56ab37cb1acc59cad16b92848af82">totalTimeWaiting</a>, (LONG64)(end - start));</div>
+<div class="line"><span class="lineno">  400</span> </div>
+<div class="line"><span class="lineno">  401</span>            EnterCriticalSection(currentPageTableLock);</div>
+<div class="line"><span class="lineno">  402</span> </div>
+<div class="line"><span class="lineno">  403</span>            <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  404</span>        }</div>
+<div class="line"><span class="lineno">  405</span>    }</div>
+<div class="line"><span class="lineno">  406</span> </div>
+<div class="line"><span class="lineno">  407</span> </div>
+<div class="line"><span class="lineno">  408</span> </div>
+<div class="line"><span class="lineno">  409</span> </div>
+<div class="line"><span class="lineno">  410</span> </div>
+<div class="line"><span class="lineno">  411</span>    <span class="comment">// if we seem to be running low on free and standby pages wake the trimmer</span></div>
+<div class="line"><span class="lineno">  412</span>    <span class="keywordflow">if</span> (((<span class="keywordtype">double</span>) (<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>.length + ReadULong64NoFence(&amp;<a class="code hl_variable" href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a>)) / ((<span class="keywordtype">double</span>) <a class="code hl_define" href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a> )) &lt; .5) {</div>
+<div class="line"><span class="lineno">  413</span>        SetEvent(<a class="code hl_variable" href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a>);</div>
+<div class="line"><span class="lineno">  414</span>    }</div>
+<div class="line"><span class="lineno">  415</span> </div>
+<div class="line"><span class="lineno">  416</span>    frameNumber = <a class="code hl_function" href="page__utils_8c.html#ae0a8c1717809fd2f938ee7917df6bd26">getFrameNumber</a>(page);</div>
+<div class="line"><span class="lineno">  417</span> </div>
+<div class="line"><span class="lineno">  418</span> </div>
+<div class="line"><span class="lineno">  419</span>    <span class="comment">//validate the pte and add it to the list</span></div>
+<div class="line"><span class="lineno">  420</span>    currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9">validFormat</a>.<a class="code hl_variable" href="structvalid_pte.html#a922221c69159322392389138fe8d1960">frameNumber</a> = frameNumber;</div>
+<div class="line"><span class="lineno">  421</span>    currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9">validFormat</a>.<a class="code hl_variable" href="structvalid_pte.html#ab69d0644ffe76adc8155ea74fdfb1044">valid</a> = 1;</div>
+<div class="line"><span class="lineno">  422</span> </div>
+<div class="line"><span class="lineno">  423</span> </div>
+<div class="line"><span class="lineno">  424</span>    page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a> = currentPTE;</div>
+<div class="line"><span class="lineno">  425</span> </div>
+<div class="line"><span class="lineno">  426</span>    <span class="keywordflow">if</span> (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &amp;frameNumber) == FALSE) {</div>
+<div class="line"><span class="lineno">  427</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">  428</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not map VA %llu to page %llX\n&quot;</span>, arbitrary_va, frameNumber);</div>
+<div class="line"><span class="lineno">  429</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  430</span>    }</div>
+<div class="line"><span class="lineno">  431</span> </div>
+<div class="line"><span class="lineno">  432</span>    <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  433</span>    <a class="code hl_function" href="page__utils_8c.html#a81bc32fad7e2392ab7737db66ed14a4f">addPageToTail</a>(&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>, page, threadInfo);</div>
+<div class="line"><span class="lineno">  434</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadContext);</div>
+<div class="line"><span class="lineno">  435</span> </div>
+<div class="line"><span class="lineno">  436</span>    <span class="keywordflow">return</span> !<a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  437</span>}</div>
+<div class="ttc" id="ainit_8c_html_a433a3b7b95392ee63bcfbfe382673e00"><div class="ttname"><a href="init_8c.html#a433a3b7b95392ee63bcfbfe382673e00">pageWaits</a></div><div class="ttdeci">volatile ULONG64 pageWaits</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00023">init.c:23</a></div></div>
+<div class="ttc" id="ainit_8c_html_a80e48e2103f402bb77050723a5c053e5"><div class="ttname"><a href="init_8c.html#a80e48e2103f402bb77050723a5c053e5">writingEndEvent</a></div><div class="ttdeci">HANDLE writingEndEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00081">init.c:81</a></div></div>
+<div class="ttc" id="ainit_8c_html_a94fe7d15f3121ceb68cee2c8fa317bad"><div class="ttname"><a href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a></div><div class="ttdeci">listHead headActiveList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00035">init.c:35</a></div></div>
+<div class="ttc" id="ainit_8c_html_adbc56ab37cb1acc59cad16b92848af82"><div class="ttname"><a href="init_8c.html#adbc56ab37cb1acc59cad16b92848af82">totalTimeWaiting</a></div><div class="ttdeci">volatile ULONG64 totalTimeWaiting</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00024">init.c:24</a></div></div>
+<div class="ttc" id="ainit_8c_html_adff0a60b8e4254e817f619ccc8d5a105"><div class="ttname"><a href="init_8c.html#adff0a60b8e4254e817f619ccc8d5a105">trimmingStartEvent</a></div><div class="ttdeci">HANDLE trimmingStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00079">init.c:79</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_a81bc32fad7e2392ab7737db66ed14a4f"><div class="ttname"><a href="page__utils_8c.html#a81bc32fad7e2392ab7737db66ed14a4f">addPageToTail</a></div><div class="ttdeci">VOID addPageToTail(pListHead head, pfn *page, PTHREAD_INFO threadInfo)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00360">page_utils.c:360</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_ae0a8c1717809fd2f938ee7917df6bd26"><div class="ttname"><a href="page__utils_8c.html#ae0a8c1717809fd2f938ee7917df6bd26">getFrameNumber</a></div><div class="ttdeci">ULONG64 getFrameNumber(pfn *pfn)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00019">page_utils.c:19</a></div></div>
+<div class="ttc" id="astructpte_html_a0b4d9ecd38326d0b13cd3d75be3224a9"><div class="ttname"><a href="structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9">pte::validFormat</a></div><div class="ttdeci">validPte validFormat</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00163">structures.h:163</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+<div class="ttc" id="astructures_8h_html_a1e905c2e2a948059f3414462c702fe2d"><div class="ttname"><a href="structures_8h.html#a1e905c2e2a948059f3414462c702fe2d">NUMBER_OF_PHYSICAL_PAGES</a></div><div class="ttdeci">#define NUMBER_OF_PHYSICAL_PAGES</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00041">structures.h:41</a></div></div>
+<div class="ttc" id="astructures_8h_html_a51048a012b81ba95e75649ea0bbe9d08"><div class="ttname"><a href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a></div><div class="ttdeci">#define REDO_FAULT</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00098">structures.h:98</a></div></div>
+<div class="ttc" id="astructvalid_pte_html_a922221c69159322392389138fe8d1960"><div class="ttname"><a href="structvalid_pte.html#a922221c69159322392389138fe8d1960">validPte::frameNumber</a></div><div class="ttdeci">ULONG64 frameNumber</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00141">structures.h:141</a></div></div>
+<div class="ttc" id="astructvalid_pte_html_ab69d0644ffe76adc8155ea74fdfb1044"><div class="ttname"><a href="structvalid_pte.html#ab69d0644ffe76adc8155ea74fdfb1044">validPte::valid</a></div><div class="ttdeci">ULONG64 valid</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00139">structures.h:139</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a39091ec036a9c3ade72645232a6c655b"><div class="ttname"><a href="#a39091ec036a9c3ade72645232a6c655b">mapPageFromFreeList</a></div><div class="ttdeci">pfn * mapPageFromFreeList(pte *currentPTE, PTHREAD_INFO threadInfo)</div><div class="ttdoc">This function tries to get a physical page of a free list.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00449">user_thread.c:449</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_abe86a2d11f81fe2a1b903588bffd3972"><div class="ttname"><a href="#abe86a2d11f81fe2a1b903588bffd3972">mapPageFromStandByList</a></div><div class="ttdeci">pfn * mapPageFromStandByList(pte *currentPTE, PTHREAD_INFO threadInfo)</div><div class="ttdoc">This function attempts to take a page from the standby list.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00494">user_thread.c:494</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00141">validPte::frameNumber</a>, <a class="el" href="init_8c_source.html#l00032">freeListLength</a>, <a class="el" href="page__utils_8c_source.html#l00019">getFrameNumber()</a>, <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>, <a class="el" href="structures_8h_source.html#l00041">NUMBER_OF_PHYSICAL_PAGES</a>, <a class="el" href="init_8c_source.html#l00023">pageWaits</a>, <a class="el" href="structures_8h_source.html#l00208">pfn::pte</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="structures_8h_source.html#l00098">REDO_FAULT</a>, <a class="el" href="init_8c_source.html#l00024">totalTimeWaiting</a>, <a class="el" href="init_8c_source.html#l00079">trimmingStartEvent</a>, <a class="el" href="structures_8h_source.html#l00139">validPte::valid</a>, <a class="el" href="structures_8h_source.html#l00163">pte::validFormat</a>, and <a class="el" href="init_8c_source.html#l00081">writingEndEvent</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>.</p>
+<div id="dynsection-12" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-12-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-12-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 12 --></div>
+</div>
+<div id="dynsection-13" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-13-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-13-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 13 --></div>
+</div>
 
 </div>
 </div>
@@ -399,8 +901,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function tries to get a physical page of a free list. It will also detect if the number of free pages is running low, and take some from the standby list. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function tries to get a physical page of a free list. </p>
+<p>It will also detect if the number of free pages is running low, and take some from the standby list. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">currentPTE</td><td>The page table entry of the virtual address that is being faulted on </td></tr>
     <tr><td class="paramname">threadInfo</td><td>The info about the calling thread. </td></tr>
@@ -416,6 +918,61 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00449">449</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  449</span>                                                                    {</div>
+<div class="line"><span class="lineno">  450</span> </div>
+<div class="line"><span class="lineno">  451</span> </div>
+<div class="line"><span class="lineno">  452</span> </div>
+<div class="line"><span class="lineno">  453</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  454</span>    ULONG64 frameNumber;</div>
+<div class="line"><span class="lineno">  455</span> </div>
+<div class="line"><span class="lineno">  456</span>    <span class="comment">// This function acquires the page lock</span></div>
+<div class="line"><span class="lineno">  457</span>    page = <a class="code hl_function" href="#aaac03443ad63f63ed80d86cbfcc6bec0">getPageFromFreeList</a>(threadInfo);</div>
+<div class="line"><span class="lineno">  458</span> </div>
+<div class="line"><span class="lineno">  459</span> </div>
+<div class="line"><span class="lineno">  460</span>    <span class="keywordflow">if</span> (page == <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>) {</div>
+<div class="line"><span class="lineno">  461</span>        <span class="keywordflow">return</span> NULL;</div>
+<div class="line"><span class="lineno">  462</span>    }</div>
+<div class="line"><span class="lineno">  463</span> </div>
+<div class="line"><span class="lineno">  464</span> </div>
+<div class="line"><span class="lineno">  465</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  466</span> </div>
+<div class="line"><span class="lineno">  467</span>    frameNumber = <a class="code hl_function" href="page__utils_8c.html#ae0a8c1717809fd2f938ee7917df6bd26">getFrameNumber</a>(page);</div>
+<div class="line"><span class="lineno">  468</span> </div>
+<div class="line"><span class="lineno">  469</span> </div>
+<div class="line"><span class="lineno">  470</span> </div>
+<div class="line"><span class="lineno">  471</span>    <span class="comment">// Zero the page if we are on a first fault, otherwise read from disk</span></div>
+<div class="line"><span class="lineno">  472</span>    <span class="keywordflow">if</span> (currentPTE-&gt;<a class="code hl_variable" href="structpte.html#adf4cf10e70f271c69b50e12ded45c02f">invalidFormat</a>.<a class="code hl_variable" href="structinvalid_pte.html#abbf271d7576a2bf1ac5c2c2a7633ee3c">diskIndex</a> != <a class="code hl_define" href="structures_8h.html#acc926dae11595da6dd20217b78c009a0">EMPTY_PTE</a>) {</div>
+<div class="line"><span class="lineno">  473</span>        <a class="code hl_function" href="#aa4d5559bed59f8700f4e332ffedd6064">modified_read</a>(currentPTE, frameNumber, threadInfo);</div>
+<div class="line"><span class="lineno">  474</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  475</span>        <a class="code hl_function" href="#af2a00908cb7f283fa07f7372f2533d6d">zeroOnePage</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  476</span>    }</div>
+<div class="line"><span class="lineno">  477</span> </div>
+<div class="line"><span class="lineno">  478</span> </div>
+<div class="line"><span class="lineno">  479</span>    <span class="keywordflow">return</span> page;</div>
+<div class="line"><span class="lineno">  480</span> </div>
+<div class="line"><span class="lineno">  481</span>}</div>
+<div class="ttc" id="astructures_8h_html_acc926dae11595da6dd20217b78c009a0"><div class="ttname"><a href="structures_8h.html#acc926dae11595da6dd20217b78c009a0">EMPTY_PTE</a></div><div class="ttdeci">#define EMPTY_PTE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00053">structures.h:53</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_aa4d5559bed59f8700f4e332ffedd6064"><div class="ttname"><a href="#aa4d5559bed59f8700f4e332ffedd6064">modified_read</a></div><div class="ttdeci">VOID modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext)</div><div class="ttdoc">This function reads in the contents of a disk page onto a physical page.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00577">user_thread.c:577</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_aaac03443ad63f63ed80d86cbfcc6bec0"><div class="ttname"><a href="#aaac03443ad63f63ed80d86cbfcc6bec0">getPageFromFreeList</a></div><div class="ttdeci">pfn * getPageFromFreeList(PTHREAD_INFO threadContext)</div><div class="ttdoc">This function gets a page off of one of the free lists.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00637">user_thread.c:637</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_af2a00908cb7f283fa07f7372f2533d6d"><div class="ttname"><a href="#af2a00908cb7f283fa07f7372f2533d6d">zeroOnePage</a></div><div class="ttdeci">BOOL zeroOnePage(pfn *page, PTHREAD_INFO threadContext)</div><div class="ttdoc">This function zeroes a physical page.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00608">user_thread.c:608</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00147">invalidPte::diskIndex</a>, <a class="el" href="structures_8h_source.html#l00053">EMPTY_PTE</a>, <a class="el" href="page__utils_8c_source.html#l00019">getFrameNumber()</a>, <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>, <a class="el" href="structures_8h_source.html#l00164">pte::invalidFormat</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>, <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>.</p>
+<div id="dynsection-14" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-14-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-14-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 14 --></div>
+</div>
+<div id="dynsection-15" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-15-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-15-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 15 --></div>
+</div>
 
 </div>
 </div>
@@ -438,8 +995,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function attempts to take a page from the standby list. If there is a page to take, this function will update the page's pagetable entry to reflect that it is no longer on standby, but on disk. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function attempts to take a page from the standby list. </p>
+<p>If there is a page to take, this function will update the page's pagetable entry to reflect that it is no longer on standby, but on disk </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">currentPTE</td><td>The page table entry of the virtual address that is being faulted on </td></tr>
     <tr><td class="paramname">threadInfo</td><td>The info of the calling thread </td></tr>
@@ -455,6 +1012,58 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00494">494</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  494</span>                                                                        {</div>
+<div class="line"><span class="lineno">  495</span> </div>
+<div class="line"><span class="lineno">  496</span> </div>
+<div class="line"><span class="lineno">  497</span>    ULONG64 frameNumber;</div>
+<div class="line"><span class="lineno">  498</span>    <a class="code hl_struct" href="structpte.html">pte</a> entryContents;</div>
+<div class="line"><span class="lineno">  499</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  500</span> </div>
+<div class="line"><span class="lineno">  501</span>    entryContents = *currentPTE;</div>
+<div class="line"><span class="lineno">  502</span> </div>
+<div class="line"><span class="lineno">  503</span> </div>
+<div class="line"><span class="lineno">  504</span> </div>
+<div class="line"><span class="lineno">  505</span>    <span class="comment">// All locks pertaining to this page are dealt with in this function. We do not need to lock or unlock it</span></div>
+<div class="line"><span class="lineno">  506</span>    page = <a class="code hl_function" href="#adf110e8fee1dab537a5b4a22909843d5">getVictimFromStandByList</a>(threadInfo);</div>
+<div class="line"><span class="lineno">  507</span> </div>
+<div class="line"><span class="lineno">  508</span>    <span class="keywordflow">if</span> (page == NULL) {</div>
+<div class="line"><span class="lineno">  509</span>        <span class="keywordflow">return</span> NULL;</div>
+<div class="line"><span class="lineno">  510</span>    }</div>
+<div class="line"><span class="lineno">  511</span> </div>
+<div class="line"><span class="lineno">  512</span>    frameNumber = <a class="code hl_function" href="page__utils_8c.html#ae0a8c1717809fd2f938ee7917df6bd26">getFrameNumber</a>(page);</div>
+<div class="line"><span class="lineno">  513</span> </div>
+<div class="line"><span class="lineno">  514</span> </div>
+<div class="line"><span class="lineno">  515</span> </div>
+<div class="line"><span class="lineno">  516</span>    <span class="comment">// Zero the page if we are on a first fault, otherwise read from disk</span></div>
+<div class="line"><span class="lineno">  517</span>    <span class="keywordflow">if</span> (entryContents.<a class="code hl_variable" href="structpte.html#adf4cf10e70f271c69b50e12ded45c02f">invalidFormat</a>.<a class="code hl_variable" href="structinvalid_pte.html#abbf271d7576a2bf1ac5c2c2a7633ee3c">diskIndex</a> == <a class="code hl_define" href="structures_8h.html#acc926dae11595da6dd20217b78c009a0">EMPTY_PTE</a>) {</div>
+<div class="line"><span class="lineno">  518</span>        <span class="keywordflow">if</span> (!<a class="code hl_function" href="#af2a00908cb7f283fa07f7372f2533d6d">zeroOnePage</a>(page, threadInfo)) {</div>
+<div class="line"><span class="lineno">  519</span>            DebugBreak();</div>
+<div class="line"><span class="lineno">  520</span>        }</div>
+<div class="line"><span class="lineno">  521</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  522</span>        <a class="code hl_function" href="#aa4d5559bed59f8700f4e332ffedd6064">modified_read</a>(currentPTE, frameNumber, threadInfo);</div>
+<div class="line"><span class="lineno">  523</span>    }</div>
+<div class="line"><span class="lineno">  524</span> </div>
+<div class="line"><span class="lineno">  525</span>    <span class="keywordflow">return</span> page;</div>
+<div class="line"><span class="lineno">  526</span>}</div>
+<div class="ttc" id="auser__thread_8c_html_adf110e8fee1dab537a5b4a22909843d5"><div class="ttname"><a href="#adf110e8fee1dab537a5b4a22909843d5">getVictimFromStandByList</a></div><div class="ttdeci">pfn * getVictimFromStandByList(PTHREAD_INFO threadInfo)</div><div class="ttdoc">This function pops a page off the standby list and updates its pte.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00536">user_thread.c:536</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00147">invalidPte::diskIndex</a>, <a class="el" href="structures_8h_source.html#l00053">EMPTY_PTE</a>, <a class="el" href="page__utils_8c_source.html#l00019">getFrameNumber()</a>, <a class="el" href="user__thread_8c_source.html#l00536">getVictimFromStandByList()</a>, <a class="el" href="structures_8h_source.html#l00164">pte::invalidFormat</a>, <a class="el" href="user__thread_8c_source.html#l00577">modified_read()</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, and <a class="el" href="user__thread_8c_source.html#l00608">zeroOnePage()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>.</p>
+<div id="dynsection-16" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-16-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-16-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 16 --></div>
+</div>
+<div id="dynsection-17" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-17-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-17-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 17 --></div>
+</div>
 
 </div>
 </div>
@@ -482,8 +1091,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function reads in the contents of a disk page onto a physical page. It uses an interim transfer virtual address to complete this task. Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls, a lot of time spent flushing and unmapping is saved. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function reads in the contents of a disk page onto a physical page. </p>
+<p>It uses an interim transfer virtual address to complete this task. Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls, a lot of time spent flushing and unmapping is saved. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">currentPTE</td><td>The page table entry that contains the disk page we want to read from. </td></tr>
     <tr><td class="paramname">frameNumber</td><td>The frame to read into. </td></tr>
@@ -493,6 +1102,49 @@ Functions</h2></td></tr>
 </dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00577">577</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  577</span>                                                                                {</div>
+<div class="line"><span class="lineno">  578</span> </div>
+<div class="line"><span class="lineno">  579</span>    ULONG64 diskIndex = currentPTE-&gt;<a class="code hl_variable" href="structpte.html#adf4cf10e70f271c69b50e12ded45c02f">invalidFormat</a>.<a class="code hl_variable" href="structinvalid_pte.html#abbf271d7576a2bf1ac5c2c2a7633ee3c">diskIndex</a>;</div>
+<div class="line"><span class="lineno">  580</span>    ULONG64 diskAddress = (ULONG64) <a class="code hl_variable" href="init_8c.html#a7e828d4a313bca81b6bae08f803ad50e">diskStart</a> + diskIndex * <a class="code hl_define" href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a>;</div>
+<div class="line"><span class="lineno">  581</span> </div>
+<div class="line"><span class="lineno">  582</span> </div>
+<div class="line"><span class="lineno">  583</span>    PVOID transferVaLocation = <a class="code hl_function" href="#a6601998c57f4c3d80891bfcab071441d">getThreadMapping</a>(threadContext);</div>
+<div class="line"><span class="lineno">  584</span> </div>
+<div class="line"><span class="lineno">  585</span> </div>
+<div class="line"><span class="lineno">  586</span>    <span class="keywordflow">if</span> (MapUserPhysicalPages(transferVaLocation, 1, &amp;frameNumber) == FALSE) {</div>
+<div class="line"><span class="lineno">  587</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">  588</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not map VA %p to page %llX\n&quot;</span>, transferVaLocation, frameNumber);</div>
+<div class="line"><span class="lineno">  589</span>        <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">  590</span>    }</div>
+<div class="line"><span class="lineno">  591</span> </div>
+<div class="line"><span class="lineno">  592</span>    memcpy(transferVaLocation, (PVOID) diskAddress, <a class="code hl_define" href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a>);</div>
+<div class="line"><span class="lineno">  593</span> </div>
+<div class="line"><span class="lineno">  594</span>    <a class="code hl_function" href="#a9a16d9a9c52782f31f8cbe5ee8fd14e9">freeThreadMapping</a>(threadContext);</div>
+<div class="line"><span class="lineno">  595</span> </div>
+<div class="line"><span class="lineno">  596</span>    <a class="code hl_function" href="disk_8c.html#a7dfe0615aa76e5354d65a2d9b62b46dc">set_disk_space_free</a>(diskIndex);</div>
+<div class="line"><span class="lineno">  597</span>}</div>
+<div class="ttc" id="adisk_8c_html_a7dfe0615aa76e5354d65a2d9b62b46dc"><div class="ttname"><a href="disk_8c.html#a7dfe0615aa76e5354d65a2d9b62b46dc">set_disk_space_free</a></div><div class="ttdeci">VOID set_disk_space_free(ULONG64 diskIndex)</div><div class="ttdef"><b>Definition</b> <a href="disk_8c_source.html#l00166">disk.c:166</a></div></div>
+<div class="ttc" id="ainit_8c_html_a7e828d4a313bca81b6bae08f803ad50e"><div class="ttname"><a href="init_8c.html#a7e828d4a313bca81b6bae08f803ad50e">diskStart</a></div><div class="ttdeci">PVOID diskStart</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00053">init.c:53</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a6601998c57f4c3d80891bfcab071441d"><div class="ttname"><a href="#a6601998c57f4c3d80891bfcab071441d">getThreadMapping</a></div><div class="ttdeci">PVOID getThreadMapping(PTHREAD_INFO threadContext)</div><div class="ttdoc">A function that gets the current transfer virtual address that a thread needs.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00133">user_thread.c:133</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a9a16d9a9c52782f31f8cbe5ee8fd14e9"><div class="ttname"><a href="#a9a16d9a9c52782f31f8cbe5ee8fd14e9">freeThreadMapping</a></div><div class="ttdeci">VOID freeThreadMapping(PTHREAD_INFO threadContext)</div><div class="ttdoc">Unmaps the thread&#39;s transfer virtual address space if it has all mapped.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00149">user_thread.c:149</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00147">invalidPte::diskIndex</a>, <a class="el" href="init_8c_source.html#l00053">diskStart</a>, <a class="el" href="user__thread_8c_source.html#l00149">freeThreadMapping()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, <a class="el" href="structures_8h_source.html#l00164">pte::invalidFormat</a>, <a class="el" href="structures_8h_source.html#l00026">PAGE_SIZE</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, and <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, and <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>.</p>
+<div id="dynsection-18" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-18-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-18-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 18 --></div>
+</div>
+<div id="dynsection-19" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-19-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-19-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 19 --></div>
+</div>
 
 </div>
 </div>
@@ -515,8 +1167,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function is the core of the program. It will culminate in the mapping of a physical page to the passed in virtual address. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function is the core of the program. </p>
+<p>It will culminate in the mapping of a physical page to the passed in virtual address. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">arbitrary_va</td><td>The virtual address that is being accessed and faulted on. </td></tr>
     <tr><td class="paramname">threadContext</td><td>The information about the faulting thread. </td></tr>
@@ -524,6 +1176,82 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A boolean that determines whether we need to back up and redo the fault. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00170">170</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  170</span>                                                              {</div>
+<div class="line"><span class="lineno">  171</span> </div>
+<div class="line"><span class="lineno">  172</span> </div>
+<div class="line"><span class="lineno">  173</span> </div>
+<div class="line"><span class="lineno">  174</span>    BOOL returnValue;</div>
+<div class="line"><span class="lineno">  175</span>    <a class="code hl_struct" href="structpte.html">pte</a>* currentPTE;</div>
+<div class="line"><span class="lineno">  176</span>    <a class="code hl_struct" href="structpte.html">pte</a> pteContents;</div>
+<div class="line"><span class="lineno">  177</span>    PCRITICAL_SECTION currentPageTableLock;</div>
+<div class="line"><span class="lineno">  178</span>    <a class="code hl_struct" href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a>* region;</div>
+<div class="line"><span class="lineno">  179</span> </div>
+<div class="line"><span class="lineno">  180</span>    currentPTE = <a class="code hl_function" href="pte__utils_8c.html#af1bc0b9029ce9be426fd21c5400c7bbb">va_to_pte</a>((ULONG64) arbitrary_va);</div>
+<div class="line"><span class="lineno">  181</span> </div>
+<div class="line"><span class="lineno">  182</span> </div>
+<div class="line"><span class="lineno">  183</span>    <span class="comment">// Checks to see if the user is accessing out of bounds va space</span></div>
+<div class="line"><span class="lineno">  184</span>    <span class="keywordflow">if</span> (<a class="code hl_function" href="pte__utils_8c.html#af7fcf9214d3e31047ed3fd41a34df2e0">isVaValid</a>((ULONG64) arbitrary_va) == FALSE) {</div>
+<div class="line"><span class="lineno">  185</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">  186</span>        printf(<span class="stringliteral">&quot;invalid va %p\n&quot;</span>, arbitrary_va);</div>
+<div class="line"><span class="lineno">  187</span>    }</div>
+<div class="line"><span class="lineno">  188</span> </div>
+<div class="line"><span class="lineno">  189</span>    returnValue = !<a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  190</span>    region = <a class="code hl_function" href="pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a>(currentPTE);</div>
+<div class="line"><span class="lineno">  191</span>    currentPageTableLock = &amp;region-&gt;<a class="code hl_variable" href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">lock</a>;</div>
+<div class="line"><span class="lineno">  192</span> </div>
+<div class="line"><span class="lineno">  193</span>    EnterCriticalSection(currentPageTableLock);</div>
+<div class="line"><span class="lineno">  194</span>    pteContents = *currentPTE;</div>
+<div class="line"><span class="lineno">  195</span> </div>
+<div class="line"><span class="lineno">  196</span>    <span class="comment">// If the page fault was already handled by another thread</span></div>
+<div class="line"><span class="lineno">  197</span>    <span class="keywordflow">if</span> (pteContents.<a class="code hl_variable" href="structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9">validFormat</a>.<a class="code hl_variable" href="structvalid_pte.html#ab69d0644ffe76adc8155ea74fdfb1044">valid</a> != TRUE) {</div>
+<div class="line"><span class="lineno">  198</span> </div>
+<div class="line"><span class="lineno">  199</span>        <span class="comment">// If the pte is in flight</span></div>
+<div class="line"><span class="lineno">  200</span>        <span class="keywordflow">if</span> (<a class="code hl_function" href="#a054a809045b98743dd633e71b528a419">isRescue</a>(currentPTE)) {</div>
+<div class="line"><span class="lineno">  201</span>            <span class="comment">// Determine if the rescue told us to back up or not</span></div>
+<div class="line"><span class="lineno">  202</span>            <span class="keywordflow">if</span> (<a class="code hl_function" href="#a77064328a04d35d501edae073abba4e7">rescue_page</a>((ULONG64) arbitrary_va, currentPTE, (<a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a>) threadContext) == <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>) {</div>
+<div class="line"><span class="lineno">  203</span>                returnValue = <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  204</span>            }</div>
+<div class="line"><span class="lineno">  205</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  206</span>            <span class="comment">// If we are on a first fault or a disk read map that page.</span></div>
+<div class="line"><span class="lineno">  207</span>            <span class="keywordflow">if</span> (<a class="code hl_function" href="#a09f6bd7a22266dc562f57a1c51d67320">mapPage</a>((ULONG64) arbitrary_va, currentPTE, threadContext, currentPageTableLock) == <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>) {</div>
+<div class="line"><span class="lineno">  208</span>                returnValue = <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  209</span>            }</div>
+<div class="line"><span class="lineno">  210</span>        }</div>
+<div class="line"><span class="lineno">  211</span>    }</div>
+<div class="line"><span class="lineno">  212</span> </div>
+<div class="line"><span class="lineno">  213</span> </div>
+<div class="line"><span class="lineno">  214</span>    LeaveCriticalSection(currentPageTableLock);</div>
+<div class="line"><span class="lineno">  215</span> </div>
+<div class="line"><span class="lineno">  216</span> </div>
+<div class="line"><span class="lineno">  217</span>    <span class="keywordflow">return</span> returnValue;</div>
+<div class="line"><span class="lineno">  218</span> </div>
+<div class="line"><span class="lineno">  219</span>}</div>
+<div class="ttc" id="apte__utils_8c_html_abcda62fe13c85a36a83bf5b2294436b7"><div class="ttname"><a href="pte__utils_8c.html#abcda62fe13c85a36a83bf5b2294436b7">getPTERegion</a></div><div class="ttdeci">PTE_REGION * getPTERegion(pte *pte)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00027">pte_utils.c:27</a></div></div>
+<div class="ttc" id="apte__utils_8c_html_af1bc0b9029ce9be426fd21c5400c7bbb"><div class="ttname"><a href="pte__utils_8c.html#af1bc0b9029ce9be426fd21c5400c7bbb">va_to_pte</a></div><div class="ttdeci">pte * va_to_pte(ULONG64 va)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00010">pte_utils.c:10</a></div></div>
+<div class="ttc" id="apte__utils_8c_html_af7fcf9214d3e31047ed3fd41a34df2e0"><div class="ttname"><a href="pte__utils_8c.html#af7fcf9214d3e31047ed3fd41a34df2e0">isVaValid</a></div><div class="ttdeci">BOOL isVaValid(ULONG64 va)</div><div class="ttdef"><b>Definition</b> <a href="pte__utils_8c_source.html#l00023">pte_utils.c:23</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html">PTE_REGION</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00245">structures.h:245</a></div></div>
+<div class="ttc" id="astruct_p_t_e___r_e_g_i_o_n_html_a5a47700edae0d01d18370739954e9860"><div class="ttname"><a href="struct_p_t_e___r_e_g_i_o_n.html#a5a47700edae0d01d18370739954e9860">PTE_REGION::lock</a></div><div class="ttdeci">CRITICAL_SECTION lock</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00248">structures.h:248</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a054a809045b98743dd633e71b528a419"><div class="ttname"><a href="#a054a809045b98743dd633e71b528a419">isRescue</a></div><div class="ttdeci">BOOL isRescue(pte *currentPTE)</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00230">user_thread.c:230</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a09f6bd7a22266dc562f57a1c51d67320"><div class="ttname"><a href="#a09f6bd7a22266dc562f57a1c51d67320">mapPage</a></div><div class="ttdeci">BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock)</div><div class="ttdoc">This function handles the first time a virtual address is accessed, and if a virtual address contents...</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00351">user_thread.c:351</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a77064328a04d35d501edae073abba4e7"><div class="ttname"><a href="#a77064328a04d35d501edae073abba4e7">rescue_page</a></div><div class="ttdeci">BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)</div><div class="ttdoc">This function will rescue a page table entry that has been unmapped by the trimming thread,...</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00251">user_thread.c:251</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="pte__utils_8c_source.html#l00027">getPTERegion()</a>, <a class="el" href="user__thread_8c_source.html#l00230">isRescue()</a>, <a class="el" href="pte__utils_8c_source.html#l00023">isVaValid()</a>, <a class="el" href="structures_8h_source.html#l00248">PTE_REGION::lock</a>, <a class="el" href="user__thread_8c_source.html#l00351">mapPage()</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="structures_8h_source.html#l00098">REDO_FAULT</a>, <a class="el" href="user__thread_8c_source.html#l00251">rescue_page()</a>, <a class="el" href="pte__utils_8c_source.html#l00010">va_to_pte()</a>, <a class="el" href="structures_8h_source.html#l00139">validPte::valid</a>, and <a class="el" href="structures_8h_source.html#l00163">pte::validFormat</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00076">testVM()</a>.</p>
+<div id="dynsection-20" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-20-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-20-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 20 --></div>
+</div>
+<div id="dynsection-21" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-21-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-21-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 21 --></div>
+</div>
 
 </div>
 </div>
@@ -551,7 +1279,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page. If the page corresponding to the virtual address is on the modified list, this function just simply removes it from the middle. If the page is on the standby list, this function removes it from the middle of the list and sets the corresponding disk space free. Lastly, If the page is not on any list, but in the process of being written out, just mark it as no longer being written out. The writer will see this and free the corresponding disk space. </p>
+<p>This function will rescue a page table entry that has been unmapped by the trimming thread, but the contents of the virtual page are still on the physical page. </p>
+<p>If the page corresponding to the virtual address is on the modified list, this function just simply removes it from the middle. If the page is on the standby list, this function removes it from the middle of the list and sets the corresponding disk space free. Lastly, If the page is not on any list, but in the process of being written out, just mark it as no longer being written out. The writer will see this and free the corresponding disk space</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">arbitrary_va</td><td>The virtual address that is faulted on. </td></tr>
@@ -563,6 +1292,116 @@ Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>Returns true if we need to redo the fault, false otherwise. </dd></dl>
 <dl class="section pre"><dt>Precondition</dt><dd>The page table entry must be locked on entry to this function. </dd></dl>
 <dl class="section post"><dt>Postcondition</dt><dd>The caller must unlock the page table entry </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00251">251</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  251</span>                                                                                 {</div>
+<div class="line"><span class="lineno">  252</span>    <a class="code hl_struct" href="structpfn.html">pfn</a>* page;</div>
+<div class="line"><span class="lineno">  253</span>    ULONG64 frameNumber;</div>
+<div class="line"><span class="lineno">  254</span> </div>
+<div class="line"><span class="lineno">  255</span>    <a class="code hl_struct" href="structpte.html">pte</a> entryContents;</div>
+<div class="line"><span class="lineno">  256</span> </div>
+<div class="line"><span class="lineno">  257</span>    <span class="comment">// We must read no fence because the pte could be getting cross edited by another faulter who is using it as a victim</span></div>
+<div class="line"><span class="lineno">  258</span>    entryContents.<a class="code hl_variable" href="structpte.html#ae8c26fcaf4191b5b94504b99ba4c5adf">entireFormat</a> = ReadULong64NoFence((DWORD64 <span class="keyword">const</span> <span class="keyword">volatile</span> *)currentPTE);</div>
+<div class="line"><span class="lineno">  259</span> </div>
+<div class="line"><span class="lineno">  260</span> </div>
+<div class="line"><span class="lineno">  261</span>    <span class="comment">// The following two checks see if the case where a pte is cross edited in the process of victimization occured</span></div>
+<div class="line"><span class="lineno">  262</span> </div>
+<div class="line"><span class="lineno">  263</span>    <span class="comment">// If before we got our snapshot, the pte was changed to non rescue</span></div>
+<div class="line"><span class="lineno">  264</span>    <span class="keywordflow">if</span> (!<a class="code hl_function" href="#a054a809045b98743dd633e71b528a419">isRescue</a>(currentPTE)){</div>
+<div class="line"><span class="lineno">  265</span> </div>
+<div class="line"><span class="lineno">  266</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  267</span>    }</div>
+<div class="line"><span class="lineno">  268</span> </div>
+<div class="line"><span class="lineno">  269</span>    frameNumber = entryContents.<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a05ae171e501eec7d4ed160bec19cd6be">frameNumber</a>;</div>
+<div class="line"><span class="lineno">  270</span>    page = <a class="code hl_function" href="page__utils_8c.html#abd5612406d1830037e6f64083d688bdf">getPFNfromFrameNumber</a>(frameNumber);</div>
+<div class="line"><span class="lineno">  271</span> </div>
+<div class="line"><span class="lineno">  272</span>    <span class="comment">// if our page that we believe our contents is on no longer maps to our copy</span></div>
+<div class="line"><span class="lineno">  273</span>    <span class="keywordflow">if</span> (page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a>-&gt;<a class="code hl_variable" href="structpte.html#ae8c26fcaf4191b5b94504b99ba4c5adf">entireFormat</a> != entryContents.<a class="code hl_variable" href="structpte.html#ae8c26fcaf4191b5b94504b99ba4c5adf">entireFormat</a>) {</div>
+<div class="line"><span class="lineno">  274</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  275</span>    }</div>
+<div class="line"><span class="lineno">  276</span> </div>
+<div class="line"><span class="lineno">  277</span> </div>
+<div class="line"><span class="lineno">  278</span> </div>
+<div class="line"><span class="lineno">  279</span>    <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  280</span> </div>
+<div class="line"><span class="lineno">  281</span>    <span class="comment">// Now that we are in the pagelock we can be sure the pte is not being edited without a lock in our victimization code.</span></div>
+<div class="line"><span class="lineno">  282</span>    <span class="comment">// Therefore, we can now check the actual pte for the same things as above as opposed to our copy</span></div>
+<div class="line"><span class="lineno">  283</span> </div>
+<div class="line"><span class="lineno">  284</span>    <span class="keywordflow">if</span> (page-&gt;<a class="code hl_variable" href="structpfn.html#ae2e24bb0e467c948348fd35010dec4e5">pte</a> != currentPTE) {</div>
+<div class="line"><span class="lineno">  285</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  286</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  287</span>    }</div>
+<div class="line"><span class="lineno">  288</span> </div>
+<div class="line"><span class="lineno">  289</span>    <span class="keywordflow">if</span> (!<a class="code hl_function" href="#a054a809045b98743dd633e71b528a419">isRescue</a>(currentPTE)) {</div>
+<div class="line"><span class="lineno">  290</span> </div>
+<div class="line"><span class="lineno">  291</span>        <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  292</span>        <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  293</span>    }</div>
+<div class="line"><span class="lineno">  294</span>    <a class="code hl_define" href="structures_8h.html#aca68c0d4ac8df0838e209fb5300f7be3">ASSERT</a>(currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a05ae171e501eec7d4ed160bec19cd6be">frameNumber</a> == frameNumber);</div>
+<div class="line"><span class="lineno">  295</span> </div>
+<div class="line"><span class="lineno">  296</span>    <span class="comment">// If there is a write in progress the page is not on any list</span></div>
+<div class="line"><span class="lineno">  297</span>    <span class="comment">// We do not know when in the right this is occurring, so we set this variable to signal to the writer to not add this</span></div>
+<div class="line"><span class="lineno">  298</span>    <span class="comment">// page to the standby list</span></div>
+<div class="line"><span class="lineno">  299</span>    <span class="comment">// Instead, the writer will free its disk space</span></div>
+<div class="line"><span class="lineno">  300</span>    <span class="keywordflow">if</span> (page-&gt;<a class="code hl_variable" href="structpfn.html#a3d9fb4680c2d513ddd312cb20f51c324">isBeingWritten</a> == TRUE) {</div>
+<div class="line"><span class="lineno">  301</span>        page-&gt;<a class="code hl_variable" href="structpfn.html#a3d9fb4680c2d513ddd312cb20f51c324">isBeingWritten</a> = FALSE;</div>
+<div class="line"><span class="lineno">  302</span>    }</div>
+<div class="line"><span class="lineno">  303</span>    <span class="comment">// If its on standby, remove it and set the disk space free</span></div>
+<div class="line"><span class="lineno">  304</span>    <span class="keywordflow">else</span> <span class="keywordflow">if</span> (currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a6382aa31ee89fcdd5524083024925ebc">transitionFormat</a>.<a class="code hl_variable" href="structtransition_pte.html#a10b3e72c49cd4c23663bc3bdf09412c8">contentsLocation</a> == <a class="code hl_define" href="structures_8h.html#ad18aeed9e566dea67bf439d46d857998">STAND_BY_LIST</a>) {</div>
+<div class="line"><span class="lineno">  305</span> </div>
+<div class="line"><span class="lineno">  306</span>        <a class="code hl_function" href="page__utils_8c.html#aa30e01e92ab002730cc6edd4f2c933f9">removeFromMiddleOfList</a>(&amp;<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>, page, threadInfo);</div>
+<div class="line"><span class="lineno">  307</span> </div>
+<div class="line"><span class="lineno">  308</span>        <a class="code hl_function" href="disk_8c.html#a7dfe0615aa76e5354d65a2d9b62b46dc">set_disk_space_free</a>(page-&gt;<a class="code hl_variable" href="structpfn.html#a573f579df22566e2dbedc20535dda482">diskIndex</a>);</div>
+<div class="line"><span class="lineno">  309</span> </div>
+<div class="line"><span class="lineno">  310</span> </div>
+<div class="line"><span class="lineno">  311</span>    } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  312</span>        <span class="comment">// It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page</span></div>
+<div class="line"><span class="lineno">  313</span>        <a class="code hl_function" href="page__utils_8c.html#aa30e01e92ab002730cc6edd4f2c933f9">removeFromMiddleOfList</a>(&amp;<a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>,page, threadInfo);</div>
+<div class="line"><span class="lineno">  314</span>    }</div>
+<div class="line"><span class="lineno">  315</span>    <span class="comment">// we can leave this lock because it is no longer on a list, so no other operations like a list removal but be poking at this page</span></div>
+<div class="line"><span class="lineno">  316</span>    <span class="comment">// A faulter that is accessing the same region will be stopped by a pagetable lock</span></div>
+<div class="line"><span class="lineno">  317</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  318</span> </div>
+<div class="line"><span class="lineno">  319</span>    <span class="keywordflow">if</span> (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &amp;frameNumber) == FALSE) {</div>
+<div class="line"><span class="lineno">  320</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">  321</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not map VA %p to page %llX\n&quot;</span>, (PVOID)arbitrary_va, frameNumber);</div>
+<div class="line"><span class="lineno">  322</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  323</span>    }</div>
+<div class="line"><span class="lineno">  324</span> </div>
+<div class="line"><span class="lineno">  325</span>    currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9">validFormat</a>.<a class="code hl_variable" href="structvalid_pte.html#ab69d0644ffe76adc8155ea74fdfb1044">valid</a> = 1;</div>
+<div class="line"><span class="lineno">  326</span>    currentPTE-&gt;<a class="code hl_variable" href="structpte.html#a0b4d9ecd38326d0b13cd3d75be3224a9">validFormat</a>.<a class="code hl_variable" href="structvalid_pte.html#a58bedc14359873650418bc99f7cd9897">transition</a> = <a class="code hl_define" href="structures_8h.html#a7f2a734b84f750bb35708fd8f3d0121e">UNASSIGNED</a>;</div>
+<div class="line"><span class="lineno">  327</span> </div>
+<div class="line"><span class="lineno">  328</span> </div>
+<div class="line"><span class="lineno">  329</span>    <a class="code hl_function" href="thread__utils_8c.html#a0b65478cbff267e6e35c3c2090f9c21d">enterPageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  330</span>    <a class="code hl_function" href="page__utils_8c.html#a81bc32fad7e2392ab7737db66ed14a4f">addPageToTail</a>(&amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>, page, threadInfo);</div>
+<div class="line"><span class="lineno">  331</span>    <a class="code hl_function" href="thread__utils_8c.html#a1db2dc4187f63adf6556fbd6339700b2">leavePageLock</a>(page, threadInfo);</div>
+<div class="line"><span class="lineno">  332</span> </div>
+<div class="line"><span class="lineno">  333</span>    <span class="keywordflow">return</span> !<a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  334</span> </div>
+<div class="line"><span class="lineno">  335</span>}</div>
+<div class="ttc" id="ainit_8c_html_acd57aa13d337da1922deec378258ca32"><div class="ttname"><a href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a></div><div class="ttdeci">listHead headModifiedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00036">init.c:36</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_aa30e01e92ab002730cc6edd4f2c933f9"><div class="ttname"><a href="page__utils_8c.html#aa30e01e92ab002730cc6edd4f2c933f9">removeFromMiddleOfList</a></div><div class="ttdeci">VOID removeFromMiddleOfList(pListHead head, pfn *page, PTHREAD_INFO threadInfo)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00122">page_utils.c:122</a></div></div>
+<div class="ttc" id="apage__utils_8c_html_abd5612406d1830037e6f64083d688bdf"><div class="ttname"><a href="page__utils_8c.html#abd5612406d1830037e6f64083d688bdf">getPFNfromFrameNumber</a></div><div class="ttdeci">pfn * getPFNfromFrameNumber(ULONG64 frameNumber)</div><div class="ttdef"><b>Definition</b> <a href="page__utils_8c_source.html#l00023">page_utils.c:23</a></div></div>
+<div class="ttc" id="astructpfn_html_a3d9fb4680c2d513ddd312cb20f51c324"><div class="ttname"><a href="structpfn.html#a3d9fb4680c2d513ddd312cb20f51c324">pfn::isBeingWritten</a></div><div class="ttdeci">ULONG64 isBeingWritten</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00210">structures.h:210</a></div></div>
+<div class="ttc" id="astructtransition_pte_html_a05ae171e501eec7d4ed160bec19cd6be"><div class="ttname"><a href="structtransition_pte.html#a05ae171e501eec7d4ed160bec19cd6be">transitionPte::frameNumber</a></div><div class="ttdeci">ULONG64 frameNumber</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00158">structures.h:158</a></div></div>
+<div class="ttc" id="astructures_8h_html_a7f2a734b84f750bb35708fd8f3d0121e"><div class="ttname"><a href="structures_8h.html#a7f2a734b84f750bb35708fd8f3d0121e">UNASSIGNED</a></div><div class="ttdeci">#define UNASSIGNED</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00151">structures.h:151</a></div></div>
+<div class="ttc" id="astructvalid_pte_html_a58bedc14359873650418bc99f7cd9897"><div class="ttname"><a href="structvalid_pte.html#a58bedc14359873650418bc99f7cd9897">validPte::transition</a></div><div class="ttdeci">ULONG64 transition</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00140">structures.h:140</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="page__utils_8c_source.html#l00360">addPageToTail()</a>, <a class="el" href="structures_8h_source.html#l00019">ASSERT</a>, <a class="el" href="structures_8h_source.html#l00157">transitionPte::contentsLocation</a>, <a class="el" href="structures_8h_source.html#l00209">pfn::diskIndex</a>, <a class="el" href="thread__utils_8c_source.html#l00247">enterPageLock()</a>, <a class="el" href="structures_8h_source.html#l00166">pte::entireFormat</a>, <a class="el" href="structures_8h_source.html#l00158">transitionPte::frameNumber</a>, <a class="el" href="page__utils_8c_source.html#l00023">getPFNfromFrameNumber()</a>, <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="structures_8h_source.html#l00210">pfn::isBeingWritten</a>, <a class="el" href="user__thread_8c_source.html#l00230">isRescue()</a>, <a class="el" href="thread__utils_8c_source.html#l00257">leavePageLock()</a>, <a class="el" href="structures_8h_source.html#l00208">pfn::pte</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="structures_8h_source.html#l00098">REDO_FAULT</a>, <a class="el" href="page__utils_8c_source.html#l00122">removeFromMiddleOfList()</a>, <a class="el" href="disk_8c_source.html#l00166">set_disk_space_free()</a>, <a class="el" href="structures_8h_source.html#l00153">STAND_BY_LIST</a>, <a class="el" href="structures_8h_source.html#l00140">validPte::transition</a>, <a class="el" href="structures_8h_source.html#l00165">pte::transitionFormat</a>, <a class="el" href="structures_8h_source.html#l00151">UNASSIGNED</a>, <a class="el" href="structures_8h_source.html#l00139">validPte::valid</a>, and <a class="el" href="structures_8h_source.html#l00163">pte::validFormat</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>.</p>
+<div id="dynsection-22" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-22-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-22-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 22 --></div>
+</div>
+<div id="dynsection-23" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-23-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-23-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 23 --></div>
+</div>
 
 </div>
 </div>
@@ -585,14 +1424,54 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>This function zeroes a physical page. It uses an interim transfer virtual address to complete this task. Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls, a lot of time spent flushing and unmapping is saved. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>This function zeroes a physical page. </p>
+<p>It uses an interim transfer virtual address to complete this task. Only after the entire transfer space is used, will this function unmap the pages from the transfer virtual address. By having limited unmap calls, a lot of time spent flushing and unmapping is saved. </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">page</td><td>The page to zero. </td></tr>
     <tr><td class="paramname">threadContext</td><td>The caller's thread info. It is used to determine which transfer virtual page to use. </td></tr>
   </table>
   </dd>
 </dl>
+
+<p class="definition">Definition at line <a class="el" href="user__thread_8c_source.html#l00608">608</a> of file <a class="el" href="user__thread_8c_source.html">user_thread.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  608</span>                                                         {</div>
+<div class="line"><span class="lineno">  609</span> </div>
+<div class="line"><span class="lineno">  610</span>    PVOID zeroVA;</div>
+<div class="line"><span class="lineno">  611</span>    ULONG64 frameNumber;</div>
+<div class="line"><span class="lineno">  612</span> </div>
+<div class="line"><span class="lineno">  613</span> </div>
+<div class="line"><span class="lineno">  614</span>    zeroVA = <a class="code hl_function" href="#a6601998c57f4c3d80891bfcab071441d">getThreadMapping</a>(threadContext);</div>
+<div class="line"><span class="lineno">  615</span> </div>
+<div class="line"><span class="lineno">  616</span>    frameNumber = <a class="code hl_function" href="page__utils_8c.html#ae0a8c1717809fd2f938ee7917df6bd26">getFrameNumber</a>(page);</div>
+<div class="line"><span class="lineno">  617</span> </div>
+<div class="line"><span class="lineno">  618</span>    <span class="keywordflow">if</span> (MapUserPhysicalPages(zeroVA, 1, &amp;frameNumber) == FALSE) {</div>
+<div class="line"><span class="lineno">  619</span>        DebugBreak();</div>
+<div class="line"><span class="lineno">  620</span>        printf(<span class="stringliteral">&quot;full_virtual_memory_test : could not map VA %p to page %llX\n&quot;</span>, zeroVA, frameNumber);</div>
+<div class="line"><span class="lineno">  621</span>        <span class="keywordflow">return</span> FALSE;</div>
+<div class="line"><span class="lineno">  622</span>    }</div>
+<div class="line"><span class="lineno">  623</span>    memset(zeroVA, 0, <a class="code hl_define" href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a>);</div>
+<div class="line"><span class="lineno">  624</span> </div>
+<div class="line"><span class="lineno">  625</span> </div>
+<div class="line"><span class="lineno">  626</span>    <a class="code hl_function" href="#a9a16d9a9c52782f31f8cbe5ee8fd14e9">freeThreadMapping</a>(threadContext);</div>
+<div class="line"><span class="lineno">  627</span> </div>
+<div class="line"><span class="lineno">  628</span>    <span class="keywordflow">return</span> TRUE;</div>
+<div class="line"><span class="lineno">  629</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="user__thread_8c_source.html#l00149">freeThreadMapping()</a>, <a class="el" href="page__utils_8c_source.html#l00019">getFrameNumber()</a>, <a class="el" href="user__thread_8c_source.html#l00133">getThreadMapping()</a>, <a class="el" href="structures_8h_source.html#l00026">PAGE_SIZE</a>, and <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00449">mapPageFromFreeList()</a>, and <a class="el" href="user__thread_8c_source.html#l00494">mapPageFromStandByList()</a>.</p>
+<div id="dynsection-24" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-24-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-24-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 24 --></div>
+</div>
+<div id="dynsection-25" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-25-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-25-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 25 --></div>
+</div>
 
 </div>
 </div>

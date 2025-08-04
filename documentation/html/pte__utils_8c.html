@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -109,7 +116,15 @@ $(function() {
 <div class="textblock"><code>#include &quot;<a class="el" href="structures_8h_source.html">../../include/variables/structures.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="globals_8h_source.html">../../include/variables/globals.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="pte__utils_8h_source.html">../../include/utils/pte_utils.h</a>&quot;</code><br />
-</div><table class="memberdecls">
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for pte_utils.c:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
+<p><a href="pte__utils_8c_source.html">Go to the source code of this file.</a></p>
+<table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:af1bc0b9029ce9be426fd21c5400c7bbb" id="r_af1bc0b9029ce9be426fd21c5400c7bbb"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structpte.html">pte</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af1bc0b9029ce9be426fd21c5400c7bbb">va_to_pte</a> (ULONG64 va)</td></tr>
@@ -133,6 +148,27 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="pte__utils_8c_source.html#l00027">27</a> of file <a class="el" href="pte__utils_8c_source.html">pte_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   27</span>                                   {</div>
+<div class="line"><span class="lineno">   28</span>    ULONG64 pageTableIndex = (<a class="code hl_struct" href="structpte.html">pte</a> - <a class="code hl_variable" href="init_8c.html#a377cadc3f3505d5777cad6f2deb856cf">pageTable</a>);</div>
+<div class="line"><span class="lineno">   29</span>    ULONG64 index = pageTableIndex / <a class="code hl_define" href="structures_8h.html#ab72513369e604b53eb0125e7bb0c4295">NUMBER_OF_PTES_PER_REGION</a>;</div>
+<div class="line"><span class="lineno">   30</span>    <span class="keywordflow">return</span>  <a class="code hl_variable" href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a> + index;</div>
+<div class="line"><span class="lineno">   31</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2e8469f2378cb4430554fbacc3c5b7a4"><div class="ttname"><a href="init_8c.html#a2e8469f2378cb4430554fbacc3c5b7a4">pteRegionsBase</a></div><div class="ttdeci">PTE_REGION * pteRegionsBase</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00050">init.c:50</a></div></div>
+<div class="ttc" id="ainit_8c_html_a377cadc3f3505d5777cad6f2deb856cf"><div class="ttname"><a href="init_8c.html#a377cadc3f3505d5777cad6f2deb856cf">pageTable</a></div><div class="ttdeci">pte * pageTable</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00040">init.c:40</a></div></div>
+<div class="ttc" id="astructpte_html"><div class="ttname"><a href="structpte.html">pte</a></div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00161">structures.h:161</a></div></div>
+<div class="ttc" id="astructures_8h_html_ab72513369e604b53eb0125e7bb0c4295"><div class="ttname"><a href="structures_8h.html#ab72513369e604b53eb0125e7bb0c4295">NUMBER_OF_PTES_PER_REGION</a></div><div class="ttdeci">#define NUMBER_OF_PTES_PER_REGION</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00241">structures.h:241</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00241">NUMBER_OF_PTES_PER_REGION</a>, <a class="el" href="init_8c_source.html#l00040">pageTable</a>, and <a class="el" href="init_8c_source.html#l00050">pteRegionsBase</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00179">isNextPageInSameRegion()</a>, <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>, and <a class="el" href="statistics__utils_8c_source.html#l00014">recordAccess()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+
 </div>
 </div>
 <a id="af7fcf9214d3e31047ed3fd41a34df2e0" name="af7fcf9214d3e31047ed3fd41a34df2e0"></a>
@@ -149,6 +185,24 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="pte__utils_8c_source.html#l00023">23</a> of file <a class="el" href="pte__utils_8c_source.html">pte_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   23</span>                           {</div>
+<div class="line"><span class="lineno">   24</span> </div>
+<div class="line"><span class="lineno">   25</span>    <span class="keywordflow">return</span> (va &gt;= (ULONG64) <a class="code hl_variable" href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a>) &amp;&amp; (va &lt;= (ULONG64) <a class="code hl_variable" href="init_8c.html#a725d904e3cf158b59c18626a4a6f8df5">vaEnd</a>);</div>
+<div class="line"><span class="lineno">   26</span>}</div>
+<div class="ttc" id="ainit_8c_html_a725d904e3cf158b59c18626a4a6f8df5"><div class="ttname"><a href="init_8c.html#a725d904e3cf158b59c18626a4a6f8df5">vaEnd</a></div><div class="ttdeci">PULONG_PTR vaEnd</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00044">init.c:44</a></div></div>
+<div class="ttc" id="ainit_8c_html_aaaf4624300194b91a31836695b593a30"><div class="ttname"><a href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a></div><div class="ttdeci">PULONG_PTR vaStart</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00043">init.c:43</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00044">vaEnd</a>, and <a class="el" href="init_8c_source.html#l00043">vaStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, and <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
 
 </div>
 </div>
@@ -167,6 +221,23 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="pte__utils_8c_source.html#l00017">17</a> of file <a class="el" href="pte__utils_8c_source.html">pte_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   17</span>                    {</div>
+<div class="line"><span class="lineno">   18</span>    ULONG64 index = (<a class="code hl_struct" href="structpte.html">pte</a> - <a class="code hl_variable" href="init_8c.html#a377cadc3f3505d5777cad6f2deb856cf">pageTable</a>);</div>
+<div class="line"><span class="lineno">   19</span>    <span class="keywordflow">return</span> (PVOID)((index * <a class="code hl_define" href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a>) + (ULONG_PTR) <a class="code hl_variable" href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a>);</div>
+<div class="line"><span class="lineno">   20</span>}</div>
+<div class="ttc" id="astructures_8h_html_a7d467c1d283fdfa1f2081ba1e0d01b6e"><div class="ttname"><a href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a></div><div class="ttdeci">#define PAGE_SIZE</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00026">structures.h:26</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00026">PAGE_SIZE</a>, <a class="el" href="init_8c_source.html#l00040">pageTable</a>, and <a class="el" href="init_8c_source.html#l00043">vaStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="trimmer__thread_8c_source.html#l00029">page_trimmer()</a>, and <a class="el" href="user__free_8c_source.html#l00073">unmapActivePage()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+
 </div>
 </div>
 <a id="af1bc0b9029ce9be426fd21c5400c7bbb" name="af1bc0b9029ce9be426fd21c5400c7bbb"></a>
@@ -183,6 +254,23 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="pte__utils_8c_source.html#l00010">10</a> of file <a class="el" href="pte__utils_8c_source.html">pte_utils.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   10</span>                      {</div>
+<div class="line"><span class="lineno">   11</span>    ULONG64 index = ((ULONG_PTR)va - (ULONG_PTR) <a class="code hl_variable" href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a>)/<a class="code hl_define" href="structures_8h.html#a7d467c1d283fdfa1f2081ba1e0d01b6e">PAGE_SIZE</a>;</div>
+<div class="line"><span class="lineno">   12</span>    <a class="code hl_struct" href="structpte.html">pte</a>* <a class="code hl_struct" href="structpte.html">pte</a> = <a class="code hl_variable" href="init_8c.html#a377cadc3f3505d5777cad6f2deb856cf">pageTable</a> + index;</div>
+<div class="line"><span class="lineno">   13</span>    <span class="keywordflow">return</span> <a class="code hl_struct" href="structpte.html">pte</a>;</div>
+<div class="line"><span class="lineno">   14</span>}</div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00026">PAGE_SIZE</a>, <a class="el" href="init_8c_source.html#l00040">pageTable</a>, and <a class="el" href="init_8c_source.html#l00043">vaStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__free_8c_source.html#l00017">freeVa()</a>, <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>, and <a class="el" href="statistics__utils_8c_source.html#l00014">recordAccess()</a>.</p>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
 
 </div>
 </div>

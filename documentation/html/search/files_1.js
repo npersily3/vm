@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['globals_2eh_0',['globals.h',['../globals_8h.html',1,'']]]
+  ['debug_2ec_0',['debug.c',['../debug_8c.html',1,'']]],
+  ['disk_2ec_1',['disk.c',['../disk_8c.html',1,'']]],
+  ['disk_2eh_2',['disk.h',['../disk_8h.html',1,'']]]
 ];

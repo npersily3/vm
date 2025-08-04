@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -70,7 +77,7 @@ $(function() { codefold.init(); });
   </div>
 </div>
 <script type="text/javascript">
-$(function(){initNavTree('structshared_lock.html','',''); });
+$(function(){initNavTree('structshared_lock.html','','structshared_lock-members'); });
 </script>
 <script type="text/javascript" src="menudata.js"></script>
 <script type="text/javascript" src="menu.js"></script>
@@ -110,10 +117,13 @@ $(function() {
 <p><code>#include &lt;<a class="el" href="structures_8h_source.html">structures.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
-Data Fields</h2></td></tr>
+Public Attributes</h2></td></tr>
 <tr class="memitem:a73cf768bc4d7ce3a69565122245e8051" id="r_a73cf768bc4d7ce3a69565122245e8051"><td class="memItemLeft" align="right" valign="top">SRWLOCK&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a73cf768bc4d7ce3a69565122245e8051">sharedLock</a></td></tr>
 </table>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Field Documentation</h2>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock">
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00253">253</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+</div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a73cf768bc4d7ce3a69565122245e8051" name="a73cf768bc4d7ce3a69565122245e8051"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a73cf768bc4d7ce3a69565122245e8051">&#9670;&#160;</a></span>sharedLock</h2>
 
@@ -125,6 +135,12 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="structures_8h_source.html#l00254">254</a> of file <a class="el" href="structures_8h_source.html">structures.h</a>.</p>
+
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00254">sharedLock</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="thread__utils_8c_source.html#l00161">acquire_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00145">acquire_srw_shared()</a>, <a class="el" href="init_8c_source.html#l00339">init_list_head()</a>, <a class="el" href="thread__utils_8c_source.html#l00169">release_srw_exclusive()</a>, <a class="el" href="thread__utils_8c_source.html#l00153">release_srw_shared()</a>, and <a class="el" href="structures_8h_source.html#l00254">sharedLock</a>.</p>
 
 </div>
 </div>

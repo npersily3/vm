@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -110,6 +117,18 @@ $(function() {
 <code>#include &lt;stdlib.h&gt;</code><br />
 <code>#include &lt;Windows.h&gt;</code><br />
 <code>#include &quot;<a class="el" href="structures_8h_source.html">structures.h</a>&quot;</code><br />
+</div><div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Include dependency graph for macros.h:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div><div class="textblock"><div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
 </div>
 <p><a href="macros_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -146,6 +165,18 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00140">140</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  144</span>{</div>
+<div class="line"><span class="lineno">  145</span>PLIST_ENTRY ListEnd = ListHead-&gt;entry.Blink;</div>
+<div class="line"><span class="lineno">  146</span> </div>
+<div class="line"><span class="lineno">  147</span>ListHead-&gt;entry.Blink-&gt;Flink = ListToAppend;</div>
+<div class="line"><span class="lineno">  148</span>ListHead-&gt;entry.Blink = ListToAppend-&gt;Blink;</div>
+<div class="line"><span class="lineno">  149</span>ListToAppend-&gt;Blink-&gt;Flink = &amp;ListHead-&gt;entry;</div>
+<div class="line"><span class="lineno">  150</span>ListToAppend-&gt;Blink = ListEnd;</div>
+<div class="line"><span class="lineno">  151</span><span class="comment">// Note: This function appends an entire list, so length update would need to count the appended list</span></div>
+<div class="line"><span class="lineno">  152</span><span class="comment">// For now, we&#39;ll leave this as a TODO since it requires counting the appended list</span></div>
+<div class="line"><span class="lineno">  153</span>}</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="afa8f00416a027788c25c09317cfa9ab6" name="afa8f00416a027788c25c09317cfa9ab6"></a>
@@ -162,6 +193,21 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00014">14</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   17</span>{</div>
+<div class="line"><span class="lineno">   18</span>ListHead-&gt;Flink = ListHead;</div>
+<div class="line"><span class="lineno">   19</span>ListHead-&gt;Blink = ListHead;</div>
+<div class="line"><span class="lineno">   20</span> </div>
+<div class="line"><span class="lineno">   21</span>}</div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00339">init_list_head()</a>.</p>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
 
 </div>
 </div>
@@ -184,6 +230,28 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00121">121</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  125</span>{</div>
+<div class="line"><span class="lineno">  126</span> </div>
+<div class="line"><span class="lineno">  127</span> </div>
+<div class="line"><span class="lineno">  128</span>PLIST_ENTRY Flink;</div>
+<div class="line"><span class="lineno">  129</span> </div>
+<div class="line"><span class="lineno">  130</span>Flink = ListHead-&gt;entry.Flink;</div>
+<div class="line"><span class="lineno">  131</span>Entry-&gt;Flink = Flink;</div>
+<div class="line"><span class="lineno">  132</span>Entry-&gt;Blink = &amp;ListHead-&gt;entry;</div>
+<div class="line"><span class="lineno">  133</span>Flink-&gt;Blink = Entry;</div>
+<div class="line"><span class="lineno">  134</span>ListHead-&gt;entry.Flink = Entry;</div>
+<div class="line"><span class="lineno">  135</span>ListHead-&gt;length++;</div>
+<div class="line"><span class="lineno">  136</span>}</div>
+</div><!-- fragment -->
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00047">addPageToFreeList()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+
 </div>
 </div>
 <a id="ae9f8be34081522b2afef70bb45a18672" name="ae9f8be34081522b2afef70bb45a18672"></a>
@@ -205,6 +273,36 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00098">98</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  102</span>{</div>
+<div class="line"><span class="lineno">  103</span> </div>
+<div class="line"><span class="lineno">  104</span>        <span class="keywordflow">if</span> (Entry == &amp;<a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>.entry || Entry == &amp;<a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.entry</div>
+<div class="line"><span class="lineno">  105</span>               || Entry == &amp;<a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>.entry) {DebugBreak(); <span class="keywordflow">return</span>;}</div>
+<div class="line"><span class="lineno">  106</span>PLIST_ENTRY Blink;</div>
+<div class="line"><span class="lineno">  107</span> </div>
+<div class="line"><span class="lineno">  108</span> </div>
+<div class="line"><span class="lineno">  109</span>Blink = ListHead-&gt;entry.Blink;</div>
+<div class="line"><span class="lineno">  110</span>Entry-&gt;Flink = &amp;ListHead-&gt;entry;</div>
+<div class="line"><span class="lineno">  111</span>Entry-&gt;Blink = Blink;</div>
+<div class="line"><span class="lineno">  112</span>Blink-&gt;Flink = Entry;</div>
+<div class="line"><span class="lineno">  113</span>ListHead-&gt;entry.Blink = Entry;</div>
+<div class="line"><span class="lineno">  114</span>        ListHead-&gt;length++;</div>
+<div class="line"><span class="lineno">  115</span> </div>
+<div class="line"><span class="lineno">  116</span>}</div>
+<div class="ttc" id="ainit_8c_html_a2104c2f630ec691446eb83024e5eb897"><div class="ttname"><a href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a></div><div class="ttdeci">listHead headStandByList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00037">init.c:37</a></div></div>
+<div class="ttc" id="ainit_8c_html_a94fe7d15f3121ceb68cee2c8fa317bad"><div class="ttname"><a href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a></div><div class="ttdeci">listHead headActiveList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00035">init.c:35</a></div></div>
+<div class="ttc" id="ainit_8c_html_acd57aa13d337da1922deec378258ca32"><div class="ttname"><a href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a></div><div class="ttdeci">listHead headModifiedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00036">init.c:36</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, and <a class="el" href="init_8c_source.html#l00037">headStandByList</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init_8c_source.html#l00295">init_free_list()</a>.</p>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
+
 </div>
 </div>
 <a id="adf0e1f55fc389f4ba6ef4c09209d6c6a" name="adf0e1f55fc389f4ba6ef4c09209d6c6a"></a>
@@ -222,6 +320,11 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00026">26</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   29</span>{</div>
+<div class="line"><span class="lineno">   30</span><span class="keywordflow">return</span> (BOOLEAN)(ListHead-&gt;entry.Flink == &amp;ListHead-&gt;entry);</div>
+<div class="line"><span class="lineno">   31</span>}</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="ac2d13e335eb7bbcd048eb8327b1c39bd" name="ac2d13e335eb7bbcd048eb8327b1c39bd"></a>
@@ -239,6 +342,17 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00157">157</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  160</span>{</div>
+<div class="line"><span class="lineno">  161</span>PSINGLE_LIST_ENTRY FirstEntry;</div>
+<div class="line"><span class="lineno">  162</span>FirstEntry = ListHead-&gt;Next;</div>
+<div class="line"><span class="lineno">  163</span><span class="keywordflow">if</span> (FirstEntry != NULL) {</div>
+<div class="line"><span class="lineno">  164</span>ListHead-&gt;Next = FirstEntry-&gt;Next;</div>
+<div class="line"><span class="lineno">  165</span>}</div>
+<div class="line"><span class="lineno">  166</span> </div>
+<div class="line"><span class="lineno">  167</span><span class="keywordflow">return</span> FirstEntry;</div>
+<div class="line"><span class="lineno">  168</span>}</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a2c071a421a8ec2350186195c4fc396f3" name="a2c071a421a8ec2350186195c4fc396f3"></a>
@@ -260,6 +374,12 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00173">173</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">  177</span>{</div>
+<div class="line"><span class="lineno">  178</span>Entry-&gt;Next = ListHead-&gt;Next;</div>
+<div class="line"><span class="lineno">  179</span>ListHead-&gt;Next = Entry;</div>
+<div class="line"><span class="lineno">  180</span>}</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a86c16913629907888167c1e8fd3323f6" name="a86c16913629907888167c1e8fd3323f6"></a>
@@ -281,6 +401,19 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00035">35</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   39</span>{</div>
+<div class="line"><span class="lineno">   40</span>PLIST_ENTRY Blink;</div>
+<div class="line"><span class="lineno">   41</span>PLIST_ENTRY Flink;</div>
+<div class="line"><span class="lineno">   42</span> </div>
+<div class="line"><span class="lineno">   43</span>Flink = Entry-&gt;Flink;</div>
+<div class="line"><span class="lineno">   44</span>Blink = Entry-&gt;Blink;</div>
+<div class="line"><span class="lineno">   45</span>Blink-&gt;Flink = Flink;</div>
+<div class="line"><span class="lineno">   46</span>Flink-&gt;Blink = Blink;</div>
+<div class="line"><span class="lineno">   47</span>ListHead-&gt;length--;</div>
+<div class="line"><span class="lineno">   48</span><span class="keywordflow">return</span> (BOOLEAN)(Flink == Blink);</div>
+<div class="line"><span class="lineno">   49</span>}</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a id="a0d33293ffc5eed4d8fafc9de60f7579f" name="a0d33293ffc5eed4d8fafc9de60f7579f"></a>
@@ -297,6 +430,40 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00053">53</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   56</span>{</div>
+<div class="line"><span class="lineno">   57</span>PLIST_ENTRY Flink;</div>
+<div class="line"><span class="lineno">   58</span>PLIST_ENTRY Entry;</div>
+<div class="line"><span class="lineno">   59</span> </div>
+<div class="line"><span class="lineno">   60</span> </div>
+<div class="line"><span class="lineno">   61</span> </div>
+<div class="line"><span class="lineno">   62</span>Entry = ListHead-&gt;entry.Flink;</div>
+<div class="line"><span class="lineno">   63</span>Flink = Entry-&gt;Flink;</div>
+<div class="line"><span class="lineno">   64</span> </div>
+<div class="line"><span class="lineno">   65</span> </div>
+<div class="line"><span class="lineno">   66</span> </div>
+<div class="line"><span class="lineno">   67</span>        <span class="keywordflow">if</span> (Entry == &amp;ListHead-&gt;entry) { <span class="keywordflow">return</span> <a class="code hl_define" href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a>;}</div>
+<div class="line"><span class="lineno">   68</span> </div>
+<div class="line"><span class="lineno">   69</span> </div>
+<div class="line"><span class="lineno">   70</span>ListHead-&gt;entry.Flink = Flink;</div>
+<div class="line"><span class="lineno">   71</span>Flink-&gt;Blink = &amp;ListHead-&gt;entry;</div>
+<div class="line"><span class="lineno">   72</span>ListHead-&gt;length--;</div>
+<div class="line"><span class="lineno">   73</span> </div>
+<div class="line"><span class="lineno">   74</span> </div>
+<div class="line"><span class="lineno">   75</span><span class="keywordflow">return</span> Entry;</div>
+<div class="line"><span class="lineno">   76</span>}</div>
+<div class="ttc" id="astructures_8h_html_a8c4c01cac35e54e00185c8c6ff6b0347"><div class="ttname"><a href="structures_8h.html#a8c4c01cac35e54e00185c8c6ff6b0347">LIST_IS_EMPTY</a></div><div class="ttdeci">#define LIST_IS_EMPTY</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00096">structures.h:96</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="structures_8h_source.html#l00096">LIST_IS_EMPTY</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="user__thread_8c_source.html#l00637">getPageFromFreeList()</a>.</p>
+<div id="dynsection-5" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-5-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-5-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 5 --></div>
+</div>
 
 </div>
 </div>
@@ -315,6 +482,19 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="macros_8h_source.html#l00080">80</a> of file <a class="el" href="macros_8h_source.html">macros.h</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   83</span>{</div>
+<div class="line"><span class="lineno">   84</span>PLIST_ENTRY Blink;</div>
+<div class="line"><span class="lineno">   85</span>PLIST_ENTRY Entry;</div>
+<div class="line"><span class="lineno">   86</span> </div>
+<div class="line"><span class="lineno">   87</span>Entry = ListHead-&gt;entry.Blink;</div>
+<div class="line"><span class="lineno">   88</span>Blink = Entry-&gt;Blink;</div>
+<div class="line"><span class="lineno">   89</span>ListHead-&gt;entry.Blink = Blink;</div>
+<div class="line"><span class="lineno">   90</span>Blink-&gt;Flink = &amp;ListHead-&gt;entry;</div>
+<div class="line"><span class="lineno">   91</span>ListHead-&gt;length--;</div>
+<div class="line"><span class="lineno">   92</span><span class="keywordflow">return</span> Entry;</div>
+<div class="line"><span class="lineno">   93</span>}</div>
+</div><!-- fragment -->
 </div>
 </div>
 </div><!-- contents -->

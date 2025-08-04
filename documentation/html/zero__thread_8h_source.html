@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -120,8 +127,8 @@ $(function() {
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#endif </span><span class="comment">//ZERO_THREAD_H</span></div>
 <div class="ttc" id="astructures_8h_html"><div class="ttname"><a href="structures_8h.html">structures.h</a></div></div>
-<div class="ttc" id="azero__thread_8h_html_a96bdf5c27edbefd5b7797ae6e402bedf"><div class="ttname"><a href="zero__thread_8h.html#a96bdf5c27edbefd5b7797ae6e402bedf">zeroingThread</a></div><div class="ttdeci">DWORD zeroingThread(LPVOID threadContext)</div><div class="ttdef"><b>Definition</b> zero_thread.c:17</div></div>
-<div class="ttc" id="azero__thread_8h_html_ad5e0516e644e6ce02824a3716bc3c26d"><div class="ttname"><a href="zero__thread_8h.html#ad5e0516e644e6ce02824a3716bc3c26d">zeroMultiplePages</a></div><div class="ttdeci">BOOL zeroMultiplePages(PULONG64 frameNumbers, ULONG64 batchSize)</div><div class="ttdef"><b>Definition</b> zero_thread.c:61</div></div>
+<div class="ttc" id="azero__thread_8h_html_a96bdf5c27edbefd5b7797ae6e402bedf"><div class="ttname"><a href="zero__thread_8h.html#a96bdf5c27edbefd5b7797ae6e402bedf">zeroingThread</a></div><div class="ttdeci">DWORD zeroingThread(LPVOID threadContext)</div><div class="ttdef"><b>Definition</b> <a href="zero__thread_8c_source.html#l00017">zero_thread.c:17</a></div></div>
+<div class="ttc" id="azero__thread_8h_html_ad5e0516e644e6ce02824a3716bc3c26d"><div class="ttname"><a href="zero__thread_8h.html#ad5e0516e644e6ce02824a3716bc3c26d">zeroMultiplePages</a></div><div class="ttdeci">BOOL zeroMultiplePages(PULONG64 frameNumbers, ULONG64 batchSize)</div><div class="ttdef"><b>Definition</b> <a href="zero__thread_8c_source.html#l00061">zero_thread.c:61</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -21,6 +21,13 @@
 <script type="text/javascript">
   $(function() { init_search(); });
 </script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX","output/SVG"],
+});
+</script>
+<script type="text/javascript" async="async" src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
@@ -31,9 +38,9 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">Virtual Memory Manager
+   <div id="projectname">Virtual Memory Manager<span id="projectnumber">&#160;v1.0</span>
    </div>
-   <div id="projectbrief">A implementation of a multithread page fault handler</div>
+   <div id="projectbrief">A high-performance multithreaded virtual memory management system</div>
   </td>
  </tr>
    <tr><td colspan="2">        <div id="MSearchBox" class="MSearchBoxInactive">
@@ -106,7 +113,13 @@ $(function() {
   <div class="headertitle"><div class="title">vm.h File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-
+<div class="textblock"><div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>This graph shows which files directly or indirectly include this file:</div>
+<div id="dynsection-0-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-0-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 0 --></div>
+</div>
+</div>
 <p><a href="vm_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
@@ -130,6 +143,90 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p class="definition">Definition at line <a class="el" href="vm_8c_source.html#l00022">22</a> of file <a class="el" href="vm_8c_source.html">vm.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   22</span>                               {</div>
+<div class="line"><span class="lineno">   23</span> </div>
+<div class="line"><span class="lineno">   24</span> </div>
+<div class="line"><span class="lineno">   25</span> </div>
+<div class="line"><span class="lineno">   26</span> </div>
+<div class="line"><span class="lineno">   27</span>    ULONG64 start, end;</div>
+<div class="line"><span class="lineno">   28</span> </div>
+<div class="line"><span class="lineno">   29</span> </div>
+<div class="line"><span class="lineno">   30</span>    CRITICAL_SECTION cs;</div>
+<div class="line"><span class="lineno">   31</span>    InitializeCriticalSection(&amp;cs);</div>
+<div class="line"><span class="lineno">   32</span>    EnterCriticalSection(&amp;cs);</div>
+<div class="line"><span class="lineno">   33</span>  </div>
+<div class="line"><span class="lineno">   34</span> </div>
+<div class="line"><span class="lineno">   35</span>    <a class="code hl_function" href="init_8c.html#a01df8b1767d5a0c7f704e92b31eeebf1">init_virtual_memory</a>();</div>
+<div class="line"><span class="lineno">   36</span> </div>
+<div class="line"><span class="lineno">   37</span> </div>
+<div class="line"><span class="lineno">   38</span>    start = GetTickCount64();</div>
+<div class="line"><span class="lineno">   39</span> </div>
+<div class="line"><span class="lineno">   40</span>    SetEvent(<a class="code hl_variable" href="init_8c.html#a1f77d91812324575a3bd55f9ba07b4d1">userStartEvent</a>);</div>
+<div class="line"><span class="lineno">   41</span> </div>
+<div class="line"><span class="lineno">   42</span>    <span class="keywordtype">int</span> i;</div>
+<div class="line"><span class="lineno">   43</span>    i = 0;</div>
+<div class="line"><span class="lineno">   44</span> </div>
+<div class="line"><span class="lineno">   45</span> </div>
+<div class="line"><span class="lineno">   46</span> </div>
+<div class="line"><span class="lineno">   47</span>     <span class="keywordflow">for</span> (; i &lt; <a class="code hl_define" href="structures_8h.html#a6893ed9fb06f470b3c214434909d1a5e">NUMBER_OF_USER_THREADS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   48</span>         WaitForSingleObject(<a class="code hl_variable" href="init_8c.html#a3a15fee53bd0c64b27452389031f7513">userThreadHandles</a>[i], INFINITE);</div>
+<div class="line"><span class="lineno">   49</span>     }</div>
+<div class="line"><span class="lineno">   50</span>    SetEvent(<a class="code hl_variable" href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a>);</div>
+<div class="line"><span class="lineno">   51</span> </div>
+<div class="line"><span class="lineno">   52</span>    i = 0;</div>
+<div class="line"><span class="lineno">   53</span>    <span class="keywordflow">for</span> (; i &lt; <a class="code hl_define" href="structures_8h.html#aecd13cc61ec8ab92172ec6bbbcbe773c">NUMBER_OF_SYSTEM_THREADS</a>; ++i) {</div>
+<div class="line"><span class="lineno">   54</span>        WaitForSingleObject(<a class="code hl_variable" href="init_8c.html#ad53a830ad07de85db0b1c8aed436e94e">systemThreadHandles</a>[i], INFINITE);</div>
+<div class="line"><span class="lineno">   55</span>    }</div>
+<div class="line"><span class="lineno">   56</span>    ResetEvent(<a class="code hl_variable" href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a>);</div>
+<div class="line"><span class="lineno">   57</span> </div>
+<div class="line"><span class="lineno">   58</span>    end = GetTickCount64();</div>
+<div class="line"><span class="lineno">   59</span>    <span class="comment">// Now that we&#39;re done with our memory we can be a good</span></div>
+<div class="line"><span class="lineno">   60</span>    <span class="comment">// citizen and free it.</span></div>
+<div class="line"><span class="lineno">   61</span>    VirtualFree(<a class="code hl_variable" href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a>, 0, MEM_RELEASE);</div>
+<div class="line"><span class="lineno">   62</span> </div>
+<div class="line"><span class="lineno">   63</span>    printf(<span class="stringliteral">&quot;Elapsed time: %llu ms\n&quot;</span>, end - start);</div>
+<div class="line"><span class="lineno">   64</span> </div>
+<div class="line"><span class="lineno">   65</span>    printf(<span class="stringliteral">&quot;StandBy length %llu  \n&quot;</span>, <a class="code hl_variable" href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a>.length);</div>
+<div class="line"><span class="lineno">   66</span>    printf(<span class="stringliteral">&quot;Modified length %llu \n&quot;</span>, <a class="code hl_variable" href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a>.length);</div>
+<div class="line"><span class="lineno">   67</span>    printf(<span class="stringliteral">&quot;Free length %llu \n&quot;</span>, <a class="code hl_variable" href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a>);</div>
+<div class="line"><span class="lineno">   68</span>    printf(<span class="stringliteral">&quot;Active length %llu \n&quot;</span>, <a class="code hl_variable" href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a>.length);</div>
+<div class="line"><span class="lineno">   69</span> </div>
+<div class="line"><span class="lineno">   70</span>    printf(<span class="stringliteral">&quot;pagewaits %llu \n&quot;</span>,   <a class="code hl_variable" href="init_8c.html#a433a3b7b95392ee63bcfbfe382673e00">pageWaits</a>);</div>
+<div class="line"><span class="lineno">   71</span>    printf(<span class="stringliteral">&quot;total time waiting %llu ticks\n&quot;</span>,   (<a class="code hl_variable" href="init_8c.html#adbc56ab37cb1acc59cad16b92848af82">totalTimeWaiting</a>));</div>
+<div class="line"><span class="lineno">   72</span>    <span class="keywordflow">return</span>;</div>
+<div class="line"><span class="lineno">   73</span>}</div>
+<div class="ttc" id="ainit_8c_html_a01df8b1767d5a0c7f704e92b31eeebf1"><div class="ttname"><a href="init_8c.html#a01df8b1767d5a0c7f704e92b31eeebf1">init_virtual_memory</a></div><div class="ttdeci">VOID init_virtual_memory(VOID)</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00166">init.c:166</a></div></div>
+<div class="ttc" id="ainit_8c_html_a1f77d91812324575a3bd55f9ba07b4d1"><div class="ttname"><a href="init_8c.html#a1f77d91812324575a3bd55f9ba07b4d1">userStartEvent</a></div><div class="ttdeci">HANDLE userStartEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00082">init.c:82</a></div></div>
+<div class="ttc" id="ainit_8c_html_a2104c2f630ec691446eb83024e5eb897"><div class="ttname"><a href="init_8c.html#a2104c2f630ec691446eb83024e5eb897">headStandByList</a></div><div class="ttdeci">listHead headStandByList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00037">init.c:37</a></div></div>
+<div class="ttc" id="ainit_8c_html_a3798be30b1f648b1b1de8c1d6560c533"><div class="ttname"><a href="init_8c.html#a3798be30b1f648b1b1de8c1d6560c533">freeListLength</a></div><div class="ttdeci">volatile ULONG64 freeListLength</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00032">init.c:32</a></div></div>
+<div class="ttc" id="ainit_8c_html_a3a15fee53bd0c64b27452389031f7513"><div class="ttname"><a href="init_8c.html#a3a15fee53bd0c64b27452389031f7513">userThreadHandles</a></div><div class="ttdeci">HANDLE userThreadHandles[NUMBER_OF_USER_THREADS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00061">init.c:61</a></div></div>
+<div class="ttc" id="ainit_8c_html_a433a3b7b95392ee63bcfbfe382673e00"><div class="ttname"><a href="init_8c.html#a433a3b7b95392ee63bcfbfe382673e00">pageWaits</a></div><div class="ttdeci">volatile ULONG64 pageWaits</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00023">init.c:23</a></div></div>
+<div class="ttc" id="ainit_8c_html_a6d400d90f983c4790d1853579b259cd9"><div class="ttname"><a href="init_8c.html#a6d400d90f983c4790d1853579b259cd9">systemShutdownEvent</a></div><div class="ttdeci">HANDLE systemShutdownEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00085">init.c:85</a></div></div>
+<div class="ttc" id="ainit_8c_html_a94fe7d15f3121ceb68cee2c8fa317bad"><div class="ttname"><a href="init_8c.html#a94fe7d15f3121ceb68cee2c8fa317bad">headActiveList</a></div><div class="ttdeci">listHead headActiveList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00035">init.c:35</a></div></div>
+<div class="ttc" id="ainit_8c_html_aaaf4624300194b91a31836695b593a30"><div class="ttname"><a href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a></div><div class="ttdeci">PULONG_PTR vaStart</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00043">init.c:43</a></div></div>
+<div class="ttc" id="ainit_8c_html_acd57aa13d337da1922deec378258ca32"><div class="ttname"><a href="init_8c.html#acd57aa13d337da1922deec378258ca32">headModifiedList</a></div><div class="ttdeci">listHead headModifiedList</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00036">init.c:36</a></div></div>
+<div class="ttc" id="ainit_8c_html_ad53a830ad07de85db0b1c8aed436e94e"><div class="ttname"><a href="init_8c.html#ad53a830ad07de85db0b1c8aed436e94e">systemThreadHandles</a></div><div class="ttdeci">HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS]</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00062">init.c:62</a></div></div>
+<div class="ttc" id="ainit_8c_html_adbc56ab37cb1acc59cad16b92848af82"><div class="ttname"><a href="init_8c.html#adbc56ab37cb1acc59cad16b92848af82">totalTimeWaiting</a></div><div class="ttdeci">volatile ULONG64 totalTimeWaiting</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00024">init.c:24</a></div></div>
+<div class="ttc" id="astructures_8h_html_a6893ed9fb06f470b3c214434909d1a5e"><div class="ttname"><a href="structures_8h.html#a6893ed9fb06f470b3c214434909d1a5e">NUMBER_OF_USER_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_USER_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00083">structures.h:83</a></div></div>
+<div class="ttc" id="astructures_8h_html_aecd13cc61ec8ab92172ec6bbbcbe773c"><div class="ttname"><a href="structures_8h.html#aecd13cc61ec8ab92172ec6bbbcbe773c">NUMBER_OF_SYSTEM_THREADS</a></div><div class="ttdeci">#define NUMBER_OF_SYSTEM_THREADS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00090">structures.h:90</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="init_8c_source.html#l00032">freeListLength</a>, <a class="el" href="init_8c_source.html#l00035">headActiveList</a>, <a class="el" href="init_8c_source.html#l00036">headModifiedList</a>, <a class="el" href="init_8c_source.html#l00037">headStandByList</a>, <a class="el" href="init_8c_source.html#l00166">init_virtual_memory()</a>, <a class="el" href="structures_8h_source.html#l00090">NUMBER_OF_SYSTEM_THREADS</a>, <a class="el" href="structures_8h_source.html#l00083">NUMBER_OF_USER_THREADS</a>, <a class="el" href="init_8c_source.html#l00023">pageWaits</a>, <a class="el" href="init_8c_source.html#l00085">systemShutdownEvent</a>, <a class="el" href="init_8c_source.html#l00062">systemThreadHandles</a>, <a class="el" href="init_8c_source.html#l00024">totalTimeWaiting</a>, <a class="el" href="init_8c_source.html#l00082">userStartEvent</a>, <a class="el" href="init_8c_source.html#l00061">userThreadHandles</a>, and <a class="el" href="init_8c_source.html#l00043">vaStart</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="vm_8c_source.html#l00186">main()</a>.</p>
+<div id="dynsection-1" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-1-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-1-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 1 --></div>
+</div>
+<div id="dynsection-2" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-2-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-2-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 2 --></div>
+</div>
+
 </div>
 </div>
 <a id="a1758db79c1f8634a1bbcb278ae08fc8b" name="a1758db79c1f8634a1bbcb278ae08fc8b"></a>
@@ -146,6 +243,139 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p class="definition">Definition at line <a class="el" href="vm_8c_source.html#l00076">76</a> of file <a class="el" href="vm_8c_source.html">vm.c</a>.</p>
+<div class="fragment"><div class="line"><span class="lineno">   76</span>                             {</div>
+<div class="line"><span class="lineno">   77</span> </div>
+<div class="line"><span class="lineno">   78</span>    WaitForSingleObject(<a class="code hl_variable" href="init_8c.html#a1f77d91812324575a3bd55f9ba07b4d1">userStartEvent</a>, INFINITE);</div>
+<div class="line"><span class="lineno">   79</span> </div>
+<div class="line"><span class="lineno">   80</span> </div>
+<div class="line"><span class="lineno">   81</span>   <span class="comment">// DebugBreak();</span></div>
+<div class="line"><span class="lineno">   82</span> </div>
+<div class="line"><span class="lineno">   83</span>    PULONG_PTR arbitrary_va;</div>
+<div class="line"><span class="lineno">   84</span>    <span class="keywordtype">unsigned</span> random_number;</div>
+<div class="line"><span class="lineno">   85</span>    <span class="keywordtype">unsigned</span> i;</div>
+<div class="line"><span class="lineno">   86</span>    <a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a> thread_info;</div>
+<div class="line"><span class="lineno">   87</span> </div>
+<div class="line"><span class="lineno">   88</span>    BOOL page_faulted;</div>
+<div class="line"><span class="lineno">   89</span>    BOOL redo_fault;</div>
+<div class="line"><span class="lineno">   90</span>    BOOL redo_try_same_address;</div>
+<div class="line"><span class="lineno">   91</span>    ULONG64 counter;</div>
+<div class="line"><span class="lineno">   92</span> </div>
+<div class="line"><span class="lineno">   93</span>    i = 0;</div>
+<div class="line"><span class="lineno">   94</span>    thread_info = (<a class="code hl_variable" href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a>)lpParam;</div>
+<div class="line"><span class="lineno">   95</span>    arbitrary_va = NULL;</div>
+<div class="line"><span class="lineno">   96</span>    redo_try_same_address = FALSE;</div>
+<div class="line"><span class="lineno">   97</span> </div>
+<div class="line"><span class="lineno">   98</span>    <a class="code hl_function" href="random__utils_8c.html#a6c0cb79f17ace71ea4c61044aa5e3c6b">InitializeThreadRNG</a>(&amp;thread_info-&gt;rng);</div>
+<div class="line"><span class="lineno">   99</span>      <span class="comment">// Now perform random accesses</span></div>
+<div class="line"><span class="lineno">  100</span> </div>
+<div class="line"><span class="lineno">  101</span><span class="preprocessor">#if DBG || spinEvents</span></div>
+<div class="line"><span class="lineno">  102</span>    <span class="keywordflow">while</span> (TRUE) {</div>
+<div class="line"><span class="lineno">  103</span>        </div>
+<div class="line"><span class="lineno">  104</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  105</span> </div>
+<div class="line"><span class="lineno">  106</span><span class="comment">//MB(1)/NUMBER_OF_USER_THREADS</span></div>
+<div class="line"><span class="lineno">  107</span> <span class="keywordflow">for</span> (; i &lt; <a class="code hl_define" href="structures_8h.html#a44d2b171cc92225ec0a76ef70fc9b531">MB</a>(1)/<a class="code hl_define" href="structures_8h.html#a6893ed9fb06f470b3c214434909d1a5e">NUMBER_OF_USER_THREADS</a>; i++) {</div>
+<div class="line"><span class="lineno">  108</span><span class="comment">//while (TRUE) {</span></div>
+<div class="line"><span class="lineno">  109</span><span class="preprocessor">        #endif</span></div>
+<div class="line"><span class="lineno">  110</span> </div>
+<div class="line"><span class="lineno">  111</span> </div>
+<div class="line"><span class="lineno">  112</span>        <span class="comment">// Randomly access different portions of the virtual address</span></div>
+<div class="line"><span class="lineno">  113</span>        <span class="comment">// space we obtained above.</span></div>
+<div class="line"><span class="lineno">  114</span>        <span class="comment">//</span></div>
+<div class="line"><span class="lineno">  115</span>        <span class="comment">// If we have never accessed the surrounding page size (4K)</span></div>
+<div class="line"><span class="lineno">  116</span>        <span class="comment">// portion, the operating system will receive a page fault</span></div>
+<div class="line"><span class="lineno">  117</span>        <span class="comment">// from the CPU and proceed to obtain a physical page and</span></div>
+<div class="line"><span class="lineno">  118</span>        <span class="comment">// install a PTE to map it - thus connecting the end-to-end</span></div>
+<div class="line"><span class="lineno">  119</span>        <span class="comment">// virtual address translation. Then the operating system</span></div>
+<div class="line"><span class="lineno">  120</span>        <span class="comment">// will tell the CPU to repeat the instruction that accessed</span></div>
+<div class="line"><span class="lineno">  121</span>        <span class="comment">// the virtual address and this time, the CPU will see the</span></div>
+<div class="line"><span class="lineno">  122</span>        <span class="comment">// valid PTE and proceed to obtain the physical contents</span></div>
+<div class="line"><span class="lineno">  123</span>        <span class="comment">// (without faulting to the operating system again).</span></div>
+<div class="line"><span class="lineno">  124</span>        page_faulted = FALSE;</div>
+<div class="line"><span class="lineno">  125</span> </div>
+<div class="line"><span class="lineno">  126</span> </div>
+<div class="line"><span class="lineno">  127</span> </div>
+<div class="line"><span class="lineno">  128</span>            <span class="keywordflow">if</span> (redo_try_same_address == FALSE) {</div>
+<div class="line"><span class="lineno">  129</span>                random_number = <a class="code hl_function" href="random__utils_8c.html#ac66203f343aa8754981ff7427f1c5897">GetNextRandom</a>(&amp;thread_info-&gt;rng);</div>
+<div class="line"><span class="lineno">  130</span><span class="preprocessor">#if 0</span></div>
+<div class="line"><span class="lineno">  131</span>                random_number += <a class="code hl_define" href="structures_8h.html#a5c723c0cc71b83224ead557db3ab74dd">KB</a>(256)*(thread_info-&gt;ThreadNumber + 2);</div>
+<div class="line"><span class="lineno">  132</span>                random_number &lt;&lt;= 18;</div>
+<div class="line"><span class="lineno">  133</span>                random_number |= (rand() &amp; (<a class="code hl_define" href="structures_8h.html#a5c723c0cc71b83224ead557db3ab74dd">KB</a>(256) -1));</div>
+<div class="line"><span class="lineno">  134</span><span class="preprocessor">#else</span></div>
+<div class="line"><span class="lineno">  135</span>            <span class="comment">//    random_number += KB(256)*(thread_info-&gt;ThreadNumber + 2);</span></div>
+<div class="line"><span class="lineno">  136</span><span class="preprocessor">#endif</span></div>
+<div class="line"><span class="lineno">  137</span> </div>
+<div class="line"><span class="lineno">  138</span>                random_number %= <a class="code hl_define" href="structures_8h.html#a8f84682134486247673ba0b44ba7968a">VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS</a>;<span class="comment">//virtual_address_size_in_unsigned_chunks;</span></div>
+<div class="line"><span class="lineno">  139</span> </div>
+<div class="line"><span class="lineno">  140</span>                <span class="comment">// Write the virtual address into each page. If we need to</span></div>
+<div class="line"><span class="lineno">  141</span>                <span class="comment">// debug anything, we&#39;ll be able to see these in the pages.</span></div>
+<div class="line"><span class="lineno">  142</span> </div>
+<div class="line"><span class="lineno">  143</span> </div>
+<div class="line"><span class="lineno">  144</span>                <span class="comment">// Ensure the write to the arbitrary virtual address doesn&#39;t</span></div>
+<div class="line"><span class="lineno">  145</span>                <span class="comment">// straddle a PAGE_SIZE boundary just to keep things simple for now.</span></div>
+<div class="line"><span class="lineno">  146</span>                random_number &amp;= ~0x7;</div>
+<div class="line"><span class="lineno">  147</span>                arbitrary_va = <a class="code hl_variable" href="init_8c.html#aaaf4624300194b91a31836695b593a30">vaStart</a> + random_number;</div>
+<div class="line"><span class="lineno">  148</span>               <span class="comment">// printf(&quot;arbitrary_va %p\n&quot;, arbitrary_va);</span></div>
+<div class="line"><span class="lineno">  149</span> </div>
+<div class="line"><span class="lineno">  150</span>            }</div>
+<div class="line"><span class="lineno">  151</span>        __try {</div>
+<div class="line"><span class="lineno">  152</span>            *arbitrary_va = (ULONG_PTR) arbitrary_va;</div>
+<div class="line"><span class="lineno">  153</span> </div>
+<div class="line"><span class="lineno">  154</span>        } __except (EXCEPTION_EXECUTE_HANDLER) {</div>
+<div class="line"><span class="lineno">  155</span>            page_faulted = TRUE;</div>
+<div class="line"><span class="lineno">  156</span>        }</div>
+<div class="line"><span class="lineno">  157</span> </div>
+<div class="line"><span class="lineno">  158</span>        <span class="keywordflow">if</span> (page_faulted) {</div>
+<div class="line"><span class="lineno">  159</span> </div>
+<div class="line"><span class="lineno">  160</span>            <span class="comment">//continuously fault on the same va</span></div>
+<div class="line"><span class="lineno">  161</span>            redo_fault = <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>;</div>
+<div class="line"><span class="lineno">  162</span>            counter = 0;</div>
+<div class="line"><span class="lineno">  163</span>            <span class="keywordflow">while</span> (redo_fault == <a class="code hl_define" href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a>) {</div>
+<div class="line"><span class="lineno">  164</span>                redo_fault = <a class="code hl_function" href="user__thread_8c.html#a15daaf165c91aa6784d5c54ea0acef75">pageFault</a>(arbitrary_va, lpParam);</div>
+<div class="line"><span class="lineno">  165</span> </div>
+<div class="line"><span class="lineno">  166</span>            }</div>
+<div class="line"><span class="lineno">  167</span>            redo_try_same_address = TRUE;</div>
+<div class="line"><span class="lineno">  168</span>            i--;</div>
+<div class="line"><span class="lineno">  169</span>           <span class="comment">// *arbitrary_va = (ULONG_PTR) arbitrary_va;</span></div>
+<div class="line"><span class="lineno">  170</span>        } <span class="keywordflow">else</span> {</div>
+<div class="line"><span class="lineno">  171</span>           <span class="comment">//recordAccess(arbitrary_va);</span></div>
+<div class="line"><span class="lineno">  172</span>            redo_try_same_address = FALSE;</div>
+<div class="line"><span class="lineno">  173</span>        }</div>
+<div class="line"><span class="lineno">  174</span> </div>
+<div class="line"><span class="lineno">  175</span>    }</div>
+<div class="line"><span class="lineno">  176</span> </div>
+<div class="line"><span class="lineno">  177</span>    printf(<span class="stringliteral">&quot;full_virtual_memory_test : finished accessing %u random virtual addresses\n&quot;</span>, i);</div>
+<div class="line"><span class="lineno">  178</span>   <span class="comment">// SetEvent(thread_info-&gt;WorkDoneHandle);</span></div>
+<div class="line"><span class="lineno">  179</span>    SetEvent(<a class="code hl_variable" href="init_8c.html#acefd683d0ec814a5f35e5e63e6744aac">userEndEvent</a>);</div>
+<div class="line"><span class="lineno">  180</span>    <span class="keywordflow">return</span> 0;</div>
+<div class="line"><span class="lineno">  181</span>}</div>
+<div class="ttc" id="ainit_8c_html_acefd683d0ec814a5f35e5e63e6744aac"><div class="ttname"><a href="init_8c.html#acefd683d0ec814a5f35e5e63e6744aac">userEndEvent</a></div><div class="ttdeci">HANDLE userEndEvent</div><div class="ttdef"><b>Definition</b> <a href="init_8c_source.html#l00083">init.c:83</a></div></div>
+<div class="ttc" id="arandom__utils_8c_html_a6c0cb79f17ace71ea4c61044aa5e3c6b"><div class="ttname"><a href="random__utils_8c.html#a6c0cb79f17ace71ea4c61044aa5e3c6b">InitializeThreadRNG</a></div><div class="ttdeci">VOID InitializeThreadRNG(THREAD_RNG_STATE *rng)</div><div class="ttdef"><b>Definition</b> <a href="random__utils_8c_source.html#l00009">random_utils.c:9</a></div></div>
+<div class="ttc" id="arandom__utils_8c_html_ac66203f343aa8754981ff7427f1c5897"><div class="ttname"><a href="random__utils_8c.html#ac66203f343aa8754981ff7427f1c5897">GetNextRandom</a></div><div class="ttdeci">ULONG64 GetNextRandom(THREAD_RNG_STATE *rng)</div><div class="ttdef"><b>Definition</b> <a href="random__utils_8c_source.html#l00036">random_utils.c:36</a></div></div>
+<div class="ttc" id="astructures_8h_html_a0d2bf865b114b5aa46dd6f5558f60df4"><div class="ttname"><a href="structures_8h.html#a0d2bf865b114b5aa46dd6f5558f60df4">PTHREAD_INFO</a></div><div class="ttdeci">* PTHREAD_INFO</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00196">structures.h:196</a></div></div>
+<div class="ttc" id="astructures_8h_html_a44d2b171cc92225ec0a76ef70fc9b531"><div class="ttname"><a href="structures_8h.html#a44d2b171cc92225ec0a76ef70fc9b531">MB</a></div><div class="ttdeci">#define MB(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00030">structures.h:30</a></div></div>
+<div class="ttc" id="astructures_8h_html_a51048a012b81ba95e75649ea0bbe9d08"><div class="ttname"><a href="structures_8h.html#a51048a012b81ba95e75649ea0bbe9d08">REDO_FAULT</a></div><div class="ttdeci">#define REDO_FAULT</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00098">structures.h:98</a></div></div>
+<div class="ttc" id="astructures_8h_html_a5c723c0cc71b83224ead557db3ab74dd"><div class="ttname"><a href="structures_8h.html#a5c723c0cc71b83224ead557db3ab74dd">KB</a></div><div class="ttdeci">#define KB(x)</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00029">structures.h:29</a></div></div>
+<div class="ttc" id="astructures_8h_html_a8f84682134486247673ba0b44ba7968a"><div class="ttname"><a href="structures_8h.html#a8f84682134486247673ba0b44ba7968a">VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS</a></div><div class="ttdeci">#define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS</div><div class="ttdef"><b>Definition</b> <a href="structures_8h_source.html#l00045">structures.h:45</a></div></div>
+<div class="ttc" id="auser__thread_8c_html_a15daaf165c91aa6784d5c54ea0acef75"><div class="ttname"><a href="user__thread_8c.html#a15daaf165c91aa6784d5c54ea0acef75">pageFault</a></div><div class="ttdeci">BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext)</div><div class="ttdoc">This function is the core of the program.</div><div class="ttdef"><b>Definition</b> <a href="user__thread_8c_source.html#l00170">user_thread.c:170</a></div></div>
+</div><!-- fragment -->
+<p class="reference">References <a class="el" href="random__utils_8c_source.html#l00036">GetNextRandom()</a>, <a class="el" href="random__utils_8c_source.html#l00009">InitializeThreadRNG()</a>, <a class="el" href="structures_8h_source.html#l00029">KB</a>, <a class="el" href="structures_8h_source.html#l00030">MB</a>, <a class="el" href="structures_8h_source.html#l00083">NUMBER_OF_USER_THREADS</a>, <a class="el" href="user__thread_8c_source.html#l00170">pageFault()</a>, <a class="el" href="structures_8h_source.html#l00196">PTHREAD_INFO</a>, <a class="el" href="structures_8h_source.html#l00098">REDO_FAULT</a>, <a class="el" href="init_8c_source.html#l00083">userEndEvent</a>, <a class="el" href="init_8c_source.html#l00082">userStartEvent</a>, <a class="el" href="init_8c_source.html#l00043">vaStart</a>, and <a class="el" href="structures_8h_source.html#l00045">VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS</a>.</p>
+
+<p class="reference">Referenced by <a class="el" href="init__threads_8c_source.html#l00027">createThreads()</a>.</p>
+<div id="dynsection-3" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the call graph for this function:</div>
+<div id="dynsection-3-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-3-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 3 --></div>
+</div>
+<div id="dynsection-4" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Here is the caller graph for this function:</div>
+<div id="dynsection-4-summary" class="dynsummary" style="display:block;">
+</div>
+<div id="dynsection-4-content" class="dyncontent" style="display:none;">
+<div class="center"><!-- SVG 4 --></div>
+</div>
 
 </div>
 </div>
