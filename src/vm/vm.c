@@ -44,13 +44,13 @@ full_virtual_memory_test(VOID) {
 
 
 
-     for (; i < NUMBER_OF_USER_THREADS; ++i) {
+     for (; i < config.number_of_user_threads; ++i) {
          WaitForSingleObject(userThreadHandles[i], INFINITE);
      }
     SetEvent(systemShutdownEvent);
 
     i = 0;
-    for (; i < NUMBER_OF_SYSTEM_THREADS; ++i) {
+    for (; i < config.number_of_system_threads; ++i) {
         WaitForSingleObject(systemThreadHandles[i], INFINITE);
     }
     ResetEvent(systemShutdownEvent);
@@ -81,7 +81,7 @@ DWORD testVM(LPVOID lpParam) {
    // DebugBreak();
 
     PULONG_PTR arbitrary_va;
-    unsigned random_number;
+    ULONG64 random_number;
     unsigned i;
     PTHREAD_INFO thread_info;
 
@@ -104,7 +104,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+ for (; i < MB(1)/config.number_of_user_threads; i++) {
 //while (TRUE) {
         #endif
 
@@ -135,7 +135,7 @@ DWORD testVM(LPVOID lpParam) {
             //    random_number += KB(256)*(thread_info->ThreadNumber + 2);
 #endif
 
-                random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
+                random_number %= config.virtual_address_size_in_unsigned_chunks;
 
                 // Write the virtual address into each page. If we need to
                 // debug anything, we'll be able to see these in the pages.

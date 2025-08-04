@@ -35,7 +35,7 @@ DWORD diskWriter (LPVOID info) {
 
     PTHREAD_INFO threadContext = (PTHREAD_INFO)info;
 
-    HANDLE* events[2];
+    HANDLE events[2];
     DWORD returnEvent;
     events[0] = writingStartEvent;
     events[1] = systemShutdownEvent;
@@ -44,7 +44,7 @@ DWORD diskWriter (LPVOID info) {
 
 
 
-        returnEvent = WaitForMultipleObjects(2,events, FALSE, INFINITE);
+        returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
         //if the system shutdown event was signaled, exit
         if (returnEvent - WAIT_OBJECT_0 == 1) {

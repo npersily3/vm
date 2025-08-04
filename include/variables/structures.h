@@ -26,30 +26,40 @@
 #define PAGE_SIZE                   4096
 // 52 bits is max that bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
 #define frame_number_size           40
-#define KB(x)                       (x*1024)
-#define MB(x)                       ((x) * 1024 * 1024)
-#define GB(x)                       ((x) * 1024 * 1024 * 1024)
-
-#if DBG
-
-#define VIRTUAL_ADDRESS_SIZE    PAGE_SIZE * 256//  GB(1)
-#define NUMBER_OF_PHYSICAL_PAGES 128
-
-#else
-
-#define VIRTUAL_ADDRESS_SIZE     GB(1)
-#define NUMBER_OF_PHYSICAL_PAGES  MB(512)/PAGE_SIZE
-
-#endif
-
-#define VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS        (VIRTUAL_ADDRESS_SIZE / sizeof (ULONG_PTR))
+#define KB(x)                       ((x) *  (ULONG64)1024)
+#define MB(x)                       (KB(x) * 1024)
+#define GB(x)                       (MB(x) * 1024)
 
 
+typedef struct {
+    ULONG64 virtual_address_size;
+    ULONG64 number_of_physical_pages;
+    ULONG64 virtual_address_size_in_unsigned_chunks;
 
-#define NUMBER_OF_DISK_DIVISIONS   1
-#define DISK_SIZE_IN_BYTES         (VIRTUAL_ADDRESS_SIZE - PAGE_SIZE * NUMBER_OF_PHYSICAL_PAGES + 2* PAGE_SIZE)
-#define DISK_SIZE_IN_PAGES         (DISK_SIZE_IN_BYTES / PAGE_SIZE)
-#define DISK_DIVISION_SIZE_IN_PAGES (DISK_SIZE_IN_PAGES / (NUMBER_OF_DISK_DIVISIONS) )
+    ULONG64 number_of_disk_divisions;
+    ULONG64 disk_size_in_bytes;
+    ULONG64 disk_size_in_pages;
+    ULONG64 disk_division_size_in_pages;
+
+    ULONG64 number_of_user_threads;
+    ULONG64 number_of_trimming_threads;
+    ULONG64 number_of_writing_threads;
+    ULONG64 number_of_threads;
+    ULONG64 number_of_system_threads;
+
+    ULONG64 size_of_transfer_va_space_in_pages;
+    ULONG64 stand_by_trim_threshold;
+    ULONG64 number_of_pages_to_trim_from_stand_by;
+    ULONG64 number_of_free_lists;
+
+    ULONG64 page_table_size_in_bytes;
+    ULONG64 number_of_ptes;
+    ULONG64 number_of_ptes_per_region;
+    ULONG64 number_of_pte_regions;
+} configuration;
+
+extern configuration config;
+
 #define EMPTY_PTE                  0
 
 #define AUTO_RESET              FALSE
@@ -80,17 +90,9 @@
 #define container_of(ptr, type, member) \
 ((type *)((char *)(ptr) - offsetof(type, member)))
 
-#define NUMBER_OF_USER_THREADS 8
-#define NUMBER_OF_ZEROING_THREADS 1
-#define NUMBER_OF_TRIMMING_THREADS 1
-#define NUMBER_OF_WRITING_THREADS 1
-//#define NUMBER_OF_SCHEDULING_THREADS 1
-
-#define NUMBER_OF_THREADS (NUMBER_OF_USER_THREADS + NUMBER_OF_ZEROING_THREADS + NUMBER_OF_TRIMMING_THREADS + NUMBER_OF_WRITING_THREADS )//+)// NUMBER_OF_SCHEDULING_THREADS)
-#define NUMBER_OF_SYSTEM_THREADS (NUMBER_OF_THREADS-NUMBER_OF_USER_THREADS)
 
 #define MAX_FAULTS 0xFFFFFF
-#define BATCH_SIZE (NUMBER_OF_PHYSICAL_PAGES / 10)
+#define BATCH_SIZE (512)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
@@ -115,10 +117,6 @@ InitializeCriticalSectionAndSpinCount((x), SPIN_COUNT)
 InitializeCriticalSection(x)
 #endif
 
-#define SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES (128)
-#define STAND_BY_TRIM_THRESHOLD (NUMBER_OF_PHYSICAL_PAGES / 10)
-#define NUMBER_OF_PAGES_TO_TRIM_FROM_STAND_BY (NUMBER_OF_PHYSICAL_PAGES / 10)
-#define NUMBER_OF_FREE_LISTS 8
 
 #define spinEvents 0
 
@@ -170,10 +168,7 @@ typedef struct {
 //
 // Page table configuration
 //
-#define PAGE_TABLE_SIZE_IN_BYTES (VIRTUAL_ADDRESS_SIZE / PAGE_SIZE * sizeof(pte))
-#define NUMBER_OF_PTES (PAGE_TABLE_SIZE_IN_BYTES / sizeof(pte))
-#define NUMBER_OF_PAGE_TABLE_LOCKS NUMBER_OF_PTES / 8
-#define SIZE_OF_PAGE_TABLE_DIVISION (PAGE_TABLE_SIZE_IN_BYTES/NUMBER_OF_PAGE_TABLE_LOCKS)
+
 
 //
 // Thread information structure
@@ -185,14 +180,12 @@ typedef struct {
 } THREAD_RNG_STATE;
 
 
-typedef struct  __declspec(align(64))  {
+typedef struct __declspec(align(64)) {
     ULONG ThreadNumber;
     ULONG ThreadId;
     ULONG64 TransferVaIndex;
     HANDLE ThreadHandle;
     THREAD_RNG_STATE rng;
-
-
 } THREAD_INFO, *PTHREAD_INFO;
 
 //
@@ -213,8 +206,6 @@ typedef struct {
 } pfn;
 
 
-
-
 #define NUMBER_OF_TIME_STAMPS 16
 #define BASELINE_HAZARD (1)
 #define LOG_BASELINE_HAZARD (0)
@@ -225,21 +216,18 @@ typedef struct {
 
 typedef struct {
     ULONG64 timeStamps[NUMBER_OF_TIME_STAMPS];
-    ULONG64:4, currentStamp;
-    ULONG64:4, numValidStamps;
+    ULONG64: 4, currentStamp;
+    ULONG64: 4, numValidStamps;
 
 
     double volatility;
     double drift;
-
 } stochastic_data;
 
 //
 //PTE_REGION  a section of 64 ptes
 //
 #define NUMBER_OF_AGES 8
-#define NUMBER_OF_PTES_PER_REGION 64
-#define NUMBER_OF_PTE_REGIONS (NUMBER_OF_PTES/NUMBER_OF_PTES_PER_REGION)
 #define LENGTH_OF_PREDICTION 10
 
 typedef struct {
@@ -247,9 +235,9 @@ typedef struct {
     stochastic_data statistics;
     CRITICAL_SECTION lock;
 
-    ULONG64:1, accessed;
-
+    ULONG64: 1, accessed;
 } PTE_REGION;
+
 typedef struct {
     SRWLOCK sharedLock;
 #if DBG
@@ -278,7 +266,6 @@ typedef struct {
     sharedLock sharedLock;
 
     pfn page;
-
 } listHead, *pListHead;
 
 

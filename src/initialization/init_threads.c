@@ -30,12 +30,12 @@ VOID createThreads(VOID) {
     PTHREAD_INFO ThreadContext;
     HANDLE Handle;
 
-    THREAD_INFO ThreadInfo[NUMBER_OF_THREADS] = {0};
+    THREAD_INFO ThreadInfo[config.number_of_threads] = {0};
 
-    THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS] = {0};
-    THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS] = {0};
-    THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS] = {0};
-    THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
+    THREAD_INFO UserThreadInfo[config.number_of_user_threads] = {0};
+    THREAD_INFO TrimmerThreadInfo[config.number_of_trimming_threads] = {0};
+    THREAD_INFO WriterThreadInfo[config.number_of_writing_threads] = {0};
+   // THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
    // THREAD_INFO SchedulerThreadInfo[NUMBER_OF_SCHEDULING_THREADS] = {0};
 
     ULONG maxThread = 0;
@@ -44,7 +44,7 @@ VOID createThreads(VOID) {
 
 
 
-    for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+    for (int i = 0; i < config.number_of_user_threads; ++i) {
         ThreadContext = &UserThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
         ThreadContext->TransferVaIndex = 0;
@@ -62,7 +62,7 @@ VOID createThreads(VOID) {
 
     threadHandleArrayOffset = maxThread;
 
-    for (int i = 0; i < NUMBER_OF_TRIMMING_THREADS; ++i) {
+    for (int i = 0; i < config.number_of_trimming_threads ; ++i) {
         ThreadContext = &TrimmerThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
 
@@ -76,7 +76,7 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
-    for (int i = 0; i < NUMBER_OF_WRITING_THREADS; ++i) {
+    for (int i = 0; i < config.number_of_writing_threads; ++i) {
         ThreadContext = &WriterThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
 
@@ -89,19 +89,19 @@ VOID createThreads(VOID) {
         maxThread++;
     }
 
-    for (int i = 0; i < NUMBER_OF_ZEROING_THREADS; ++i) {
-        ThreadContext = &ZeroIngThreadInfo[i];
-        ThreadContext->ThreadNumber = maxThread;
-
-
-        Handle = createNewThread(zeroingThread,ThreadContext);
-
-        ThreadContext->ThreadHandle = Handle;
-
-        systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
-
-        maxThread++;
-    }
+    // for (int i = 0; i < NUMBER_OF_ZEROING_THREADS; ++i) {
+    //     ThreadContext = &ZeroIngThreadInfo[i];
+    //     ThreadContext->ThreadNumber = maxThread;
+    //
+    //
+    //     Handle = createNewThread(zeroingThread,ThreadContext);
+    //
+    //     ThreadContext->ThreadHandle = Handle;
+    //
+    //     systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
+    //
+    //     maxThread++;
+    // }
     //
     // for (int i = 0; i < NUMBER_OF_SCHEDULING_THREADS; ++i) {
     //     ThreadContext = &SchedulerThreadInfo[i];
@@ -145,7 +145,7 @@ VOID initializePageTableLocks(VOID) {
     PTE_REGION* p;
 
     p = pteRegionsBase;
-    for (int i = 0; i < NUMBER_OF_PTE_REGIONS; ++i) {
+    for (int i = 0; i < config.number_of_pte_regions; ++i) {
         INITIALIZE_LOCK_DIRECT(p->lock);
         p++;
     }

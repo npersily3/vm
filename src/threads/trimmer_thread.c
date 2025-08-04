@@ -56,7 +56,7 @@ DWORD page_trimmer(LPVOID info) {
         }
 
         // while there is still stuff to trim and the arrays are not at capacity
-        while (headModifiedList.length < NUMBER_OF_PHYSICAL_PAGES / 4 && BatchIndex < BATCH_SIZE) {
+        while (headModifiedList.length < config.number_of_physical_pages / 4 && BatchIndex < BATCH_SIZE) {
 
             page = getActivePage(threadContext);
 

@@ -21,10 +21,10 @@ extern listHead headToBeZeroedList;
 
 //Free list
 
-extern listHead headFreeLists[NUMBER_OF_FREE_LISTS];
+extern listHead headFreeLists[config.number_of_free_lists];
 extern volatile LONG freeListAddIndex;
 extern volatile LONG freeListRemoveIndex;
-extern volatile ULONG64 freeListLength;
+extern volatile LONG64 freeListLength;
 
 
 //
@@ -42,7 +42,7 @@ extern volatile boolean standByPruningInProgress;
 extern PULONG_PTR vaStart;
 extern PULONG_PTR vaEnd;
 extern PVOID transferVaWriting;
-extern PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
+extern PVOID userThreadTransferVa[config.number_of_user_threads];
 extern PVOID zeroThreadTransferVa;
 
 
@@ -66,9 +66,9 @@ extern ULONG64* number_of_open_slots;
 //
 // Thread handles
 //
-extern HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
-extern HANDLE userThreadHandles[NUMBER_OF_USER_THREADS];
-extern HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
+extern HANDLE workDoneThreadHandles[config.number_of_threads];
+extern HANDLE userThreadHandles[config.number_of_user_threads];
+extern HANDLE systemThreadHandles[config.number_of_system_threads];
 
 //
 // Synchronization events
@@ -98,10 +98,10 @@ extern CRITICAL_SECTION serializeWriterandUser;
 //
 // Arrays of thread info
 //
-extern THREAD_INFO UserThreadInfo[NUMBER_OF_USER_THREADS];
-extern THREAD_INFO TrimmerThreadInfo[NUMBER_OF_TRIMMING_THREADS];
-extern THREAD_INFO WriterThreadInfo[NUMBER_OF_WRITING_THREADS];
-extern THREAD_INFO ZeroingThreadInfo[NUMBER_OF_ZEROING_THREADS];
+extern THREAD_INFO UserThreadInfo[config.number_of_user_threads];
+extern THREAD_INFO TrimmerThreadInfo[config.number_of_trimming_threads];
+extern THREAD_INFO WriterThreadInfo[config.number_of_writing_threads];
+//extern THREAD_INFO ZeroingThreadInfo[NUMBER_OF_ZEROING_THREADS];
 
 extern volatile LONG64 transferVaReadPage;
 

@@ -13,7 +13,7 @@ most_free_disk_portion(VOID) {
     ULONG64 index = 0;
 
     EnterCriticalSection(lockNumberOfSlots);
-    for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
+    for (int i = 0; i < config.number_of_disk_divisions; ++i) {
         if (max <= number_of_open_slots[i]) {
             max = number_of_open_slots[i];
             index = i;
@@ -37,16 +37,16 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
     freePortion = most_free_disk_portion();
 
 
-    start = diskActive + freePortion * (DISK_DIVISION_SIZE_IN_PAGES/64);
+    start = diskActive + freePortion * ( config.disk_division_size_in_pages / 64);
 
     if(number_of_open_slots[freePortion] == 0) {
         return COULD_NOT_FIND_SLOT;
     }
 
 
-    // accounts for extra slot case
-    end = start + DISK_DIVISION_SIZE_IN_PAGES/64;
-    if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
+    // accounts for the extra slot case
+    end = start + ((ULONG64) config.disk_division_size_in_pages / (ULONG64)64);
+    if (freePortion == config.number_of_disk_divisions - 1) {
         end += 1;
     }
 
@@ -92,16 +92,16 @@ ULONG64 get_free_disk_index(VOID) {
     freePortion = most_free_disk_portion();
 
 
-    start = diskActive + freePortion * (DISK_DIVISION_SIZE_IN_PAGES/64);
+    start = diskActive + freePortion * (config.disk_division_size_in_pages/64);
 
     if(number_of_open_slots[freePortion] == 0) {
         return COULD_NOT_FIND_SLOT;
     }
 
 
-    // accounts for extra slot case
-    end = start + DISK_DIVISION_SIZE_IN_PAGES/64;
-    if (freePortion == NUMBER_OF_DISK_DIVISIONS - 1) {
+    // accounts for the extra slot case
+    end = start + ( config.disk_division_size_in_pages  / (ULONG64)64);
+    if (freePortion == config.number_of_disk_divisions - 1) {
         end += 1;
     }
 
@@ -179,10 +179,10 @@ set_disk_space_free(ULONG64 diskIndex) {
     // there is truncation when stuff cant go in easily
 
 
-    diskIndexSection = diskIndex / DISK_DIVISION_SIZE_IN_PAGES;
+    diskIndexSection = (ULONG64) diskIndex /  (ULONG64) config.disk_division_size_in_pages;
 
-    if (diskIndexSection >= NUMBER_OF_DISK_DIVISIONS) {
-        diskIndexSection = NUMBER_OF_DISK_DIVISIONS - 1;
+    if (diskIndexSection >= config.number_of_disk_divisions) {
+        diskIndexSection = config.number_of_disk_divisions - 1;
     }
 
 

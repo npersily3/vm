@@ -20,16 +20,18 @@
 
 #pragma comment(lib, "onecore.lib")
 
+configuration config;
+
 volatile ULONG64 pageWaits;
 volatile ULONG64 totalTimeWaiting;
 
 //
 // Global variable definitions
 //
-listHead headFreeLists[NUMBER_OF_FREE_LISTS];
+listHead headFreeLists[config.number_of_free_lists];
  volatile LONG freeListAddIndex;
  volatile LONG freeListRemoveIndex;
-volatile ULONG64 freeListLength;
+volatile LONG64 freeListLength;
 volatile boolean standByPruningInProgress;
 
 listHead headActiveList;
@@ -43,7 +45,7 @@ pfn *endPFN;
 PULONG_PTR vaStart;
 PULONG_PTR vaEnd;
 PVOID transferVaWriting;
-PVOID userThreadTransferVa[NUMBER_OF_USER_THREADS];
+PVOID userThreadTransferVa[config.number_of_user_threads];
 PVOID zeroThreadTransferVa;
 ULONG_PTR physical_page_count;
 PULONG_PTR physical_page_numbers;
@@ -57,9 +59,9 @@ PULONG64 diskActiveEnd;
 PULONG64* diskActiveVa;
 ULONG64* number_of_open_slots;
 
-HANDLE workDoneThreadHandles[NUMBER_OF_THREADS];
-HANDLE userThreadHandles[NUMBER_OF_USER_THREADS];
-HANDLE systemThreadHandles[NUMBER_OF_SYSTEM_THREADS];
+HANDLE workDoneThreadHandles[config.number_of_threads];
+HANDLE userThreadHandles[config.number_of_user_threads];
+HANDLE systemThreadHandles[config.number_of_system_threads];
 
  PCRITICAL_SECTION lockFreeList;
  PCRITICAL_SECTION lockActiveList;
@@ -87,6 +89,37 @@ HANDLE systemShutdownEvent;
 
 
 HANDLE physical_page_handle;
+
+VOID init_config(VOID) {
+#if DBG
+    config.virtual_address_size = 256 * PAGE_SIZE;
+    config.number_of_physical_pages = 128;
+#else
+    config.virtual_address_size = GB(8);
+    config.number_of_physical_pages = GB(4);
+#endif
+    config.virtual_address_size_in_unsigned_chunks = config.virtual_address_size / sizeof(ULONG64);
+
+    config.number_of_disk_divisions = 1;
+    config.disk_size_in_bytes = (config.virtual_address_size - (PAGE_SIZE * config.number_of_physical_pages) + (2 * PAGE_SIZE));
+    config.disk_size_in_pages = config.disk_size_in_bytes / PAGE_SIZE;
+    config.disk_division_size_in_pages = config.disk_division_size_in_pages / config.number_of_disk_divisions;
+
+    config.number_of_user_threads = 8;
+    config.number_of_trimming_threads = 1;
+    config.number_of_writing_threads = 1;
+    config.number_of_threads = config.number_of_user_threads + config.number_of_trimming_threads + config.number_of_writing_threads;
+    config.number_of_system_threads = config.number_of_threads - config.number_of_user_threads;
+
+    config.size_of_transfer_va_space_in_pages = 128;
+    config.stand_by_trim_threshold = config.number_of_physical_pages / 10;
+    config.number_of_pages_to_trim_from_stand_by = config.number_of_physical_pages / 10;
+
+    config.page_table_size_in_bytes = config.virtual_address_size / PAGE_SIZE;
+    config.number_of_ptes = config.page_table_size_in_bytes / sizeof(pte);
+    config.number_of_ptes_per_region = 64;
+    config.number_of_pte_regions = config.number_of_ptes / config.number_of_ptes_per_region;
+}
 
 BOOL
 GetPrivilege(VOID) {
@@ -178,7 +211,7 @@ VOID init_pte_regions(VOID) {
     //nptodo add the case where NUMPTES is not divisible by 64
 
 
-    pteRegionsBase = (PTE_REGION*) init_memory(NUMBER_OF_PTE_REGIONS * sizeof(PTE_REGION));
+    pteRegionsBase = (PTE_REGION*) init_memory(config.number_of_pte_regions * sizeof(PTE_REGION));
 
 
 }
@@ -186,7 +219,7 @@ VOID init_pte_regions(VOID) {
 VOID init_pageTable(VOID) {
     ULONG64 numBytes;
     // Initialize the page table
-    numBytes = PAGE_TABLE_SIZE_IN_BYTES;
+    numBytes = config.page_table_size_in_bytes ;
     pageTable = (pte*)init_memory(numBytes);
 
     init_pte_regions();
@@ -196,9 +229,9 @@ VOID init_pageTable(VOID) {
 VOID init_disk(VOID) {
     ULONG64 numBytes;
     // Initialize disk structures
-    numBytes = DISK_SIZE_IN_BYTES;
+    numBytes = config.page_table_size_in_bytes;
     diskStart = init_memory(numBytes);
-    diskEnd = (ULONG64) diskStart + numBytes;
+
 
     init_disk_active();
     init_num_open_slots();
@@ -210,15 +243,12 @@ VOID init_disk_active(VOID) {
 
 
 // depending on our disk size check if our bits will go in evenly
-#if DISK_SIZE_IN_PAGES % 64 != 0
+if  (config.disk_division_size_in_pages  % 64) {
+    numEntries = config.disk_division_size_in_pages  / 64 + 1;
+} else {
+    numEntries = config.disk_division_size_in_pages / 64;
+}
 
-    numEntries = DISK_SIZE_IN_PAGES / 64 + 1;
-
-#else
-
-    numEntries = DISK_SIZE_IN_PAGES / 64;
-
-#endif
 
 
 
@@ -229,20 +259,21 @@ VOID init_disk_active(VOID) {
 
     //makes it so that the out of bounds portion that exists in our diskMeta data is never accessed
 
-#if DISK_SIZE_IN_PAGES % 64 != 0
+if (config.disk_division_size_in_pages % 64 != 0) {
     ULONG64 number_of_usable_bits;
     ULONG64 bitMask;
     bitMask = MAXULONG64;
 
-    number_of_usable_bits = (DISK_SIZE_IN_PAGES % 64) - 1;
+    number_of_usable_bits = (config.disk_division_size_in_pages % 64) - 1;
 
     bitMask &= (1 << (1 + number_of_usable_bits)) - 1;
 
 
 
     diskActive[numEntries - 1] = ~bitMask;
+}
 
-#endif
+
     diskActiveEnd = (PULONG64)((ULONG64) diskActive + numEntries);
 
 
@@ -256,7 +287,7 @@ VOID init_disk_active(VOID) {
 VOID init_num_open_slots(VOID) {
     ULONG64 numBytes;
 
-    numBytes = sizeof(ULONG64) * NUMBER_OF_DISK_DIVISIONS;
+    numBytes = sizeof(ULONG64) * config.number_of_disk_divisions;
     number_of_open_slots = (ULONG64*)malloc(numBytes);
 
     if (number_of_open_slots == NULL) {
@@ -265,8 +296,8 @@ VOID init_num_open_slots(VOID) {
     }
 
     // if you switch back to more regions, change this back
-    for (int i = 0; i < NUMBER_OF_DISK_DIVISIONS; ++i) {
-        number_of_open_slots[i] = DISK_SIZE_IN_PAGES - 1;
+    for (int i = 0; i < config.number_of_disk_divisions ; ++i) {
+        number_of_open_slots[i] = config.disk_division_size_in_pages - 1;
     }
     // number_of_open_slots[NUMBER_OF_DISK_DIVISIONS - 1] += 2;
     // number_of_open_slots[0] -= 1;
@@ -294,12 +325,12 @@ VOID init_pfns(VOID) {
 }
 VOID init_free_list(VOID) {
 
-    for (int i = 0; i < NUMBER_OF_FREE_LISTS; ++i) {
+    for (int i = 0; i < config.number_of_free_lists ; ++i) {
         init_list_head(&headFreeLists[i]);
     }
     freeListAddIndex = 0;
     freeListRemoveIndex = 0;
-    freeListLength = NUMBER_OF_PHYSICAL_PAGES;
+    freeListLength = config.number_of_physical_pages ;
 
     // Add every page to the free list
     for (int i = 0; i < physical_page_count; ++i) {
@@ -324,7 +355,7 @@ VOID init_free_list(VOID) {
         InsertTailList(&headFreeLists[freeListAddIndex], &new_pfn->entry);
 
         freeListAddIndex++;
-        freeListAddIndex %= NUMBER_OF_FREE_LISTS;
+        freeListAddIndex %= config.number_of_free_lists ;
     }
 }
 VOID init_lists(VOID) {
@@ -375,7 +406,7 @@ BOOL getPhysicalPages (VOID) {
         return FALSE;
     }
 
-    physical_page_count = NUMBER_OF_PHYSICAL_PAGES;
+    physical_page_count = config.number_of_physical_pages ;
     physical_page_numbers = (PULONG_PTR)malloc(physical_page_count * sizeof(ULONG_PTR));
 
     if (physical_page_numbers == NULL) {
@@ -392,10 +423,10 @@ BOOL getPhysicalPages (VOID) {
         return FALSE;
     }
 
-    if (physical_page_count != NUMBER_OF_PHYSICAL_PAGES) {
-        printf("full_virtual_memory_test : allocated only %llu pages out of %u pages requested\n",
+    if (physical_page_count != config.number_of_physical_pages ) {
+        printf("full_virtual_memory_test : allocated only %llu pages out of %llu pages requested\n",
                physical_page_count,
-               NUMBER_OF_PHYSICAL_PAGES);
+               config.number_of_physical_pages );
     }
 
     return TRUE;
@@ -413,18 +444,18 @@ BOOL initVA () {
 
     vaStart = (PULONG_PTR)VirtualAlloc2(NULL,
                                         NULL,
-                                        VIRTUAL_ADDRESS_SIZE,
+                                        config.virtual_address_size ,
                                         MEM_RESERVE | MEM_PHYSICAL,
                                         PAGE_READWRITE,
                                         &parameter,
                                         1);
     if (vaStart == NULL) {
-        printf("Failed to allocate virtual address space: size %I64x \n ", VIRTUAL_ADDRESS_SIZE);
+        printf("Failed to allocate virtual address space: size %I64x \n ", config.virtual_address_size);
         DebugBreak();
         exit(1);
     }
 
-    vaEnd = (PULONG64) ((ULONG64) vaStart + VIRTUAL_ADDRESS_SIZE);
+    vaEnd = (PULONG64) ((ULONG64) vaStart + config.virtual_address_size);
 
     transferVaWriting = (PULONG_PTR)VirtualAlloc2(NULL,
                                         NULL,
@@ -450,10 +481,10 @@ BOOL initVA () {
         return FALSE;
     }
 
-    for (int i = 0; i < NUMBER_OF_USER_THREADS; ++i) {
+    for (int i = 0; i < config.number_of_user_threads; ++i) {
         userThreadTransferVa[i] = (PULONG_PTR)VirtualAlloc2(NULL,
                                             NULL,
-                                            SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES * PAGE_SIZE,
+                                            config.size_of_transfer_va_space_in_pages * PAGE_SIZE,
                                             MEM_RESERVE | MEM_PHYSICAL,
                                             PAGE_READWRITE,
                                             &parameter,
@@ -475,7 +506,7 @@ ULONG64 getMaxFrameNumber(VOID) {
 
     ULONG64 i;
 
-    for (i = 0; i < NUMBER_OF_PHYSICAL_PAGES; ++i) {
+    for (i = 0; i < config.number_of_physical_pages ; ++i) {
         maxFrameNumber = max(maxFrameNumber, physical_page_numbers[i]);
     }
     return maxFrameNumber;
