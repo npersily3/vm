@@ -306,12 +306,17 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
         removeFromMiddleOfList(&vm.lists.standby, page, threadInfo);
 
         set_disk_space_free(page->diskIndex);
+#if DBG
+        page->diskIndex = 0;
+#endif
 
 
     } else {
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfList(&vm.lists.modified, page, threadInfo);
     }
+
+
     // we can leave this lock because it is no longer on a list, so no other operations like a list removal but be poking at this page
     // A faulter that is accessing the same region will be stopped by a pagetable lock
     leavePageLock(page, threadInfo);
@@ -594,6 +599,11 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
     freeThreadMapping(threadContext);
 
     set_disk_space_free(diskIndex);
+#if DBG
+    pfn* page = getPFNfromFrameNumber(frameNumber);
+    page->diskIndex = 0;
+
+#endif
 }
 
 /**

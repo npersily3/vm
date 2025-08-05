@@ -204,7 +204,11 @@ main(int argc, char **argv) {
     // store, bringing them back from backing store, protecting them, etc.
     //
     // This is where we can be as creative as we like, the sky's the limit !
+    memset (&vm, 0, sizeof(vm));
+    //calls get physical pages, because his parameters might change
 
+
+    init_config();
 
     full_virtual_memory_test();
 
@@ -212,6 +216,3 @@ main(int argc, char **argv) {
 }
 
 
-
-//nptodo change how arbitrary va is changed
-//nptodo make sure free list locks are acquired correctly

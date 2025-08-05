@@ -43,7 +43,7 @@ VOID init_config(VOID) {
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
     vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
 
-    vm.config.number_of_user_threads = 1;
+    vm.config.number_of_user_threads = 8;
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
     vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.number_of_writing_threads;
@@ -140,11 +140,7 @@ CreateSharedMemorySection(VOID) {
 VOID
 init_virtual_memory(VOID) {
 
-  memset (&vm, 0, sizeof(vm));
-    //calls get physical pages, because his parameters might change
 
-
-    init_config();
 
     initVA();
 
@@ -185,7 +181,7 @@ VOID init_pageTable(VOID) {
 VOID init_disk(VOID) {
     ULONG64 numBytes;
     // Initialize disk structures
-    numBytes = vm.config.page_table_size_in_bytes;
+    numBytes = vm.config.disk_size_in_bytes;
     vm.disk.start = init_memory(numBytes);
 
 

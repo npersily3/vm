@@ -148,7 +148,9 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
         // will put it on the active list
         if(page->isBeingWritten == FALSE) {
             set_disk_space_free(page->diskIndex);
-
+#if DBG
+            page->diskIndex = 0;
+#endif
             // if a pte/page pair had been freed, the user thread does not want to wait for the writer thread
             // to finish in order to release locks, so the faulter signals this status and tells us to put this page on
             // the freelist

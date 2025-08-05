@@ -96,8 +96,11 @@ bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
         headToAdd->length = number_of_pages_removed;
 
         headToRemove->entry.Flink = &page->entry;
+
         if (&headToRemove->entry == &page->entry) {
             headToRemove->entry.Blink = &headToRemove->entry;
+        } else {
+            page->entry.Blink = &headToRemove->entry;
         }
     }
 

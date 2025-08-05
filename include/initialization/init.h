@@ -12,6 +12,7 @@
 // Initialization functions
 //
 BOOL GetPrivilege(VOID);
+VOID init_config(VOID);
 VOID init_virtual_memory(VOID);
 
 ULONG64 getMaxFrameNumber(VOID);

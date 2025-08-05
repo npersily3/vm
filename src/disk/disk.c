@@ -19,6 +19,7 @@ most_free_disk_portion(VOID) {
             index = i;
         }
     }
+    ASSERT(index == 0)
     //LeaveCriticalSection(lockNumberOfSlots);
 
     return index;
@@ -35,7 +36,7 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
     BOOL isNotAtEnd = TRUE;
     BOOL arrayIsNotFull = TRUE;
     freePortion = most_free_disk_portion();
-
+    ASSERT(freePortion == 0)
 
     start = vm.disk.active + freePortion * ( vm.config.disk_division_size_in_pages / 64);
 
@@ -63,6 +64,7 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
                  start++;
             }
 
+            ASSERT(freePortion == 0)
             InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
             diskIndices[numDiskSlotsFilled] = returnValue;
@@ -173,10 +175,12 @@ set_disk_space_free(ULONG64 diskIndex) {
     ULONG64 bitOffset;
     ULONG64 diskHasChanged;
 
-
     ULONG64 diskIndexSection;
+
     // this rounds down the disk index given to the nearest disk division. it works by taking advantage of the fact that
     // there is truncation when stuff cant go in easily
+#if 0
+
 
 
     diskIndexSection = (ULONG64) diskIndex /  (ULONG64) vm.config.disk_division_size_in_pages;
@@ -184,7 +188,9 @@ set_disk_space_free(ULONG64 diskIndex) {
     if (diskIndexSection >= vm.config.number_of_disk_divisions) {
         diskIndexSection = vm.config.number_of_disk_divisions - 1;
     }
-
+#else
+    diskIndexSection = 0;
+#endif
 
     // round down to the nearest ULONG64
     diskMetaDataIndex = (diskIndex >> 6);
@@ -219,6 +225,7 @@ set_disk_space_free(ULONG64 diskIndex) {
             break;
         }
         oldDiskSlotContents = diskHasChanged;
+        newDiskSlotContents = oldDiskSlotContents & ~((ULONG64)1 << bitOffset);
     }
 
 
