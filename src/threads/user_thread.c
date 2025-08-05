@@ -23,7 +23,7 @@ VOID spinWhileWaiting(VOID) {
     DWORD status;
 
     while (TRUE) {
-        status = WaitForSingleObject(writingEndEvent, 0);
+        status = WaitForSingleObject(vm.events.writingEnd, 0);
         if (status != WAIT_TIMEOUT) {
             return;
         }

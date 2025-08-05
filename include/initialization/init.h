@@ -12,7 +12,8 @@
 // Initialization functions
 //
 BOOL GetPrivilege(VOID);
-VOID init_config(VOID);
+VOID init_base_config(VOID);
+VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, ULONG64 physicalInGigs, ULONG64 numFreeLists);
 VOID init_virtual_memory(VOID);
 
 ULONG64 getMaxFrameNumber(VOID);

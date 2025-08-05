@@ -207,8 +207,26 @@ main(int argc, char **argv) {
     memset (&vm, 0, sizeof(vm));
     //calls get physical pages, because his parameters might change
 
+    if (argc >= 1) {
+        if (argc != 5) {
+            printf("should be of format -> vm_debug [numUserThreads] [vaSizeInGigs] [paSizeInGigs]  [numFreeLists]");
+            exit(1);
+        }
 
-    init_config();
+        ULONG64 userThreads = (ULONG64) atoi(argv[1]);
+        ULONG64 vaSizeInGigs = (ULONG64) atoi(argv[2]);
+        ULONG64 paSizeInGigs = (ULONG64) atoi(argv[3]);
+        ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
+
+
+        init_config_params(userThreads, vaSizeInGigs, paSizeInGigs, numFreeLists);
+    } else {
+        init_base_config();
+    }
+
+
+
+    DebugBreak();
 
     full_virtual_memory_test();
 
