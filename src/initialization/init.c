@@ -30,17 +30,19 @@ VOID init_config(VOID) {
     config.virtual_address_size = 256 * PAGE_SIZE;
     config.number_of_physical_pages = 128;
 #else
-    vm.config.virtual_address_size = GB(1);
-    vm.config.number_of_physical_pages = MB(512);
+    vm.config.virtual_address_size = MB(1);
+    vm.config.number_of_physical_pages = 64;
 #endif
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
+
+    getPhysicalPages();
 
     vm.config.number_of_disk_divisions = 1;
     vm.config.disk_size_in_bytes = (vm.config.virtual_address_size - (PAGE_SIZE * vm.config.number_of_physical_pages) + (2 * PAGE_SIZE));
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
-    vm.config.disk_division_size_in_pages = vm.config.disk_division_size_in_pages / vm.config.number_of_disk_divisions;
+    vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
 
-    vm.config.number_of_user_threads = 8;
+    vm.config.number_of_user_threads = 1;
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
     vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.number_of_writing_threads;
@@ -54,6 +56,8 @@ VOID init_config(VOID) {
     vm.config.number_of_ptes = vm.config.page_table_size_in_bytes / sizeof(pte);
     vm.config.number_of_ptes_per_region = 64;
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
+
+    vm.config.number_of_free_lists = 8;
 }
 
 BOOL
@@ -133,8 +137,9 @@ CreateSharedMemorySection(VOID) {
 VOID
 init_virtual_memory(VOID) {
 
+    //calls get physical pages, because his parameters might change
     init_config();
-    getPhysicalPages();
+
     initVA();
     init_pfns();
     init_pageTable();
@@ -147,7 +152,7 @@ VOID init_pte_regions(VOID) {
     //nptodo add the case where NUMPTES is not divisible by 64
 
 
-    vm.pte.RegionsBase = (PTE_REGION*) init_memory(vm.config.number_of_pte_regions * sizeof(PTE_REGION));
+    vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
 
 
 }
@@ -179,10 +184,10 @@ VOID init_disk_active(VOID) {
 
 
 // depending on our disk size check if our bits will go in evenly
-if  (vm.config.disk_division_size_in_pages  % 64) {
-    numEntries = vm.config.disk_division_size_in_pages  / 64 + 1;
+if  (vm.config.disk_size_in_pages  % 64) {
+    numEntries = vm.config.disk_size_in_pages  / 64 + 1;
 } else {
-    numEntries = vm.config.disk_division_size_in_pages / 64;
+    numEntries = vm.config.disk_size_in_pages / 64;
 }
 
 
@@ -451,6 +456,7 @@ PVOID init_memory(ULONG64 numBytes) {
 
     if (new == NULL) {
         printf("malloc failed\n");
+        DebugBreak();
         exit(1);
     }
 
