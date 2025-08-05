@@ -251,7 +251,7 @@ VOID init_pfns(VOID) {
         printf("Failed to reserve memory for PFN database\n");
         return;
     }
-     vm.pfn.start =  vm.pfn.start + max;
+     vm.pfn.end =  vm.pfn.start + max;
 
     init_lists();
 
@@ -284,6 +284,7 @@ VOID init_free_list(VOID) {
         // Commit the full page(s) that contain this pfn structure
         if (VirtualAlloc(startPage, commitSize, MEM_COMMIT, PAGE_READWRITE) != startPage) {
             printf("Failed to commit at expected address\n");
+            exit(1);
         }
 
         // Now initialize the pfn structure
