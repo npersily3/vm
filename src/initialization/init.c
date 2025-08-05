@@ -27,11 +27,12 @@ state vm;
 
 VOID init_config(VOID) {
 #if DBG
-    config.virtual_address_size = 256 * PAGE_SIZE;
-    config.number_of_physical_pages = 128;
-#else
     vm.config.virtual_address_size = 256 * PAGE_SIZE;
     vm.config.number_of_physical_pages = 128;
+#else
+
+    vm.config.virtual_address_size = GB(1);
+    vm.config.number_of_physical_pages = MB(512)/PAGE_SIZE;
 #endif
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
 
@@ -52,8 +53,10 @@ VOID init_config(VOID) {
     vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 10;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 10;
 
-    vm.config.page_table_size_in_bytes = vm.config.virtual_address_size / PAGE_SIZE;
-    vm.config.number_of_ptes = vm.config.page_table_size_in_bytes / sizeof(pte);
+
+    vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
+    vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
+
     vm.config.number_of_ptes_per_region = 64;
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
 
@@ -137,14 +140,24 @@ CreateSharedMemorySection(VOID) {
 VOID
 init_virtual_memory(VOID) {
 
+  memset (&vm, 0, sizeof(vm));
     //calls get physical pages, because his parameters might change
+
+
     init_config();
 
     initVA();
+
     init_pfns();
+
     init_pageTable();
+
     init_disk();
+
    initThreads();
+
+
+
 
 }
 VOID init_pte_regions(VOID) {

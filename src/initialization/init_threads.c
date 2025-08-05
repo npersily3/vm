@@ -145,7 +145,6 @@ VOID initializePageTableLocks(VOID) {
     p = vm.pte.RegionsBase;
     for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
         InitializeCriticalSection(&p->lock);
-        DebugBreak();
         p++;
     }
 }

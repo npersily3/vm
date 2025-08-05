@@ -137,7 +137,7 @@ PVOID getThreadMapping(PTHREAD_INFO threadContext) {
     PVOID va = (PVOID) ((ULONG64) currentTransferVa + PAGE_SIZE  * threadContext->TransferVaIndex);
 
     threadContext->TransferVaIndex += 1;
-    ASSERT(threadContext->TransferVaIndex <= SIZE_OF_TRANSFER_VA_SPACE_IN_PAGES);
+    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_transfer_va_space_in_pages);
 
     return va;
 }
@@ -671,7 +671,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 
         if (gotFreeListLock) {
 #if DBG
-        validateList(&headFreeLists[localFreeListIndex]);
+        validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
             // now we have a locked page
             entry = RemoveHeadList(&vm.lists.free.heads[localFreeListIndex]);
@@ -682,7 +682,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                 page = container_of(entry, pfn, entry);
             }
 #if DBG
-            validateList(&headFreeLists[localFreeListIndex]);
+            validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
             // now that the page is off the list we no longer need to lock the list
