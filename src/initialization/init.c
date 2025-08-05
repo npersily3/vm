@@ -30,8 +30,8 @@ VOID init_config(VOID) {
     config.virtual_address_size = 256 * PAGE_SIZE;
     config.number_of_physical_pages = 128;
 #else
-    vm.config.virtual_address_size = MB(1);
-    vm.config.number_of_physical_pages = 64;
+    vm.config.virtual_address_size = 256 * PAGE_SIZE;
+    vm.config.number_of_physical_pages = 128;
 #endif
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
 
@@ -153,6 +153,8 @@ VOID init_pte_regions(VOID) {
 
 
     vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
+
+
 
 
 }

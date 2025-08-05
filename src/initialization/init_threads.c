@@ -128,7 +128,6 @@ VOID createEvents(VOID) {
     vm.events.writingStart = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     vm.events.trimmingStart = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     vm.events.writingEnd = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
-    vm.events.userEnd = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
     //  zeroingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     vm.events.systemShutdown = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
 }
@@ -146,6 +145,7 @@ VOID initializePageTableLocks(VOID) {
     p = vm.pte.RegionsBase;
     for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
         InitializeCriticalSection(&p->lock);
+        DebugBreak();
         p++;
     }
 }
