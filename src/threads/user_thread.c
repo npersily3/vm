@@ -644,7 +644,11 @@ BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
  * @return Returns a free page.
  * @post The caller must release the page lock of the returned page.
  */
+//TODO change it so that each thread walks down differently,
+// TODO batch remove from the global free list into a local list.
+// TODO think about this local list as a loan and have the trimmer or someone else take it back
 pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
+
     ULONG64 localFreeListIndex;
     PLIST_ENTRY entry;
     pfn* page;

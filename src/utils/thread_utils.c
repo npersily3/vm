@@ -43,6 +43,8 @@ InsertTailListDebug(
 }
 #endif
 
+
+// Basic validation function of a list
 VOID validateList(pListHead head) {
     LIST_ENTRY* currentEntry;
     ULONG64 forwardLength = 0;
@@ -110,6 +112,8 @@ VOID validateList(pListHead head) {
     return;
 }
 
+
+// my own implementation of a critical section using interlocks
 void acquireLock(PULONG64 lock) {
 
     ULONG64 oldValueComparator;
@@ -140,6 +144,8 @@ BOOL tryAcquireLock(PULONG64 lock) {
     return TRUE;
 }
 
+
+// Wrappers for acquiring srw locks. where my debug versions trigger if indicated to
 VOID acquire_srw_shared(sharedLock* lock) {
 #if DBG
     debug_acquire_srw_shared(lock, "unknown", 0);
@@ -173,6 +179,7 @@ VOID release_srw_exclusive(sharedLock* lock) {
 }
 
 // Debug-only implementation functions
+// key differences are storing each shared holder in a list and the thread id of an exclusive owner
 #if DBG
 
 VOID debug_acquire_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
@@ -241,7 +248,7 @@ VOID debug_release_srw_exclusive(sharedLock* lock) {
 }
 #endif
 
-
+// wrapper for pagelocks to help with debugging
 VOID enterPageLock(pfn* page, PTHREAD_INFO info) {
 
     ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)

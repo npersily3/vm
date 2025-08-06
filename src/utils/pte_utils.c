@@ -5,7 +5,7 @@
 #include "../../include/variables/structures.h"
 #include "../../include/variables/globals.h"
 #include "../../include/utils/pte_utils.h"
-
+// Simple conversion and validation functions
 pte*
 va_to_pte(ULONG64 va) {
     ASSERT(isVaValid(va))

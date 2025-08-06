@@ -69,6 +69,15 @@ full_virtual_memory_test(VOID) {
 
     printf("pagewaits %llu \n",   vm.misc.pageWaits);
     printf("total time waiting %llu ticks\n",   (vm.misc.totalTimeWaiting));
+
+
+    printf("num physical: %llu \n", vm.config.number_of_physical_pages* PAGE_SIZE/GB(1));
+    printf("num virtual: %llu G\n", vm.config.virtual_address_size/GB(1));
+    printf("num userthreads: %llu \n", vm.config.number_of_user_threads);
+    printf("num freelists: %llu \n", vm.config.number_of_free_lists);
+
+
+
     return;
 }
 
@@ -104,7 +113,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1) / (vm.config.number_of_user_threads); i++) {
+ for (; i < MB(1); i++) {
 //while (TRUE) {
         #endif
 
@@ -150,6 +159,7 @@ DWORD testVM(LPVOID lpParam) {
             }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
+
 
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             page_faulted = TRUE;
@@ -207,7 +217,7 @@ main(int argc, char **argv) {
     memset (&vm, 0, sizeof(vm));
     //calls get physical pages, because his parameters might change
 
-    if (argc >= 1) {
+    if (argc > 1) {
         if (argc != 5) {
             printf("should be of format -> vm_debug [numUserThreads] [vaSizeInGigs] [paSizeInGigs]  [numFreeLists]");
             exit(1);
@@ -226,7 +236,6 @@ main(int argc, char **argv) {
 
 
 
-    DebugBreak();
 
     full_virtual_memory_test();
 

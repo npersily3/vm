@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -118,7 +118,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 1
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -134,14 +134,24 @@ InitializeCriticalSection(&(x))
 // PTE format definitions
 //
 typedef struct {
+    // bit that indicates to the cpu that indicates if it has a valid frame number
     ULONG64 valid: 1;
+    // indicates if the pte was accessed
+    ULONG64 access: 1;
+    // indicates if where the virtual pages contents are
     ULONG64 transition: 2;
+    // the physical frame number associated with the pte
     ULONG64 frameNumber: frame_number_size;
 } validPte;
 
 typedef struct {
+    // bit that indicates to the cpu that indicates if it has a invalid frame number
     ULONG64 mustBeZero: 1;
+    // in this format these bits do not matter
+    ULONG64 access: 1;
     ULONG64 transition: 2;
+
+    // disk slot where the contents are
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
 
@@ -151,8 +161,13 @@ typedef struct {
 #define STAND_BY_LIST 3
 
 typedef struct {
+    // in this format a pte must be unmapped
     ULONG64 mustBeZero: 1;
+    // tracks accesses
+    ULONG64 access: 1;
+    // tracks if it can be rescued out of a write or trim
     ULONG64 contentsLocation: 2;
+    // the frame number to retrieve the contents from
     ULONG64 frameNumber: frame_number_size;
 } transitionPte;
 
@@ -179,7 +194,7 @@ typedef struct {
     ULONG64 counter;
 } THREAD_RNG_STATE;
 
-
+// Main components are the transfer va index,
 typedef struct __declspec(align(64)) {
     ULONG ThreadNumber;
     ULONG ThreadId;
