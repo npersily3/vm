@@ -39,8 +39,8 @@ DWORD page_trimmer(LPVOID info) {
 
     HANDLE events[2];
     DWORD returnEvent;
-    events[0] = trimmingStartEvent;
-    events[1] = systemShutdownEvent;
+    events[0] = vm.events.trimmingStart;
+    events[1] = vm.events.systemShutdown;
 
 
     while (TRUE) {
@@ -56,7 +56,7 @@ DWORD page_trimmer(LPVOID info) {
         }
 
         // while there is still stuff to trim and the arrays are not at capacity
-        while (headModifiedList.length < NUMBER_OF_PHYSICAL_PAGES / 4 && BatchIndex < BATCH_SIZE) {
+        while ((vm.lists.modified.length < vm.config.number_of_physical_pages / 4) && BatchIndex < BATCH_SIZE) {
 
             page = getActivePage(threadContext);
 
@@ -96,11 +96,11 @@ DWORD page_trimmer(LPVOID info) {
             }
         }
         if (doubleBreak == TRUE) {
-            SetEvent(writingStartEvent);
+            SetEvent(vm.events.writingStart);
             continue;
         }
         if (BatchIndex == 0) {
-            SetEvent(writingStartEvent);
+            SetEvent(vm.events.writingStart);
             continue;
         }
 
@@ -111,7 +111,7 @@ DWORD page_trimmer(LPVOID info) {
         LeaveCriticalSection(trimmedPageTableLock);
 
         //nptodo add a condition around this
-        SetEvent(writingStartEvent);
+        SetEvent(vm.events.writingStart);
 
 
     }
@@ -127,7 +127,7 @@ pfn* getActivePage(PTHREAD_INFO threadContext) {
 
     pfn* page;
 
-    page = RemoveFromHeadofPageList(&headActiveList, threadContext);
+    page = RemoveFromHeadofPageList(&vm.lists.active, threadContext);
 
 
     if (page == LIST_IS_EMPTY) {
@@ -146,7 +146,7 @@ VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
 
     if (MapUserPhysicalPagesScatter((PVOID)virtualAddresses, batchSize, NULL) == FALSE) {
         DebugBreak();
-        printf("full_virtual_memory_test : could not unmap VA %p\n", transferVaWriting);
+        printf("full_virtual_memory_test : could not unmap VA %llu\n", virtualAddresses[0]);
         return;
     }
 }
@@ -165,7 +165,7 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
         enterPageLock(page, threadContext);
-        addPageToTail(&headModifiedList, page, threadContext);
+        addPageToTail(&vm.lists.modified, page, threadContext);
         leavePageLock(page, threadContext);
     }
 }
@@ -181,16 +181,17 @@ BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
     pfn* nextPage;
     PTE_REGION* nextRegion;
     sharedLock* lock;
-    lock = &headActiveList.sharedLock;
+    lock = &vm.lists.active.sharedLock;
 
     // Peek ahead
     // TODO make this a no fence on the entry
-    enterPageLock(&headActiveList.page, info);
-    nextPage = container_of(headActiveList.entry.Flink, pfn, entry);
-    leavePageLock(&headActiveList.page, info);
+    // acquire shared
+    enterPageLock(&vm.lists.active.page, info);
+    nextPage = container_of(&vm.lists.active.entry.Flink, pfn, entry);
+    leavePageLock(&vm.lists.active.page, info);
 
 
-    if (&headActiveList.entry == &nextPage->entry) {
+    if (&vm.lists.active.entry == &nextPage->entry) {
         return LIST_IS_EMPTY;
     }
 

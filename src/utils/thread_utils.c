@@ -43,13 +43,15 @@ InsertTailListDebug(
 }
 #endif
 
+
+// Basic validation function of a list
 VOID validateList(pListHead head) {
     LIST_ENTRY* currentEntry;
     ULONG64 forwardLength = 0;
     ULONG64 backwardLength = 0;
 
 
-    const ULONG64 MAX_EXPECTED_LENGTH = NUMBER_OF_PHYSICAL_PAGES + 10; // Safety limit
+    const ULONG64 MAX_EXPECTED_LENGTH = vm.config.number_of_physical_pages + 10; // Safety limit
 
     // Check empty list case
     if (head->length == 0) {
@@ -62,11 +64,9 @@ VOID validateList(pListHead head) {
     currentEntry = head->entry.Flink;
     while (currentEntry != &head->entry && forwardLength < MAX_EXPECTED_LENGTH) {
         // Check for cross-list corruption
-        ASSERT(currentEntry != &headModifiedList.entry &&
-               currentEntry != &headStandByList.entry &&
-               currentEntry != &headActiveList.entry &&
-              // currentEntry != &headFreeList.entry &&
-               currentEntry != &headToBeZeroedList.entry);
+        ASSERT(currentEntry != &vm.lists.modified.entry &&
+               currentEntry != &vm.lists.standby.entry &&
+               currentEntry != &vm.lists.active.entry);
 
         // Validate bidirectional linking
         if (currentEntry->Blink->Flink != currentEntry) {
@@ -112,6 +112,8 @@ VOID validateList(pListHead head) {
     return;
 }
 
+
+// my own implementation of a critical section using interlocks
 void acquireLock(PULONG64 lock) {
 
     ULONG64 oldValueComparator;
@@ -142,6 +144,8 @@ BOOL tryAcquireLock(PULONG64 lock) {
     return TRUE;
 }
 
+
+// Wrappers for acquiring srw locks. where my debug versions trigger if indicated to
 VOID acquire_srw_shared(sharedLock* lock) {
 #if DBG
     debug_acquire_srw_shared(lock, "unknown", 0);
@@ -175,6 +179,7 @@ VOID release_srw_exclusive(sharedLock* lock) {
 }
 
 // Debug-only implementation functions
+// key differences are storing each shared holder in a list and the thread id of an exclusive owner
 #if DBG
 
 VOID debug_acquire_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
@@ -243,7 +248,7 @@ VOID debug_release_srw_exclusive(sharedLock* lock) {
 }
 #endif
 
-
+// wrapper for pagelocks to help with debugging
 VOID enterPageLock(pfn* page, PTHREAD_INFO info) {
 
     ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)

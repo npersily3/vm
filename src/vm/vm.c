@@ -37,51 +37,60 @@ full_virtual_memory_test(VOID) {
 
     start = GetTickCount64();
 
-    SetEvent(userStartEvent);
+    SetEvent(vm.events.userStart);
 
     int i;
     i = 0;
 
 
 
-     for (; i < NUMBER_OF_USER_THREADS; ++i) {
-         WaitForSingleObject(userThreadHandles[i], INFINITE);
+     for (; i < vm.config.number_of_user_threads; ++i) {
+         WaitForSingleObject(vm.events.userThreadHandles[i], INFINITE);
      }
-    SetEvent(systemShutdownEvent);
+    SetEvent(vm.events.systemShutdown);
 
     i = 0;
-    for (; i < NUMBER_OF_SYSTEM_THREADS; ++i) {
-        WaitForSingleObject(systemThreadHandles[i], INFINITE);
+    for (; i < vm.config.number_of_system_threads; ++i) {
+        WaitForSingleObject(vm.events.systemThreadHandles[i], INFINITE);
     }
-    ResetEvent(systemShutdownEvent);
+    ResetEvent(vm.events.systemShutdown);
 
     end = GetTickCount64();
     // Now that we're done with our memory we can be a good
     // citizen and free it.
-    VirtualFree(vaStart, 0, MEM_RELEASE);
+    VirtualFree(vm.va.start, 0, MEM_RELEASE);
 
     printf("Elapsed time: %llu ms\n", end - start);
 
-    printf("StandBy length %llu  \n", headStandByList.length);
-    printf("Modified length %llu \n", headModifiedList.length);
-    printf("Free length %llu \n", freeListLength);
-    printf("Active length %llu \n", headActiveList.length);
+    printf("StandBy length %llu  \n", vm.lists.standby.length);
+    printf("Modified length %llu \n", vm.lists.modified.length);
+    printf("Free length %llu \n", vm.lists.free.length);
+    printf("Active length %llu \n", vm.lists.active.length);
 
-    printf("pagewaits %llu \n",   pageWaits);
-    printf("total time waiting %llu ticks\n",   (totalTimeWaiting));
+    printf("pagewaits %llu \n",   vm.misc.pageWaits);
+    printf("total time waiting %llu ticks\n",   (vm.misc.totalTimeWaiting));
+
+
+    printf("num physical: %llu \n", vm.config.number_of_physical_pages* PAGE_SIZE/GB(1));
+    printf("num virtual: %llu G\n", vm.config.virtual_address_size/GB(1));
+    printf("num userthreads: %llu \n", vm.config.number_of_user_threads);
+    printf("num freelists: %llu \n", vm.config.number_of_free_lists);
+
+
+
     return;
 }
 
 
 DWORD testVM(LPVOID lpParam) {
 
-    WaitForSingleObject(userStartEvent, INFINITE);
+    WaitForSingleObject(vm.events.userStart, INFINITE);
 
 
    // DebugBreak();
 
     PULONG_PTR arbitrary_va;
-    unsigned random_number;
+    ULONG64 random_number;
     unsigned i;
     PTHREAD_INFO thread_info;
 
@@ -104,7 +113,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1)/NUMBER_OF_USER_THREADS; i++) {
+ for (; i < MB(1); i++) {
 //while (TRUE) {
         #endif
 
@@ -135,7 +144,7 @@ DWORD testVM(LPVOID lpParam) {
             //    random_number += KB(256)*(thread_info->ThreadNumber + 2);
 #endif
 
-                random_number %= VIRTUAL_ADDRESS_SIZE_IN_UNSIGNED_CHUNKS;//virtual_address_size_in_unsigned_chunks;
+                random_number %= vm.config.virtual_address_size_in_unsigned_chunks;
 
                 // Write the virtual address into each page. If we need to
                 // debug anything, we'll be able to see these in the pages.
@@ -144,12 +153,13 @@ DWORD testVM(LPVOID lpParam) {
                 // Ensure the write to the arbitrary virtual address doesn't
                 // straddle a PAGE_SIZE boundary just to keep things simple for now.
                 random_number &= ~0x7;
-                arbitrary_va = vaStart + random_number;
+                arbitrary_va = vm.va.start + random_number;
                // printf("arbitrary_va %p\n", arbitrary_va);
 
             }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
+
 
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             page_faulted = TRUE;
@@ -175,8 +185,7 @@ DWORD testVM(LPVOID lpParam) {
     }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
-   // SetEvent(thread_info->WorkDoneHandle);
-    SetEvent(userEndEvent);
+
     return 0;
 }
 
@@ -205,6 +214,27 @@ main(int argc, char **argv) {
     // store, bringing them back from backing store, protecting them, etc.
     //
     // This is where we can be as creative as we like, the sky's the limit !
+    memset (&vm, 0, sizeof(vm));
+    //calls get physical pages, because his parameters might change
+
+    if (argc > 1) {
+        if (argc != 5) {
+            printf("should be of format -> vm_debug [numUserThreads] [vaSizeInGigs] [paSizeInGigs]  [numFreeLists]");
+            exit(1);
+        }
+
+        ULONG64 userThreads = (ULONG64) atoi(argv[1]);
+        ULONG64 vaSizeInGigs = (ULONG64) atoi(argv[2]);
+        ULONG64 paSizeInGigs = (ULONG64) atoi(argv[3]);
+        ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
+
+
+        init_config_params(userThreads, vaSizeInGigs, paSizeInGigs, numFreeLists);
+    } else {
+        init_base_config();
+    }
+
+
 
 
     full_virtual_memory_test();
@@ -213,6 +243,3 @@ main(int argc, char **argv) {
 }
 
 
-
-//nptodo change how arbitrary va is changed
-//nptodo make sure free list locks are acquired correctly

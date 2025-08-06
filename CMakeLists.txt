@@ -89,11 +89,7 @@ set_target_properties(vm PROPERTIES
         DEBUG_POSTFIX "_debug"
 )
 
-# Add compile definitions for debug builds
-target_compile_definitions(vm PRIVATE
-        $<$<CONFIG:Debug>:DBG=1>
-        $<$<CONFIG:Release>:DBG=0>
-)
+
 
 # Optional: Add support for multiple VA to same page
 option(SUPPORT_MULTIPLE_VA "Enable support for multiple VA to same page" OFF)
@@ -124,6 +120,7 @@ install(TARGETS vm
         RUNTIME DESTINATION bin
 )
 
+# Package configuration (optional)
 # Package configuration (optional)
 set(CPACK_PACKAGE_NAME "VirtualMemorySystem")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")

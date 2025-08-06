@@ -5,6 +5,8 @@
 #include "variables/structures.h"
 #include "utils/random_utils.h"
 
+// AI generated better randomness
+
 // Initialize RNG state with non-deterministic seed
 VOID InitializeThreadRNG(THREAD_RNG_STATE* rng) {
     LARGE_INTEGER perfCounter;
@@ -32,7 +34,7 @@ VOID InitializeThreadRNG(THREAD_RNG_STATE* rng) {
     }
 }
 
-// High-quality XOR shift generator - much better than your current approach
+// High-quality XOR shift generator
 ULONG64 GetNextRandom(THREAD_RNG_STATE* rng) {
     ULONG64 x = rng->state;
 
