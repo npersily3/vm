@@ -166,7 +166,7 @@ VOID freeThreadMapping(PTHREAD_INFO threadContext) {
  *@param threadContext The information about the faulting thread.
  *@return A boolean that determines whether we need to back up and redo the fault.
 */
-//TODO move mapping and adding to the active list to this function as opposed to being in two place
+
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
@@ -186,6 +186,13 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
         printf("invalid va %p\n", arbitrary_va);
     }
 
+
+    // TODO make the region have an srw lock and the pte have a lock bit
+    // TODO set access bit
+    // use BOOLEAN _interlockedbittestandset64(
+  //   [in] LONG64 volatile *Base,
+  //   [in] LONG64          Offset
+  // );
     returnValue = !REDO_FAULT;
     region = getPTERegion(currentPTE);
     currentPageTableLock = &region->lock;

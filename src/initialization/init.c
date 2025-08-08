@@ -19,6 +19,10 @@
 
 
 #pragma comment(lib, "onecore.lib")
+//TODO batch commit the pages. First sort the array. Then, see if the next pfn will reside in the same page.
+//TODO Switch to Virtual alloc (Reserve | Commit) for the pagefile
+
+
 
 state vm;
 

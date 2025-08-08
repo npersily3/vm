@@ -177,7 +177,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
  * @param frameNumberArray An array of frame numbers
  * @param diskAddressArray An array of diskAddresses
  */
-// TODO make it so that is no longer unmaps everytime similar to modified read
+
 VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray) {
     if (MapUserPhysicalPages(vm.va.writing, localBatchSize, frameNumberArray) == FALSE) {
 
