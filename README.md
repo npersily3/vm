@@ -1,13 +1,12 @@
-# Multithreaded Virtual Memory Manager
+****# Multithreaded Virtual Memory Manager
 
 ## By Noah Persily
 ### Summer 2025, Reach out to me with more questions at *nrpersily@gmail.com*
 
----
+
 
 ## The Goal
 
---- 
 
 
 The goal of this program is to simulate a virtual memory manager that exists in all modern operating systems. 
@@ -23,6 +22,13 @@ I started this journey by making single threaded virtual memory manager. The mai
 
 ### Basic Multithreaded Machine 
 
-Now that I was very familiar with the moving parts of this state machine, I had to figure out what parts to separate into their own threads. Initially, I only thought about having a user thread and a trimmer/writer thread, but performance traces showed that both writing and trimming were costly, so I decided to split them into their own threads. 
-Another new consideration in the multithreaded was my lock hierarchy. 
+Now that I was very familiar with the moving parts of this state machine, I had to figure out what parts to separate into their own threads.
+Initially, I only thought about having a user thread and a trimmer/writer thread, but performance traces showed that both writing and trimming were costly, so I decided to split them into their own threads.
+
+A new challenge to tackle in multithreaded was page table entries in transition between threads. I needed to create two new lists ---modified and standby---
+
+Another new consideration in the multithreaded was my lock hierarchy. In my simple state machine I only had three types of locks to consider, page table entry, list locks, and disk locks. 
+Since I need to look at a page table entry to determine a list to go to, I thought that they should be at the top of my hierarchy. 
+Next, I realized that disk locks are pretty self contained, so they should be the last lock I acquire.  
+This order made sense, but there were a few times I had to break it. In the case where I was
 
