@@ -26,12 +26,18 @@ Now that I was very familiar with the moving parts of this state machine, I had 
 Initially, I only thought about having a user thread and a trimmer/writer thread, but performance traces showed that both writing and trimming were costly, so I decided to split them into their own threads.
 
 A new challenge to tackle in multithreaded was page table entries in transition between threads. I needed to create two new lists, modified and standby. The modified list had contain pages that have been unmapped from their virtual addresses, but not yet written to disk. The standby list contains pages that have contents in both a disk slot and a physical page.
-Since the pages on these lists still have the contents of the virtual page on them, we can save ourselves from doing a disk read by mapping that specific frame to a faulted on pte. 
+Since the pages on these lists still have the contents of the virtual page on them, we can save ourselves from doing a disk read by mapping that specific frame if the previous virtual address was faulted on again. I have used the term rescue to describe this sequence of events. 
 
-
-Another new consideration in the multithreaded was my lock hierarchy. In my simple state machine I only had three types of locks to consider, page table entry, list locks, and disk locks. 
+Another new consideration in the multithreaded world was a lock hierarchy. In this simple multithreaded state machine I only had three types of locks to consider, page table entry, list locks, and disk locks. 
 Since I need to look at a page table entry to determine a list to go to, I thought that they should be at the top of my hierarchy. 
 Next, I realized that disk locks are pretty self contained, so they should be the last lock I acquire.  
-This order made sense, but there were a few times I had to break it. In the case where I was
+This order made sense, but there were a few times I had to break it. In the case where I was repurposing a page off of the standby list, I first need to look at the standby list then edit the pte of the page at the head.
+I cannot lock the pte first as I need to look at the standby list to determine the pte, and I cannot lock them out of order because a deadlock could occur. In order to solve this problem, I need to try and acquire the pte lock and if I cannot get it, I need to release the standby lock and redo the fault. 
 
-![diagram 1](images/figure1.png)
+---
+
+![diagram 1](images/figure1vector.svg)
+---
+
+### Complex Multithreaded State Machine
+
