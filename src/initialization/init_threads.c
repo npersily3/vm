@@ -51,6 +51,7 @@ VOID createThreads(VOID) {
         ThreadContext = &UserThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
         ThreadContext->TransferVaIndex = 0;
+        init_list_head(&ThreadContext->localList);
 
 
         Handle = createNewThread(testVM, ThreadContext);

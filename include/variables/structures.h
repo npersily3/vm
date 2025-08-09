@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -118,7 +118,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 0
+#define spinEvents 1
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -200,14 +200,7 @@ typedef struct {
     ULONG64 counter;
 } THREAD_RNG_STATE;
 
-// Main components are the transfer va index,
-typedef struct __declspec(align(64)) {
-    ULONG ThreadNumber;
-    ULONG ThreadId;
-    ULONG64 TransferVaIndex;
-    HANDLE ThreadHandle;
-    THREAD_RNG_STATE rng;
-} THREAD_INFO, *PTHREAD_INFO;
+
 
 //
 // List head structure
@@ -361,6 +354,18 @@ typedef struct {
 
     volatile boolean standByPruningInProgress;
 } misc;
+
+// Main components are the transfer va index,
+typedef struct __declspec(align(64)) {
+    ULONG ThreadNumber;
+    ULONG ThreadId;
+    ULONG64 TransferVaIndex;
+    HANDLE ThreadHandle;
+    THREAD_RNG_STATE rng;
+    listHead localList;
+} THREAD_INFO, *PTHREAD_INFO;
+
+
 typedef struct {
     PTHREAD_INFO user;
     PTHREAD_INFO trimmer;
@@ -383,6 +388,8 @@ typedef struct {
 
 
 extern state vm;
+
+#define FREE_LIST_TO_LOCAL_LIST_BATCH_SIZE 128
 
 #define useSharedLock 1
 

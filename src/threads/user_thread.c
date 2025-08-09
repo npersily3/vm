@@ -4,6 +4,8 @@
 
 #include "../../include/threads/user_thread.h"
 #include <stdio.h>
+#include <utils/random_utils.h>
+
 #include "../../include/variables/globals.h"
 #include "../../include/variables/structures.h"
 #include "../../include/variables/macros.h"
@@ -375,44 +377,48 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
     // Attempt to get a page from the free list and standby list
     // NULL means the page could not be found
-     page = mapPageFromFreeList(currentPTE, threadInfo);
 
 
-     if (page == NULL) {
-         page = mapPageFromStandByList(currentPTE,  threadInfo);
+    page = getPageFromLocalList(threadInfo);
+    if (page == NULL) {
+        page = mapPageFromFreeList(currentPTE, threadInfo);
 
-         if (page == NULL) {
+        if (page == NULL) {
+            page = mapPageFromStandByList(currentPTE,  threadInfo);
 
-            // If we are not able to get a page, start the trimmer and sleep
+            if (page == NULL) {
 
-            LeaveCriticalSection(currentPageTableLock);
+                // If we are not able to get a page, start the trimmer and sleep
 
-            //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
+                LeaveCriticalSection(currentPageTableLock);
 
-            ResetEvent(vm.events.writingEnd);
-            SetEvent(vm.events.trimmingStart);
+                //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
+
+                ResetEvent(vm.events.writingEnd);
+                SetEvent(vm.events.trimmingStart);
 
 
-            vm.misc.pageWaits++;
+                vm.misc.pageWaits++;
 
-            ULONG64 start;
-            ULONG64 end;
+                ULONG64 start;
+                ULONG64 end;
 
-            start = ReadTimeStampCounter();
+                start = ReadTimeStampCounter();
 #if spinEvents
-            spinWhileWaiting();
+                spinWhileWaiting();
 #else
-            WaitForSingleObject(vm.events.writingEnd, INFINITE);
+                WaitForSingleObject(vm.events.writingEnd, INFINITE);
 
 #endif
 
-           end = ReadTimeStampCounter();
+                end = ReadTimeStampCounter();
 
-            InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64)(end - start));
+                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64)(end - start));
 
-            EnterCriticalSection(currentPageTableLock);
+                EnterCriticalSection(currentPageTableLock);
 
-            return REDO_FAULT;
+                return REDO_FAULT;
+            }
         }
     }
 
@@ -663,13 +669,15 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     boolean pruneInProgress = FALSE;
     boolean gotFreeListLock = FALSE;
     ULONG64 counter;
+    ULONG64 i;
 
 
 
     counter = 0;
+    i = 0;
 
-    // Increment global data that approximates what free list should be the most full/least contended
-    localFreeListIndex = InterlockedIncrement(&vm.lists.free.RemoveIndex) % vm.config.number_of_free_lists;
+    // randomly accesses a freelist first
+    localFreeListIndex = GetNextRandom(&threadContext->rng) % vm.config.number_of_free_lists;
 
 
     // Iterate through the freelists starting at the index calculated above and try to lock it
@@ -694,22 +702,29 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 #if DBG
         validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
+
+            // Now that we have the head lock, we might as well add pages to our local list
+        for (; i < FREE_LIST_TO_LOCAL_LIST_BATCH_SIZE; ++i) {
             // now we have a locked page
             entry = RemoveHeadList(&vm.lists.free.heads[localFreeListIndex]);
-
             if (entry == LIST_IS_EMPTY) {
                 page = LIST_IS_EMPTY;
+                break;
             } else {
+                localTotalFreeListLength = InterlockedDecrement64((volatile LONG64 *) &vm.lists.free.length);
                 page = container_of(entry, pfn, entry);
+                InsertHeadList(&threadContext->localList, &page->entry);
             }
+        }
+
 #if DBG
             validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
-            // now that the page is off the list we no longer need to lock the list
+            // now that pages are off the list we no longer need to lock the list
             LeaveCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock);
 
-            if (page == LIST_IS_EMPTY) {
+            if (i == 0) {
                 gotFreeListLock = FALSE;
                 counter++;
                 localFreeListIndex = (localFreeListIndex + 1) % vm.config.number_of_free_lists;
@@ -717,8 +732,8 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
             } else {
 
                 // The following code calls the standby pruner.
-                localTotalFreeListLength = InterlockedDecrement64((volatile LONG64 *) &vm.lists.free.length);
 
+                // despite warnings, localFreeListLength Must Be Initialized
                ASSERT(localTotalFreeListLength != MAXULONG64);
                 // check to see if we have enough pages on the free list
                 if (localTotalFreeListLength <= vm.config.stand_by_trim_threshold) {
@@ -731,7 +746,9 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 
                     InterlockedExchange((volatile LONG *)&vm.misc.standByPruningInProgress, FALSE);
                 }
-                // return a locked page
+                // return the page at the front of the local list
+                entry = RemoveHeadList(&threadContext->localList);
+                page = container_of(entry, pfn, entry);
                 enterPageLock(page, threadContext);
                 return page;
             }
@@ -741,4 +758,25 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
         localFreeListIndex = (localFreeListIndex + 1) % vm.config.number_of_free_lists;
         counter++;
     }
+}
+
+/**
+ * @brief This function returns a free page on the users local list. Since no other thread has access to this lead, there is no need to deal with synchronization
+ * @param threadContext The thread info that contains the local list head
+ * @return The page at the head of the local list
+ */
+pfn* getPageFromLocalList(PTHREAD_INFO threadContext) {
+    pListHead head;
+    pfn* page;
+    PLIST_ENTRY entry;
+
+    head  = &threadContext->localList;
+    // since this is a per thread thing, the list lengths will not be edited the second after this check
+    if (head->length == 0) {
+        return LIST_IS_EMPTY;
+    }
+    entry = RemoveHeadList(head);
+    page = container_of(entry, pfn, entry);
+
+    return page;
 }

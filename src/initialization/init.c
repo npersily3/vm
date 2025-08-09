@@ -46,7 +46,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
     vm.config.size_of_transfer_va_space_in_pages = 128;
-    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 4;
+    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
 
 
@@ -85,7 +85,7 @@ VOID init_base_config(VOID) {
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
     vm.config.size_of_transfer_va_space_in_pages = 128;
-    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 4;
+    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
 
 
