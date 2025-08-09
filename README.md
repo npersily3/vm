@@ -62,7 +62,7 @@ The user thread used batching two places. First, I started to batch unmap my ker
 To actually fix the contention instead of moving it from the standby to freelist was to dimension my freelist. I could not do this with my standby list since the order in which they were added matters, but in the freelist it does not. In a multidimensioned free list, multiple users could be satisfying faults without interruption themselves
 
 
-![diagram 2](images/figur2vector.svg)
+![diagram 2](images/figure2vector.svg)
 
 State Machine as of August 1st
 
