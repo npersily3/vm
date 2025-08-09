@@ -136,6 +136,8 @@ InitializeCriticalSection(&(x))
 typedef struct {
     // bit that indicates to the cpu that indicates if it has a valid frame number
     ULONG64 valid: 1;
+    // 1 bit shared lock
+    ULONG64 lock: 1;
     // indicates if the pte was accessed
     ULONG64 access: 1;
     // indicates if where the virtual pages contents are
@@ -147,6 +149,8 @@ typedef struct {
 typedef struct {
     // bit that indicates to the cpu that indicates if it has a invalid frame number
     ULONG64 mustBeZero: 1;
+    // 1 bit shared lock
+    ULONG64 lock: 1;
     // in this format these bits do not matter
     ULONG64 access: 1;
     ULONG64 transition: 2;
@@ -163,6 +167,8 @@ typedef struct {
 typedef struct {
     // in this format a pte must be unmapped
     ULONG64 mustBeZero: 1;
+    // 1 bit shared lock
+    ULONG64 lock: 1;
     // tracks accesses
     ULONG64 access: 1;
     // tracks if it can be rescued out of a write or trim

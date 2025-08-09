@@ -41,3 +41,31 @@ I cannot lock the pte first as I need to look at the standby list to determine t
 
 ### Complex Multithreaded State Machine
 
+In order to improve my scalability, I needed to get smarter. I had to implement more sophisticated locking techniques among other strategies.
+
+The first place I released contention from was the disk. Instead of having one big lock around the whole disk, I created a lock per slot. Then, I started using atomic interlocked operations to lock and unlock disk slots. Additionally, I switched my disk to a bitmap instead of a byte map. 
+
+Next, I started to look for a way to alleviate list contention, specifically on the standby list. Ideally, I wanted to be able to remove from the head, add to the tail, and remove from the middle simultaneously. 
+The way I thought to do this was to add locks on individual pages. Now, I could first try to lock all the pages I needed to edit, before grabbing the list lock exclusive and shutting everyone out. To implement this, I embedded a lock in my pfn and added a slim read-write lock to my listhead structure. 
+
+The addition of pagelocks also helped me reduce my pagetable lock contention. In scenarios, where a pte was linked to a pfn I could use the page's lock as a stand-in for a pagetable lock. 
+Both my writes and my victimization of standby pages could now be done with only the page-lock. The only caveat was that in my rescue I had to check if the pte changed after I acquire the pagelock.
+
+Another key strategy I implemented was batching. I was able to implement batching in all three types of threads.
+
+In the trimmer, I now remove multiple pages from the active list and unmap them all simultaneously with a call to the function "map user physical pages scatter". 
+
+In the writer, I now preacquire multiple disk slots, instead of searching the disk individually. Moreover, during the actual process to write to disk, I could only do one map and unmap call per batch.
+
+The user thread used batching two places. First, I started to batch unmap my kernel virtual address space that I use to read disk contents into physical pages. Then, I started to batch remove pages from the standby list and place them onto the freelist in order to alleviate standby list contention.
+
+To actually fix the contention instead of moving it from the standby to freelist was to dimension my freelist. I could not do this with my standby list since the order in which they were added matters, but in the freelist it does not. In a multidimensioned free list, multiple users could be satisfying faults without interruption themselves
+
+
+![diagram 2](images/figur2vector.svg)
+
+State Machine as of August 1st
+
+
+
+
