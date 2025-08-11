@@ -120,7 +120,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 0
+#define spinEvents 1
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -239,21 +239,6 @@ typedef struct {
     double volatility;
     double drift;
 } stochastic_data;
-
-//
-//PTE_REGION  a section of 64 ptes
-//
-#define NUMBER_OF_AGES 8
-#define LENGTH_OF_PREDICTION 10
-
-typedef struct {
-    LIST_ENTRY entry;
-    stochastic_data statistics;
-    CRITICAL_SECTION lock;
-
-    ULONG64: 1, accessed;
-} PTE_REGION;
-
 typedef struct {
     SRWLOCK sharedLock;
 #if DBG
@@ -275,6 +260,22 @@ typedef struct _SHARED_HOLDER_DEBUG {
     int lineNumber;
 } SHARED_HOLDER_DEBUG;
 #endif
+
+//
+//PTE_REGION  a section of 64 ptes
+//
+#define NUMBER_OF_AGES 8
+#define LENGTH_OF_PREDICTION 10
+
+typedef struct {
+    LIST_ENTRY entry;
+    stochastic_data statistics;
+    sharedLock lock;
+
+    ULONG64: 1, accessed;
+} PTE_REGION;
+
+
 
 typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;

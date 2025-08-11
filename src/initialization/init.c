@@ -198,13 +198,7 @@ init_virtual_memory(VOID) {
 VOID init_pte_regions(VOID) {
 
     //nptodo add the case where NUMPTES is not divisible by 64
-
-
     vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
-
-
-
-
 }
 
 VOID init_pageTable(VOID) {

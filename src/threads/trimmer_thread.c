@@ -30,7 +30,7 @@
 DWORD page_trimmer(LPVOID info) {
     ULONG64 BatchIndex;
     BOOL doubleBreak;
-    PCRITICAL_SECTION trimmedPageTableLock;
+    sharedLock* trimmedPageTableLock;
     pfn* page;
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
@@ -74,7 +74,7 @@ DWORD page_trimmer(LPVOID info) {
 
                 region = getPTERegion(page->pte);
                 trimmedPageTableLock = &region->lock;
-                EnterCriticalSection(trimmedPageTableLock);
+                acquire_srw_exclusive(trimmedPageTableLock, threadContext);
             } else {
                 ASSERT(region == getPTERegion(page->pte))
             }
@@ -90,7 +90,7 @@ DWORD page_trimmer(LPVOID info) {
                 unmapBatch(virtualAddresses, BatchIndex);
                 addBatchToModifiedList(pages, BatchIndex,  threadContext);
 
-                LeaveCriticalSection(trimmedPageTableLock);
+                release_srw_exclusive(trimmedPageTableLock);
                 // Setting this to null tells the next loop to get a new region
                 trimmedPageTableLock = NULL;
                 BatchIndex = 0;
@@ -110,7 +110,7 @@ DWORD page_trimmer(LPVOID info) {
         unmapBatch(virtualAddresses, BatchIndex);
         addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
 
-        LeaveCriticalSection(trimmedPageTableLock);
+        release_srw_exclusive(trimmedPageTableLock);
 
         //nptodo add a condition around this
         SetEvent(vm.events.writingStart);
