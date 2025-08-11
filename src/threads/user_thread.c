@@ -513,10 +513,9 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
 
 
     ULONG64 frameNumber;
-    pte entryContents;
+
     pfn* page;
 
-    entryContents = *currentPTE;
 
 
 
@@ -532,7 +531,7 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
 
 
     // Zero the page if we are on a first fault, otherwise read from disk
-    if (entryContents.invalidFormat.diskIndex == EMPTY_PTE) {
+    if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
         if (!zeroOnePage(page, threadInfo)) {
             DebugBreak();
         }
@@ -703,7 +702,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 #endif
 
             // Now that we have the head lock, we might as well add pages to our local list
-        for (; i < FREE_LIST_TO_LOCAL_LIST_BATCH_SIZE; ++i) {
+        for (; i < BATCH_SIZE; ++i) {
             // now we have a locked page
             entry = RemoveHeadList(&vm.lists.free.heads[localFreeListIndex]);
             if (entry == LIST_IS_EMPTY) {

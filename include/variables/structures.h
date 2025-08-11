@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -56,6 +56,8 @@ typedef struct {
     ULONG64 number_of_ptes;
     ULONG64 number_of_ptes_per_region;
     ULONG64 number_of_pte_regions;
+    ULONG64 time_until_recall_pages;
+
 } configuration;
 
 
@@ -278,7 +280,7 @@ typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
     volatile ULONG64 length;
     sharedLock sharedLock;
-    ULONG64 timeOfLastAccess;
+    volatile ULONG64 timeOfLastAccess;
     pfn page;
 } listHead, *pListHead;
 
@@ -389,7 +391,7 @@ typedef struct {
 
 extern state vm;
 
-#define FREE_LIST_TO_LOCAL_LIST_BATCH_SIZE 128
+
 
 #define useSharedLock 1
 

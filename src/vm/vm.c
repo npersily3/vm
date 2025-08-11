@@ -181,8 +181,14 @@ DWORD testVM(LPVOID lpParam) {
            //recordAccess(arbitrary_va);
             redo_try_same_address = FALSE;
         }
+#if DBG
+     i++;
+     if (i % KB(8) == 0) {
+         printf(".");
+     }
+#endif
 
-    }
+}
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
 

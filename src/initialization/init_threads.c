@@ -57,7 +57,7 @@ VOID createThreads(VOID) {
         Handle = createNewThread(testVM, ThreadContext);
         ThreadContext->ThreadHandle = Handle;
 
-
+        vm.threadInfo.user = UserThreadInfo;
         vm.events.userThreadHandles[i] = Handle;
 
         maxThread++;

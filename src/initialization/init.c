@@ -57,6 +57,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
 
     vm.config.number_of_free_lists = numFreeLists;
+    vm.config.time_until_recall_pages = 2500000;
 }
 
 
@@ -66,8 +67,8 @@ VOID init_base_config(VOID) {
     vm.config.number_of_physical_pages = 128;
 #else
 
-    vm.config.virtual_address_size = GB(1);
-    vm.config.number_of_physical_pages = MB(512)/PAGE_SIZE;
+    vm.config.virtual_address_size = GB(4);
+    vm.config.number_of_physical_pages = GB(2)/PAGE_SIZE;
 #endif
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
 
@@ -92,9 +93,12 @@ VOID init_base_config(VOID) {
     vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
     vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
 
+
+
+
     vm.config.number_of_ptes_per_region = 64;
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
-
+    vm.config.time_until_recall_pages = 2500000;
     vm.config.number_of_free_lists = 8;
 }
 
