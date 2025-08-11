@@ -480,7 +480,7 @@ pfn* mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo) {
     }
 
 
-    leavePageLock(page, threadInfo);
+
 
     frameNumber = getFrameNumber(page);
 
@@ -657,8 +657,7 @@ BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
  * @return Returns a free page.
  * @post The caller must release the page lock of the returned page.
  */
-//TODO change it so that each thread walks down differently,
-// TODO batch remove from the global free list into a local list.
+
 // TODO think about this local list as a loan and have the trimmer or someone else take it back
 pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 
@@ -747,10 +746,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                     InterlockedExchange((volatile LONG *)&vm.misc.standByPruningInProgress, FALSE);
                 }
                 // return the page at the front of the local list
-                entry = RemoveHeadList(&threadContext->localList);
-                page = container_of(entry, pfn, entry);
-                enterPageLock(page, threadContext);
-                return page;
+                return getPageFromLocalList(threadContext);
             }
         }
 
@@ -769,14 +765,25 @@ pfn* getPageFromLocalList(PTHREAD_INFO threadContext) {
     pListHead head;
     pfn* page;
     PLIST_ENTRY entry;
+    LARGE_INTEGER time;
+
+
 
     head  = &threadContext->localList;
-    // since this is a per thread thing, the list lengths will not be edited the second after this check
+
+    // I do this in a lock because the trimmer could be accessing this
+    acquire_srw_exclusive(&head->sharedLock, threadContext);
+
     if (head->length == 0) {
+        release_srw_exclusive(&head->sharedLock);
         return LIST_IS_EMPTY;
     }
     entry = RemoveHeadList(head);
     page = container_of(entry, pfn, entry);
+    release_srw_exclusive(&head->sharedLock);
+
+    QueryPerformanceCounter(&time);
+    head->timeOfLastAccess = time.QuadPart;
 
     return page;
 }

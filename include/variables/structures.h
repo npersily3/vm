@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -118,7 +118,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 1
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -278,7 +278,7 @@ typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
     volatile ULONG64 length;
     sharedLock sharedLock;
-
+    ULONG64 timeOfLastAccess;
     pfn page;
 } listHead, *pListHead;
 
