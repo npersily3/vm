@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -56,6 +56,8 @@ typedef struct {
     ULONG64 number_of_ptes;
     ULONG64 number_of_ptes_per_region;
     ULONG64 number_of_pte_regions;
+    ULONG64 time_until_recall_pages;
+
 } configuration;
 
 
@@ -200,14 +202,7 @@ typedef struct {
     ULONG64 counter;
 } THREAD_RNG_STATE;
 
-// Main components are the transfer va index,
-typedef struct __declspec(align(64)) {
-    ULONG ThreadNumber;
-    ULONG ThreadId;
-    ULONG64 TransferVaIndex;
-    HANDLE ThreadHandle;
-    THREAD_RNG_STATE rng;
-} THREAD_INFO, *PTHREAD_INFO;
+
 
 //
 // List head structure
@@ -285,7 +280,7 @@ typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
     volatile ULONG64 length;
     sharedLock sharedLock;
-
+    volatile ULONG64 timeOfLastAccess;
     pfn page;
 } listHead, *pListHead;
 
@@ -361,6 +356,18 @@ typedef struct {
 
     volatile boolean standByPruningInProgress;
 } misc;
+
+// Main components are the transfer va index,
+typedef struct __declspec(align(64)) {
+    ULONG ThreadNumber;
+    ULONG ThreadId;
+    ULONG64 TransferVaIndex;
+    HANDLE ThreadHandle;
+    THREAD_RNG_STATE rng;
+    listHead localList;
+} THREAD_INFO, *PTHREAD_INFO;
+
+
 typedef struct {
     PTHREAD_INFO user;
     PTHREAD_INFO trimmer;
@@ -383,6 +390,8 @@ typedef struct {
 
 
 extern state vm;
+
+
 
 #define useSharedLock 1
 

@@ -12,10 +12,11 @@
 #include "../../include/utils/pte_utils.h"
 #include "../../include/utils/page_utils.h"
 #include "../../include/utils/thread_utils.h"
+#include "threads/user_thread.h"
 
 /**
  *@file trimmer_thread.c
- *@brief This file containsa protocal for unmapping active pages and adding them to a modified list.
+ *@brief This file contains protocal for unmapping active pages and adding them to a modified list.
  *@author Noah Persily
 */
 /**
@@ -55,6 +56,7 @@ DWORD page_trimmer(LPVOID info) {
             return 0;
         }
 
+        recallPagesFromLocalList();
         // while there is still stuff to trim and the arrays are not at capacity
         while ((vm.lists.modified.length < vm.config.number_of_physical_pages / 4) && BatchIndex < BATCH_SIZE) {
 
@@ -115,6 +117,36 @@ DWORD page_trimmer(LPVOID info) {
 
 
     }
+}
+
+ULONG64 recallPagesFromLocalList(VOID) {
+    ULONG64 time;
+    ULONG64 prevTime;
+    LARGE_INTEGER currentTime;
+    PTHREAD_INFO currentThreadContext;
+    pfn* page;
+    ULONG64 counter;
+
+    counter = 0;
+    for (int i = 0; i < vm.config.number_of_user_threads; i++) {
+        currentThreadContext = &vm.threadInfo.user[i];
+        acquire_srw_exclusive(&currentThreadContext->localList.sharedLock, currentThreadContext);
+
+        prevTime = currentThreadContext->localList.timeOfLastAccess;
+        QueryPerformanceCounter(&currentTime);
+        time = currentTime.QuadPart;
+        if ((time - prevTime) > vm.config.time_until_recall_pages) {
+            while (&currentThreadContext->localList.entry != currentThreadContext->localList.entry.Flink) {
+                page = container_of(currentThreadContext->localList.entry.Flink, pfn, entry);
+                addPageToFreeList(page, currentThreadContext);
+                counter++;
+            }
+
+        }
+
+        release_srw_exclusive(&currentThreadContext->localList.sharedLock);
+    }
+    return counter;
 }
 
 /**
