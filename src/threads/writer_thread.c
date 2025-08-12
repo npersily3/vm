@@ -279,6 +279,9 @@ VOID updatePage (pfn* page, ULONG64 diskIndex) {
 VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG64 size) {
     for (int i = 0; i < size; i++) {
         addresses[i] = indices[i] * PAGE_SIZE + (ULONG64) vm.disk.start;
+#if DBG
+        *((PULONG64) addresses[i]) = 0;
+#endif
     }
 }
 

@@ -218,6 +218,8 @@ VOID init_disk(VOID) {
     vm.disk.start = init_memory(numBytes);
 
 
+
+
     init_disk_active();
     init_num_open_slots();
 }
@@ -260,6 +262,7 @@ if (vm.config.disk_division_size_in_pages % 64 != 0) {
 
 
     vm.disk.activeEnd = (PULONG64)((ULONG64) vm.disk.active + numEntries);
+    vm.disk.circularBufferStart = vm.disk.active;
 
 
 

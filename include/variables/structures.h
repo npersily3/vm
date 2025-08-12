@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -315,6 +315,7 @@ typedef struct {
     PULONG64 activeEnd;
     PULONG64* activeVa;
     ULONG64* number_of_open_slots;
+    PULONG64 circularBufferStart;
 } disk;
 
 typedef struct {

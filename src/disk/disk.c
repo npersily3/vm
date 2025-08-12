@@ -27,8 +27,8 @@ most_free_disk_portion(VOID) {
 
 ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
     ULONG64 freePortion;
-    PULONG64 start;
-    PULONG64 end;
+
+    PULONG64 endOfSearch;
     ULONG64 bitOffset;
     ULONG64 returnValue;
     ULONG64 numDiskSlotsFilled = 0;
@@ -38,42 +38,47 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
     freePortion = most_free_disk_portion();
     ASSERT(freePortion == 0)
 
-    start = vm.disk.active + freePortion * ( vm.config.disk_division_size_in_pages / 64);
+
 
     if(vm.disk.number_of_open_slots[freePortion] == 0) {
         return COULD_NOT_FIND_SLOT;
     }
 
 
-    // accounts for the extra slot case
-    end = start + ((ULONG64) vm.config.disk_division_size_in_pages / (ULONG64)64);
-    if (freePortion == vm.config.number_of_disk_divisions - 1) {
-        end += 1;
-    }
 
+
+    endOfSearch = vm.disk.circularBufferStart - 1;
+
+    if (endOfSearch < vm.disk.active) {
+        endOfSearch = vm.disk.activeEnd;
+    }
 
 
     // TODO make it wrap and have a writer thread ulong past in that is the last location
     while (isNotAtEnd && arrayIsNotFull) {
 
-        if (*start != FULL_DISK_SPACE) {
+        if (*vm.disk.circularBufferStart != FULL_DISK_SPACE) {
 
-            bitOffset = get_free_disk_bit(start);
+            bitOffset = get_free_disk_bit(vm.disk.circularBufferStart);
 
             if (bitOffset == 64) {
-                 start++;
+                 vm.disk.circularBufferStart++;
+            } else {
+                ASSERT(freePortion == 0)
+                InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
+                returnValue = 8 * sizeof(ULONG64) * (vm.disk.circularBufferStart - vm.disk.active) + bitOffset;
+                diskIndices[numDiskSlotsFilled] = returnValue;
+                numDiskSlotsFilled++;
             }
-
-            ASSERT(freePortion == 0)
-            InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
-            returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
-            diskIndices[numDiskSlotsFilled] = returnValue;
-            numDiskSlotsFilled++;
-
         } else {
-            start++;
+            vm.disk.circularBufferStart++;
         }
-        isNotAtEnd = start < end ;
+
+        if (vm.disk.circularBufferStart == vm.disk.activeEnd) {
+            vm.disk.circularBufferStart = vm.disk.active;
+        }
+
+        isNotAtEnd = vm.disk.circularBufferStart != endOfSearch ;
         arrayIsNotFull =  numDiskSlotsFilled <  BATCH_SIZE;
 
     }
@@ -81,7 +86,8 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
       if ( numDiskSlotsFilled == 0) {
           return COULD_NOT_FIND_SLOT;
       }
-    }   return numDiskSlotsFilled;
+    }
+    return numDiskSlotsFilled;
 }
 //
 // ULONG64 get_free_disk_index(VOID) {
