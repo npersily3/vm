@@ -147,19 +147,15 @@ BOOL tryAcquireLock(PULONG64 lock) {
 
 // Wrappers for acquiring srw locks. where my debug versions trigger if indicated to
 VOID acquire_srw_shared(sharedLock* lock) {
-#if DBG
-    debug_acquire_srw_shared(lock, "unknown", 0);
-#else
+
     AcquireSRWLockShared(&lock->sharedLock);
-#endif
+
 }
 
 VOID release_srw_shared(sharedLock* lock) {
-#if DBG
-    debug_release_srw_shared(lock, "unknown", 0);
-#else
+
     ReleaseSRWLockShared(&lock->sharedLock);
-#endif
+
 }
 
 VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
@@ -182,60 +178,6 @@ VOID release_srw_exclusive(sharedLock* lock) {
 // key differences are storing each shared holder in a list and the thread id of an exclusive owner
 #if DBG
 
-VOID debug_acquire_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
-    SHARED_HOLDER_DEBUG* holder = malloc(sizeof(SHARED_HOLDER_DEBUG));
-
-    if (holder) {
-        holder->threadId = GetCurrentThreadId();
-        holder->acquireTime = GetTickCount64();
-        holder->fileName = fileName;
-        holder->lineNumber = lineNumber;
-    }
-
-    AcquireSRWLockShared(&lock->sharedLock);
-
-    if (holder) {
-        EnterCriticalSection(&lock->debugLock);
-        InsertTailListDebug(&lock->sharedHolders, &holder->entry);
-        LeaveCriticalSection(&lock->debugLock);
-    }
-
-    InterlockedIncrement64((volatile LONG64 *) &lock->numHeldShared);
-}
-
-VOID debug_release_srw_shared(sharedLock* lock, const char* fileName, int lineNumber) {
-    ULONG64 currentThreadId = GetCurrentThreadId();
-    SHARED_HOLDER_DEBUG* holder = NULL;
-    PLIST_ENTRY entry;
-
-    EnterCriticalSection(&lock->debugLock);
-
-    // Find this thread's entry
-    for (entry = lock->sharedHolders.Flink;
-         entry != &lock->sharedHolders;
-         entry = entry->Flink) {
-
-        holder = CONTAINING_RECORD(entry, SHARED_HOLDER_DEBUG, entry);
-        if (holder->threadId == currentThreadId) {
-            RemoveEntryList(&holder->entry);
-            break;
-        }
-        holder = NULL;
-    }
-
-    LeaveCriticalSection(&lock->debugLock);
-
-    if (!holder) {
-        printf("ERROR: Thread %llu releasing shared lock it doesn't hold! %s:%d\n",
-               currentThreadId, fileName, lineNumber);
-        DebugBreak();
-    } else {
-        free(holder);
-    }
-
-    ReleaseSRWLockShared(&lock->sharedLock);
-    InterlockedDecrement64((volatile LONG64 *) &lock->numHeldShared);
-}
 
 VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
     AcquireSRWLockExclusive(&lock->sharedLock);

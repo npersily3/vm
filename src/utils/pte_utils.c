@@ -5,6 +5,8 @@
 #include "../../include/variables/structures.h"
 #include "../../include/variables/globals.h"
 #include "../../include/utils/pte_utils.h"
+
+#include "utils/thread_utils.h"
 // Simple conversion and validation functions
 pte*
 va_to_pte(ULONG64 va) {
@@ -35,4 +37,22 @@ PTE_REGION* getPTERegion(pte* pte) {
 BOOL isPTEValid(pte* pte) {
 
     return ((ULONG64)pte >= (ULONG64) vm.pte.table) && ((ULONG64)pte < ((ULONG64) vm.pte.table + vm.config.page_table_size_in_bytes) );
+}
+VOID lockPTE(pte* pte) {
+
+    PTE_REGION* region = getPTERegion(pte);
+    BOOL status;
+
+    acquire_srw_shared(&region->lock);
+
+    do {
+        status = _interlockedbittestandset64((volatile LONG64*)&pte->entireFormat, 1);
+    } while (status == 1);
+}
+
+VOID unlockPTE(pte* pte) {
+    PTE_REGION* region = getPTERegion(pte);
+
+    _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
+    release_srw_shared(&region->lock);
 }

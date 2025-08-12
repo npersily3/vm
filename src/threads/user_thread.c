@@ -176,8 +176,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     BOOL returnValue;
     pte* currentPTE;
     pte pteContents;
-    PCRITICAL_SECTION currentPageTableLock;
-    PTE_REGION* region;
+
 
     currentPTE = va_to_pte((ULONG64) arbitrary_va);
 
@@ -189,17 +188,11 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     }
 
 
-    // TODO make the region have an srw lock and the pte have a lock bit
-    // TODO set access bit
-    // use BOOLEAN _interlockedbittestandset64(
-  //   [in] LONG64 volatile *Base,
-  //   [in] LONG64          Offset
-  // );
-    returnValue = !REDO_FAULT;
-    region = getPTERegion(currentPTE);
-    currentPageTableLock = &region->lock;
 
-    EnterCriticalSection(currentPageTableLock);
+    returnValue = !REDO_FAULT;
+
+
+    lockPTE(currentPTE);
     pteContents = *currentPTE;
 
     // If the page fault was already handled by another thread
@@ -213,14 +206,14 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             }
         } else {
             // If we are on a first fault or a disk read map that page.
-            if (mapPage((ULONG64) arbitrary_va, currentPTE, threadContext, currentPageTableLock) == REDO_FAULT) {
+            if (mapPage((ULONG64) arbitrary_va, currentPTE, threadContext) == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
         }
     }
 
 
-    LeaveCriticalSection(currentPageTableLock);
+    unlockPTE(currentPTE);
 
 
     return returnValue;
@@ -362,7 +355,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
  * @post The caller must unlock the page table entry.
  */
 
-BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITICAL_SECTION currentPageTableLock) {
+BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
 
 
     pfn* page;
@@ -390,7 +383,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
                 // If we are not able to get a page, start the trimmer and sleep
 
-                LeaveCriticalSection(currentPageTableLock);
+                unlockPTE(currentPTE);
 
                 //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
 
@@ -415,7 +408,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext, PCRITI
 
                 InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64)(end - start));
 
-                EnterCriticalSection(currentPageTableLock);
+                lockPTE(currentPTE);
 
                 return REDO_FAULT;
             }
