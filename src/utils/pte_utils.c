@@ -47,7 +47,7 @@ VOID lockPTE(pte* pte) {
 
     do {
         status = _interlockedbittestandset64((volatile LONG64*)&pte->entireFormat, 1);
-    } while (status == 0);
+    } while (status == 1);
 }
 
 VOID unlockPTE(pte* pte) {
