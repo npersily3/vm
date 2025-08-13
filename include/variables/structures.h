@@ -47,7 +47,7 @@ typedef struct {
     ULONG64 number_of_threads;
     ULONG64 number_of_system_threads;
 
-    ULONG64 size_of_transfer_va_space_in_pages;
+    ULONG64 size_of_user_thread_transfer_va_space_in_pages;
     ULONG64 stand_by_trim_threshold;
     ULONG64 number_of_pages_to_trim_from_stand_by;
     ULONG64 number_of_free_lists;
@@ -95,6 +95,7 @@ typedef struct {
 
 #define MAX_FAULTS 0xFFFFFF
 #define BATCH_SIZE (512)
+#define NUM_WRITING_BATCHES (128)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0

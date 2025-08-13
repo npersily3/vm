@@ -16,6 +16,47 @@
  *@brief This file contains all the functions associated with writing to page that have been recently trimmed to disk.
  *@author Noah Persily
 */
+
+
+
+
+/**
+ *@brief A function that gets the current transfer virtual address that a thread needs.
+ *@param threadContext The thread info of the caller. It is used to update the per thread index into its transfer virtual address space.
+ *@return A pointer to a page of unmapped transfer virtual address space.
+*/
+
+PVOID getWriterThreadMapping(PTHREAD_INFO threadContext) {
+    // Get the current thread's transfer va space
+    PVOID currentTransferVa = vm.va.writing;
+    // Index into it
+    PVOID va = (PVOID) ((ULONG64) currentTransferVa + BATCH_SIZE * PAGE_SIZE  * threadContext->TransferVaIndex);
+
+    threadContext->TransferVaIndex += 1;
+    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_transfer_va_space_in_pages);
+
+    return va;
+}
+
+/**
+ * @brief Unmaps the thread's transfer virtual address space if it has all mapped. Batching it in this way saves a lot of time spent mapping and flushing.
+ * @param threadContext The thread info of the caller. It is used to index into the correct transfer virtual address space.
+ */
+VOID freeWriterThreadMapping(PTHREAD_INFO threadContext) {
+
+    // If we are at the end, reset and unmap everything
+    if (threadContext->TransferVaIndex == NUM_WRITING_BATCHES) {
+        threadContext->TransferVaIndex = 0;
+
+        if (MapUserPhysicalPages(vm.va.writing, BATCH_SIZE * NUM_WRITING_BATCHES, NULL) == FALSE) {
+            DebugBreak();
+            printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.userThreadTransfer[threadContext->ThreadNumber]);
+            return;
+        }
+    }
+}
+
+
 /**
  * @brief This function takes pages off the modified list and tries to write them to disk. It batch writes pages to disk to be more effiecient.
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
@@ -84,7 +125,7 @@ DWORD diskWriter (LPVOID info) {
         getDiskAddressesFromDiskIndices(diskIndexArray, diskAddressArray, localBatchSize);
 
         // actual write to disk
-        writeToDisk(localBatchSize, frameNumberArray, diskAddressArray);
+        writeToDisk(localBatchSize, frameNumberArray, diskAddressArray, threadContext);
 
         addToStandBy(localBatchSize, pfnArray, threadContext);
 
@@ -176,9 +217,15 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
   * @param localBatchSize The number of diskSlots and frames passed
  * @param frameNumberArray An array of frame numbers
  * @param diskAddressArray An array of diskAddresses
+ * @param ThreadContext The info of the caller
  */
 
-VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray) {
+VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray, PTHREAD_INFO ThreadContext) {
+
+    PVOID va;
+
+    va = getWriterThreadMapping(ThreadContext);
+
     if (MapUserPhysicalPages(vm.va.writing, localBatchSize, frameNumberArray) == FALSE) {
 
         DebugBreak();
@@ -190,11 +237,7 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
         memcpy((PVOID)diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE) , PAGE_SIZE);
     }
 
-    if (MapUserPhysicalPages(vm.va.writing, localBatchSize, NULL) == FALSE) {
-        DebugBreak();
-        printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.writing);
-        return ;
-    }
+    freeWriterThreadMapping(ThreadContext);
 
 
 }

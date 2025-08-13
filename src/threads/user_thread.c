@@ -151,10 +151,10 @@ PVOID getThreadMapping(PTHREAD_INFO threadContext) {
 VOID freeThreadMapping(PTHREAD_INFO threadContext) {
 
     // If we are at the end, reset and unmap everything
-    if (threadContext->TransferVaIndex == vm.config.size_of_transfer_va_space_in_pages ) {
+    if (threadContext->TransferVaIndex == vm.config.size_of_user_thread_transfer_va_space_in_pages ) {
         threadContext->TransferVaIndex = 0;
 
-        if (MapUserPhysicalPages(vm.va.userThreadTransfer[threadContext->ThreadNumber], vm.config.size_of_transfer_va_space_in_pages, NULL) == FALSE) {
+        if (MapUserPhysicalPages(vm.va.userThreadTransfer[threadContext->ThreadNumber], vm.config.size_of_user_thread_transfer_va_space_in_pages, NULL) == FALSE) {
             DebugBreak();
             printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.userThreadTransfer[threadContext->ThreadNumber]);
             return;
@@ -506,7 +506,7 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
 
 
     ULONG64 frameNumber;
-
+    boolean pruneInProgress;
     pfn* page;
 
 
@@ -531,6 +531,15 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
     } else {
         modified_read(currentPTE, frameNumber, threadInfo);
     }
+
+    // ideally we never have to go to standby, because  then we are forcing ourselves into one lane, so when we do, we should be pruning
+    // pruneInProgress = (BOOL)InterlockedCompareExchange((volatile LONG *)&vm.misc.standByPruningInProgress, TRUE, FALSE);
+    //
+    // if (pruneInProgress == FALSE) {
+    //     batchVictimsFromStandByList(threadInfo);
+    // }
+    //
+    // InterlockedExchange((volatile LONG *)&vm.misc.standByPruningInProgress, FALSE);
 
     return page;
 }
