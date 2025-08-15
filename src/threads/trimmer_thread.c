@@ -34,9 +34,13 @@ DWORD page_trimmer(LPVOID info) {
     pfn* page;
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
-    PTE_REGION* region;
+
     PTHREAD_INFO threadContext;
     threadContext = (PTHREAD_INFO)info;
+    PTE_REGION* currentRegion;
+    ULONG64 totalTrimmedPages;
+    ULONG64 trimmedPagesInRegion;
+    pte* currentPTE;
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -44,8 +48,11 @@ DWORD page_trimmer(LPVOID info) {
     events[1] = vm.events.systemShutdown;
 
 
+    currentRegion = vm.pte.RegionsBase;
+
     while (TRUE) {
         BatchIndex = 0;
+        totalTrimmedPages = 0;
         doubleBreak = FALSE;
         trimmedPageTableLock = NULL;
 
@@ -57,8 +64,54 @@ DWORD page_trimmer(LPVOID info) {
         }
 
         recallPagesFromLocalList();
+
+        while (totalTrimmedPages < BATCH_SIZE) {
+
+            //check for overflow then wrap.
+            if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
+                currentRegion = vm.pte.RegionsBase;
+            }
+
+            acquire_srw_exclusive(&currentRegion->lock, threadContext);
+
+            currentPTE = getFirstPTEInRegion(currentRegion);
+
+            trimmedPagesInRegion = 0;
+            for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+
+                // when we find a valid pte invalidate it and store its info
+                if (currentPTE->validFormat.valid == 1) {
+
+
+                    currentPTE->transitionFormat.mustBeZero = 0;
+                    currentPTE->transitionFormat.contentsLocation = MODIFIED_LIST;
+                    page = getPFNfromFrameNumber(currentPTE->transitionFormat.frameNumber);
+
+                    virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+                    pages[trimmedPagesInRegion] = page;
+
+                    trimmedPagesInRegion++;
+                    totalTrimmedPages++;
+
+                }
+
+                currentPTE++;
+            }
+            unmapBatch(virtualAddresses, trimmedPagesInRegion);
+            addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
+
+            release_srw_exclusive(&currentRegion->lock);
+            currentRegion++;
+
+        }
+
+
+#if 0
         // while there is still stuff to trim and the arrays are not at capacity
         while ((vm.lists.modified.length < vm.config.number_of_physical_pages / 4) && BatchIndex < BATCH_SIZE) {
+
+
+
 
             page = getActivePage(threadContext);
 
@@ -114,6 +167,8 @@ DWORD page_trimmer(LPVOID info) {
 
         //nptodo add a condition around this
         SetEvent(vm.events.writingStart);
+#endif
+
 
 
     }

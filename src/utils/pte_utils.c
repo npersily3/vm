@@ -34,6 +34,14 @@ PTE_REGION* getPTERegion(pte* pte) {
     ULONG64 index = pageTableIndex / vm.config.number_of_ptes_per_region;
     return  vm.pte.RegionsBase + index;
 }
+
+pte* getFirstPTEInRegion(PTE_REGION* region) {
+    ULONG64 regionIndex = (region - vm.pte.RegionsBase);
+    ULONG64 pteIndex = regionIndex * vm.config.number_of_ptes_per_region;
+
+    return vm.pte.table + pteIndex;
+}
+
 BOOL isPTEValid(pte* pte) {
 
     return ((ULONG64)pte >= (ULONG64) vm.pte.table) && ((ULONG64)pte < ((ULONG64) vm.pte.table + vm.config.page_table_size_in_bytes) );

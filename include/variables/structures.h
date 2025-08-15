@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else

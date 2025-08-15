@@ -33,7 +33,7 @@ PVOID getWriterThreadMapping(PTHREAD_INFO threadContext) {
     PVOID va = (PVOID) ((ULONG64) currentTransferVa + BATCH_SIZE * PAGE_SIZE  * threadContext->TransferVaIndex);
 
     threadContext->TransferVaIndex += 1;
-    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_transfer_va_space_in_pages);
+    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_user_thread_transfer_va_space_in_pages);
 
     return va;
 }

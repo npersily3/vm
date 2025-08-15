@@ -139,7 +139,7 @@ PVOID getThreadMapping(PTHREAD_INFO threadContext) {
     PVOID va = (PVOID) ((ULONG64) currentTransferVa + PAGE_SIZE  * threadContext->TransferVaIndex);
 
     threadContext->TransferVaIndex += 1;
-    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_transfer_va_space_in_pages);
+    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_user_thread_transfer_va_space_in_pages);
 
     return va;
 }
@@ -333,10 +333,6 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     currentPTE->validFormat.transition = UNASSIGNED;
 
 
-    enterPageLock(page, threadInfo);
-    addPageToTail(&vm.lists.active, page, threadInfo);
-    leavePageLock(page, threadInfo);
-
     return !REDO_FAULT;
 
 }
@@ -440,9 +436,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
         return FALSE;
     }
 
-    enterPageLock(page, threadInfo);
-    addPageToTail(&vm.lists.active, page, threadInfo);
-    leavePageLock(page, threadContext);
+
 
     return !REDO_FAULT;
 }
@@ -506,7 +500,7 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
 
 
     ULONG64 frameNumber;
-    boolean pruneInProgress;
+
     pfn* page;
 
 
@@ -533,13 +527,7 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
     }
 
     // ideally we never have to go to standby, because  then we are forcing ourselves into one lane, so when we do, we should be pruning
-    // pruneInProgress = (BOOL)InterlockedCompareExchange((volatile LONG *)&vm.misc.standByPruningInProgress, TRUE, FALSE);
-    //
-    // if (pruneInProgress == FALSE) {
-    //     batchVictimsFromStandByList(threadInfo);
-    // }
-    //
-    // InterlockedExchange((volatile LONG *)&vm.misc.standByPruningInProgress, FALSE);
+
 
     return page;
 }
@@ -571,8 +559,10 @@ pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo) {
     // if the rescue sees a change in the pte it will redo the fault
     // We have to write no fence here in order to avoid tearing
 
+
     local.transitionFormat.contentsLocation = DISK;
     local.invalidFormat.diskIndex = page->diskIndex;
+
 
     WriteULong64NoFence((volatile DWORD64 *)page->pte,  local.entireFormat);
 
