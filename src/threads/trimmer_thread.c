@@ -106,6 +106,8 @@ DWORD page_trimmer(LPVOID info) {
 
         }
 
+        SetEvent(vm.events.writingStart);
+
 
 #if 0
         // while there is still stuff to trim and the arrays are not at capacity

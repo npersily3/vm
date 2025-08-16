@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -94,7 +94,11 @@ typedef struct {
 
 
 #define MAX_FAULTS 0xFFFFFF
+#if DBG
+#define BATCH_SIZE (64)
+#else
 #define BATCH_SIZE (512)
+#endif
 #define NUM_WRITING_BATCHES (128)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
