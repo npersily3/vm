@@ -37,6 +37,7 @@ full_virtual_memory_test(VOID) {
 
     start = GetTickCount64();
 
+    printf("initialization done");
     SetEvent(vm.events.userStart);
 
     int i;
@@ -184,7 +185,7 @@ while (TRUE) {
 #if DBG
      i++;
      if (i % KB(8) == 0) {
-    //     printf(".");
+         printf(".");
      }
 #endif
 

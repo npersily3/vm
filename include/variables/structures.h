@@ -273,7 +273,7 @@ typedef struct {
     stochastic_data statistics;
     sharedLock lock;
 
-    ULONG64: 1, accessed;
+    ULONG64: 1, hasActiveEntry;
 } PTE_REGION;
 
 
