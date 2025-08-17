@@ -361,6 +361,8 @@ typedef struct {
     volatile ULONG64 totalTimeWaiting;
 
     volatile boolean standByPruningInProgress;
+    volatile ULONG64 numTrims;
+    volatile ULONG64 numWrites;
 } misc;
 
 // Main components are the transfer va index,

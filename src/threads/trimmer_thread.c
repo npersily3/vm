@@ -27,9 +27,12 @@
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
  * @retval 0 If the program succeeds
  */
+
+#define VERBOSE 1
 DWORD page_trimmer(LPVOID info) {
-    ULONG64 BatchIndex;
-    BOOL doubleBreak;
+
+    ULONG64 counter;
+
     sharedLock* trimmedPageTableLock;
     pfn* page;
     pfn* pages[BATCH_SIZE];
@@ -50,10 +53,18 @@ DWORD page_trimmer(LPVOID info) {
 
     currentRegion = vm.pte.RegionsBase;
 
+#if VERBOSE
+    ULONG64 start;
+    ULONG64 end;
+
+
+#endif
+
+
     while (TRUE) {
-        BatchIndex = 0;
+
         totalTrimmedPages = 0;
-        doubleBreak = FALSE;
+        counter = 0;
         trimmedPageTableLock = NULL;
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
@@ -63,9 +74,13 @@ DWORD page_trimmer(LPVOID info) {
             return 0;
         }
 
-        recallPagesFromLocalList();
+      //  recallPagesFromLocalList();
 
-        while (totalTrimmedPages < BATCH_SIZE) {
+#if VERBOSE
+        start = __rdtsc();
+#endif
+
+        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
 
             //check for overflow then wrap.
             if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
@@ -103,75 +118,17 @@ DWORD page_trimmer(LPVOID info) {
             }
             release_srw_exclusive(&currentRegion->lock);
             currentRegion++;
+            counter++;
 
         }
-
-        SetEvent(vm.events.writingStart);
-
-
-#if 0
-        // while there is still stuff to trim and the arrays are not at capacity
-        while ((vm.lists.modified.length < vm.config.number_of_physical_pages / 4) && BatchIndex < BATCH_SIZE) {
-
-
-
-
-            page = getActivePage(threadContext);
-
-            if (page == NULL) {
-                if (BatchIndex == 0) {
-                    doubleBreak = TRUE;
-                }
-                break;
-            }
-
-            // if we are not on a streak we need to get a new region a lock the ptes
-            if (trimmedPageTableLock == NULL) {
-
-                region = getPTERegion(page->pte);
-                trimmedPageTableLock = &region->lock;
-                acquire_srw_exclusive(trimmedPageTableLock, threadContext);
-            } else {
-                ASSERT(region == getPTERegion(page->pte))
-            }
-
-
-            virtualAddresses[BatchIndex] = (ULONG64) pte_to_va(page->pte);
-            pages[BatchIndex] = page;
-            pages[BatchIndex]->pte->transitionFormat.mustBeZero = 0;
-            pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
-            BatchIndex++;
-
-            if (isNextPageInSameRegion(region, threadContext) == FALSE) {
-                unmapBatch(virtualAddresses, BatchIndex);
-                addBatchToModifiedList(pages, BatchIndex,  threadContext);
-
-                release_srw_exclusive(trimmedPageTableLock);
-                // Setting this to null tells the next loop to get a new region
-                trimmedPageTableLock = NULL;
-                BatchIndex = 0;
-
-            }
-        }
-        if (doubleBreak == TRUE) {
-            SetEvent(vm.events.writingStart);
-            continue;
-        }
-        if (BatchIndex == 0) {
-            SetEvent(vm.events.writingStart);
-            continue;
-        }
-
-        //this just handles the last batch
-        unmapBatch(virtualAddresses, BatchIndex);
-        addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
-
-        release_srw_exclusive(trimmedPageTableLock);
-
-        //nptodo add a condition around this
-        SetEvent(vm.events.writingStart);
+#if VERBOSE
+        end = __rdtsc();
+        printf("trim time: %llu\n", start-end);
 #endif
 
+        vm.misc.numTrims ++;
+
+        SetEvent(vm.events.writingStart);
 
 
     }

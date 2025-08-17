@@ -86,6 +86,7 @@ DWORD diskWriter (LPVOID info) {
 
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
+        vm.misc.numWrites ++;
 
         //if the system shutdown event was signaled, exit
         if (returnEvent - WAIT_OBJECT_0 == 1) {
