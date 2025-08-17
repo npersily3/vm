@@ -184,7 +184,7 @@ DWORD testVM(LPVOID lpParam) {
         }
 #if 1
      i++;
-     if (i % KB(8) == 0) {
+     if (i % KB(128) == 0) {
          printf(".");
      }
 #endif
