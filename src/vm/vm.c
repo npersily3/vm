@@ -18,11 +18,14 @@ static __inline unsigned __int64 GetTimeStampCounter(void) {
 }
 
 
+ULONG64 noah;
+
 VOID
 full_virtual_memory_test(VOID) {
 
 
 
+    noah = 0;
 
     ULONG64 start, end;
 
@@ -114,7 +117,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1); i++) {
+ for (; i < MB(10); i++) {
 //while (TRUE) {
         #endif
 
@@ -184,9 +187,12 @@ DWORD testVM(LPVOID lpParam) {
         }
 #if 1
      i++;
-     if (i % KB(128) == 0) {
+     if (i % MB(1) == 0) {
          printf(".");
      }
+    if (noah) {
+        printf("noah");
+    }
 #endif
 
 }
@@ -245,7 +251,6 @@ main(int argc, char **argv) {
 
 
     full_virtual_memory_test();
-
 
 }
 
