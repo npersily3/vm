@@ -117,8 +117,8 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1) ; i++) {
-//while (TRUE) {
+ //for (; i < MB(1) ; i++) {
+while (TRUE) {
         #endif
 
 
@@ -185,9 +185,9 @@ DWORD testVM(LPVOID lpParam) {
            //recordAccess(arbitrary_va);
             redo_try_same_address = FALSE;
         }
-#if 1
+#if 0
      i++;
-     if (i % MB(1) == 0) {
+     if (i % KB(128) == 0) {
          printf(".");
      }
 #endif

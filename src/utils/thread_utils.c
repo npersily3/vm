@@ -167,7 +167,7 @@ VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
 }
 
 VOID release_srw_exclusive(sharedLock* lock) {
-#if DBG
+#if 1
     debug_release_srw_exclusive(lock);
 #else
     ReleaseSRWLockExclusive(&lock->sharedLock);
