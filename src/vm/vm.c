@@ -186,7 +186,7 @@ while (TRUE) {
             redo_try_same_address = FALSE;
         }
 #if 1
-//     i++;
+     i++;
      if (i % KB(128) == 0) {
          printf(".");
      }

@@ -62,7 +62,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
 
 
 VOID init_base_config(VOID) {
-#if DBG
+#if 1
     vm.config.virtual_address_size = 256 * PAGE_SIZE;
     vm.config.number_of_physical_pages = 128;
 #else

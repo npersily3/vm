@@ -115,16 +115,22 @@ DWORD page_trimmer(LPVOID info) {
 
                     currentPTE++;
                 }
+                currentRegion->hasActiveEntry = FALSE;
+
+                release_srw_exclusive(&currentRegion->lock);
+
                 unmapBatch(virtualAddresses, trimmedPagesInRegion);
                 addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
-                currentRegion->hasActiveEntry = FALSE;
+
                 InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
+            } else {
+
+
+                release_srw_exclusive(&currentRegion->lock);
+                currentRegion++;
+                counter++;
             }
 
-
-            release_srw_exclusive(&currentRegion->lock);
-            currentRegion++;
-            counter++;
 
         }
 #if VERBOSE
