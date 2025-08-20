@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -327,6 +327,7 @@ typedef struct {
     PULONG_PTR physical_page_numbers;
     pfn *start;
     pfn *end;
+    volatile ULONG64 numActivePages;
 } pfns;
 
 typedef struct {

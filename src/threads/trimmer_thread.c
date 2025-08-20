@@ -28,10 +28,11 @@
  * @retval 0 If the program succeeds
  */
 
-#define VERBOSE 1
+#define VERBOSE 0
 DWORD page_trimmer(LPVOID info) {
 
     ULONG64 counter;
+
 
     sharedLock* trimmedPageTableLock;
     pfn* page;
@@ -44,6 +45,8 @@ DWORD page_trimmer(LPVOID info) {
     ULONG64 totalTrimmedPages;
     ULONG64 trimmedPagesInRegion;
     pte* currentPTE;
+
+
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -74,13 +77,13 @@ DWORD page_trimmer(LPVOID info) {
             return 0;
         }
 
-      //  recallPagesFromLocalList();
+      recallPagesFromLocalList();
 
 #if VERBOSE
         start = __rdtsc();
 #endif
 
-        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
+        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions && vm.pfn.numActivePages > 0) {
 
             //check for overflow then wrap.
             if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
@@ -116,6 +119,8 @@ DWORD page_trimmer(LPVOID info) {
                 addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
                 currentRegion->hasActiveEntry = FALSE;
             }
+
+            InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             release_srw_exclusive(&currentRegion->lock);
             currentRegion++;
             counter++;

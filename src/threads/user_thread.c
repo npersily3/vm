@@ -218,6 +218,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
     unlockPTE(currentPTE);
+    InterlockedIncrement64(&vm.pfn.numActivePages);
 
 
     return returnValue;

@@ -25,7 +25,7 @@ full_virtual_memory_test(VOID) {
 
 
 
-    noah = 0;
+    noah = 1;
 
     ULONG64 start, end;
 
@@ -117,7 +117,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(10); i++) {
+ for (; i < MB(1) ; i++) {
 //while (TRUE) {
         #endif
 
@@ -190,9 +190,6 @@ DWORD testVM(LPVOID lpParam) {
      if (i % MB(1) == 0) {
          printf(".");
      }
-    if (noah) {
-        printf("noah");
-    }
 #endif
 
 }
