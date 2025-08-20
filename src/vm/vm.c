@@ -185,8 +185,8 @@ while (TRUE) {
            //recordAccess(arbitrary_va);
             redo_try_same_address = FALSE;
         }
-#if 0
-     i++;
+#if 1
+//     i++;
      if (i % KB(128) == 0) {
          printf(".");
      }

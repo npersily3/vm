@@ -118,9 +118,10 @@ DWORD page_trimmer(LPVOID info) {
                 unmapBatch(virtualAddresses, trimmedPagesInRegion);
                 addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
                 currentRegion->hasActiveEntry = FALSE;
+                InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             }
 
-            InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
+
             release_srw_exclusive(&currentRegion->lock);
             currentRegion++;
             counter++;

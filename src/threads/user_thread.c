@@ -212,15 +212,16 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
         }
     }
 
-    PTE_REGION* region = getPTERegion(currentPTE);
-
-    region->hasActiveEntry = TRUE;
 
 
-    unlockPTE(currentPTE);
     if (returnValue != REDO_FAULT) {
+        PTE_REGION* region = getPTERegion(currentPTE);
+        region->hasActiveEntry = TRUE;
         InterlockedIncrement64(&vm.pfn.numActivePages);
     }
+
+    unlockPTE(currentPTE);
+
 
     return returnValue;
 
