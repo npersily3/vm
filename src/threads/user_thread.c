@@ -116,7 +116,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         // We can do this without a pte lock because the page lock protects it from rescues
         page->pte->transitionFormat.contentsLocation = DISK;
         page->pte->invalidFormat.diskIndex = page->diskIndex;
-        //set_disk_space_free(page->diskIndex);
+        set_disk_space_free(page->diskIndex);
 
         // add it to the list and manage locks
         nextPage = container_of(page->entry.Flink, pfn, entry);
