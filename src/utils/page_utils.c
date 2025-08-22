@@ -183,12 +183,19 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
         // another thread that acquires exclusively could have changed our page
         Flink = container_of(page->entry.Flink, pfn, entry);
         Blink = container_of(page->entry.Blink, pfn, entry);
+
+        // set blink to null to trigger the right logic
+        if (Flink == Blink) {
+            Blink = NULL;
+        }
     }
 
 #if DBG
  //   validateList(head);
     ASSERT(Flink->entry.Blink == &page->entry)
-    ASSERT(Blink->entry.Flink == &page->entry)
+    if (Blink != NULL) {
+        ASSERT(Blink->entry.Flink == &page->entry)
+    }
 #endif
 
 

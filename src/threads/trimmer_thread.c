@@ -243,7 +243,7 @@ BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
     lock = &vm.lists.active.sharedLock;
 
     // Peek ahead
-    // TODO make this a no fence on the entry
+
     // acquire shared
     enterPageLock(&vm.lists.active.page, info);
     nextPage = container_of(&vm.lists.active.entry.Flink, pfn, entry);

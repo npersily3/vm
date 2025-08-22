@@ -389,7 +389,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
 
                 unlockPTE(currentPTE);
 
-                //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
+
 
                 ResetEvent(vm.events.writingEnd);
                 SetEvent(vm.events.trimmingStart);
@@ -568,9 +568,10 @@ pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo) {
     // We have to write no fence here in order to avoid tearing
 
 
+    //TODO there is some sort of condition where I am unintentionally locking the whole thing, How do I cross edit ptes with the lock bit
+
     local.transitionFormat.contentsLocation = DISK;
     local.invalidFormat.diskIndex = page->diskIndex;
-
 
     WriteULong64NoFence((volatile DWORD64 *)page->pte,  local.entireFormat);
 
@@ -626,7 +627,7 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
  * @param threadContext The caller's thread info. It is used to determine which transfer virtual page to use.
 
  */
-// TODO make it only take in a frame number and make it void
+
 BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
 
     PVOID zeroVA;
@@ -657,7 +658,7 @@ BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
  * @post The caller must release the page lock of the returned page.
  */
 
-// TODO think about this local list as a loan and have the trimmer or someone else take it back
+
 pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 
     ULONG64 localFreeListIndex;

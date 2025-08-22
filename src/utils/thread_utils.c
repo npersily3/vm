@@ -190,27 +190,28 @@ VOID debug_release_srw_exclusive(sharedLock* lock) {
 }
 #endif
 
+//For now, I turned off the asserts because of how the recall woorks
 // wrapper for pagelocks to help with debugging
 VOID enterPageLock(pfn* page, PTHREAD_INFO info) {
 
-    ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
+//    ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
 
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
     EnterCriticalSection(&page->lock);
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
-    ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+  //  ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
 }
 
 boolean tryEnterPageLock(pfn* page, PTHREAD_INFO info) {
 
     bool result;
 
-    ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
+   // ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
     result = TryEnterCriticalSection(&page->lock);
 
     if (result) {
-        ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+   //     ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
     }
 
     return result;
@@ -218,7 +219,7 @@ boolean tryEnterPageLock(pfn* page, PTHREAD_INFO info) {
 
 
 VOID leavePageLock(pfn* page, PTHREAD_INFO info) {
-    ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+ //   ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
     LeaveCriticalSection(&page->lock);

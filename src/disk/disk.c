@@ -53,7 +53,7 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
 
 
 
-    // TODO make it wrap and have a writer thread ulong past in that is the last location
+
     while (isNotAtEnd && arrayIsNotFull) {
 
         if (*start != FULL_DISK_SPACE) {
