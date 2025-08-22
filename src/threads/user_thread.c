@@ -58,7 +58,7 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
     // iterate through the freelists starting at the index calculated above and try to lock it
     while (TRUE) {
         // once you lock a free list insert it at the head
-        if (TryEnterCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock) == TRUE) {
+        if (tryEnterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadInfo) == TRUE) {
 
 #if DBG
             validateList(&vm.lists.free.heads[localFreeListIndex]);
@@ -683,7 +683,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     while (TRUE) {
         // In our first run through, just try to enter a freelist lock
         if (counter < vm.config.number_of_free_lists) {
-            if (TryEnterCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock) == TRUE) {
+            if (tryEnterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadContext) == TRUE) {
                 gotFreeListLock = TRUE;
             }
             // if all of them were empty at the time we checked

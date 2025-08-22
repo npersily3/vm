@@ -154,14 +154,14 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
         Flink = container_of(page->entry.Flink, pfn, entry);
         Blink = container_of(page->entry.Blink, pfn, entry);
 
-        if (TryEnterCriticalSection(&Flink->lock) == TRUE) {
+        if (tryEnterPageLock(Flink, threadInfo) == TRUE) {
             // set blink to null if there is only one page prevents double acquisitions
             if (Flink == Blink) {
                 Blink = NULL;
                 obtainedPageLocks = TRUE;
                 break;
             }
-            if (TryEnterCriticalSection(&Blink->lock) == TRUE) {
+            if (tryEnterPageLock(Blink, threadInfo) == TRUE) {
                 obtainedPageLocks = TRUE;
                 break;
             }
@@ -195,12 +195,12 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
 // actual list operation
     if (Blink == NULL) {
-        ASSERT(head->length == 0)
+        ASSERT(head->length == 1)
 
         head->entry.Flink = &head->entry;
         head->entry.Blink = &head->entry;
     } else {
-        ASSERT(head->length > 0)
+        ASSERT(head->length > 1)
 
         LIST_ENTRY* prevEntry = &Blink->entry;
         LIST_ENTRY* nextEntry = &Flink->entry;
@@ -267,7 +267,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
             return LIST_IS_EMPTY;
         }
 
-        if (TryEnterCriticalSection(&pageToRemove->lock) == FALSE) {
+        if (tryEnterPageLock(pageToRemove, threadInfo) == FALSE) {
             leavePageLock(&head->page, threadInfo);
             continue;
         }
@@ -283,7 +283,7 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
         }
 
 
-        if (TryEnterCriticalSection(&flinkOfPageToRemove->lock) == TRUE) {
+        if (tryEnterPageLock(flinkOfPageToRemove, threadInfo) == TRUE) {
             obtainedPageLocks = TRUE;
             break;
         }
@@ -412,7 +412,7 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
         }
 
 
-        if (TryEnterCriticalSection(&nextPage->lock) == TRUE) {
+        if (tryEnterPageLock(nextPage, threadInfo) == TRUE) {
             obtainedPageLocks = TRUE;
             break;
         }

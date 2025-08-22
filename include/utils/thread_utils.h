@@ -23,6 +23,7 @@ VOID release_srw_shared(sharedLock* lock);
 
 VOID enterPageLock(pfn* page, PTHREAD_INFO info);
 VOID leavePageLock(pfn* page, PTHREAD_INFO info);
+boolean tryEnterPageLock(pfn* page, PTHREAD_INFO info);
 
 #if DBG
 
