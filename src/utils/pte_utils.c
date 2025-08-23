@@ -49,13 +49,18 @@ BOOL isPTEValid(pte* pte) {
 VOID lockPTE(pte* pte) {
 
     PTE_REGION* region = getPTERegion(pte);
-    BOOL oldValue;
 
+#if 0
+    BOOL oldValue;
     acquire_srw_shared(&region->lock);
 
     do {
         oldValue = _interlockedbittestandset64((volatile LONG64*)&pte->entireFormat, 1);
     } while (oldValue == 1);
+#endif
+
+
+    acquire_srw_exclusive(&region->lock, NULL);
     ASSERT(pte->transitionFormat.access == 0);
 }
 
@@ -63,6 +68,6 @@ VOID unlockPTE(pte* pte) {
     PTE_REGION* region = getPTERegion(pte);
     ASSERT(pte->transitionFormat.access == 0);
 
-    _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
-    release_srw_shared(&region->lock);
+   // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
+    release_srw_exclusive(&region->lock);
 }

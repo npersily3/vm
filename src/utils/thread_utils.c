@@ -181,11 +181,11 @@ VOID release_srw_exclusive(sharedLock* lock) {
 
 VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
     AcquireSRWLockExclusive(&lock->sharedLock);
-    lock->threadId = info->ThreadId;
+   // lock->threadId = info->ThreadId;
 }
 
 VOID debug_release_srw_exclusive(sharedLock* lock) {
-    lock->threadId = -1;
+    //lock->threadId = -1;
     ReleaseSRWLockExclusive(&lock->sharedLock);
 }
 #endif
