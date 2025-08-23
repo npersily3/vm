@@ -12,6 +12,7 @@
 #include "../../include/utils/pte_utils.h"
 #include "../../include/utils/page_utils.h"
 #include "../../include/utils/thread_utils.h"
+#include "initialization/init.h"
 #include "threads/user_thread.h"
 
 /**
@@ -77,13 +78,13 @@ DWORD page_trimmer(LPVOID info) {
             return 0;
         }
 
-      recallPagesFromLocalList();
+      recallPagesFromLocalList(threadContext);
 
 #if VERBOSE
         start = __rdtsc();
 #endif
 
-        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions && vm.pfn.numActivePages > 0) {
+        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
 
             //check for overflow then wrap.
             if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
@@ -145,38 +146,57 @@ DWORD page_trimmer(LPVOID info) {
         vm.misc.numTrims ++;
 
         SetEvent(vm.events.writingStart);
-
-
     }
 }
 
-ULONG64 recallPagesFromLocalList(VOID) {
-    ULONG64 time;
-    ULONG64 prevTime;
-    LARGE_INTEGER currentTime;
+ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
+
     PTHREAD_INFO currentThreadContext;
     pfn* page;
     ULONG64 counter;
+    listHead trimmerLocalList;
+    PLIST_ENTRY entry;
+    pListHead head;
 
     counter = 0;
+    init_list_head(&trimmerLocalList);
+
     for (int i = 0; i < vm.config.number_of_user_threads; i++) {
+
+
         currentThreadContext = &vm.threadInfo.user[i];
-        acquire_srw_exclusive(&currentThreadContext->localList.sharedLock, currentThreadContext);
 
-        prevTime = currentThreadContext->localList.timeOfLastAccess;
-        QueryPerformanceCounter(&currentTime);
-        time = currentTime.QuadPart;
-        //todo make this unconditional just remove all of them.
-        if ((time - prevTime) > vm.config.time_until_recall_pages) {
-            while (&currentThreadContext->localList.entry != currentThreadContext->localList.entry.Flink) {
-                page = container_of(currentThreadContext->localList.entry.Flink, pfn, entry);
-                addPageToFreeList(page, currentThreadContext);
-                counter++;
-            }
+        head = &currentThreadContext->localList;
+        acquire_srw_exclusive(&head->sharedLock, trimThreadContext);
 
+
+
+        // make order one
+        while (&head->entry != head->entry.Flink) {
+             entry = RemoveHeadList(head);
+            page = container_of(entry, pfn, entry);
+            InsertHeadList(&trimmerLocalList, &page->entry);
         }
 
-        release_srw_exclusive(&currentThreadContext->localList.sharedLock);
+        release_srw_exclusive(&head->sharedLock);
+
+        //get info
+        // get list lock
+
+        //assemble local list
+
+        // release list lock
+
+        // add pages off of local to free lists
+
+
+        head = &trimmerLocalList;
+        while (&head->entry != head->entry.Flink) {
+            entry = RemoveHeadList(head);
+            page = container_of(entry, pfn, entry);
+            addPageToFreeList(page, trimThreadContext);
+            counter++;
+        }
     }
     return counter;
 }
@@ -229,6 +249,20 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
         enterPageLock(page, threadContext);
+
+#if DBG
+        if (page->isBeingWritten == FALSE && (page->hasBeenRescuedWhileWritten == FALSE)) {
+            ASSERT(page->diskIndex == 0);
+        }
+
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == page->pte) {
+                DebugBreak();
+            }
+        }
+
+#endif
+
         addPageToTail(&vm.lists.modified, page, threadContext);
         leavePageLock(page, threadContext);
     }

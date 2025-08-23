@@ -96,7 +96,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 
     // adds pages onto the local list from the standby list but does not update them
     // returns with all the pages locked
-    if (removeBatchFromList(&vm.lists.standby, &localList, threadInfo) == LIST_IS_EMPTY) {
+    if (removeBatchFromList(&vm.lists.standby, &localList, threadInfo, vm.config.number_of_pages_to_trim_from_stand_by) == LIST_IS_EMPTY) {
         return;
     }
 
@@ -114,6 +114,26 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         localPTE.entireFormat = 0;
         localPTE.invalidFormat.transition = DISK;
         localPTE.invalidFormat.diskIndex = page->diskIndex;
+
+#if DBG
+
+#if DBG_DISK
+
+        ULONG64 count = 0;
+
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == page->pte) {
+                count++;
+            }
+        }
+        ASSERT(count == 1);
+#endif
+        page->hasBeenRescuedWhileWritten = 0;
+
+        page->diskIndex = 0;
+#endif
+
+
         WriteULong64NoFence((volatile ULONG64 *) currentPTE, localPTE.entireFormat);
 
         // cannot have this becaused we need to store the contents
@@ -207,14 +227,16 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                 returnValue = REDO_FAULT;
             }
         }
+
+        if (returnValue != REDO_FAULT) {
+            PTE_REGION *region = getPTERegion(currentPTE);
+            region->hasActiveEntry = TRUE;
+            InterlockedIncrement64(&vm.pfn.numActivePages);
+        }
+
     }
 
 
-    if (returnValue != REDO_FAULT) {
-        PTE_REGION *region = getPTERegion(currentPTE);
-        region->hasActiveEntry = TRUE;
-        InterlockedIncrement64(&vm.pfn.numActivePages);
-    }
 
     unlockPTE(currentPTE);
 
@@ -298,6 +320,10 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
     // page to the standby list
     // Instead, the writer will free its disk space
     if (page->isBeingWritten == TRUE) {
+#if DBG
+    page->hasBeenRescuedWhileWritten = 1;
+
+#endif
         page->isBeingWritten = FALSE;
     }
     // If its on standby, remove it and set the disk space free
@@ -306,11 +332,33 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
 
         set_disk_space_free(page->diskIndex);
 #if DBG
+#if DBG_DISK
+
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == page->pte) {
+                DebugBreak();
+            }
+        }
+
+#endif
+
         page->diskIndex = 0;
 #endif
     } else {
+#if DBG_DISK
+
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == page->pte) {
+                DebugBreak();
+            }
+        }
+
+#endif
+
+        ASSERT(page->diskIndex == 0)
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfList(&vm.lists.modified, page, threadInfo);
+        ASSERT(page->diskIndex == 0)
     }
 
 
@@ -538,6 +586,24 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
     local.transitionFormat.contentsLocation = DISK;
     local.invalidFormat.diskIndex = page->diskIndex;
+#if DBG
+
+    #if DBG_DISK
+
+        ULONG64 count = 0;
+
+    for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+        if (vm.disk.activeVa[i] == page->pte) {
+            count++;
+        }
+    }
+    ASSERT(count == 1);
+#endif
+
+    page->hasBeenRescuedWhileWritten = 0;
+    page->diskIndex = 0;
+
+#endif
 
     WriteULong64NoFence((volatile DWORD64 *) page->pte, local.entireFormat);
 
@@ -579,8 +645,19 @@ modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
     set_disk_space_free(diskIndex);
 #if DBG
     pfn *page = getPFNfromFrameNumber(frameNumber);
-    page->diskIndex = 0;
 
+#if DBG_DISK
+
+    if (currentPTE != NULL) {
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == currentPTE ) {
+                DebugBreak();
+            }
+        }
+    }
+
+#endif
+    page->diskIndex = 0;
 #endif
 }
 
@@ -623,7 +700,7 @@ BOOL zeroOnePage(pfn *page, PTHREAD_INFO threadContext) {
  */
 
 
-pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
+pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     ULONG64 localFreeListIndex;
     PLIST_ENTRY entry;
     pfn *page;

@@ -68,6 +68,7 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
             InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
             returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
             diskIndices[numDiskSlotsFilled] = returnValue;
+            vm.disk.activeVa[returnValue] = (pte*) (1ULL << 63);
             numDiskSlotsFilled++;
 
         } else {
@@ -166,6 +167,11 @@ ULONG64 get_free_disk_bit(PULONG64 diskSlot) {
 
 VOID
 set_disk_space_free(ULONG64 diskIndex) {
+#if DBG_DISK
+
+    vm.disk.activeVa[diskIndex] = NULL;
+
+#endif
 
     ULONG64 diskMetaDataIndex;
     ULONG64 newDiskSlotContents;
@@ -203,24 +209,12 @@ set_disk_space_free(ULONG64 diskIndex) {
     bitOffset = diskIndex & (63);
     newDiskSlotContents = oldDiskSlotContents & ~((ULONG64)1 << bitOffset);
 
-    //T1
-        //oldDiskSlotContents 1111
-        //NewDiskSlotContents 1110
-    //T2
-        //oldDiskSlotContents 1111
-        //new diskSlotsContents 1101
 
-
-
-
-    //dASSERT(FALSE)
     while (true) {
         diskHasChanged = InterlockedCompareExchange64((PLONG64) diskMetaDateAddress,
             (LONG64) newDiskSlotContents,
             (LONG64) oldDiskSlotContents);
 
-        //t1
-        //diskhasChanged = 1111
         if (diskHasChanged == oldDiskSlotContents) {
             break;
         }

@@ -62,7 +62,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
 
 
 VOID init_base_config(VOID) {
-#if 1
+#if DBG
     vm.config.virtual_address_size = 256 * PAGE_SIZE;
     vm.config.number_of_physical_pages = 128;
 #else
@@ -264,7 +264,7 @@ if (vm.config.disk_division_size_in_pages % 64 != 0) {
 
 
 
-    vm.disk.activeVa = init_memory(numEntries * sizeof(ULONG64));
+    vm.disk.activeVa = init_memory(vm.config.disk_size_in_pages * sizeof(pte*));
 
 }
 

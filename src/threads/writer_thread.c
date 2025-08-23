@@ -10,6 +10,7 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
+#include "initialization/init.h"
 #include "threads/user_thread.h"
 /**
  *@file writer_thread.c
@@ -108,7 +109,7 @@ DWORD diskWriter (LPVOID info) {
         previousBatchSize = localBatchSize;
 
         // fill our local page and frame number arrays
-        getPagesFromModifiedList(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray,  threadContext);
+        localBatchSize = getPagesFromModifiedList(localBatchSize, pfnArray, diskIndexArray, frameNumberArray,  threadContext);
 
 
 
@@ -117,6 +118,7 @@ DWORD diskWriter (LPVOID info) {
             freeUnusedDiskSlots(diskIndexArray, localBatchSize, previousBatchSize);
         }
 
+        // modified list is empty
         if (localBatchSize == 0) {
             SetEvent(vm.events.writingEnd);
             continue;
@@ -199,6 +201,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
             if (page->isBeingFreed == TRUE) {
                 page->isBeingFreed = FALSE;
                 addPageToFreeList(page, info);
+
             }
         } else {
 
@@ -252,32 +255,29 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
  * @param frameNumberArray An array of frame numbers to be filled in.
  * @param threadContext The thread info of the caller.
  */
-VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
+ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
     pfn* page;
     ULONG64 frameNumber;
-    BOOL doubleBreak;
+    ULONG64 newBatchSize;
+
+    listHead head;
 
 
     i = 0;
-    doubleBreak = FALSE;
 
-    for (; i < *localBatchSizePointer; i++) {
+
+    init_list_head(&head);
+
+    newBatchSize = removeBatchFromList(&vm.lists.modified, &head, threadContext, localBatchSize);
+
+    for (; i < newBatchSize; i++) {
 
 
         // this function obtains the page lock for us
-        page = RemoveFromHeadofPageList(&vm.lists.modified, threadContext);
+        page = container_of(RemoveHeadList(&head), pfn, entry);
 
-
-        // if we reach the end update the contents of the size pointer and break
-        if (page == LIST_IS_EMPTY) {
-            if (i == 0) {
-                doubleBreak = TRUE;
-            }
-            *localBatchSizePointer = i;
-            break;
-        }
         frameNumber = getFrameNumber(page);
 
         pfnArray[i] = page;
@@ -287,11 +287,8 @@ VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, P
 
         leavePageLock(page, threadContext);
     }
-    if (doubleBreak == TRUE) {
-        return;
-    }
 
-    return;
+    return newBatchSize;
 }
 
 
@@ -310,14 +307,27 @@ VOID updatePage (pfn* page, ULONG64 diskIndex) {
 
 
     pte local;
+#if DBG_DISK
 
+    for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+        if (vm.disk.activeVa[i] == page->pte) {
+            DebugBreak();
+        }
+    }
+
+    vm.disk.activeVa[diskIndex] = page->pte;
+
+#endif
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
+
 
     local.entireFormat =  ReadULong64NoFence(&page->pte->entireFormat);
     local.transitionFormat.contentsLocation = STAND_BY_LIST;
 
     WriteULong64NoFence(&page->pte->entireFormat, local.entireFormat);
+
+
 
     //page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
 

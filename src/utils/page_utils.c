@@ -38,14 +38,18 @@ volatile ULONG64 pagesremoved;
  * @post All the pages added to the local list need to be unlocked
  */
 
-bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo) {
+ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo, ULONG64 number_of_pages) {
 
     pfn* firstPage;
     pfn* lastPage;
 
     acquire_srw_shared(&headToRemove->sharedLock);
-    enterPageLock(&headToRemove->page, threadInfo);
 
+    // TODO redo this to look more like my other my list methods
+    if (tryEnterPageLock(&headToRemove->page, threadInfo) == FALSE) {
+        release_srw_shared(&headToRemove->sharedLock);
+        acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
+    }
 
 
     ULONG64 number_of_pages_removed = 0;
@@ -55,7 +59,7 @@ bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
 
     page = container_of(headToRemove->entry.Flink, pfn, entry);
     // lock all the pages you can up until the threshold
-    for (; number_of_pages_removed < vm.config.number_of_pages_to_trim_from_stand_by; number_of_pages_removed++) {
+    for (; number_of_pages_removed < number_of_pages; number_of_pages_removed++) {
 
         if (&page->entry == &headToRemove->entry) {
             break;
@@ -105,7 +109,7 @@ bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
 
 #if DBG
 
-    validateList(headToRemove);
+    //validateList(headToRemove);
     validateList(headToAdd);
 
 #endif
@@ -113,11 +117,7 @@ bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
     leavePageLock(&headToRemove->page, threadInfo);
     release_srw_shared(&headToRemove->sharedLock);
 
-    if (number_of_pages_removed == 0) {
-        return LIST_IS_EMPTY;
-    }
-
-    return !LIST_IS_EMPTY;
+    return number_of_pages_removed ;
 }
 
 // Called with page's pageLock held

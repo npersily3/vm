@@ -187,7 +187,7 @@ while (TRUE) {
         }
 #if 1
      i++;
-     if (i % KB(128) == 0) {
+     if (i % MB(1) == 0) {
          printf(".");
      }
 #endif

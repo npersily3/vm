@@ -180,12 +180,25 @@ VOID release_srw_exclusive(sharedLock* lock) {
 
 
 VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
+    ULONG64 threadId;
+
+    if (info == NULL) {
+        threadId = GetCurrentThreadId();
+    } else {
+        threadId = info->ThreadId;
+    }
+
+    ASSERT(lock->threadId != threadId);
+
     AcquireSRWLockExclusive(&lock->sharedLock);
-   // lock->threadId = info->ThreadId;
+
+    lock->threadId = threadId;
+
 }
 
 VOID debug_release_srw_exclusive(sharedLock* lock) {
-    //lock->threadId = -1;
+    ASSERT(lock->threadId == GetCurrentThreadId());
+    lock->threadId = -1;
     ReleaseSRWLockExclusive(&lock->sharedLock);
 }
 #endif

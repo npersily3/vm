@@ -13,6 +13,9 @@
 
 // Debug macros
 #define DBG 1
+#define DBG_DISK 1
+
+
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -223,7 +226,12 @@ typedef struct {
     ULONG64 diskIndex;
     ULONG64 isBeingWritten: 1;
     ULONG64 isBeingFreed: 1;
+#if DBG
+    ULONG64 hasBeenRescuedWhileWritten: 1;
+#endif
     CRITICAL_SECTION lock;
+
+
 } pfn;
 
 
@@ -318,7 +326,7 @@ typedef struct {
     ULONG64 end;
     PULONG64 active;
     PULONG64 activeEnd;
-    PULONG64* activeVa;
+    pte** activeVa;
     ULONG64* number_of_open_slots;
 } disk;
 
