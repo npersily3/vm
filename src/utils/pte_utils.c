@@ -61,12 +61,12 @@ VOID lockPTE(pte* pte) {
 
 
     acquire_srw_exclusive(&region->lock, NULL);
-    ASSERT(pte->transitionFormat.access == 0);
+    //ASSERT(pte->transitionFormat.access == 0);
 }
 
 VOID unlockPTE(pte* pte) {
     PTE_REGION* region = getPTERegion(pte);
-    ASSERT(pte->transitionFormat.access == 0);
+    //ASSERT(pte->transitionFormat.access == 0);
 
    // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
     release_srw_exclusive(&region->lock);

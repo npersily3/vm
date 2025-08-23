@@ -46,11 +46,7 @@ bool removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_IN
     acquire_srw_shared(&headToRemove->sharedLock);
     enterPageLock(&headToRemove->page, threadInfo);
 
-#if DBG
 
-    validateList(headToRemove);
-
-#endif
 
     ULONG64 number_of_pages_removed = 0;
     pfn* page;

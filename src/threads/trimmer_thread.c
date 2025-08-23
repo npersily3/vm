@@ -101,6 +101,7 @@ DWORD page_trimmer(LPVOID info) {
                     // when we find a valid pte invalidate it and store its info
                     if (currentPTE->validFormat.valid == 1) {
 
+                        // todo stop tearing
                         currentPTE->transitionFormat.mustBeZero = 0;
                         currentPTE->transitionFormat.contentsLocation = MODIFIED_LIST;
                         page = getPFNfromFrameNumber(currentPTE->transitionFormat.frameNumber);
@@ -117,10 +118,13 @@ DWORD page_trimmer(LPVOID info) {
                 }
                 currentRegion->hasActiveEntry = FALSE;
 
-                release_srw_exclusive(&currentRegion->lock);
+
 
                 unmapBatch(virtualAddresses, trimmedPagesInRegion);
                 addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
+
+                // Need to have this after because I could fault it back in before it is on the modified list
+                release_srw_exclusive(&currentRegion->lock);
 
                 InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             } else {
@@ -162,6 +166,7 @@ ULONG64 recallPagesFromLocalList(VOID) {
         prevTime = currentThreadContext->localList.timeOfLastAccess;
         QueryPerformanceCounter(&currentTime);
         time = currentTime.QuadPart;
+        //todo make this unconditional just remove all of them.
         if ((time - prevTime) > vm.config.time_until_recall_pages) {
             while (&currentThreadContext->localList.entry != currentThreadContext->localList.entry.Flink) {
                 page = container_of(currentThreadContext->localList.entry.Flink, pfn, entry);

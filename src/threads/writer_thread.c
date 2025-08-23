@@ -308,9 +308,18 @@ VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, P
 // TODO make it so the pte only has one transition bit and pfn has a standby or modifed bit
 VOID updatePage (pfn* page, ULONG64 diskIndex) {
 
+
+    pte local;
+
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
-    page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
+
+    local.entireFormat =  ReadULong64NoFence(&page->pte->entireFormat);
+    local.transitionFormat.contentsLocation = STAND_BY_LIST;
+
+    WriteULong64NoFence(&page->pte->entireFormat, local.entireFormat);
+
+    //page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
 
 }
 
@@ -327,3 +336,4 @@ VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG
 }
 
 
+// TODO

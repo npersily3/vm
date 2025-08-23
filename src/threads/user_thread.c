@@ -115,7 +115,9 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         localPTE.invalidFormat.transition = DISK;
         localPTE.invalidFormat.diskIndex = page->diskIndex;
         WriteULong64NoFence((volatile ULONG64 *) currentPTE, localPTE.entireFormat);
-        set_disk_space_free(page->diskIndex);
+
+        // cannot have this becaused we need to store the contents
+        // set_disk_space_free(page->diskIndex);
 
         // add it to the list and manage locks
         nextPage = container_of(page->entry.Flink, pfn, entry);
