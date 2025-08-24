@@ -133,8 +133,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         page->diskIndex = 0;
 #endif
 
-
-        WriteULong64NoFence((volatile ULONG64 *) currentPTE, localPTE.entireFormat);
+       writePTE(currentPTE, localPTE);
 
         // cannot have this becaused we need to store the contents
         // set_disk_space_free(page->diskIndex);
@@ -286,18 +285,12 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
     // The following two checks see if the case where a pte is cross edited in the process of victimization occured
 
     // If before we got our snapshot, the pte was changed to non rescue
-    if (!isRescue(currentPTE)) {
+    if (!isRescue(&entryContents)) {
         return REDO_FAULT;
     }
 
     frameNumber = entryContents.transitionFormat.frameNumber;
     page = getPFNfromFrameNumber(frameNumber);
-
-    // if our page that we believe our contents is on no longer maps to our copy
-    if (page->pte->entireFormat != entryContents.entireFormat) {
-        return REDO_FAULT;
-    }
-
 
     enterPageLock(page, threadInfo);
 
@@ -309,7 +302,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
         return REDO_FAULT;
     }
 
-    if (!isRescue(currentPTE)) {
+    if (entryContents.entireFormat != currentPTE->entireFormat) {
         leavePageLock(page, threadInfo);
         return REDO_FAULT;
     }
@@ -372,8 +365,11 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
         return FALSE;
     }
 
-    currentPTE->validFormat.valid = 1;
-    currentPTE->validFormat.transition = UNASSIGNED;
+    ASSERT(entryContents.entireFormat == currentPTE->entireFormat);
+    entryContents.validFormat.valid = 1;
+    entryContents.validFormat.transition = UNASSIGNED;
+
+    writePTE(currentPTE, entryContents);
 
 
     return !REDO_FAULT;
@@ -459,10 +455,16 @@ BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
     frameNumber = getFrameNumber(page);
 
 
-    //validate the pte and add it to the list
-    currentPTE->validFormat.frameNumber = frameNumber;
-    currentPTE->validFormat.valid = 1;
+    //validate the pte
+    
+    pte localPTE;
 
+    localPTE.entireFormat = currentPTE->entireFormat;
+    localPTE.validFormat.frameNumber = frameNumber;
+    localPTE.validFormat.valid = 1;
+
+    writePTE(currentPTE, localPTE);
+    
 
     page->pte = currentPTE;
 
@@ -584,6 +586,7 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
     //TODO there is some sort of condition where I am unintentionally locking the whole thing, How do I cross edit ptes with the lock bit
 
+    local.entireFormat = 0;
     local.transitionFormat.contentsLocation = DISK;
     local.invalidFormat.diskIndex = page->diskIndex;
 #if DBG
@@ -605,7 +608,7 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
 #endif
 
-    WriteULong64NoFence((volatile DWORD64 *) page->pte, local.entireFormat);
+   writePTE(page->pte, local);
 
     leavePageLock(page, threadInfo);
 
@@ -804,7 +807,7 @@ pfn *getPageFromLocalList(PTHREAD_INFO threadContext) {
     pListHead head;
     pfn *page;
     PLIST_ENTRY entry;
-    LARGE_INTEGER time;
+
 
 
     head = &threadContext->localList;
@@ -820,8 +823,6 @@ pfn *getPageFromLocalList(PTHREAD_INFO threadContext) {
     page = container_of(entry, pfn, entry);
     release_srw_exclusive(&head->sharedLock);
 
-    QueryPerformanceCounter(&time);
-    head->timeOfLastAccess = time.QuadPart;
 
     return page;
 }

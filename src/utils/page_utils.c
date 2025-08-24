@@ -33,8 +33,7 @@ volatile ULONG64 pagesremoved;
  * @param headToRemove A list head to remove pages from
  * @param headToAdd A list head to add the pages removed
  * @param threadInfo The info of the calling thread
- * @retval True if it was able to remove pages
- * @retval False if the list to remove from was empty
+ * @return The number of pages removed
  * @post All the pages added to the local list need to be unlocked
  */
 
@@ -45,11 +44,20 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     pfn* lastPage;
     boolean obtainedExclusive;
 
+    volatile pfn* lockedPages[32] = {0};
     obtainedExclusive = FALSE;
+    ULONG64 pageLocksNeeded = 0;
+
+
+
+#if DBG
+
+    validateList(headToAdd);
+
+#endif
+
     acquire_srw_shared(&headToRemove->sharedLock);
 
-
-    // TODO redo this to look more like my other my list methods
     if (tryEnterPageLock(&headToRemove->page, threadInfo) == FALSE) {
         release_srw_shared(&headToRemove->sharedLock);
         acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
@@ -59,12 +67,14 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
     ULONG64 number_of_pages_removed = 0;
     pfn* page;
+    pageLocksNeeded = number_of_pages + 1;
 
     InterlockedIncrement64((volatile LONG64 *) &prunecount);
 
     page = container_of(headToRemove->entry.Flink, pfn, entry);
     // lock all the pages you can up until the threshold
-    for (; number_of_pages_removed < number_of_pages; number_of_pages_removed++) {
+
+    for (; number_of_pages_removed < pageLocksNeeded; number_of_pages_removed++) {
 
         if (&page->entry == &headToRemove->entry) {
             break;
@@ -74,9 +84,30 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
         if (tryEnterPageLock(page, threadInfo) == FALSE) {
             break;
         }
-
+#if DBG
+        if (number_of_pages_removed < 32) {
+            lockedPages[number_of_pages_removed] = page;
+        }
+#endif
         page = container_of(page->entry.Flink, pfn, entry);
     }
+
+
+
+    if (number_of_pages_removed == 1) {
+        if (&page->entry != &headToRemove->entry) {
+            number_of_pages_removed = 0;
+        } else {
+            number_of_pages_removed = 2;
+        }
+    }
+
+if (number_of_pages_removed != 0) {
+    number_of_pages_removed--;
+
+    // right now, just back up if you cannot get the lock
+
+
 
 
 
@@ -87,18 +118,22 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
     InterlockedAdd64(&headToRemove->length, (LONG64)
          (0 - number_of_pages_removed));
+}
 
 
-
-
-
+#if 1
     // i can edit the flinks and blinks here because all the pages have been lock
     //
     if (number_of_pages_removed != 0) {
 
 
         // the head and tail of the local list
+
+        // page is the new first page of the list we are removing from
+        // the other page locals pertain to the new list
         firstPage = container_of(headToRemove->entry.Flink, pfn, entry);
+
+        page = container_of(page->entry.Blink, pfn, entry);
         lastPage = container_of(page->entry.Blink, pfn, entry);
 
         headToAdd->entry.Flink = &firstPage->entry;
@@ -117,10 +152,10 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
             page->entry.Blink = &headToRemove->entry;
         }
     }
+#endif
 
 #if DBG
 
-    //validateList(headToRemove);
     validateList(headToAdd);
 
 #endif
@@ -128,6 +163,10 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     if (obtainedExclusive == TRUE) {
         release_srw_exclusive(&headToRemove->sharedLock);
     } else {
+        if (number_of_pages_removed != 0) {
+            leavePageLock(page, threadInfo);
+        }
+
         leavePageLock(&headToRemove->page, threadInfo);
         release_srw_shared(&headToRemove->sharedLock);
     }
@@ -172,6 +211,13 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
                 break;
             }
             if (tryEnterPageLock(Blink, threadInfo) == TRUE) {
+#if DBG
+                //   validateList(head);
+                ASSERT(Flink->entry.Blink == &page->entry)
+                if (Blink != NULL) {
+                    ASSERT(Blink->entry.Flink == &page->entry)
+                }
+#endif
                 obtainedPageLocks = TRUE;
                 break;
             }

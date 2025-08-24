@@ -337,10 +337,33 @@ typedef struct {
     pfn *end;
     volatile ULONG64 numActivePages;
 } pfns;
+#if DBG
+#define FRAMES_TO_CAPTURE 17
+typedef  struct __declspec(align(128)){
+    pte oldPteContents;
+    pte pteContents;
+    pte* pteAddress;
+
+    pfn pfnContents;
+    ULONG64 frameNumber;
+    PVOID stacktrace[FRAMES_TO_CAPTURE];
+    ULONG64 threadId;
+
+} debugPTE;
+
+
+#define DEBUG_PTE_CIRCULAR_BUFFER_SIZE 0x80000
+
+#endif
 
 typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
+
+#if DBG
+    volatile ULONG64 debugBufferIndex;
+    debugPTE* debugBuffer;
+#endif
 
 } ptes;
 
@@ -391,6 +414,7 @@ typedef struct {
     PTHREAD_INFO writer;
 
 } threadInfo;
+
 
 
 typedef struct {

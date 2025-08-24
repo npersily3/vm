@@ -100,12 +100,18 @@ DWORD page_trimmer(LPVOID info) {
                 for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
 
                     // when we find a valid pte invalidate it and store its info
-                    if (currentPTE->validFormat.valid == 1) {
+                    pte localPTE;
+                    localPTE.entireFormat = currentPTE->entireFormat;
+                    if (localPTE.validFormat.valid == 1) {
 
-                        // todo stop tearing
-                        currentPTE->transitionFormat.mustBeZero = 0;
-                        currentPTE->transitionFormat.contentsLocation = MODIFIED_LIST;
-                        page = getPFNfromFrameNumber(currentPTE->transitionFormat.frameNumber);
+
+                        localPTE.transitionFormat.mustBeZero = 0;
+                        localPTE.transitionFormat.contentsLocation = MODIFIED_LIST;
+                        writePTE(currentPTE, localPTE);
+
+
+
+                        page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
 
                         virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                         pages[trimmedPagesInRegion] = page;
@@ -201,25 +207,7 @@ ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
     return counter;
 }
 
-/**
- * @brief This functions pops a page off the active list and returns it unlocked
- * @param threadContext The thread info of the caller.
- * @return Returns an active page. If the list is empty, it returns null.
- */
-pfn* getActivePage(PTHREAD_INFO threadContext) {
 
-
-    pfn* page;
-
-    page = RemoveFromHeadofPageList(&vm.lists.active, threadContext);
-
-
-    if (page == LIST_IS_EMPTY) {
-        return NULL;
-    }
-    leavePageLock(page, threadContext);
-    return page;
-}
 
 /**
  * @brief Simple wrapper for a MapUserPhysicalPagesScatter call.
@@ -250,16 +238,16 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
         page = pages[i];
         enterPageLock(page, threadContext);
 
-#if DBG
+#if 0
         if (page->isBeingWritten == FALSE && (page->hasBeenRescuedWhileWritten == FALSE)) {
             ASSERT(page->diskIndex == 0);
-        }
-
-        for (int j = 0; j < vm.config.disk_size_in_pages; j++) {
-            if (vm.disk.activeVa[j] == page->pte) {
-                DebugBreak();
+            for (int j = 0; j < vm.config.disk_size_in_pages; j++) {
+                if (vm.disk.activeVa[j] == page->pte) {
+                    DebugBreak();
+                }
             }
         }
+
 
 #endif
 
@@ -268,32 +256,3 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
     }
 }
 
-/**
- * @brief This function peeks into the head of the active list and sees if the next page is in the same pte region.
- * @param region The page table region struct of the batch that is currently being trimmed.
- * @param info The info of the caller.
- * @return Returns true if the next page's corresponding page table entry is in the region passed in.
- */
-BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
-
-    pfn* nextPage;
-    PTE_REGION* nextRegion;
-    sharedLock* lock;
-    lock = &vm.lists.active.sharedLock;
-
-    // Peek ahead
-
-    // acquire shared
-    enterPageLock(&vm.lists.active.page, info);
-    nextPage = container_of(&vm.lists.active.entry.Flink, pfn, entry);
-    leavePageLock(&vm.lists.active.page, info);
-
-
-    if (&vm.lists.active.entry == &nextPage->entry) {
-        return LIST_IS_EMPTY;
-    }
-
-    nextRegion = getPTERegion(nextPage->pte);
-
-    return nextRegion == region;
-}

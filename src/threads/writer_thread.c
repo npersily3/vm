@@ -302,7 +302,7 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
 * @pre The page  must be locked.
  * @post The caller must release the page lock.
  */
-// TODO make it so the pte only has one transition bit and pfn has a standby or modifed bit
+
 VOID updatePage (pfn* page, ULONG64 diskIndex) {
 
 
@@ -322,10 +322,11 @@ VOID updatePage (pfn* page, ULONG64 diskIndex) {
     page->diskIndex = diskIndex;
 
 
+    // TODO make it so the pte only has one transition bit and pfn has a standby or modifed bit
     local.entireFormat =  ReadULong64NoFence(&page->pte->entireFormat);
     local.transitionFormat.contentsLocation = STAND_BY_LIST;
 
-    WriteULong64NoFence(&page->pte->entireFormat, local.entireFormat);
+    writePTE(page->pte, local);
 
 
 
@@ -345,5 +346,3 @@ VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG
     }
 }
 
-
-// TODO

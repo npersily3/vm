@@ -16,5 +16,10 @@ pte* getFirstPTEInRegion(PTE_REGION* region);
 BOOL isPTEValid(pte* pte);
 VOID unlockPTE(pte* pte);
 VOID lockPTE(pte* pte);
+VOID writePTE(pte* pteAddress, pte NewPteContents);
+#if DBG
+VOID recordAccess(pte* pteAddress, pte NewPteContents);
+#endif
+
 
 #endif //PTE_UTILS_H

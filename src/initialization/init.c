@@ -220,6 +220,12 @@ VOID init_disk(VOID) {
 
     init_disk_active();
     init_num_open_slots();
+#if DBG
+
+    vm.pte.debugBuffer = init_memory(sizeof(debugPTE) * DEBUG_PTE_CIRCULAR_BUFFER_SIZE);
+
+#endif
+
 }
 
 VOID init_disk_active(VOID) {

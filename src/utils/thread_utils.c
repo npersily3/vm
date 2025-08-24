@@ -232,7 +232,7 @@ boolean tryEnterPageLock(pfn* page, PTHREAD_INFO info) {
 
 
 VOID leavePageLock(pfn* page, PTHREAD_INFO info) {
- //   ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+    ASSERT(info->ThreadId == GetCurrentThreadId())
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
     LeaveCriticalSection(&page->lock);

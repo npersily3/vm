@@ -71,3 +71,31 @@ VOID unlockPTE(pte* pte) {
    // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
     release_srw_exclusive(&region->lock);
 }
+VOID writePTE(pte* pteAddress, pte NewPteContents) {
+    recordAccess(pteAddress, NewPteContents);
+    WriteULong64NoFence(&pteAddress->entireFormat, NewPteContents.entireFormat);
+
+}
+
+
+#if DBG
+
+VOID recordAccess(pte* pteAddress, pte NewPteContents) {
+
+    debugPTE* debug_pte;
+    ULONG64 index;
+
+    index = InterlockedIncrement64(&vm.pte.debugBufferIndex) - 1;
+    index %= DEBUG_PTE_CIRCULAR_BUFFER_SIZE;
+    debug_pte = &vm.pte.debugBuffer[index];
+
+    debug_pte->oldPteContents.entireFormat = pteAddress->entireFormat;
+    debug_pte->pteAddress = pteAddress;
+    debug_pte->pteContents = NewPteContents;
+    debug_pte->threadId = GetCurrentThreadId();
+    CaptureStackBackTrace(0,FRAMES_TO_CAPTURE,debug_pte->stacktrace,NULL);
+
+}
+
+
+#endif
