@@ -38,17 +38,22 @@ volatile ULONG64 pagesremoved;
  * @post All the pages added to the local list need to be unlocked
  */
 
+// todo Right now I am making a conscious design choice to back up immediately, I assume there is a smart way to back up, but right now I am just going to quit immeadiately
 ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo, ULONG64 number_of_pages) {
 
     pfn* firstPage;
     pfn* lastPage;
+    boolean obtainedExclusive;
 
+    obtainedExclusive = FALSE;
     acquire_srw_shared(&headToRemove->sharedLock);
+
 
     // TODO redo this to look more like my other my list methods
     if (tryEnterPageLock(&headToRemove->page, threadInfo) == FALSE) {
         release_srw_shared(&headToRemove->sharedLock);
         acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
+        obtainedExclusive = TRUE;
     }
 
 
@@ -65,10 +70,16 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
             break;
         }
 
-        enterPageLock(page, threadInfo);
+        // right now, just back up if you cannot get the lock
+        if (tryEnterPageLock(page, threadInfo) == FALSE) {
+            break;
+        }
 
         page = container_of(page->entry.Flink, pfn, entry);
     }
+
+
+
 #if DBG
     InterlockedAdd64( (volatile LONG64 *) &pagesremoved,(LONG64) number_of_pages_removed);
 #endif
@@ -114,9 +125,12 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
 #endif
 
-    leavePageLock(&headToRemove->page, threadInfo);
-    release_srw_shared(&headToRemove->sharedLock);
-
+    if (obtainedExclusive == TRUE) {
+        release_srw_exclusive(&headToRemove->sharedLock);
+    } else {
+        leavePageLock(&headToRemove->page, threadInfo);
+        release_srw_shared(&headToRemove->sharedLock);
+    }
     return number_of_pages_removed ;
 }
 

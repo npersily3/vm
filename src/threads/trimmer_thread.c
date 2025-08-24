@@ -255,8 +255,8 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
             ASSERT(page->diskIndex == 0);
         }
 
-        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
-            if (vm.disk.activeVa[i] == page->pte) {
+        for (int j = 0; j < vm.config.disk_size_in_pages; j++) {
+            if (vm.disk.activeVa[j] == page->pte) {
                 DebugBreak();
             }
         }
