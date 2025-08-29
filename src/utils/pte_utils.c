@@ -72,7 +72,9 @@ VOID unlockPTE(pte* pte) {
     release_srw_exclusive(&region->lock);
 }
 VOID writePTE(pte* pteAddress, pte NewPteContents) {
-    recordAccess(pteAddress, NewPteContents);
+#if DBG
+    recordPTEAccess(pteAddress, NewPteContents);
+#endif
     WriteULong64NoFence(&pteAddress->entireFormat, NewPteContents.entireFormat);
 
 }
@@ -80,7 +82,7 @@ VOID writePTE(pte* pteAddress, pte NewPteContents) {
 
 #if DBG
 
-VOID recordAccess(pte* pteAddress, pte NewPteContents) {
+VOID recordPTEAccess(pte* pteAddress, pte NewPteContents) {
 
     debugPTE* debug_pte;
     ULONG64 index;

@@ -18,7 +18,7 @@ VOID unlockPTE(pte* pte);
 VOID lockPTE(pte* pte);
 VOID writePTE(pte* pteAddress, pte NewPteContents);
 #if DBG
-VOID recordAccess(pte* pteAddress, pte NewPteContents);
+VOID recordPTEAccess(pte* pteAddress, pte NewPteContents);
 #endif
 
 

@@ -139,9 +139,9 @@ BOOL tryAcquireLock(PULONG64 lock) {
     oldValue =  InterlockedCompareExchange( (volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
 
     if (oldValue == LOCK_FREE) {
-        return FALSE;
+        return TRUE;
     }
-    return TRUE;
+    return FALSE;
 }
 
 

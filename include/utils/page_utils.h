@@ -7,6 +7,9 @@
 
 #include "../variables/structures.h"
 
+
+VOID writePFN(pfn* pfnAddress,  pfn pfnNewContents);
+VOID recordPFNAccess(pfn* pfnAddress, pfn pfnNewContents);
 VOID pfnInbounds(pfn* trimmed);
 ULONG64 getFrameNumber(pfn* pfn);
 pfn* getPFNfromFrameNumber(ULONG64 frameNumber);

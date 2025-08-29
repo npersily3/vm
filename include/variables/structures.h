@@ -321,6 +321,8 @@ typedef struct {
 
 } va;
 
+
+
 typedef struct {
     PVOID start;
     ULONG64 end;
@@ -330,13 +332,7 @@ typedef struct {
     ULONG64* number_of_open_slots;
 } disk;
 
-typedef struct {
-    ULONG_PTR physical_page_count;
-    PULONG_PTR physical_page_numbers;
-    pfn *start;
-    pfn *end;
-    volatile ULONG64 numActivePages;
-} pfns;
+
 #if DBG
 #define FRAMES_TO_CAPTURE 17
 typedef  struct __declspec(align(128)){
@@ -352,10 +348,39 @@ typedef  struct __declspec(align(128)){
 } debugPTE;
 
 
+typedef struct {
+
+    pfn oldContents;
+    pfn newContents;
+    pfn* pfnAddress;
+
+    PVOID stacktrace[FRAMES_TO_CAPTURE];
+    ULONG64 threadId;
+
+} debugPFN;
+
+
 #define DEBUG_PTE_CIRCULAR_BUFFER_SIZE 0x80000
+#define DEBUG_PFN_CIRCULAR_BUFFER_SIZE 0x80000
 
 #endif
 
+
+
+typedef struct {
+    ULONG_PTR physical_page_count;
+    PULONG_PTR physical_page_numbers;
+    pfn *start;
+    pfn *end;
+    volatile ULONG64 numActivePages;
+#if DBG
+
+    volatile ULONG64 debugBufferIndex;
+    debugPFN* debugBuffer;
+#endif
+
+
+} pfns;
 typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;

@@ -9,6 +9,19 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/variables/globals.h"
 #include "utils/thread_utils.h"
+#include "variables/macros.h"
+
+VOID writePFN(pfn* pfnAddress,  pfn pfnNewContents) {
+#if DBG
+    recordPFNAccess(pfnAddress, pfnNewContents);
+#endif
+
+    *pfnAddress = pfnNewContents;
+}
+VOID recordPFNAccess(pfn* pfnAddress, pfn pfnNewContents) {
+
+}
+
 
 VOID
 pfnInbounds(pfn* trimmed) {
@@ -36,7 +49,7 @@ volatile ULONG64 pagesremoved;
  * @return The number of pages removed
  * @post All the pages added to the local list need to be unlocked
  */
-
+#if 1
 // todo Right now I am making a conscious design choice to back up immediately, I assume there is a smart way to back up, but right now I am just going to quit immeadiately
 ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo, ULONG64 number_of_pages) {
 
@@ -96,63 +109,73 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
     if (number_of_pages_removed == 1) {
         if (&page->entry != &headToRemove->entry) {
-            number_of_pages_removed = 0;
+            // this is for the case where we only locked one page, but there were more on the list, so we could not safely update their blinks
+            leavePageLock(page, threadInfo);
         } else {
-            number_of_pages_removed = 2;
-        }
-    }
+            //case where there is only one page on the list
+            page->entry.Flink = &headToAdd->entry;
+            page->entry.Blink = &headToAdd->entry;
 
-if (number_of_pages_removed != 0) {
-    number_of_pages_removed--;
+            headToAdd->length = 1;
+            headToAdd->entry.Flink = &page->entry;
+            headToAdd->entry.Blink = &page->entry;
 
-    // right now, just back up if you cannot get the lock
-
-
-
-
-
-#if DBG
-    InterlockedAdd64( (volatile LONG64 *) &pagesremoved,(LONG64) number_of_pages_removed);
-#endif
-
-
-    InterlockedAdd64(&headToRemove->length, (LONG64)
-         (0 - number_of_pages_removed));
-}
-
-
-#if 1
-    // i can edit the flinks and blinks here because all the pages have been lock
-    //
-    if (number_of_pages_removed != 0) {
-
-
-        // the head and tail of the local list
-
-        // page is the new first page of the list we are removing from
-        // the other page locals pertain to the new list
-        firstPage = container_of(headToRemove->entry.Flink, pfn, entry);
-
-        page = container_of(page->entry.Blink, pfn, entry);
-        lastPage = container_of(page->entry.Blink, pfn, entry);
-
-        headToAdd->entry.Flink = &firstPage->entry;
-        headToAdd->entry.Blink = &lastPage->entry;
-
-        firstPage->entry.Blink = &headToAdd->entry;
-        lastPage->entry.Flink = &headToAdd->entry;
-
-        headToAdd->length = number_of_pages_removed;
-
-        headToRemove->entry.Flink = &page->entry;
-
-        if (&headToRemove->entry == &page->entry) {
+            headToRemove->length = 0;
+            headToRemove->entry.Flink = &headToRemove->entry;
             headToRemove->entry.Blink = &headToRemove->entry;
-        } else {
-            page->entry.Blink = &headToRemove->entry;
+
         }
     }
+
+    if (number_of_pages_removed > 1) {
+
+        number_of_pages_removed--;
+
+        // right now, just back up if you cannot get the lock
+
+
+
+
+
+
+        // i can edit the flinks and blinks here because all the pages have been lock
+        //
+
+
+
+            // the head and tail of the local list
+
+            // page is the new first page of the list we are removing from
+            // the other page locals pertain to the new list
+            firstPage = container_of(headToRemove->entry.Flink, pfn, entry);
+
+            page = container_of(page->entry.Blink, pfn, entry);
+            lastPage = container_of(page->entry.Blink, pfn, entry);
+
+            headToAdd->entry.Flink = &firstPage->entry;
+            headToAdd->entry.Blink = &lastPage->entry;
+
+            firstPage->entry.Blink = &headToAdd->entry;
+            lastPage->entry.Flink = &headToAdd->entry;
+
+            headToAdd->length = number_of_pages_removed;
+
+            headToRemove->entry.Flink = &page->entry;
+
+            if (&headToRemove->entry == &page->entry) {
+                headToRemove->entry.Blink = &headToRemove->entry;
+            } else {
+                page->entry.Blink = &headToRemove->entry;
+            }
+#if DBG
+        InterlockedAdd64( (volatile LONG64 *) &pagesremoved,(LONG64) number_of_pages_removed);
 #endif
+
+
+        InterlockedAdd64(&headToRemove->length, (LONG64)
+             (0 - number_of_pages_removed));
+        }
+
 
 #if DBG
 
@@ -163,7 +186,7 @@ if (number_of_pages_removed != 0) {
     if (obtainedExclusive == TRUE) {
         release_srw_exclusive(&headToRemove->sharedLock);
     } else {
-        if (number_of_pages_removed != 0) {
+        if (number_of_pages_removed > 1) {
             leavePageLock(page, threadInfo);
         }
 
@@ -172,6 +195,8 @@ if (number_of_pages_removed != 0) {
     }
     return number_of_pages_removed ;
 }
+#endif
+
 
 // Called with page's pageLock held
 /**

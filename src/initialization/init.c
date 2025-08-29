@@ -208,6 +208,11 @@ VOID init_pageTable(VOID) {
     vm.pte.table = (pte*)init_memory(numBytes);
 
     init_pte_regions();
+#if DBG
+
+    vm.pte.debugBuffer = init_memory(sizeof(debugPTE) * DEBUG_PTE_CIRCULAR_BUFFER_SIZE);
+
+#endif
 
 }
 
@@ -220,11 +225,7 @@ VOID init_disk(VOID) {
 
     init_disk_active();
     init_num_open_slots();
-#if DBG
 
-    vm.pte.debugBuffer = init_memory(sizeof(debugPTE) * DEBUG_PTE_CIRCULAR_BUFFER_SIZE);
-
-#endif
 
 }
 
@@ -311,6 +312,11 @@ VOID init_pfns(VOID) {
     init_lists();
 
     init_free_list();
+
+#if DBG
+    vm.pfn.debugBuffer = init_memory(sizeof(debugPFN) * DEBUG_PFN_CIRCULAR_BUFFER_SIZE);
+#endif
+
 
 
 }
