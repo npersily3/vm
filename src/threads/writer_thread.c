@@ -287,6 +287,14 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
 
         leavePageLock(page, threadContext);
     }
+// #if DBG
+//
+//     for (i = 0; i < newBatchSize; i++) {
+//         ASSERT(pfnArray[i]->lock.OwningThread == NULL);
+//     }
+//
+// #endif
+
 
     return newBatchSize;
 }
