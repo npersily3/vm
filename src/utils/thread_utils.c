@@ -10,11 +10,10 @@
 #include "variables/globals.h"
 
 #if DBG
-        BOOLEAN
+BOOLEAN
 RemoveEntryList(
-        __in PLIST_ENTRY Entry
-)
-{
+    __in PLIST_ENTRY Entry
+) {
     PLIST_ENTRY Blink;
     PLIST_ENTRY Flink;
 
@@ -22,17 +21,15 @@ RemoveEntryList(
     Blink = Entry->Blink;
     Blink->Flink = Flink;
     Flink->Blink = Blink;
-    return (BOOLEAN)(Flink == Blink);
+    return (BOOLEAN) (Flink == Blink);
 }
 
 
-
-        VOID
+VOID
 InsertTailListDebug(
-        __inout PLIST_ENTRY ListHead,
-        __inout __drv_aliasesMem PLIST_ENTRY Entry
-)
-{
+    __inout PLIST_ENTRY ListHead,
+    __inout __drv_aliasesMem PLIST_ENTRY Entry
+) {
     PLIST_ENTRY Blink;
 
     Blink = ListHead->Blink;
@@ -46,7 +43,7 @@ InsertTailListDebug(
 
 // Basic validation function of a list
 VOID validateList(pListHead head) {
-    LIST_ENTRY* currentEntry;
+    LIST_ENTRY *currentEntry;
     ULONG64 forwardLength = 0;
     ULONG64 backwardLength = 0;
 
@@ -55,7 +52,7 @@ VOID validateList(pListHead head) {
 
     // Check empty list case
     if (head->length == 0) {
-        ASSERT (head->entry.Blink == &head->entry && head->entry.Flink == &head->entry);
+        ASSERT(head->entry.Blink == &head->entry && head->entry.Flink == &head->entry);
         return;
     }
 
@@ -65,8 +62,8 @@ VOID validateList(pListHead head) {
     while (currentEntry != &head->entry && forwardLength < MAX_EXPECTED_LENGTH) {
         // Check for cross-list corruption
         ASSERT(currentEntry != &vm.lists.modified.entry &&
-               currentEntry != &vm.lists.standby.entry &&
-               currentEntry != &vm.lists.active.entry);
+            currentEntry != &vm.lists.standby.entry &&
+            currentEntry != &vm.lists.active.entry);
 
         // Validate bidirectional linking
         if (currentEntry->Blink->Flink != currentEntry) {
@@ -85,13 +82,12 @@ VOID validateList(pListHead head) {
     // Check for infinite loop
     if (forwardLength >= MAX_EXPECTED_LENGTH) {
         ASSERT(FALSE); // Possible infinite loop detected
-        return ;
+        return;
     }
 
     // Validate backward traversal
     currentEntry = head->entry.Blink;
     while (currentEntry != &head->entry && backwardLength < MAX_EXPECTED_LENGTH) {
-
         if (currentEntry->Blink->Flink != currentEntry) {
             ASSERT(FALSE); // Broken bidirectional link
             return;
@@ -115,28 +111,26 @@ VOID validateList(pListHead head) {
 
 // my own implementation of a critical section using interlocks
 void acquireLock(PULONG64 lock) {
-
     ULONG64 oldValueComparator;
 
 
     while (TRUE) {
-
-        oldValueComparator =  InterlockedCompareExchange((volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
+        oldValueComparator = InterlockedCompareExchange((volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
 
         if (oldValueComparator == LOCK_FREE) {
             break;
         }
     }
 }
-void releaseLock(PULONG64 lock) {
 
+void releaseLock(PULONG64 lock) {
     InterlockedExchange((volatile LONG *) lock, LOCK_FREE);
 }
-BOOL tryAcquireLock(PULONG64 lock) {
 
+BOOL tryAcquireLock(PULONG64 lock) {
     ULONG64 oldValue;
 
-    oldValue =  InterlockedCompareExchange( (volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
+    oldValue = InterlockedCompareExchange((volatile LONG *) lock, LOCK_HELD, LOCK_FREE);
 
     if (oldValue == LOCK_FREE) {
         return TRUE;
@@ -146,19 +140,15 @@ BOOL tryAcquireLock(PULONG64 lock) {
 
 
 // Wrappers for acquiring srw locks. where my debug versions trigger if indicated to
-VOID acquire_srw_shared(sharedLock* lock) {
-
+VOID acquire_srw_shared(sharedLock *lock) {
     AcquireSRWLockShared(&lock->sharedLock);
-
 }
 
-VOID release_srw_shared(sharedLock* lock) {
-
+VOID release_srw_shared(sharedLock *lock) {
     ReleaseSRWLockShared(&lock->sharedLock);
-
 }
 
-VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
+VOID acquire_srw_exclusive(sharedLock *lock, PTHREAD_INFO info) {
 #if DBG
     debug_acquire_srw_exclusive(lock, info);
 #else
@@ -166,7 +156,7 @@ VOID acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
 #endif
 }
 
-VOID release_srw_exclusive(sharedLock* lock) {
+VOID release_srw_exclusive(sharedLock *lock) {
 #if DBG
     debug_release_srw_exclusive(lock);
 #else
@@ -179,7 +169,7 @@ VOID release_srw_exclusive(sharedLock* lock) {
 #if DBG
 
 
-VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
+VOID debug_acquire_srw_exclusive(sharedLock *lock, PTHREAD_INFO info) {
     ULONG64 threadId;
 
     if (info == NULL) {
@@ -193,10 +183,9 @@ VOID debug_acquire_srw_exclusive(sharedLock* lock, PTHREAD_INFO info) {
     AcquireSRWLockExclusive(&lock->sharedLock);
 
     lock->threadId = threadId;
-
 }
 
-VOID debug_release_srw_exclusive(sharedLock* lock) {
+VOID debug_release_srw_exclusive(sharedLock *lock) {
     ASSERT(lock->threadId == GetCurrentThreadId());
     lock->threadId = -1;
     ReleaseSRWLockExclusive(&lock->sharedLock);
@@ -205,38 +194,34 @@ VOID debug_release_srw_exclusive(sharedLock* lock) {
 
 //For now, I turned off the asserts because of how the recall woorks
 // wrapper for pagelocks to help with debugging
-VOID enterPageLock(pfn* page, PTHREAD_INFO info) {
+VOID enterPageLock(pfn *page, PTHREAD_INFO info) {
+    ULONG64 threadId;
 
-//    ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
-
-    //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
+    threadId =  GetCurrentThreadId();
+    ASSERT(threadId != (ULONG64) page->lock.OwningThread)
     EnterCriticalSection(&page->lock);
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
-  //  ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+    //  ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
 }
 
-boolean tryEnterPageLock(pfn* page, PTHREAD_INFO info) {
-
+boolean tryEnterPageLock(pfn *page, PTHREAD_INFO info) {
     bool result;
 
-   // ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
+    // ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
     result = TryEnterCriticalSection(&page->lock);
 
     if (result) {
-   //     ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
+        //     ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
     }
 
     return result;
 }
 
 
-VOID leavePageLock(pfn* page, PTHREAD_INFO info) {
+VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
     ASSERT(info->ThreadId == GetCurrentThreadId())
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
     LeaveCriticalSection(&page->lock);
-
-
-
 }
