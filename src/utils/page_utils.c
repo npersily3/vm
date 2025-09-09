@@ -69,6 +69,10 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
 #endif
 
+#define USE_SRW_LOCKS 1
+
+
+#if USE_SRW_LOCKS
     acquire_srw_shared(&headToRemove->sharedLock);
 
     if (tryEnterPageLock(&headToRemove->page, threadInfo) == FALSE) {
@@ -76,6 +80,10 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
         acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
         obtainedExclusive = TRUE;
     }
+#else
+    acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
+    obtainedExclusive = TRUE;
+#endif
 
 
     ULONG64 number_of_pages_removed = 0;
@@ -85,6 +93,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     InterlockedIncrement64((volatile LONG64 *) &prunecount);
 
     page = container_of(headToRemove->entry.Flink, pfn, entry);
+
     // lock all the pages you can up until the threshold
 
     for (; number_of_pages_removed < pageLocksNeeded; number_of_pages_removed++) {
@@ -93,11 +102,13 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
             break;
         }
 
+
         // right now, just back up if you cannot get the lock
         if (tryEnterPageLock(page, threadInfo) == FALSE) {
             break;
         }
 #if DBG
+        page->lockedDuringPrune = TRUE;
         if (number_of_pages_removed < 32) {
             lockedPages[number_of_pages_removed] = page;
         }
@@ -106,11 +117,11 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     }
 
 
-
+#if 0
     if (number_of_pages_removed == 1) {
         if (&page->entry != &headToRemove->entry) {
             // this is for the case where we only locked one page, but there were more on the list, so we could not safely update their blinks
-            leavePageLock(page, threadInfo);
+
         } else {
             //case where there is only one page on the list
             page->entry.Flink = &headToAdd->entry;
@@ -125,7 +136,17 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
             headToRemove->entry.Blink = &headToRemove->entry;
 
         }
+        leavePageLock(page, threadInfo);
     }
+#else
+    if (number_of_pages_removed == 1) {
+        lastPage = container_of(page->entry.Blink, pfn, entry);
+        leavePageLock(lastPage, threadInfo);
+
+        number_of_pages_removed = 0;
+
+    }
+#endif
 
     if (number_of_pages_removed > 1) {
 
@@ -178,6 +199,10 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
 
 #if DBG
+
+    for (int i = 0; i < number_of_pages_removed; ++i) {
+
+    }
 
     validateList(headToAdd);
 

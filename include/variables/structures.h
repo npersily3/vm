@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define DBG 1
-#define DBG_DISK 1
+#define DBG 0
+#define DBG_DISK 0
 
 
 #if DBG
@@ -228,6 +228,7 @@ typedef struct {
     ULONG64 isBeingFreed: 1;
 #if DBG
     ULONG64 hasBeenRescuedWhileWritten: 1;
+    ULONG64 lockedDuringPrune: 1;
 #endif
     CRITICAL_SECTION lock;
 
@@ -348,11 +349,12 @@ typedef  struct __declspec(align(128)){
 } debugPTE;
 
 
-typedef struct {
+typedef struct __declspec(align(256)){
 
+    pfn* pfnAddress;
     pfn oldContents;
     pfn newContents;
-    pfn* pfnAddress;
+
 
     PVOID stacktrace[FRAMES_TO_CAPTURE];
     ULONG64 threadId;

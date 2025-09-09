@@ -270,12 +270,13 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
 
     init_list_head(&head);
 
+    // returns a doubly linked list of locked pages
     newBatchSize = removeBatchFromList(&vm.lists.modified, &head, threadContext, localBatchSize);
 
     for (; i < newBatchSize; i++) {
 
 
-        // this function obtains the page lock for us
+
         page = container_of(RemoveHeadList(&head), pfn, entry);
 
         frameNumber = getFrameNumber(page);
@@ -286,14 +287,15 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
         updatePage(page, diskIndexArray[i]);
 
         leavePageLock(page, threadContext);
+        ASSERT((ULONG64)pfnArray[i]->lock.OwningThread != GetCurrentThreadId());
     }
-// #if DBG
-//
-//     for (i = 0; i < newBatchSize; i++) {
-//         ASSERT(pfnArray[i]->lock.OwningThread == NULL);
-//     }
-//
-// #endif
+#if DBG
+
+    for (i = 0; i < newBatchSize; i++) {
+        ASSERT((ULONG64)pfnArray[i]->lock.OwningThread != GetCurrentThreadId());
+    }
+
+#endif
 
 
     return newBatchSize;

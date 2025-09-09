@@ -192,7 +192,27 @@ VOID debug_release_srw_exclusive(sharedLock *lock) {
 }
 #endif
 
-//For now, I turned off the asserts because of how the recall woorks
+#if DBG
+VOID recordPFNLock(pfn* page) {
+    ULONG64 threadId;
+    debugPFN* pfn;
+
+    ULONG64 index;
+    threadId = GetCurrentThreadId();
+
+    index = InterlockedIncrement64(&vm.pfn.debugBufferIndex) - 1;
+    index %= DEBUG_PTE_CIRCULAR_BUFFER_SIZE;
+
+    pfn = &vm.pfn.debugBuffer[index];
+
+    pfn->pfnAddress = page;
+    pfn->oldContents = *page;
+    pfn->threadId = threadId;
+
+    CaptureStackBackTrace(0,FRAMES_TO_CAPTURE,pfn->stacktrace,NULL);
+}
+
+#endif
 // wrapper for pagelocks to help with debugging
 VOID enterPageLock(pfn *page, PTHREAD_INFO info) {
     ULONG64 threadId;
@@ -200,6 +220,10 @@ VOID enterPageLock(pfn *page, PTHREAD_INFO info) {
     threadId =  GetCurrentThreadId();
     ASSERT(threadId != (ULONG64) page->lock.OwningThread)
     EnterCriticalSection(&page->lock);
+
+#if DBG
+    recordPFNLock(page);
+#endif
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
     //  ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
@@ -207,11 +231,16 @@ VOID enterPageLock(pfn *page, PTHREAD_INFO info) {
 
 boolean tryEnterPageLock(pfn *page, PTHREAD_INFO info) {
     bool result;
+    ULONG64 threadId;
 
-    // ASSERT(info->ThreadId != (ULONG64) page->lock.OwningThread)
+    threadId =  GetCurrentThreadId();
+    ASSERT(threadId != (ULONG64) page->lock.OwningThread)
     result = TryEnterCriticalSection(&page->lock);
 
     if (result) {
+#if DBG
+        recordPFNLock(page);
+#endif
         //     ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
     }
 
@@ -224,4 +253,6 @@ VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
     LeaveCriticalSection(&page->lock);
+
+    ASSERT((ULONG64)page->lock.OwningThread != GetCurrentThreadId())
 }

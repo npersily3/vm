@@ -67,8 +67,8 @@ VOID init_base_config(VOID) {
     vm.config.number_of_physical_pages = 128;
 #else
 
-    vm.config.virtual_address_size = GB(4);
-    vm.config.number_of_physical_pages = GB(2)/PAGE_SIZE;
+    vm.config.virtual_address_size = GB(2);
+    vm.config.number_of_physical_pages = GB(1)/PAGE_SIZE;
 #endif
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
 
