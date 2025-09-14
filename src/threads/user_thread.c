@@ -144,6 +144,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         leavePageLock(page, threadInfo);
         page = nextPage;
     }
+    ASSERT(threadInfo->pagelocksHeld == 0)
 }
 
 /**
@@ -734,7 +735,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
             return LIST_IS_EMPTY;
             // acquire a freelist lock exclusive
         } else {
-            EnterCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock);
+            enterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadContext);
             gotFreeListLock = TRUE;
         }
 
@@ -744,6 +745,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
             validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
+            acquire_srw_exclusive(&threadContext->localList.sharedLock, threadContext);
             // Now that we have the head lock, we might as well add pages to our local list
             for (; i < BATCH_SIZE; ++i) {
                 // now we have a locked page
@@ -757,13 +759,14 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                     InsertHeadList(&threadContext->localList, &page->entry);
                 }
             }
+            release_srw_exclusive(&threadContext->localList.sharedLock);
 
 #if DBG
             validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
             // now that pages are off the list we no longer need to lock the list
-            LeaveCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock);
+            leavePageLock(&vm.lists.free.heads[localFreeListIndex].page, threadContext);
 
             if (i == 0) {
                 gotFreeListLock = FALSE;

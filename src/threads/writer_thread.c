@@ -297,6 +297,7 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
 
 #endif
 
+    ASSERT(threadContext->pagelocksHeld == 0)
 
     return newBatchSize;
 }

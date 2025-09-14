@@ -61,8 +61,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     obtainedExclusive = FALSE;
     ULONG64 pageLocksNeeded = 0;
 
-
-
+    ASSERT(threadInfo->pagelocksHeld == 0)
 #if DBG
 
     validateList(headToAdd);
@@ -86,7 +85,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 #endif
 
 
-    ULONG64 number_of_pages_removed = 0;
+    ULONG64 number_of_page_locks_acquired = 0;
     pfn* page;
     pageLocksNeeded = number_of_pages + 1;
 
@@ -96,7 +95,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
     // lock all the pages you can up until the threshold
 
-    for (; number_of_pages_removed < pageLocksNeeded; number_of_pages_removed++) {
+    for (; number_of_page_locks_acquired < pageLocksNeeded; number_of_page_locks_acquired++) {
 
         if (&page->entry == &headToRemove->entry) {
             break;
@@ -107,16 +106,17 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
         if (tryEnterPageLock(page, threadInfo) == FALSE) {
             break;
         }
+
 #if DBG
         page->lockedDuringPrune = TRUE;
-        if (number_of_pages_removed < 32) {
-            lockedPages[number_of_pages_removed] = page;
+        if (number_of_page_locks_acquired < 32) {
+            lockedPages[number_of_page_locks_acquired] = page;
         }
 #endif
         page = container_of(page->entry.Flink, pfn, entry);
     }
 
-
+//flip this later
 #if 0
     if (number_of_pages_removed == 1) {
         if (&page->entry != &headToRemove->entry) {
@@ -139,18 +139,18 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
         leavePageLock(page, threadInfo);
     }
 #else
-    if (number_of_pages_removed == 1) {
-        lastPage = container_of(page->entry.Blink, pfn, entry);
-        leavePageLock(lastPage, threadInfo);
+    if (number_of_page_locks_acquired == 1) {
+        page = container_of(headToRemove->entry.Blink, pfn, entry);
+        leavePageLock(page, threadInfo);
 
-        number_of_pages_removed = 0;
+        number_of_page_locks_acquired = 0;
 
     }
 #endif
 
-    if (number_of_pages_removed > 1) {
+    if (number_of_page_locks_acquired > 1) {
 
-        number_of_pages_removed--;
+        number_of_page_locks_acquired--;
 
         // right now, just back up if you cannot get the lock
 
@@ -179,7 +179,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
             firstPage->entry.Blink = &headToAdd->entry;
             lastPage->entry.Flink = &headToAdd->entry;
 
-            headToAdd->length = number_of_pages_removed;
+            headToAdd->length = number_of_page_locks_acquired;
 
             headToRemove->entry.Flink = &page->entry;
 
@@ -189,20 +189,16 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
                 page->entry.Blink = &headToRemove->entry;
             }
 #if DBG
-        InterlockedAdd64( (volatile LONG64 *) &pagesremoved,(LONG64) number_of_pages_removed);
+        InterlockedAdd64( (volatile LONG64 *) &pagesremoved,(LONG64) number_of_page_locks_acquired);
 #endif
 
 
         InterlockedAdd64(&headToRemove->length, (LONG64)
-             (0 - number_of_pages_removed));
+             (0 - number_of_page_locks_acquired));
         }
 
 
 #if DBG
-
-    for (int i = 0; i < number_of_pages_removed; ++i) {
-
-    }
 
     validateList(headToAdd);
 
@@ -211,14 +207,14 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     if (obtainedExclusive == TRUE) {
         release_srw_exclusive(&headToRemove->sharedLock);
     } else {
-        if (number_of_pages_removed > 1) {
+        if (number_of_page_locks_acquired > 1) {
             leavePageLock(page, threadInfo);
         }
 
         leavePageLock(&headToRemove->page, threadInfo);
         release_srw_shared(&headToRemove->sharedLock);
     }
-    return number_of_pages_removed ;
+    return number_of_page_locks_acquired ;
 }
 #endif
 
@@ -332,10 +328,12 @@ VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
     if (obtainedPageLocks == TRUE) {
 
-        leavePageLock(Flink, threadInfo);
+
         if (Blink != NULL) {
             leavePageLock(Blink, threadInfo);
         }
+
+        leavePageLock(Flink, threadInfo);
 
         release_srw_shared(&head->sharedLock);
     } else {
@@ -474,11 +472,13 @@ pfn* RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
 
         ASSERT(Entry != ListHead)
 
+        if (flinkOfPageToRemove != NULL) {
+            leavePageLock(flinkOfPageToRemove, threadInfo);
+        }
+
        leavePageLock(&head->page, threadInfo);
 
-        if (flinkOfPageToRemove != NULL) {
-            LeaveCriticalSection(&flinkOfPageToRemove->lock);
-        }
+
 
         release_srw_shared(&head->sharedLock);
     } else {
@@ -588,11 +588,12 @@ VOID addPageToTail(pListHead head, pfn* page, PTHREAD_INFO threadInfo) {
     if (obtainedPageLocks == TRUE) {
 
 
+        if (nextPage != NULL) {
+            leavePageLock(nextPage, threadInfo);
+        }
+
         leavePageLock(&head->page, threadInfo);
 
-        if (nextPage != NULL) {
-           leavePageLock(nextPage, threadInfo);
-        }
 
         release_srw_shared(&head->sharedLock);
     } else {

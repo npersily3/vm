@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define DBG 0
-#define DBG_DISK 0
+#define DBG 1
+#define DBG_DISK 1
 
 
 #if DBG
@@ -356,6 +356,7 @@ typedef struct __declspec(align(256)){
     pfn newContents;
 
 
+
     PVOID stacktrace[FRAMES_TO_CAPTURE];
     ULONG64 threadId;
 
@@ -425,13 +426,21 @@ typedef struct {
 } misc;
 
 // Main components are the transfer va index,
-typedef struct __declspec(align(64)) {
+typedef struct __declspec(align(512)) {
     ULONG ThreadNumber;
     ULONG ThreadId;
     ULONG64 TransferVaIndex;
     HANDLE ThreadHandle;
     THREAD_RNG_STATE rng;
     listHead localList;
+
+#if DBG
+    ULONG64 pagelocksHeld;
+
+    debugPFN pagelockIndices[512];
+
+#endif
+
 } THREAD_INFO, *PTHREAD_INFO;
 
 

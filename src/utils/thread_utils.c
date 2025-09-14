@@ -193,7 +193,7 @@ VOID debug_release_srw_exclusive(sharedLock *lock) {
 #endif
 
 #if DBG
-VOID recordPFNLock(pfn* page) {
+VOID recordPFNLock(pfn* page, PTHREAD_INFO info) {
     ULONG64 threadId;
     debugPFN* pfn;
 
@@ -210,6 +210,19 @@ VOID recordPFNLock(pfn* page) {
     pfn->threadId = threadId;
 
     CaptureStackBackTrace(0,FRAMES_TO_CAPTURE,pfn->stacktrace,NULL);
+
+
+    ULONG64 localDebugBufferIndex;
+
+    for (localDebugBufferIndex = 0; localDebugBufferIndex < 512; localDebugBufferIndex++) {
+        if (info->pagelockIndices[localDebugBufferIndex].pfnAddress == 0) {
+            break;
+        }
+    }
+
+    ASSERT(localDebugBufferIndex < 512)
+
+    info->pagelockIndices[localDebugBufferIndex] = *pfn;
 }
 
 #endif
@@ -222,7 +235,11 @@ VOID enterPageLock(pfn *page, PTHREAD_INFO info) {
     EnterCriticalSection(&page->lock);
 
 #if DBG
-    recordPFNLock(page);
+    recordPFNLock(page, info);
+    info->pagelocksHeld++;
+    ASSERT(info->pagelocksHeld != 0)
+
+
 #endif
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
@@ -239,7 +256,9 @@ boolean tryEnterPageLock(pfn *page, PTHREAD_INFO info) {
 
     if (result) {
 #if DBG
-        recordPFNLock(page);
+        recordPFNLock(page, info);
+        info->pagelocksHeld++;
+
 #endif
         //     ASSERT(info->ThreadId == (ULONG64) page->lock.OwningThread)
     }
@@ -251,6 +270,26 @@ boolean tryEnterPageLock(pfn *page, PTHREAD_INFO info) {
 VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
     ASSERT(info->ThreadId == GetCurrentThreadId())
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
+
+    ASSERT(info->pagelocksHeld > 0)
+
+
+
+#if DBG
+
+    int i;
+    i = 0;
+    for (; i < 512; ++i) {
+        if (info->pagelockIndices[i].pfnAddress == page) {
+            info->pagelockIndices[i] = {0};
+        }
+    }
+
+    ASSERT(i < 512)
+
+    info->pagelocksHeld--;
+#endif
+
 
     LeaveCriticalSection(&page->lock);
 

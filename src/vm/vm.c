@@ -243,6 +243,9 @@ main(int argc, char **argv) {
     } else {
         init_base_config();
     }
+    printf("%llu ",sizeof(pfn));
+    printf("%llu ",sizeof(debugPFN));
+
 
 
 
