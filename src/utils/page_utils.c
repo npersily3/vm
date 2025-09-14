@@ -140,7 +140,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     }
 #else
     if (number_of_page_locks_acquired == 1) {
-        page = container_of(headToRemove->entry.Blink, pfn, entry);
+        page = container_of(headToRemove->entry.Flink, pfn, entry);
         leavePageLock(page, threadInfo);
 
         number_of_page_locks_acquired = 0;
@@ -204,16 +204,19 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
 #endif
 
+    if (number_of_page_locks_acquired > 0) {
+        leavePageLock(page, threadInfo);
+    }
+
     if (obtainedExclusive == TRUE) {
         release_srw_exclusive(&headToRemove->sharedLock);
     } else {
-        if (number_of_page_locks_acquired > 1) {
-            leavePageLock(page, threadInfo);
-        }
+
 
         leavePageLock(&headToRemove->page, threadInfo);
         release_srw_shared(&headToRemove->sharedLock);
     }
+    ASSERT(threadInfo->pagelocksHeld - number_of_page_locks_acquired == 0)
     return number_of_page_locks_acquired ;
 }
 #endif

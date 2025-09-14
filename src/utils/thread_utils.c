@@ -214,15 +214,19 @@ VOID recordPFNLock(pfn* page, PTHREAD_INFO info) {
 
     ULONG64 localDebugBufferIndex;
 
+
+
     for (localDebugBufferIndex = 0; localDebugBufferIndex < 512; localDebugBufferIndex++) {
         if (info->pagelockIndices[localDebugBufferIndex].pfnAddress == 0) {
+            info->pagelockIndices[localDebugBufferIndex] = *pfn;
             break;
         }
     }
 
+
     ASSERT(localDebugBufferIndex < 512)
 
-    info->pagelockIndices[localDebugBufferIndex] = *pfn;
+
 }
 
 #endif
@@ -281,7 +285,8 @@ VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
     i = 0;
     for (; i < 512; ++i) {
         if (info->pagelockIndices[i].pfnAddress == page) {
-            info->pagelockIndices[i] = {0};
+            memset(&info->pagelockIndices[i], 0, sizeof(debugPFN));
+            break;
         }
     }
 

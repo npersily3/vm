@@ -69,7 +69,7 @@ full_virtual_memory_test(VOID) {
     printf("StandBy length %llu  \n", vm.lists.standby.length);
     printf("Modified length %llu \n", vm.lists.modified.length);
     printf("Free length %llu \n", vm.lists.free.length);
-    printf("Active length %llu \n", vm.lists.active.length);
+    printf("Active length %llu \n", vm.pfn.numActivePages);
 
     printf("pagewaits %llu \n",   vm.misc.pageWaits);
     printf("total time waiting %llu ticks\n",   (vm.misc.totalTimeWaiting));
@@ -117,7 +117,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1)/8 ; i++) {
+ for (; i < MB(1); i++) {
 //while (TRUE) {
         #endif
 
@@ -180,18 +180,18 @@ DWORD testVM(LPVOID lpParam) {
             }
             redo_try_same_address = TRUE;
             i--;
-           // *arbitrary_va = (ULONG_PTR) arbitrary_va;
-        } else {
-           //recordAccess(arbitrary_va);
-            redo_try_same_address = FALSE;
-        }
-#if 1
-     i++;
-     if (i % MB(1) == 0) {
-         printf(".");
-     }
-#endif
 
+        } else {
+
+            redo_try_same_address = FALSE;
+
+#if 1
+    if (i % 1000000 == 0) {
+        printf("noah ");
+    }
+#endif
+        }
+    i++;
 }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
@@ -244,8 +244,9 @@ main(int argc, char **argv) {
         init_base_config();
     }
     printf("%llu ",sizeof(pfn));
+#if DBG
     printf("%llu ",sizeof(debugPFN));
-
+#endif
 
 
 
