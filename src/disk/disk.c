@@ -62,15 +62,14 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
 
             if (bitOffset == 64) {
                  start++;
+            } else {
+                ASSERT(freePortion == 0)
+                InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
+                returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
+                diskIndices[numDiskSlotsFilled] = returnValue;
+                vm.disk.activeVa[returnValue] = (pte*) (1ULL << 63);
+                numDiskSlotsFilled++;
             }
-
-            ASSERT(freePortion == 0)
-            InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
-            returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
-            diskIndices[numDiskSlotsFilled] = returnValue;
-            vm.disk.activeVa[returnValue] = (pte*) (1ULL << 63);
-            numDiskSlotsFilled++;
-
         } else {
             start++;
         }

@@ -117,8 +117,9 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
     }
 
 //flip this later
-#if 0
-    if (number_of_pages_removed == 1) {
+#if 1
+    if (number_of_page_locks_acquired == 1) {
+        page = container_of(headToRemove->entry.Flink, pfn, entry);
         if (&page->entry != &headToRemove->entry) {
             // this is for the case where we only locked one page, but there were more on the list, so we could not safely update their blinks
 
@@ -137,6 +138,9 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
 
         }
         leavePageLock(page, threadInfo);
+
+        number_of_page_locks_acquired = 0;
+
     }
 #else
     if (number_of_page_locks_acquired == 1) {

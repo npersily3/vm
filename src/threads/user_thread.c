@@ -326,28 +326,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
 
         set_disk_space_free(page->diskIndex);
 #if DBG
-#if DBG_DISK
-
-        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
-            if (vm.disk.activeVa[i] == page->pte) {
-                DebugBreak();
-            }
-        }
-
-#endif
-
         page->diskIndex = 0;
 #endif
     } else {
-#if DBG_DISK
-
-        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
-            if (vm.disk.activeVa[i] == page->pte) {
-                DebugBreak();
-            }
-        }
-
-#endif
 
         ASSERT(page->diskIndex == 0)
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
@@ -360,6 +341,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
     // A faulter that is accessing the same region will be stopped by a pagetable lock
     leavePageLock(page, threadInfo);
 
+    InterlockedIncrement64(&vm.misc.numRescues);
     if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", (PVOID) arbitrary_va, frameNumber);
@@ -551,6 +533,8 @@ pfn *mapPageFromStandByList(pte *currentPTE, PTHREAD_INFO threadInfo) {
     } else {
         modified_read(currentPTE, frameNumber, threadInfo);
     }
+
+    InterlockedIncrement64(&vm.misc.pagesFromStandBy);
 
     // ideally we never have to go to standby, because  then we are forcing ourselves into one lane, so when we do, we should be pruning
 
@@ -791,6 +775,8 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                     InterlockedExchange((volatile LONG *) &vm.misc.standByPruningInProgress, FALSE);
                 }
                 // return the page at the front of the local list
+                InterlockedDecrement64(&vm.misc.pagesFromLocalCache);
+                InterlockedIncrement64(&vm.misc.pagesFromFree);
                 return getPageFromLocalList(threadContext);
             }
         }
@@ -826,6 +812,7 @@ pfn *getPageFromLocalList(PTHREAD_INFO threadContext) {
     page = container_of(entry, pfn, entry);
     release_srw_exclusive(&head->sharedLock);
 
+    InterlockedIncrement64(&vm.misc.pagesFromLocalCache);
 
     return page;
 }

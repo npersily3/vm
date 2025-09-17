@@ -15,7 +15,6 @@
 #define DBG 1
 #define DBG_DISK 1
 
-
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -27,7 +26,7 @@
 // Configuration constants
 //
 #define PAGE_SIZE                   4096
-// 52 bits is max that bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
+// 52 bits is max that address bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
 #define frame_number_size           40
 #define KB(x)                       ((x) *  (ULONG64)1024)
 #define MB(x)                       (KB(x) * 1024)
@@ -423,6 +422,10 @@ typedef struct {
     volatile boolean standByPruningInProgress;
     volatile ULONG64 numTrims;
     volatile ULONG64 numWrites;
+    volatile ULONG64 pagesFromStandBy;
+    volatile ULONG64 pagesFromFree;
+    volatile ULONG64 pagesFromLocalCache;
+    volatile ULONG64 numRescues;
 } misc;
 
 // Main components are the transfer va index,

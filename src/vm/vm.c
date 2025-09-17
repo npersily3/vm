@@ -103,7 +103,7 @@ DWORD testVM(LPVOID lpParam) {
     BOOL redo_try_same_address;
     ULONG64 counter;
 
-    i = 0;
+    i = 1;
     thread_info = (PTHREAD_INFO)lpParam;
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
@@ -117,7 +117,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1); i++) {
+ for (; i < MB(10); i++) {
 //while (TRUE) {
         #endif
 
@@ -186,8 +186,8 @@ DWORD testVM(LPVOID lpParam) {
             redo_try_same_address = FALSE;
 
 #if 1
-    if (i % 1000000 == 0) {
-        printf("noah ");
+    if (i % KB(512) == 0) {
+        printf(".");
     }
 #endif
         }

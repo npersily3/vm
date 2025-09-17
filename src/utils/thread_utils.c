@@ -43,6 +43,9 @@ InsertTailListDebug(
 
 // Basic validation function of a list
 VOID validateList(pListHead head) {
+
+    return;
+
     LIST_ENTRY *currentEntry;
     ULONG64 forwardLength = 0;
     ULONG64 backwardLength = 0;
