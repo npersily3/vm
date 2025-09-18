@@ -91,8 +91,8 @@ VOID recordPTEAccess(pte* pteAddress, pte NewPteContents) {
     index %= DEBUG_PTE_CIRCULAR_BUFFER_SIZE;
     debug_pte = &vm.pte.debugBuffer[index];
 
-    debug_pte->oldPteContents.entireFormat = pteAddress->entireFormat;
     debug_pte->pteAddress = pteAddress;
+    debug_pte->oldPteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
     debug_pte->pteContents = NewPteContents;
     debug_pte->threadId = GetCurrentThreadId();
     CaptureStackBackTrace(0,FRAMES_TO_CAPTURE,debug_pte->stacktrace,NULL);

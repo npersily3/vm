@@ -273,6 +273,8 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
     // returns a doubly linked list of locked pages
     newBatchSize = removeBatchFromList(&vm.lists.modified, &head, threadContext, localBatchSize);
 
+
+
     for (; i < newBatchSize; i++) {
 
 

@@ -238,19 +238,6 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
         page = pages[i];
         enterPageLock(page, threadContext);
 
-#if 0
-        if (page->isBeingWritten == FALSE && (page->hasBeenRescuedWhileWritten == FALSE)) {
-            ASSERT(page->diskIndex == 0);
-            for (int j = 0; j < vm.config.disk_size_in_pages; j++) {
-                if (vm.disk.activeVa[j] == page->pte) {
-                    DebugBreak();
-                }
-            }
-        }
-
-
-#endif
-
         addPageToTail(&vm.lists.modified, page, threadContext);
         leavePageLock(page, threadContext);
     }

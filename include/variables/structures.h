@@ -15,6 +15,7 @@
 #define DBG 1
 #define DBG_DISK 1
 
+
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -336,9 +337,10 @@ typedef struct {
 #if DBG
 #define FRAMES_TO_CAPTURE 17
 typedef  struct __declspec(align(128)){
+
+    pte* pteAddress;
     pte oldPteContents;
     pte pteContents;
-    pte* pteAddress;
 
     pfn pfnContents;
     ULONG64 frameNumber;

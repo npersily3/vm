@@ -330,10 +330,10 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
 #endif
     } else {
 
-        ASSERT(page->diskIndex == 0)
+
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfList(&vm.lists.modified, page, threadInfo);
-        ASSERT(page->diskIndex == 0)
+
     }
 
 
@@ -389,10 +389,10 @@ BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
 
     page = getPageFromLocalList(threadInfo);
     if (page == NULL) {
-        page = mapPageFromFreeList(currentPTE, threadInfo);
+        page = getPageFromFreeList(threadInfo);
 
         if (page == NULL) {
-            page = mapPageFromStandByList(currentPTE, threadInfo);
+            page = getVictimFromStandByList(threadInfo);
 
             if (page == NULL) {
                 // If we are not able to get a page, start the trimmer and sleep
@@ -438,6 +438,15 @@ BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
     frameNumber = getFrameNumber(page);
 
 
+    // Zero the page if we are on a first fault, otherwise read from disk
+    if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
+        if (!zeroOnePage(page, threadInfo)) {
+            DebugBreak();
+        }
+    } else {
+        modified_read(currentPTE, frameNumber, threadInfo);
+    }
+
     //validate the pte
     
     pte localPTE;
@@ -461,42 +470,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
     return !REDO_FAULT;
 }
 
-/**
- * @brief This function tries to get a physical page of a free list. It will also detect if the number of free pages
- * is running low, and take some from the standby list.
- * @param currentPTE The page table entry of the virtual address that is being faulted on
- * @param threadInfo The info about the calling thread.
-* @return Returns a page from a freelist
-* @retval Returns null if the list is empty
- * @pre The page table entry must be locked on entry to this function.
- * @post The caller must unlock the page table entry.
- */
-pfn *mapPageFromFreeList(pte *currentPTE, PTHREAD_INFO threadInfo) {
-    pfn *page;
-    ULONG64 frameNumber;
 
-    // This function acquires the page lock
-    page = getPageFromFreeList(threadInfo);
-
-
-    if (page == LIST_IS_EMPTY) {
-        return NULL;
-    }
-
-
-    frameNumber = getFrameNumber(page);
-
-
-    // Zero the page if we are on a first fault, otherwise read from disk
-    if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, frameNumber, threadInfo);
-    } else {
-        zeroOnePage(page, threadInfo);
-    }
-
-
-    return page;
-}
 
 /**
  *@brief This function attempts to take a page from the standby list. If there is a page to take, this function
@@ -509,38 +483,7 @@ pfn *mapPageFromFreeList(pte *currentPTE, PTHREAD_INFO threadInfo) {
  * @post The caller must unlock the page table entry
  */
 
-pfn *mapPageFromStandByList(pte *currentPTE, PTHREAD_INFO threadInfo) {
-    ULONG64 frameNumber;
 
-    pfn *page;
-
-
-    // All locks pertaining to this page are dealt with in this function. We do not need to lock or unlock it
-    page = getVictimFromStandByList(threadInfo);
-
-    if (page == NULL) {
-        return NULL;
-    }
-
-    frameNumber = getFrameNumber(page);
-
-
-    // Zero the page if we are on a first fault, otherwise read from disk
-    if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
-        if (!zeroOnePage(page, threadInfo)) {
-            DebugBreak();
-        }
-    } else {
-        modified_read(currentPTE, frameNumber, threadInfo);
-    }
-
-    InterlockedIncrement64(&vm.misc.pagesFromStandBy);
-
-    // ideally we never have to go to standby, because  then we are forcing ourselves into one lane, so when we do, we should be pruning
-
-
-    return page;
-}
 
 /**
  * @brief This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry
@@ -569,7 +512,7 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     // We have to write no fence here in order to avoid tearing
 
 
-    //TODO there is some sort of condition where I am unintentionally locking the whole thing, How do I cross edit ptes with the lock bit
+
 
     local.entireFormat = 0;
     local.transitionFormat.contentsLocation = DISK;
@@ -596,6 +539,8 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
    writePTE(page->pte, local);
 
     leavePageLock(page, threadInfo);
+
+    InterlockedIncrement64(&vm.misc.pagesFromStandBy);
 
 
     return page;
@@ -631,6 +576,7 @@ modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
     freeThreadMapping(threadContext);
 
     set_disk_space_free(diskIndex);
+
 #if DBG
     pfn *page = getPFNfromFrameNumber(frameNumber);
 
