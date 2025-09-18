@@ -12,6 +12,7 @@
 #include "../../include/utils/pte_utils.h"
 #include "../../include/utils/page_utils.h"
 #include "../../include/utils/thread_utils.h"
+#include "initialization/init.h"
 #include "threads/user_thread.h"
 
 /**
@@ -27,16 +28,26 @@
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
  * @retval 0 If the program succeeds
  */
+
+#define VERBOSE 0
 DWORD page_trimmer(LPVOID info) {
-    ULONG64 BatchIndex;
-    BOOL doubleBreak;
+
+    ULONG64 counter;
+
+
     sharedLock* trimmedPageTableLock;
     pfn* page;
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
-    PTE_REGION* region;
+
     PTHREAD_INFO threadContext;
     threadContext = (PTHREAD_INFO)info;
+    PTE_REGION* currentRegion;
+    ULONG64 totalTrimmedPages;
+    ULONG64 trimmedPagesInRegion;
+    pte* currentPTE;
+
+
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -44,9 +55,20 @@ DWORD page_trimmer(LPVOID info) {
     events[1] = vm.events.systemShutdown;
 
 
+    currentRegion = vm.pte.RegionsBase;
+
+#if VERBOSE
+    ULONG64 start;
+    ULONG64 end;
+
+
+#endif
+
+
     while (TRUE) {
-        BatchIndex = 0;
-        doubleBreak = FALSE;
+
+        totalTrimmedPages = 0;
+        counter = 0;
         trimmedPageTableLock = NULL;
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
@@ -56,118 +78,136 @@ DWORD page_trimmer(LPVOID info) {
             return 0;
         }
 
-        recallPagesFromLocalList();
-        // while there is still stuff to trim and the arrays are not at capacity
-        while ((vm.lists.modified.length < vm.config.number_of_physical_pages / 4) && BatchIndex < BATCH_SIZE) {
+      recallPagesFromLocalList(threadContext);
 
-            page = getActivePage(threadContext);
+#if VERBOSE
+        start = __rdtsc();
+#endif
 
-            if (page == NULL) {
-                if (BatchIndex == 0) {
-                    doubleBreak = TRUE;
+        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
+
+            //check for overflow then wrap.
+            if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
+                currentRegion = vm.pte.RegionsBase;
+            }
+
+            acquire_srw_exclusive(&currentRegion->lock, threadContext);
+
+            if (currentRegion->hasActiveEntry == TRUE) {
+                currentPTE = getFirstPTEInRegion(currentRegion);
+
+                trimmedPagesInRegion = 0;
+                for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+
+                    // when we find a valid pte invalidate it and store its info
+                    pte localPTE;
+                    localPTE.entireFormat = currentPTE->entireFormat;
+                    if (localPTE.validFormat.valid == 1) {
+
+
+                        localPTE.transitionFormat.mustBeZero = 0;
+                        localPTE.transitionFormat.contentsLocation = MODIFIED_LIST;
+                        writePTE(currentPTE, localPTE);
+
+
+
+                        page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
+
+                        virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+                        pages[trimmedPagesInRegion] = page;
+
+                        trimmedPagesInRegion++;
+                        totalTrimmedPages++;
+
+                    }
+
+                    currentPTE++;
                 }
-                break;
-            }
+                currentRegion->hasActiveEntry = FALSE;
 
-            // if we are not on a streak we need to get a new region a lock the ptes
-            if (trimmedPageTableLock == NULL) {
 
-                region = getPTERegion(page->pte);
-                trimmedPageTableLock = &region->lock;
-                acquire_srw_exclusive(trimmedPageTableLock, threadContext);
+
+                unmapBatch(virtualAddresses, trimmedPagesInRegion);
+                addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
+
+                // Need to have this after because I could fault it back in before it is on the modified list
+                release_srw_exclusive(&currentRegion->lock);
+
+                InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             } else {
-                ASSERT(region == getPTERegion(page->pte))
-            }
 
 
-            virtualAddresses[BatchIndex] = (ULONG64) pte_to_va(page->pte);
-            pages[BatchIndex] = page;
-            pages[BatchIndex]->pte->transitionFormat.mustBeZero = 0;
-            pages[BatchIndex]->pte->transitionFormat.contentsLocation = MODIFIED_LIST;
-            BatchIndex++;
-
-            if (isNextPageInSameRegion(region, threadContext) == FALSE) {
-                unmapBatch(virtualAddresses, BatchIndex);
-                addBatchToModifiedList(pages, BatchIndex,  threadContext);
-
-                release_srw_exclusive(trimmedPageTableLock);
-                // Setting this to null tells the next loop to get a new region
-                trimmedPageTableLock = NULL;
-                BatchIndex = 0;
-
-            }
-        }
-        if (doubleBreak == TRUE) {
-            SetEvent(vm.events.writingStart);
-            continue;
-        }
-        if (BatchIndex == 0) {
-            SetEvent(vm.events.writingStart);
-            continue;
-        }
-
-        //this just handles the last batch
-        unmapBatch(virtualAddresses, BatchIndex);
-        addBatchToModifiedList(pages, BatchIndex, (PTHREAD_INFO) threadContext);
-
-        release_srw_exclusive(trimmedPageTableLock);
-
-        //nptodo add a condition around this
-        SetEvent(vm.events.writingStart);
-
-
-    }
-}
-
-ULONG64 recallPagesFromLocalList(VOID) {
-    ULONG64 time;
-    ULONG64 prevTime;
-    LARGE_INTEGER currentTime;
-    PTHREAD_INFO currentThreadContext;
-    pfn* page;
-    ULONG64 counter;
-
-    counter = 0;
-    for (int i = 0; i < vm.config.number_of_user_threads; i++) {
-        currentThreadContext = &vm.threadInfo.user[i];
-        acquire_srw_exclusive(&currentThreadContext->localList.sharedLock, currentThreadContext);
-
-        prevTime = currentThreadContext->localList.timeOfLastAccess;
-        QueryPerformanceCounter(&currentTime);
-        time = currentTime.QuadPart;
-        if ((time - prevTime) > vm.config.time_until_recall_pages) {
-            while (&currentThreadContext->localList.entry != currentThreadContext->localList.entry.Flink) {
-                page = container_of(currentThreadContext->localList.entry.Flink, pfn, entry);
-                addPageToFreeList(page, currentThreadContext);
+                release_srw_exclusive(&currentRegion->lock);
+                currentRegion++;
                 counter++;
             }
 
+
+        }
+#if VERBOSE
+        end = __rdtsc();
+        printf("trim time: %llu\n", start-end);
+#endif
+
+        vm.misc.numTrims ++;
+
+        SetEvent(vm.events.writingStart);
+    }
+}
+
+ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
+
+    PTHREAD_INFO currentThreadContext;
+    pfn* page;
+    ULONG64 counter;
+    listHead trimmerLocalList;
+    PLIST_ENTRY entry;
+    pListHead head;
+
+    counter = 0;
+    init_list_head(&trimmerLocalList);
+
+    for (int i = 0; i < vm.config.number_of_user_threads; i++) {
+
+
+        currentThreadContext = &vm.threadInfo.user[i];
+
+        head = &currentThreadContext->localList;
+        acquire_srw_exclusive(&head->sharedLock, trimThreadContext);
+
+
+
+        // make order one
+        while (&head->entry != head->entry.Flink) {
+             entry = RemoveHeadList(head);
+            page = container_of(entry, pfn, entry);
+            InsertHeadList(&trimmerLocalList, &page->entry);
         }
 
-        release_srw_exclusive(&currentThreadContext->localList.sharedLock);
+        release_srw_exclusive(&head->sharedLock);
+
+        //get info
+        // get list lock
+
+        //assemble local list
+
+        // release list lock
+
+        // add pages off of local to free lists
+
+
+        head = &trimmerLocalList;
+        while (&head->entry != head->entry.Flink) {
+            entry = RemoveHeadList(head);
+            page = container_of(entry, pfn, entry);
+            addPageToFreeList(page, trimThreadContext);
+            counter++;
+        }
     }
     return counter;
 }
 
-/**
- * @brief This functions pops a page off the active list and returns it unlocked
- * @param threadContext The thread info of the caller.
- * @return Returns an active page. If the list is empty, it returns null.
- */
-pfn* getActivePage(PTHREAD_INFO threadContext) {
 
-
-    pfn* page;
-
-    page = RemoveFromHeadofPageList(&vm.lists.active, threadContext);
-
-
-    if (page == LIST_IS_EMPTY) {
-        return NULL;
-    }
-    leavePageLock(page, threadContext);
-    return page;
-}
 
 /**
  * @brief Simple wrapper for a MapUserPhysicalPagesScatter call.
@@ -197,37 +237,9 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
         enterPageLock(page, threadContext);
+
         addPageToTail(&vm.lists.modified, page, threadContext);
         leavePageLock(page, threadContext);
     }
 }
 
-/**
- * @brief This function peeks into the head of the active list and sees if the next page is in the same pte region.
- * @param region The page table region struct of the batch that is currently being trimmed.
- * @param info The info of the caller.
- * @return Returns true if the next page's corresponding page table entry is in the region passed in.
- */
-BOOL isNextPageInSameRegion(PTE_REGION* region, PTHREAD_INFO info) {
-
-    pfn* nextPage;
-    PTE_REGION* nextRegion;
-    sharedLock* lock;
-    lock = &vm.lists.active.sharedLock;
-
-    // Peek ahead
-    // TODO make this a no fence on the entry
-    // acquire shared
-    enterPageLock(&vm.lists.active.page, info);
-    nextPage = container_of(&vm.lists.active.entry.Flink, pfn, entry);
-    leavePageLock(&vm.lists.active.page, info);
-
-
-    if (&vm.lists.active.entry == &nextPage->entry) {
-        return LIST_IS_EMPTY;
-    }
-
-    nextRegion = getPTERegion(nextPage->pte);
-
-    return nextRegion == region;
-}

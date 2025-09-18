@@ -10,12 +10,54 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
+#include "initialization/init.h"
 #include "threads/user_thread.h"
 /**
  *@file writer_thread.c
  *@brief This file contains all the functions associated with writing to page that have been recently trimmed to disk.
  *@author Noah Persily
 */
+
+
+
+
+/**
+ *@brief A function that gets the current transfer virtual address that a thread needs.
+ *@param threadContext The thread info of the caller. It is used to update the per thread index into its transfer virtual address space.
+ *@return A pointer to a page of unmapped transfer virtual address space.
+*/
+
+PVOID getWriterThreadMapping(PTHREAD_INFO threadContext) {
+    // Get the current thread's transfer va space
+    PVOID currentTransferVa = vm.va.writing;
+    // Index into it
+    PVOID va = (PVOID) ((ULONG64) currentTransferVa + BATCH_SIZE * PAGE_SIZE  * threadContext->TransferVaIndex);
+
+    threadContext->TransferVaIndex += 1;
+    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_user_thread_transfer_va_space_in_pages);
+
+    return va;
+}
+
+/**
+ * @brief Unmaps the thread's transfer virtual address space if it has all mapped. Batching it in this way saves a lot of time spent mapping and flushing.
+ * @param threadContext The thread info of the caller. It is used to index into the correct transfer virtual address space.
+ */
+VOID freeWriterThreadMapping(PTHREAD_INFO threadContext) {
+
+    // If we are at the end, reset and unmap everything
+    if (threadContext->TransferVaIndex == NUM_WRITING_BATCHES) {
+        threadContext->TransferVaIndex = 0;
+
+        if (MapUserPhysicalPages(vm.va.writing, BATCH_SIZE * NUM_WRITING_BATCHES, NULL) == FALSE) {
+            DebugBreak();
+            printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.userThreadTransfer[threadContext->ThreadNumber]);
+            return;
+        }
+    }
+}
+
+
 /**
  * @brief This function takes pages off the modified list and tries to write them to disk. It batch writes pages to disk to be more effiecient.
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
@@ -45,6 +87,7 @@ DWORD diskWriter (LPVOID info) {
 
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
+        vm.misc.numWrites ++;
 
         //if the system shutdown event was signaled, exit
         if (returnEvent - WAIT_OBJECT_0 == 1) {
@@ -66,7 +109,7 @@ DWORD diskWriter (LPVOID info) {
         previousBatchSize = localBatchSize;
 
         // fill our local page and frame number arrays
-        getPagesFromModifiedList(&localBatchSize, pfnArray, diskIndexArray, frameNumberArray,  threadContext);
+        localBatchSize = getPagesFromModifiedList(localBatchSize, pfnArray, diskIndexArray, frameNumberArray,  threadContext);
 
 
 
@@ -75,6 +118,7 @@ DWORD diskWriter (LPVOID info) {
             freeUnusedDiskSlots(diskIndexArray, localBatchSize, previousBatchSize);
         }
 
+        // modified list is empty
         if (localBatchSize == 0) {
             SetEvent(vm.events.writingEnd);
             continue;
@@ -84,7 +128,7 @@ DWORD diskWriter (LPVOID info) {
         getDiskAddressesFromDiskIndices(diskIndexArray, diskAddressArray, localBatchSize);
 
         // actual write to disk
-        writeToDisk(localBatchSize, frameNumberArray, diskAddressArray);
+        writeToDisk(localBatchSize, frameNumberArray, diskAddressArray, threadContext);
 
         addToStandBy(localBatchSize, pfnArray, threadContext);
 
@@ -157,6 +201,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
             if (page->isBeingFreed == TRUE) {
                 page->isBeingFreed = FALSE;
                 addPageToFreeList(page, info);
+
             }
         } else {
 
@@ -176,9 +221,15 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
   * @param localBatchSize The number of diskSlots and frames passed
  * @param frameNumberArray An array of frame numbers
  * @param diskAddressArray An array of diskAddresses
+ * @param ThreadContext The info of the caller
  */
 
-VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray) {
+VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray, PTHREAD_INFO ThreadContext) {
+
+    PVOID va;
+
+    va = getWriterThreadMapping(ThreadContext);
+
     if (MapUserPhysicalPages(vm.va.writing, localBatchSize, frameNumberArray) == FALSE) {
 
         DebugBreak();
@@ -190,11 +241,7 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
         memcpy((PVOID)diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE) , PAGE_SIZE);
     }
 
-    if (MapUserPhysicalPages(vm.va.writing, localBatchSize, NULL) == FALSE) {
-        DebugBreak();
-        printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.writing);
-        return ;
-    }
+    freeWriterThreadMapping(ThreadContext);
 
 
 }
@@ -208,32 +255,32 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
  * @param frameNumberArray An array of frame numbers to be filled in.
  * @param threadContext The thread info of the caller.
  */
-VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
+ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
 
     ULONG64 i;
     pfn* page;
     ULONG64 frameNumber;
-    BOOL doubleBreak;
+    ULONG64 newBatchSize;
+
+    listHead head;
 
 
     i = 0;
-    doubleBreak = FALSE;
-
-    for (; i < *localBatchSizePointer; i++) {
 
 
-        // this function obtains the page lock for us
-        page = RemoveFromHeadofPageList(&vm.lists.modified, threadContext);
+    init_list_head(&head);
+
+    // returns a doubly linked list of locked pages
+    newBatchSize = removeBatchFromList(&vm.lists.modified, &head, threadContext, localBatchSize);
 
 
-        // if we reach the end update the contents of the size pointer and break
-        if (page == LIST_IS_EMPTY) {
-            if (i == 0) {
-                doubleBreak = TRUE;
-            }
-            *localBatchSizePointer = i;
-            break;
-        }
+
+    for (; i < newBatchSize; i++) {
+
+
+
+        page = container_of(RemoveHeadList(&head), pfn, entry);
+
         frameNumber = getFrameNumber(page);
 
         pfnArray[i] = page;
@@ -242,12 +289,19 @@ VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, P
         updatePage(page, diskIndexArray[i]);
 
         leavePageLock(page, threadContext);
+        ASSERT((ULONG64)pfnArray[i]->lock.OwningThread != GetCurrentThreadId());
     }
-    if (doubleBreak == TRUE) {
-        return;
+#if DBG
+
+    for (i = 0; i < newBatchSize; i++) {
+        ASSERT((ULONG64)pfnArray[i]->lock.OwningThread != GetCurrentThreadId());
     }
 
-    return;
+#endif
+
+    ASSERT(threadContext->pagelocksHeld == 0)
+
+    return newBatchSize;
 }
 
 
@@ -261,12 +315,35 @@ VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, P
 * @pre The page  must be locked.
  * @post The caller must release the page lock.
  */
-// TODO make it so the pte only has one transition bit and pfn has a standby or modifed bit
+
 VOID updatePage (pfn* page, ULONG64 diskIndex) {
 
+
+    pte local;
+#if DBG_DISK
+
+    for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+        if (vm.disk.activeVa[i] == page->pte) {
+            DebugBreak();
+        }
+    }
+
+    vm.disk.activeVa[diskIndex] = page->pte;
+
+#endif
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
-    page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
+
+
+    // TODO make it so the pte only has one transition bit and pfn has a standby or modifed bit
+    local.entireFormat =  ReadULong64NoFence(&page->pte->entireFormat);
+    local.transitionFormat.contentsLocation = STAND_BY_LIST;
+
+    writePTE(page->pte, local);
+
+
+
+    //page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
 
 }
 
@@ -281,5 +358,4 @@ VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG
         addresses[i] = indices[i] * PAGE_SIZE + (ULONG64) vm.disk.start;
     }
 }
-
 

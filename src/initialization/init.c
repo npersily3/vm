@@ -45,7 +45,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
     vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.number_of_writing_threads;
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
-    vm.config.size_of_transfer_va_space_in_pages = 128;
+    vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
     vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
 
@@ -63,8 +63,8 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
 
 VOID init_base_config(VOID) {
 #if DBG
-    vm.config.virtual_address_size = 256 * PAGE_SIZE;
-    vm.config.number_of_physical_pages = 128;
+    vm.config.virtual_address_size = MB(128);
+    vm.config.number_of_physical_pages = MB(64)/PAGE_SIZE;
 #else
 
     vm.config.virtual_address_size = GB(4);
@@ -85,7 +85,7 @@ VOID init_base_config(VOID) {
     vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.number_of_writing_threads;
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
-    vm.config.size_of_transfer_va_space_in_pages = 128;
+    vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
     vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
 
@@ -208,6 +208,11 @@ VOID init_pageTable(VOID) {
     vm.pte.table = (pte*)init_memory(numBytes);
 
     init_pte_regions();
+#if DBG
+
+    vm.pte.debugBuffer = init_memory(sizeof(debugPTE) * DEBUG_PTE_CIRCULAR_BUFFER_SIZE);
+
+#endif
 
 }
 
@@ -220,6 +225,8 @@ VOID init_disk(VOID) {
 
     init_disk_active();
     init_num_open_slots();
+
+
 }
 
 VOID init_disk_active(VOID) {
@@ -264,7 +271,7 @@ if (vm.config.disk_division_size_in_pages % 64 != 0) {
 
 
 
-    vm.disk.activeVa = init_memory(numEntries * sizeof(ULONG64));
+    vm.disk.activeVa = init_memory(vm.config.disk_size_in_pages * sizeof(pte*));
 
 }
 
@@ -305,6 +312,11 @@ VOID init_pfns(VOID) {
     init_lists();
 
     init_free_list();
+
+#if DBG
+    vm.pfn.debugBuffer = init_memory(sizeof(debugPFN) * DEBUG_PFN_CIRCULAR_BUFFER_SIZE);
+#endif
+
 
 
 }
@@ -452,7 +464,7 @@ BOOL initVA () {
 
     vm.va.writing = (PULONG_PTR)VirtualAlloc2(NULL,
                                         NULL,
-                                        PAGE_SIZE*BATCH_SIZE,
+                                        PAGE_SIZE*BATCH_SIZE*NUM_WRITING_BATCHES,
                                         MEM_RESERVE | MEM_PHYSICAL,
                                         PAGE_READWRITE,
                                         &parameter,
@@ -467,7 +479,7 @@ BOOL initVA () {
     for (int i = 0; i < vm.config.number_of_user_threads; ++i) {
         vm.va.userThreadTransfer[i] = (PULONG_PTR)VirtualAlloc2(NULL,
                                             NULL,
-                                            vm.config.size_of_transfer_va_space_in_pages * PAGE_SIZE,
+                                            vm.config.size_of_user_thread_transfer_va_space_in_pages * PAGE_SIZE,
                                             MEM_RESERVE | MEM_PHYSICAL,
                                             PAGE_READWRITE,
                                             &parameter,

@@ -85,6 +85,7 @@ VOID createThreads(VOID) {
     for (int i = 0; i < vm.config.number_of_writing_threads; ++i) {
         ThreadContext = &WriterThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
+        ThreadContext->TransferVaIndex = 0;
 
         Handle = createNewThread(diskWriter,ThreadContext);
 

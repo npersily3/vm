@@ -46,26 +46,25 @@ VOID spinWhileWaiting(VOID) {
  * @post The caller must release the page lock.
  */
 
-VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
+VOID addPageToFreeList(pfn *page, PTHREAD_INFO threadInfo) {
     ULONG64 localFreeListIndex;
 
 
     // Increment the global index which is a guess as to what free list most likely is available and has pages
     localFreeListIndex = InterlockedIncrement(&vm.lists.free.AddIndex);
     localFreeListIndex %= vm.config.number_of_free_lists;
-    InterlockedIncrement64((volatile LONG64 *)&vm.lists.free.length);
+    InterlockedIncrement64((volatile LONG64 *) &vm.lists.free.length);
 
     // iterate through the freelists starting at the index calculated above and try to lock it
     while (TRUE) {
         // once you lock a free list insert it at the head
-        if (TryEnterCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock) == TRUE) {
-
+        if (tryEnterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadInfo) == TRUE) {
 #if DBG
             validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
 
-            InsertHeadList(&vm.lists.free.heads[localFreeListIndex], &page->entry );
+            InsertHeadList(&vm.lists.free.heads[localFreeListIndex], &page->entry);
 
 #if DBG
             validateList(&vm.lists.free.heads[localFreeListIndex]);
@@ -74,14 +73,10 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
             leavePageLock(&vm.lists.free.heads[localFreeListIndex].page, threadInfo);
 
             return;
-
         }
         // increment and wrap
-        localFreeListIndex = (localFreeListIndex + 1) % vm.config.number_of_free_lists ;
+        localFreeListIndex = (localFreeListIndex + 1) % vm.config.number_of_free_lists;
     }
-
-
-
 }
 
 /**
@@ -90,8 +85,10 @@ VOID addPageToFreeList(pfn* page, PTHREAD_INFO threadInfo) {
  */
 VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
-    pfn* page;
-    pfn* nextPage;
+    pfn *page;
+    pfn *nextPage;
+    pte localPTE;
+    pte *currentPTE;
 
 
     init_list_head(&localList);
@@ -99,7 +96,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 
     // adds pages onto the local list from the standby list but does not update them
     // returns with all the pages locked
-    if (removeBatchFromList(&vm.lists.standby, &localList, threadInfo) == LIST_IS_EMPTY) {
+    if (removeBatchFromList(&vm.lists.standby, &localList, threadInfo, vm.config.number_of_pages_to_trim_from_stand_by) == LIST_IS_EMPTY) {
         return;
     }
 
@@ -112,20 +109,44 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     // For every page on the local list
 
     while (&page->entry != &localList.entry) {
-
         // We can do this without a pte lock because the page lock protects it from rescues
-        page->pte->transitionFormat.contentsLocation = DISK;
-        page->pte->invalidFormat.diskIndex = page->diskIndex;
+        currentPTE = page->pte;
+        localPTE.entireFormat = 0;
+        localPTE.invalidFormat.transition = DISK;
+        localPTE.invalidFormat.diskIndex = page->diskIndex;
+
+#if DBG
+
+#if DBG_DISK
+
+        ULONG64 count = 0;
+
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == page->pte) {
+                count++;
+            }
+        }
+        ASSERT(count == 1);
+#endif
+        page->hasBeenRescuedWhileWritten = 0;
+
+        page->diskIndex = 0;
+#endif
+
+       writePTE(currentPTE, localPTE);
+
+        // cannot have this becaused we need to store the contents
+        // set_disk_space_free(page->diskIndex);
 
         // add it to the list and manage locks
         nextPage = container_of(page->entry.Flink, pfn, entry);
         addPageToFreeList(page, threadInfo);
         leavePageLock(page, threadInfo);
         page = nextPage;
-
     }
-
+    ASSERT(threadInfo->pagelocksHeld == 0)
 }
+
 /**
  *@brief A function that gets the current transfer virtual address that a thread needs.
  *@param threadContext The thread info of the caller. It is used to update the per thread index into its transfer virtual address space.
@@ -136,10 +157,10 @@ PVOID getThreadMapping(PTHREAD_INFO threadContext) {
     // Get the current thread's transfer va space
     PVOID currentTransferVa = vm.va.userThreadTransfer[threadContext->ThreadNumber];
     // Index into it
-    PVOID va = (PVOID) ((ULONG64) currentTransferVa + PAGE_SIZE  * threadContext->TransferVaIndex);
+    PVOID va = (PVOID) ((ULONG64) currentTransferVa + PAGE_SIZE * threadContext->TransferVaIndex);
 
     threadContext->TransferVaIndex += 1;
-    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_transfer_va_space_in_pages);
+    ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_user_thread_transfer_va_space_in_pages);
 
     return va;
 }
@@ -149,14 +170,15 @@ PVOID getThreadMapping(PTHREAD_INFO threadContext) {
  * @param threadContext The thread info of the caller. It is used to index into the correct transfer virtual address space.
  */
 VOID freeThreadMapping(PTHREAD_INFO threadContext) {
-
     // If we are at the end, reset and unmap everything
-    if (threadContext->TransferVaIndex == vm.config.size_of_transfer_va_space_in_pages ) {
+    if (threadContext->TransferVaIndex == vm.config.size_of_user_thread_transfer_va_space_in_pages) {
         threadContext->TransferVaIndex = 0;
 
-        if (MapUserPhysicalPages(vm.va.userThreadTransfer[threadContext->ThreadNumber], vm.config.size_of_transfer_va_space_in_pages, NULL) == FALSE) {
+        if (MapUserPhysicalPages(vm.va.userThreadTransfer[threadContext->ThreadNumber],
+                                 vm.config.size_of_user_thread_transfer_va_space_in_pages, NULL) == FALSE) {
             DebugBreak();
-            printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.userThreadTransfer[threadContext->ThreadNumber]);
+            printf("full_virtual_memory_test : could not unmap VA %p\n",
+                   vm.va.userThreadTransfer[threadContext->ThreadNumber]);
             return;
         }
     }
@@ -170,11 +192,8 @@ VOID freeThreadMapping(PTHREAD_INFO threadContext) {
 */
 
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
-
-
-
     BOOL returnValue;
-    pte* currentPTE;
+    pte *currentPTE;
     pte pteContents;
 
 
@@ -188,7 +207,6 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     }
 
 
-
     returnValue = !REDO_FAULT;
 
 
@@ -197,7 +215,6 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
-
         // If the pte is in flight
         if (isRescue(currentPTE)) {
             // Determine if the rescue told us to back up or not
@@ -210,14 +227,21 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                 returnValue = REDO_FAULT;
             }
         }
+
+        if (returnValue != REDO_FAULT) {
+            PTE_REGION *region = getPTERegion(currentPTE);
+            region->hasActiveEntry = TRUE;
+            InterlockedIncrement64(&vm.pfn.numActivePages);
+        }
+
     }
+
 
 
     unlockPTE(currentPTE);
 
 
     return returnValue;
-
 }
 
 /**
@@ -229,11 +253,10 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
  * @pre The page table entry must be locked.
  * @post The caller must release the lock of the page table entry.
  */
-BOOL isRescue(pte* currentPTE) {
+BOOL isRescue(pte *currentPTE) {
     return (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST) ||
-            (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST);
+           (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST);
 }
-
 
 
 /**
@@ -250,33 +273,25 @@ BOOL isRescue(pte* currentPTE) {
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry
  */
-BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo) {
-    pfn* page;
+BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo) {
+    pfn *page;
     ULONG64 frameNumber;
 
     pte entryContents;
 
     // We must read no fence because the pte could be getting cross edited by another faulter who is using it as a victim
-    entryContents.entireFormat = ReadULong64NoFence((DWORD64 const volatile *)currentPTE);
+    entryContents.entireFormat = ReadULong64NoFence((DWORD64 const volatile *) currentPTE);
 
 
     // The following two checks see if the case where a pte is cross edited in the process of victimization occured
 
     // If before we got our snapshot, the pte was changed to non rescue
-    if (!isRescue(currentPTE)){
-
+    if (!isRescue(&entryContents)) {
         return REDO_FAULT;
     }
 
     frameNumber = entryContents.transitionFormat.frameNumber;
     page = getPFNfromFrameNumber(frameNumber);
-
-    // if our page that we believe our contents is on no longer maps to our copy
-    if (page->pte->entireFormat != entryContents.entireFormat) {
-        return REDO_FAULT;
-    }
-
-
 
     enterPageLock(page, threadInfo);
 
@@ -288,8 +303,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
         return REDO_FAULT;
     }
 
-    if (!isRescue(currentPTE)) {
-
+    if (entryContents.entireFormat != currentPTE->entireFormat) {
         leavePageLock(page, threadInfo);
         return REDO_FAULT;
     }
@@ -300,22 +314,26 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     // page to the standby list
     // Instead, the writer will free its disk space
     if (page->isBeingWritten == TRUE) {
+#if DBG
+    page->hasBeenRescuedWhileWritten = 1;
+
+#endif
         page->isBeingWritten = FALSE;
     }
     // If its on standby, remove it and set the disk space free
     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
-
         removeFromMiddleOfList(&vm.lists.standby, page, threadInfo);
 
         set_disk_space_free(page->diskIndex);
 #if DBG
         page->diskIndex = 0;
 #endif
-
-
     } else {
+
+
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfList(&vm.lists.modified, page, threadInfo);
+
     }
 
 
@@ -323,22 +341,21 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
     // A faulter that is accessing the same region will be stopped by a pagetable lock
     leavePageLock(page, threadInfo);
 
-    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
+    InterlockedIncrement64(&vm.misc.numRescues);
+    if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
         DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", (PVOID)arbitrary_va, frameNumber);
+        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", (PVOID) arbitrary_va, frameNumber);
         return FALSE;
     }
 
-    currentPTE->validFormat.valid = 1;
-    currentPTE->validFormat.transition = UNASSIGNED;
+    ASSERT(entryContents.entireFormat == currentPTE->entireFormat);
+    entryContents.validFormat.valid = 1;
+    entryContents.validFormat.transition = UNASSIGNED;
 
+    writePTE(currentPTE, entryContents);
 
-    enterPageLock(page, threadInfo);
-    addPageToTail(&vm.lists.active, page, threadInfo);
-    leavePageLock(page, threadInfo);
 
     return !REDO_FAULT;
-
 }
 
 
@@ -355,15 +372,13 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO threadInfo)
  * @post The caller must unlock the page table entry.
  */
 
-BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
-
-
-    pfn* page;
+BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
+    pfn *page;
     ULONG64 frameNumber;
     PTHREAD_INFO threadInfo;
 
 
-    threadInfo = (PTHREAD_INFO)threadContext;
+    threadInfo = (PTHREAD_INFO) threadContext;
 
 
     page = NULL;
@@ -374,18 +389,16 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
 
     page = getPageFromLocalList(threadInfo);
     if (page == NULL) {
-        page = mapPageFromFreeList(currentPTE, threadInfo);
+        page = getPageFromFreeList(threadInfo);
 
         if (page == NULL) {
-            page = mapPageFromStandByList(currentPTE,  threadInfo);
+            page = getVictimFromStandByList(threadInfo);
 
             if (page == NULL) {
-
                 // If we are not able to get a page, start the trimmer and sleep
 
                 unlockPTE(currentPTE);
 
-                //TODO find a way to resolve the case where it resets writing end event and there is a deadlock
 
                 ResetEvent(vm.events.writingEnd);
                 SetEvent(vm.events.trimmingStart);
@@ -406,7 +419,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
 
                 end = ReadTimeStampCounter();
 
-                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64)(end - start));
+                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64) (end - start));
 
                 lockPTE(currentPTE);
 
@@ -416,80 +429,48 @@ BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext) {
     }
 
 
-
-
-
     // if we seem to be running low on free and standby pages wake the trimmer
-    if (((double) (vm.lists.standby.length + ReadULong64NoFence(&vm.lists.free.length)) / ((double) vm.config.number_of_physical_pages )) < .5) {
+    if (((double) (vm.lists.standby.length + ReadULong64NoFence(&vm.lists.free.length)) / ((double) vm.config.
+             number_of_physical_pages)) < .5) {
         SetEvent(vm.events.trimmingStart);
     }
 
     frameNumber = getFrameNumber(page);
 
 
-    //validate the pte and add it to the list
-    currentPTE->validFormat.frameNumber = frameNumber;
-    currentPTE->validFormat.valid = 1;
+    // Zero the page if we are on a first fault, otherwise read from disk
+    if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
+        if (!zeroOnePage(page, threadInfo)) {
+            DebugBreak();
+        }
+    } else {
+        modified_read(currentPTE, frameNumber, threadInfo);
+    }
 
+    //validate the pte
+    
+    pte localPTE;
+
+    localPTE.entireFormat = currentPTE->entireFormat;
+    localPTE.validFormat.frameNumber = frameNumber;
+    localPTE.validFormat.valid = 1;
+
+    writePTE(currentPTE, localPTE);
+    
 
     page->pte = currentPTE;
 
-    if (MapUserPhysicalPages((PVOID)arbitrary_va, 1, &frameNumber) == FALSE) {
+    if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %llu to page %llX\n", arbitrary_va, frameNumber);
         return FALSE;
     }
 
-    enterPageLock(page, threadInfo);
-    addPageToTail(&vm.lists.active, page, threadInfo);
-    leavePageLock(page, threadContext);
 
     return !REDO_FAULT;
 }
 
-/**
- * @brief This function tries to get a physical page of a free list. It will also detect if the number of free pages
- * is running low, and take some from the standby list.
- * @param currentPTE The page table entry of the virtual address that is being faulted on
- * @param threadInfo The info about the calling thread.
-* @return Returns a page from a freelist
-* @retval Returns null if the list is empty
- * @pre The page table entry must be locked on entry to this function.
- * @post The caller must unlock the page table entry.
- */
-pfn* mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo) {
 
-
-
-    pfn* page;
-    ULONG64 frameNumber;
-
-    // This function acquires the page lock
-    page = getPageFromFreeList(threadInfo);
-
-
-    if (page == LIST_IS_EMPTY) {
-        return NULL;
-    }
-
-
-
-
-    frameNumber = getFrameNumber(page);
-
-
-
-    // Zero the page if we are on a first fault, otherwise read from disk
-    if (currentPTE->invalidFormat.diskIndex != EMPTY_PTE) {
-        modified_read(currentPTE, frameNumber, threadInfo);
-    } else {
-        zeroOnePage(page, threadInfo);
-    }
-
-
-    return page;
-
-}
 
 /**
  *@brief This function attempts to take a page from the standby list. If there is a page to take, this function
@@ -502,38 +483,7 @@ pfn* mapPageFromFreeList (pte* currentPTE, PTHREAD_INFO threadInfo) {
  * @post The caller must unlock the page table entry
  */
 
-pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
 
-
-    ULONG64 frameNumber;
-
-    pfn* page;
-
-
-
-
-    // All locks pertaining to this page are dealt with in this function. We do not need to lock or unlock it
-    page = getVictimFromStandByList(threadInfo);
-
-    if (page == NULL) {
-        return NULL;
-    }
-
-    frameNumber = getFrameNumber(page);
-
-
-
-    // Zero the page if we are on a first fault, otherwise read from disk
-    if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
-        if (!zeroOnePage(page, threadInfo)) {
-            DebugBreak();
-        }
-    } else {
-        modified_read(currentPTE, frameNumber, threadInfo);
-    }
-
-    return page;
-}
 
 /**
  * @brief This function pops a page off the standby list and updates its pte. Important note, it updates the page table entry
@@ -543,9 +493,8 @@ pfn* mapPageFromStandByList (pte*  currentPTE, PTHREAD_INFO threadInfo) {
  * @param threadInfo The thread info of the caller.
  * @return Return a page from the standby list. If the list is empty return NULL
  */
-pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo) {
-
-    pfn* page;
+pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
+    pfn *page;
     pte local;
 
 
@@ -562,12 +511,36 @@ pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo) {
     // if the rescue sees a change in the pte it will redo the fault
     // We have to write no fence here in order to avoid tearing
 
+
+
+
+    local.entireFormat = 0;
     local.transitionFormat.contentsLocation = DISK;
     local.invalidFormat.diskIndex = page->diskIndex;
+#if DBG
 
-    WriteULong64NoFence((volatile DWORD64 *)page->pte,  local.entireFormat);
+    #if DBG_DISK
+
+        ULONG64 count = 0;
+
+    for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+        if (vm.disk.activeVa[i] == page->pte) {
+            count++;
+        }
+    }
+    ASSERT(count == 1);
+#endif
+
+    page->hasBeenRescuedWhileWritten = 0;
+    page->diskIndex = 0;
+
+#endif
+
+   writePTE(page->pte, local);
 
     leavePageLock(page, threadInfo);
+
+    InterlockedIncrement64(&vm.misc.pagesFromStandBy);
 
 
     return page;
@@ -584,8 +557,7 @@ pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo) {
  * @post The caller must unlock the page table entry
  */
 VOID
-modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) {
-
+modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) {
     ULONG64 diskIndex = currentPTE->invalidFormat.diskIndex;
     ULONG64 diskAddress = (ULONG64) vm.disk.start + diskIndex * PAGE_SIZE;
 
@@ -604,10 +576,22 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
     freeThreadMapping(threadContext);
 
     set_disk_space_free(diskIndex);
-#if DBG
-    pfn* page = getPFNfromFrameNumber(frameNumber);
-    page->diskIndex = 0;
 
+#if DBG
+    pfn *page = getPFNfromFrameNumber(frameNumber);
+
+#if DBG_DISK
+
+    if (currentPTE != NULL) {
+        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
+            if (vm.disk.activeVa[i] == currentPTE ) {
+                DebugBreak();
+            }
+        }
+    }
+
+#endif
+    page->diskIndex = 0;
 #endif
 }
 
@@ -619,9 +603,8 @@ modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
  * @param threadContext The caller's thread info. It is used to determine which transfer virtual page to use.
 
  */
-// TODO make it only take in a frame number and make it void
-BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
 
+BOOL zeroOnePage(pfn *page, PTHREAD_INFO threadContext) {
     PVOID zeroVA;
     ULONG64 frameNumber;
 
@@ -650,18 +633,16 @@ BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadContext) {
  * @post The caller must release the page lock of the returned page.
  */
 
-// TODO think about this local list as a loan and have the trimmer or someone else take it back
-pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
 
+pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     ULONG64 localFreeListIndex;
     PLIST_ENTRY entry;
-    pfn* page;
+    pfn *page;
     ULONG64 localTotalFreeListLength;
     boolean pruneInProgress = FALSE;
     boolean gotFreeListLock = FALSE;
     ULONG64 counter;
     ULONG64 i;
-
 
 
     counter = 0;
@@ -676,7 +657,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
     while (TRUE) {
         // In our first run through, just try to enter a freelist lock
         if (counter < vm.config.number_of_free_lists) {
-            if (TryEnterCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock) == TRUE) {
+            if (tryEnterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadContext) == TRUE) {
                 gotFreeListLock = TRUE;
             }
             // if all of them were empty at the time we checked
@@ -684,36 +665,38 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
             return LIST_IS_EMPTY;
             // acquire a freelist lock exclusive
         } else {
-            EnterCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock);
+            enterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadContext);
             gotFreeListLock = TRUE;
         }
 
 
         if (gotFreeListLock) {
 #if DBG
-        validateList(&vm.lists.free.heads[localFreeListIndex]);
+            validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
+            acquire_srw_exclusive(&threadContext->localList.sharedLock, threadContext);
             // Now that we have the head lock, we might as well add pages to our local list
-        for (; i < BATCH_SIZE; ++i) {
-            // now we have a locked page
-            entry = RemoveHeadList(&vm.lists.free.heads[localFreeListIndex]);
-            if (entry == LIST_IS_EMPTY) {
-                page = LIST_IS_EMPTY;
-                break;
-            } else {
-                localTotalFreeListLength = InterlockedDecrement64((volatile LONG64 *) &vm.lists.free.length);
-                page = container_of(entry, pfn, entry);
-                InsertHeadList(&threadContext->localList, &page->entry);
+            for (; i < BATCH_SIZE; ++i) {
+                // now we have a locked page
+                entry = RemoveHeadList(&vm.lists.free.heads[localFreeListIndex]);
+                if (entry == LIST_IS_EMPTY) {
+                    page = LIST_IS_EMPTY;
+                    break;
+                } else {
+                    localTotalFreeListLength = InterlockedDecrement64((volatile LONG64 *) &vm.lists.free.length);
+                    page = container_of(entry, pfn, entry);
+                    InsertHeadList(&threadContext->localList, &page->entry);
+                }
             }
-        }
+            release_srw_exclusive(&threadContext->localList.sharedLock);
 
 #if DBG
             validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
             // now that pages are off the list we no longer need to lock the list
-            LeaveCriticalSection(&vm.lists.free.heads[localFreeListIndex].page.lock);
+            leavePageLock(&vm.lists.free.heads[localFreeListIndex].page, threadContext);
 
             if (i == 0) {
                 gotFreeListLock = FALSE;
@@ -721,23 +704,25 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                 localFreeListIndex = (localFreeListIndex + 1) % vm.config.number_of_free_lists;
                 continue;
             } else {
-
                 // The following code calls the standby pruner.
 
                 // despite warnings, localFreeListLength Must Be Initialized
-               ASSERT(localTotalFreeListLength != MAXULONG64);
+                ASSERT(localTotalFreeListLength != MAXULONG64);
                 // check to see if we have enough pages on the free list
                 if (localTotalFreeListLength <= vm.config.stand_by_trim_threshold) {
                     // if there is not a pruning mission already happening
-                    pruneInProgress = (BOOL)InterlockedCompareExchange((volatile LONG *)&vm.misc.standByPruningInProgress, TRUE, FALSE);
+                    pruneInProgress = (BOOL) InterlockedCompareExchange(
+                        (volatile LONG *) &vm.misc.standByPruningInProgress, TRUE, FALSE);
 
                     if (pruneInProgress == FALSE) {
                         batchVictimsFromStandByList(threadContext);
                     }
 
-                    InterlockedExchange((volatile LONG *)&vm.misc.standByPruningInProgress, FALSE);
+                    InterlockedExchange((volatile LONG *) &vm.misc.standByPruningInProgress, FALSE);
                 }
                 // return the page at the front of the local list
+                InterlockedDecrement64(&vm.misc.pagesFromLocalCache);
+                InterlockedIncrement64(&vm.misc.pagesFromFree);
                 return getPageFromLocalList(threadContext);
             }
         }
@@ -753,15 +738,14 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
  * @param threadContext The thread info that contains the local list head
  * @return The page at the head of the local list
  */
-pfn* getPageFromLocalList(PTHREAD_INFO threadContext) {
+pfn *getPageFromLocalList(PTHREAD_INFO threadContext) {
     pListHead head;
-    pfn* page;
+    pfn *page;
     PLIST_ENTRY entry;
-    LARGE_INTEGER time;
 
 
 
-    head  = &threadContext->localList;
+    head = &threadContext->localList;
 
     // I do this in a lock because the trimmer could be accessing this
     acquire_srw_exclusive(&head->sharedLock, threadContext);
@@ -774,8 +758,7 @@ pfn* getPageFromLocalList(PTHREAD_INFO threadContext) {
     page = container_of(entry, pfn, entry);
     release_srw_exclusive(&head->sharedLock);
 
-    QueryPerformanceCounter(&time);
-    head->timeOfLastAccess = time.QuadPart;
+    InterlockedIncrement64(&vm.misc.pagesFromLocalCache);
 
     return page;
 }

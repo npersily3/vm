@@ -12,8 +12,8 @@
 DWORD diskWriter (LPVOID threadContext);
 pfn* getPageFromModifiedList(VOID);
 VOID updatePage (pfn* page,ULONG64 index);
-VOID getPagesFromModifiedList (PULONG64 localBatchSizePointer, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO info);
-VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray);
+ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO info);
+VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray, PTHREAD_INFO info);
 VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO threadInfo);
 VOID freeUnusedDiskSlots(PULONG64 diskIndexArray, ULONG64 start, ULONG64 end) ;
 VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG64 size);

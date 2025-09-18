@@ -12,7 +12,10 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
+#define DBG_DISK 1
+
+
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
 #else
@@ -24,7 +27,7 @@
 // Configuration constants
 //
 #define PAGE_SIZE                   4096
-// 52 bits is max that bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
+// 52 bits is max that address bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
 #define frame_number_size           40
 #define KB(x)                       ((x) *  (ULONG64)1024)
 #define MB(x)                       (KB(x) * 1024)
@@ -47,7 +50,7 @@ typedef struct {
     ULONG64 number_of_threads;
     ULONG64 number_of_system_threads;
 
-    ULONG64 size_of_transfer_va_space_in_pages;
+    ULONG64 size_of_user_thread_transfer_va_space_in_pages;
     ULONG64 stand_by_trim_threshold;
     ULONG64 number_of_pages_to_trim_from_stand_by;
     ULONG64 number_of_free_lists;
@@ -94,7 +97,12 @@ typedef struct {
 
 
 #define MAX_FAULTS 0xFFFFFF
+#if DBG
+#define BATCH_SIZE (64)
+#else
 #define BATCH_SIZE (512)
+#endif
+#define NUM_WRITING_BATCHES (128)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
@@ -218,7 +226,13 @@ typedef struct {
     ULONG64 diskIndex;
     ULONG64 isBeingWritten: 1;
     ULONG64 isBeingFreed: 1;
+#if DBG
+    ULONG64 hasBeenRescuedWhileWritten: 1;
+    ULONG64 lockedDuringPrune: 1;
+#endif
     CRITICAL_SECTION lock;
+
+
 } pfn;
 
 
@@ -272,7 +286,7 @@ typedef struct {
     stochastic_data statistics;
     sharedLock lock;
 
-    ULONG64: 1, accessed;
+    ULONG64: 1, hasActiveEntry;
 } PTE_REGION;
 
 
@@ -308,25 +322,77 @@ typedef struct {
 
 } va;
 
+
+
 typedef struct {
     PVOID start;
     ULONG64 end;
     PULONG64 active;
     PULONG64 activeEnd;
-    PULONG64* activeVa;
+    pte** activeVa;
     ULONG64* number_of_open_slots;
 } disk;
+
+
+#if DBG
+#define FRAMES_TO_CAPTURE 17
+typedef  struct __declspec(align(128)){
+
+    pte* pteAddress;
+    pte oldPteContents;
+    pte pteContents;
+
+    pfn pfnContents;
+    ULONG64 frameNumber;
+    PVOID stacktrace[FRAMES_TO_CAPTURE];
+    ULONG64 threadId;
+
+} debugPTE;
+
+
+typedef struct __declspec(align(256)){
+
+    pfn* pfnAddress;
+    pfn oldContents;
+    pfn newContents;
+
+
+
+    PVOID stacktrace[FRAMES_TO_CAPTURE];
+    ULONG64 threadId;
+
+} debugPFN;
+
+
+#define DEBUG_PTE_CIRCULAR_BUFFER_SIZE 0x80000
+#define DEBUG_PFN_CIRCULAR_BUFFER_SIZE 0x80000
+
+#endif
+
+
 
 typedef struct {
     ULONG_PTR physical_page_count;
     PULONG_PTR physical_page_numbers;
     pfn *start;
     pfn *end;
-} pfns;
+    volatile ULONG64 numActivePages;
+#if DBG
 
+    volatile ULONG64 debugBufferIndex;
+    debugPFN* debugBuffer;
+#endif
+
+
+} pfns;
 typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
+
+#if DBG
+    volatile ULONG64 debugBufferIndex;
+    debugPTE* debugBuffer;
+#endif
 
 } ptes;
 
@@ -356,16 +422,30 @@ typedef struct {
     volatile ULONG64 totalTimeWaiting;
 
     volatile boolean standByPruningInProgress;
+    volatile ULONG64 numTrims;
+    volatile ULONG64 numWrites;
+    volatile ULONG64 pagesFromStandBy;
+    volatile ULONG64 pagesFromFree;
+    volatile ULONG64 pagesFromLocalCache;
+    volatile ULONG64 numRescues;
 } misc;
 
 // Main components are the transfer va index,
-typedef struct __declspec(align(64)) {
+typedef struct __declspec(align(512)) {
     ULONG ThreadNumber;
     ULONG ThreadId;
     ULONG64 TransferVaIndex;
     HANDLE ThreadHandle;
     THREAD_RNG_STATE rng;
     listHead localList;
+
+#if DBG
+    ULONG64 pagelocksHeld;
+
+    debugPFN pagelockIndices[512];
+
+#endif
+
 } THREAD_INFO, *PTHREAD_INFO;
 
 
@@ -375,6 +455,7 @@ typedef struct {
     PTHREAD_INFO writer;
 
 } threadInfo;
+
 
 
 typedef struct {

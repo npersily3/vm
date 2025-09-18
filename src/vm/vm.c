@@ -18,11 +18,14 @@ static __inline unsigned __int64 GetTimeStampCounter(void) {
 }
 
 
+ULONG64 noah;
+
 VOID
 full_virtual_memory_test(VOID) {
 
 
 
+    noah = 1;
 
     ULONG64 start, end;
 
@@ -37,6 +40,7 @@ full_virtual_memory_test(VOID) {
 
     start = GetTickCount64();
 
+    printf("initialization done");
     SetEvent(vm.events.userStart);
 
     int i;
@@ -65,7 +69,7 @@ full_virtual_memory_test(VOID) {
     printf("StandBy length %llu  \n", vm.lists.standby.length);
     printf("Modified length %llu \n", vm.lists.modified.length);
     printf("Free length %llu \n", vm.lists.free.length);
-    printf("Active length %llu \n", vm.lists.active.length);
+    printf("Active length %llu \n", vm.pfn.numActivePages);
 
     printf("pagewaits %llu \n",   vm.misc.pageWaits);
     printf("total time waiting %llu ticks\n",   (vm.misc.totalTimeWaiting));
@@ -99,7 +103,7 @@ DWORD testVM(LPVOID lpParam) {
     BOOL redo_try_same_address;
     ULONG64 counter;
 
-    i = 0;
+    i = 1;
     thread_info = (PTHREAD_INFO)lpParam;
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
@@ -113,7 +117,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(1)/8; i++) {
+ for (; i < MB(10); i++) {
 //while (TRUE) {
         #endif
 
@@ -176,18 +180,18 @@ DWORD testVM(LPVOID lpParam) {
             }
             redo_try_same_address = TRUE;
             i--;
-           // *arbitrary_va = (ULONG_PTR) arbitrary_va;
-        } else {
-           //recordAccess(arbitrary_va);
-            redo_try_same_address = FALSE;
-        }
-#if DBG
-     i++;
-     if (i % KB(8) == 0) {
-    //     printf(".");
-     }
-#endif
 
+        } else {
+
+            redo_try_same_address = FALSE;
+
+#if 1
+    if (i % KB(512) == 0) {
+        printf(".");
+    }
+#endif
+        }
+    i++;
 }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
@@ -239,12 +243,15 @@ main(int argc, char **argv) {
     } else {
         init_base_config();
     }
+    printf("%llu ",sizeof(pfn));
+#if DBG
+    printf("%llu ",sizeof(debugPFN));
+#endif
 
 
 
 
     full_virtual_memory_test();
-
 
 }
 
