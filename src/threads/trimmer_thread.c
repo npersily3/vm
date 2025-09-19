@@ -107,7 +107,11 @@ DWORD page_trimmer(LPVOID info) {
                     localPTE.entireFormat = currentPTE->entireFormat;
                     if (localPTE.validFormat.valid == 1) {
 
-
+                        if (localPTE.validFormat.access == 1) {
+                            localPTE.validFormat.access = 0;
+                            writePTE(currentPTE, localPTE);
+                            continue;
+                        }
                         localPTE.transitionFormat.mustBeZero = 0;
                         localPTE.transitionFormat.isTransition = 1;
                         writePTE(currentPTE, localPTE);

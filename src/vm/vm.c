@@ -22,7 +22,7 @@ boolean setAccessBit(ULONG64 va) {
     pte oldPTE;
     pte returnValue;
 
-    pteAddress = pte_to_va(va);
+    pteAddress = va_to_pte(va);
     oldPTE.entireFormat = ReadULong64NoFence(pteAddress);
     newPTE.entireFormat = oldPTE.entireFormat;
 
