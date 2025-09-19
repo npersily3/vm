@@ -106,7 +106,7 @@ typedef struct {
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
 
-#define REDO_FAULT TRUE
+#define REDO_FAULT 0
 #define REDO_FREE TRUE
 //
 // Thread configuration

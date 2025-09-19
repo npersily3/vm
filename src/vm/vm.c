@@ -16,7 +16,26 @@
 static __inline unsigned __int64 GetTimeStampCounter(void) {
     return __rdtsc();
 }
+boolean setAccessBit(ULONG64 va) {
+    pte* pteAddress;
+    pte newPTE;
+    pte oldPTE;
+    pte returnValue;
 
+    pteAddress = pte_to_va(va);
+    oldPTE.entireFormat = ReadULong64NoFence(pteAddress);
+    newPTE.entireFormat = oldPTE.entireFormat;
+
+    newPTE.validFormat.access = 1;
+
+   returnValue.entireFormat = InterlockedCompareExchange64(pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
+
+    if (returnValue.validFormat.valid == 0) {
+        return REDO_FAULT;
+    }
+    return !REDO_FAULT;
+
+}
 
 ULONG64 noah;
 
@@ -198,7 +217,10 @@ DWORD testVM(LPVOID lpParam) {
 
         } else {
 
+            setAccessBit(arbitrary_va);
             redo_try_same_address = FALSE;
+
+
 
 #if 0
     if (i % KB(512) == 0) {

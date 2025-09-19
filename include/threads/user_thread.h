@@ -10,9 +10,9 @@
 
 BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext);
 BOOL isRescue(pte* currentPTE);
-BOOL rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO info);
+ULONG64 rescue_page(ULONG64 arbitrary_va, pte* currentPTE, PTHREAD_INFO info);
 pfn* getVictimFromStandByList (PTHREAD_INFO threadInfo);
-BOOL mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext);
+ULONG64 mapPage(ULONG64 arbitrary_va, pte* currentPTE, LPVOID threadContext);
 VOID modified_read(pte* currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext);
 BOOL zeroOnePage (pfn* page, PTHREAD_INFO threadInfo);
 pfn* getPageFromFreeList(PTHREAD_INFO threadContext);

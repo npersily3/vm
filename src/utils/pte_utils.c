@@ -71,6 +71,12 @@ VOID unlockPTE(pte* pte) {
    // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
     release_srw_exclusive(&region->lock);
 }
+
+/**
+ * @brief NoFence write to a PTE. In debug mode, this function keeps track of how the pte has changed and the stack trace
+ * @param pteAddress The address to write to
+ * @param NewPteContents The new contents
+ */
 VOID writePTE(pte* pteAddress, pte NewPteContents) {
 #if DBG
     recordPTEAccess(pteAddress, NewPteContents);
