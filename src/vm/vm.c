@@ -83,10 +83,19 @@ full_virtual_memory_test(VOID) {
 
     printf("num active pages: %llu \n", vm.pfn.numActivePages);
 
-    printf("num rescues  %llu \n", vm.misc.numRescues);
-    printf("num freeList  %llu \n", vm.misc.pagesFromFree);
-    printf("num localCach  %llu \n", vm.misc.pagesFromLocalCache);
-    printf("num standBy  %llu \n", vm.misc.pagesFromStandBy);
+    double totalHardFaults = (double) vm.misc.pagesFromFree + vm.misc.pagesFromLocalCache + vm.misc.pagesFromStandBy;
+    double totalFaults = vm.misc.numRescues + totalHardFaults;
+
+    printf("num faults %.0f \n", totalFaults);
+    printf("num hard faults %.0f \n", totalHardFaults);
+
+    printf("rescue percentage: %.2f%% \n", ((vm.misc.numRescues/totalFaults)*100));
+    printf("hard fault percentage: %.2f%% \n", ((totalHardFaults/totalFaults)*100));
+    printf("Percentages of hard faults:\n");
+
+    printf("num freeList: %.2f%% \n", vm.misc.pagesFromFree/totalHardFaults*100);
+    printf("num localCache: %.2f%% \n", vm.misc.pagesFromLocalCache/totalHardFaults*100);
+    printf("num standBy: %.2f%% \n", vm.misc.pagesFromStandBy/totalHardFaults*100);
 
     return;
 }
@@ -191,7 +200,7 @@ DWORD testVM(LPVOID lpParam) {
 
             redo_try_same_address = FALSE;
 
-#if 1
+#if 0
     if (i % KB(512) == 0) {
         printf(".");
     }

@@ -127,7 +127,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 0
+#define spinEvents 1
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -150,7 +150,7 @@ typedef struct {
     // indicates if the pte was accessed
     ULONG64 access: 1;
     // indicates if where the virtual pages contents are
-    ULONG64 transition: 2;
+    ULONG64 isTransition: 1;
     // the physical frame number associated with the pte
     ULONG64 frameNumber: frame_number_size;
 } validPte;
@@ -162,16 +162,13 @@ typedef struct {
     ULONG64 lock: 1;
     // in this format these bits do not matter
     ULONG64 access: 1;
-    ULONG64 transition: 2;
+    ULONG64 isTransition: 1;
 
     // disk slot where the contents are
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
 
-#define DISK 0
-#define UNASSIGNED 1
-#define MODIFIED_LIST 2
-#define STAND_BY_LIST 3
+
 
 typedef struct {
     // in this format a pte must be unmapped
@@ -181,7 +178,7 @@ typedef struct {
     // tracks accesses
     ULONG64 access: 1;
     // tracks if it can be rescued out of a write or trim
-    ULONG64 contentsLocation: 2;
+    ULONG64 isTransition: 1;
     // the frame number to retrieve the contents from
     ULONG64 frameNumber: frame_number_size;
 } transitionPte;
@@ -219,10 +216,16 @@ typedef struct {
 //
 // PFN (Page Frame Number) structure
 //
+
+
+#define MODIFIED_LIST 0
+#define STAND_BY_LIST 1
 typedef struct {
     LIST_ENTRY entry;
     pte *pte;
     ULONG64 diskIndex;
+
+    ULONG64 location: 1;
     ULONG64 isBeingWritten: 1;
     ULONG64 isBeingFreed: 1;
 #if DBG

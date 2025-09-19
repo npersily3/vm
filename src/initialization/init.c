@@ -96,10 +96,10 @@ VOID init_base_config(VOID) {
 
 
 
-    vm.config.number_of_ptes_per_region = 64;
+    vm.config.number_of_ptes_per_region = 512;
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
     vm.config.time_until_recall_pages = 2500000;
-    vm.config.number_of_free_lists = 8;
+    vm.config.number_of_free_lists = 16;
 }
 
 BOOL

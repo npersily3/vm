@@ -109,7 +109,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         // We can do this without a pte lock because the page lock protects it from rescues
         currentPTE = page->pte;
         localPTE.entireFormat = 0;
-        localPTE.invalidFormat.transition = DISK;
+        localPTE.invalidFormat.isTransition = 0;
         localPTE.invalidFormat.diskIndex = page->diskIndex;
 
 #if DBG
@@ -218,7 +218,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
         // If the pte is in flight in the system threads
-        if (isRescue(currentPTE)) {
+        if ((currentPTE->transitionFormat.isTransition == TRUE)) {
             // Determine if the rescue told us to back up or not
             if (rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) threadContext) == REDO_FAULT) {
                 returnValue = REDO_FAULT;
@@ -247,19 +247,6 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     return returnValue;
 }
 
-/**
- * @brief
- *
- * @param currentPTE The page table entry of the virtual address that was faulted on.
- * @return It returns true if the currentPTE is signaled as transition.
- *
- * @pre The page table entry must be locked.
- * @post The caller must release the lock of the page table entry.
- */
-BOOL isRescue(pte *currentPTE) {
-    return (currentPTE->transitionFormat.contentsLocation == MODIFIED_LIST) ||
-           (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST);
-}
 
 
 /**
@@ -289,7 +276,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
     // The following two checks see if the case where a pte is cross edited in the process of victimization occured
 
     // If before we got our snapshot, the pte was changed to non rescue
-    if (!isRescue(&entryContents)) {
+    if (entryContents.transitionFormat.isTransition == 0) {
         return REDO_FAULT;
     }
 
@@ -324,7 +311,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
         page->isBeingWritten = FALSE;
     }
     // If its on standby, remove it and set the disk space free
-    else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
+    else if (page->location == STAND_BY_LIST) {
         removeFromMiddleOfList(&vm.lists.standby, page, threadInfo);
 
         set_disk_space_free(page->diskIndex);
@@ -353,7 +340,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
 
     ASSERT(entryContents.entireFormat == currentPTE->entireFormat);
     entryContents.validFormat.valid = 1;
-    entryContents.validFormat.transition = UNASSIGNED;
+    entryContents.validFormat.isTransition = 0;
 
     writePTE(currentPTE, entryContents);
 
@@ -517,7 +504,7 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
 
     local.entireFormat = 0;
-    local.transitionFormat.contentsLocation = DISK;
+    local.transitionFormat.isTransition = 0;
     local.invalidFormat.diskIndex = page->diskIndex;
 #if DBG
 

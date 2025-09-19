@@ -106,12 +106,13 @@ DWORD page_trimmer(LPVOID info) {
 
 
                         localPTE.transitionFormat.mustBeZero = 0;
-                        localPTE.transitionFormat.contentsLocation = MODIFIED_LIST;
+                        localPTE.transitionFormat.isTransition = 1;
                         writePTE(currentPTE, localPTE);
 
 
 
                         page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
+                        page->location = MODIFIED_LIST;
 
                         virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                         pages[trimmedPagesInRegion] = page;
