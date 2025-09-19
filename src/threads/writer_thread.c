@@ -319,7 +319,6 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
 VOID updatePage (pfn* page, ULONG64 diskIndex) {
 
 
-    pte local;
 #if DBG_DISK
 
     for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
@@ -333,17 +332,7 @@ VOID updatePage (pfn* page, ULONG64 diskIndex) {
 #endif
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
-
-
-    // TODO make it so the pte only has one transition bit and pfn has a standby or modifed bit
-    local.entireFormat =  ReadULong64NoFence(&page->pte->entireFormat);
-    local.transitionFormat.contentsLocation = STAND_BY_LIST;
-
-    writePTE(page->pte, local);
-
-
-
-    //page->pte->transitionFormat.contentsLocation = STAND_BY_LIST;
+    page->location = STAND_BY_LIST;
 
 }
 

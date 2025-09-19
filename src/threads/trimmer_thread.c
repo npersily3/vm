@@ -22,7 +22,8 @@
 */
 /**
  * @brief This is the function that deals with unmapping pages.
- * It will pop a page off the active list and add it to the modified list.
+ * It will first retrieve all the pages from local caches and add them to the free list.
+ * Then, it will comb through page table regions, batch unmapping all valid entries and adding them to the modified list.
  * It will batch unmap if the consecutive pages are in the same page table entry region.
  *
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
@@ -84,6 +85,7 @@ DWORD page_trimmer(LPVOID info) {
         start = __rdtsc();
 #endif
 
+        // if we have trimmed enough, or have combed through everything
         while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
 
             //check for overflow then wrap.
@@ -93,25 +95,27 @@ DWORD page_trimmer(LPVOID info) {
 
             acquire_srw_exclusive(&currentRegion->lock, threadContext);
 
+            // check to see if there are any active entries in this region
             if (currentRegion->hasActiveEntry == TRUE) {
                 currentPTE = getFirstPTEInRegion(currentRegion);
 
                 trimmedPagesInRegion = 0;
                 for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
 
-                    // when we find a valid pte invalidate it and store its info
+                    // when we find a valid pte, invalidate it and store its info in stack variables
                     pte localPTE;
                     localPTE.entireFormat = currentPTE->entireFormat;
                     if (localPTE.validFormat.valid == 1) {
 
 
                         localPTE.transitionFormat.mustBeZero = 0;
-                        localPTE.transitionFormat.contentsLocation = MODIFIED_LIST;
+                        localPTE.transitionFormat.isTransition = 1;
                         writePTE(currentPTE, localPTE);
 
 
 
                         page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
+                        page->location = MODIFIED_LIST;
 
                         virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                         pages[trimmedPagesInRegion] = page;
@@ -155,6 +159,11 @@ DWORD page_trimmer(LPVOID info) {
     }
 }
 
+/**
+ * @brief This function recalls pages from the local lists and adds them to the free lists.
+ * @param trimThreadContext Thread info of the caller
+ * @return The number of pages that were recalled from the local lists.
+ */
 ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
 
     PTHREAD_INFO currentThreadContext;

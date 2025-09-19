@@ -86,7 +86,7 @@ VOID init_base_config(VOID) {
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
     vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
-    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
+    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages * 7/8;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
 
 
@@ -96,10 +96,10 @@ VOID init_base_config(VOID) {
 
 
 
-    vm.config.number_of_ptes_per_region = 64;
+    vm.config.number_of_ptes_per_region = 512;
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
     vm.config.time_until_recall_pages = 2500000;
-    vm.config.number_of_free_lists = 8;
+    vm.config.number_of_free_lists = 16;
 }
 
 BOOL
@@ -327,8 +327,7 @@ VOID init_free_list(VOID) {
 
         init_list_head(&vm.lists.free.heads[i]);
     }
-    vm.lists.free.AddIndex = 0;
-    vm.lists.free.RemoveIndex = 0;
+
     vm.lists.free.length = vm.config.number_of_physical_pages ;
 
     // Add every page to the free list
@@ -352,11 +351,10 @@ VOID init_free_list(VOID) {
         memset(new_pfn, 0, sizeof(pfn));
 
         InitializeCriticalSection(&new_pfn->lock);
-        InsertTailList(&(vm.lists.free.heads[vm.lists.free.AddIndex]), &new_pfn->entry);
+        InsertTailList(&(vm.lists.free.heads[i % vm.config.number_of_free_lists]), &new_pfn->entry);
 
 
-        vm.lists.free.AddIndex +=1;
-        vm.lists.free.AddIndex %= vm.config.number_of_free_lists ;
+
     }
 }
 VOID init_lists(VOID) {
@@ -364,7 +362,7 @@ VOID init_lists(VOID) {
     //init_list_head(&headToBeZeroedList);
     init_list_head(&vm.lists.standby);
     init_list_head(&vm.lists.modified);
-    init_list_head(&vm.lists.active);
+
 
     vm.misc.standByPruningInProgress = false;
 }
