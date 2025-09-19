@@ -101,8 +101,7 @@ InsertTailList(
 )
 {
 
-        if (Entry == &vm.lists.modified.entry || Entry == &vm.lists.active.entry
-               || Entry == &vm.lists.standby.entry) {DebugBreak(); return;}
+        if (Entry == &vm.lists.modified.entry ||  Entry == &vm.lists.standby.entry) {DebugBreak(); return;}
 PLIST_ENTRY Blink;
 
 

@@ -81,6 +81,12 @@ full_virtual_memory_test(VOID) {
     printf("num freelists: %llu \n", vm.config.number_of_free_lists);
 
 
+    printf("num active pages: %llu \n", vm.pfn.numActivePages);
+
+    printf("num rescues  %llu \n", vm.misc.numRescues);
+    printf("num freeList  %llu \n", vm.misc.pagesFromFree);
+    printf("num localCach  %llu \n", vm.misc.pagesFromLocalCache);
+    printf("num standBy  %llu \n", vm.misc.pagesFromStandBy);
 
     return;
 }
@@ -117,7 +123,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(10); i++) {
+ for (; i < MB(5); i++) {
 //while (TRUE) {
         #endif
 

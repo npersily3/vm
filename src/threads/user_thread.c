@@ -36,23 +36,19 @@ VOID spinWhileWaiting(VOID) {
 
 /**
  * @brief Adds a page to any available freelist.
- *
-
- *
  * @param page The page you are inserting into the list
  * @param threadInfo The thread info of a caller. It is mainly used for debug functions
- *
 * @pre The page  must be locked.
  * @post The caller must release the page lock.
  */
+
 
 VOID addPageToFreeList(pfn *page, PTHREAD_INFO threadInfo) {
     ULONG64 localFreeListIndex;
 
 
-    // Increment the global index which is a guess as to what free list most likely is available and has pages
-    localFreeListIndex = InterlockedIncrement(&vm.lists.free.AddIndex);
-    localFreeListIndex %= vm.config.number_of_free_lists;
+// randomly add to a free list
+    localFreeListIndex = GetNextRandom(&threadInfo->rng) % vm.config.number_of_free_lists;
     InterlockedIncrement64((volatile LONG64 *) &vm.lists.free.length);
 
     // iterate through the freelists starting at the index calculated above and try to lock it
@@ -60,6 +56,7 @@ VOID addPageToFreeList(pfn *page, PTHREAD_INFO threadInfo) {
         // once you lock a free list insert it at the head
         if (tryEnterPageLock(&vm.lists.free.heads[localFreeListIndex].page, threadInfo) == TRUE) {
 #if DBG
+            // since there are no remove from middle calls, we can validate the list
             validateList(&vm.lists.free.heads[localFreeListIndex]);
 #endif
 
@@ -116,26 +113,12 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         localPTE.invalidFormat.diskIndex = page->diskIndex;
 
 #if DBG
-
-#if DBG_DISK
-
-        ULONG64 count = 0;
-
-        for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
-            if (vm.disk.activeVa[i] == page->pte) {
-                count++;
-            }
-        }
-        ASSERT(count == 1);
-#endif
-        page->hasBeenRescuedWhileWritten = 0;
-
         page->diskIndex = 0;
 #endif
 
        writePTE(currentPTE, localPTE);
 
-        // cannot have this becaused we need to store the contents
+        // cannot have this line because we need to store the contents
         // set_disk_space_free(page->diskIndex);
 
         // add it to the list and manage locks
@@ -148,11 +131,30 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 }
 
 /**
+ * @brief This function decides whether to prune or not based on a global boolean that is kept track of with interlocked operations.
+ *
+ * @param threadInfo  The thread info of the caller. It is mainly used for debug functions.
+ *
+ */
+VOID checkIfPrune(PTHREAD_INFO threadInfo) {
+
+    // if there is not a pruning mission already happening
+    BOOL pruneInProgress = (BOOL) InterlockedCompareExchange(
+        (volatile LONG *) &vm.misc.standByPruningInProgress, TRUE, FALSE);
+
+    if (pruneInProgress == FALSE) {
+        batchVictimsFromStandByList(threadInfo);
+        InterlockedExchange((volatile LONG *) &vm.misc.standByPruningInProgress, FALSE);
+    }
+
+
+}
+
+/**
  *@brief A function that gets the current transfer virtual address that a thread needs.
  *@param threadContext The thread info of the caller. It is used to update the per thread index into its transfer virtual address space.
  *@return A pointer to a page of unmapped transfer virtual address space.
 */
-
 PVOID getThreadMapping(PTHREAD_INFO threadContext) {
     // Get the current thread's transfer va space
     PVOID currentTransferVa = vm.va.userThreadTransfer[threadContext->ThreadNumber];
@@ -215,7 +217,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
-        // If the pte is in flight
+        // If the pte is in flight in the system threads
         if (isRescue(currentPTE)) {
             // Determine if the rescue told us to back up or not
             if (rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) threadContext) == REDO_FAULT) {
@@ -228,6 +230,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             }
         }
 
+        // keeps track of pte region so that trimmer can skip blank ones
         if (returnValue != REDO_FAULT) {
             PTE_REGION *region = getPTERegion(currentPTE);
             region->hasActiveEntry = TRUE;
@@ -366,7 +369,6 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
  * @param arbitrary_va The virtual address being accessed.
  * @param currentPTE The page table entry of the virtual address being accessed.
  * @param threadContext The thread info of the faulting thread.
- * @param currentPageTableLock The lock corresponding to the page table entry
  * @return Returns true if we need to redo the fault, false otherwise.
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry.
@@ -540,6 +542,9 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
     leavePageLock(page, threadInfo);
 
+    // I will now prune if no one else is pruning
+    checkIfPrune(threadInfo);
+
     InterlockedIncrement64(&vm.misc.pagesFromStandBy);
 
 
@@ -710,15 +715,7 @@ pfn* getPageFromFreeList(PTHREAD_INFO threadContext) {
                 ASSERT(localTotalFreeListLength != MAXULONG64);
                 // check to see if we have enough pages on the free list
                 if (localTotalFreeListLength <= vm.config.stand_by_trim_threshold) {
-                    // if there is not a pruning mission already happening
-                    pruneInProgress = (BOOL) InterlockedCompareExchange(
-                        (volatile LONG *) &vm.misc.standByPruningInProgress, TRUE, FALSE);
-
-                    if (pruneInProgress == FALSE) {
-                        batchVictimsFromStandByList(threadContext);
-                    }
-
-                    InterlockedExchange((volatile LONG *) &vm.misc.standByPruningInProgress, FALSE);
+                   checkIfPrune(threadContext);
                 }
                 // return the page at the front of the local list
                 InterlockedDecrement64(&vm.misc.pagesFromLocalCache);

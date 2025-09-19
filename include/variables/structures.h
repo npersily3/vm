@@ -12,9 +12,8 @@
 
 
 // Debug macros
-#define DBG 1
-#define DBG_DISK 1
-
+#define DBG 0
+#define DBG_DISK 0
 
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
@@ -301,14 +300,12 @@ typedef struct __declspec(align(64)) {
 
 typedef struct {
     listHead* heads;
-    volatile LONG AddIndex;
-    volatile LONG RemoveIndex;
     volatile LONG64 length;
 
 } freeList;
 
 typedef struct {
-     listHead active;
+
      listHead modified;
      listHead standby;
      listHead zeroed;
