@@ -197,6 +197,8 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     BOOL returnValue;
     pte *currentPTE;
     pte pteContents;
+    ULONG64 frameNumber;
+    pte newPTE;
 
 
     currentPTE = va_to_pte((ULONG64) arbitrary_va);
@@ -220,24 +222,42 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
         // If the pte is in flight in the system threads
         if ((currentPTE->transitionFormat.isTransition == TRUE)) {
             // Determine if the rescue told us to back up or not
-            if (rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) threadContext) == REDO_FAULT) {
+            frameNumber = rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) threadContext);
+            if (frameNumber  == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
         } else {
             // If we are on a first fault or a disk read map that page.
-            if (mapPage((ULONG64) arbitrary_va, currentPTE, threadContext) == REDO_FAULT) {
+            frameNumber = mapPage((ULONG64) arbitrary_va, currentPTE, threadContext);
+            if (frameNumber == REDO_FAULT) {
                 returnValue = REDO_FAULT;
             }
         }
+
 
         // keeps track of pte region so that trimmer can skip blank ones
         if (returnValue != REDO_FAULT) {
             PTE_REGION *region = getPTERegion(currentPTE);
             region->hasActiveEntry = TRUE;
             InterlockedIncrement64(&vm.pfn.numActivePages);
+
+
+            if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
+                DebugBreak();
+                printf("rfull_virtual_memory_test : could not map VA %p to page %llX\n", (PVOID) arbitrary_va, frameNumber);
+                return FALSE;
+            }
+
+            newPTE.entireFormat = 0;
+            newPTE.validFormat.frameNumber = frameNumber;
+            newPTE.validFormat.valid = 1;
+            newPTE.validFormat.access = 1;
+            writePTE(currentPTE, newPTE);
+
         }
 
     }
+
 
 
 
@@ -263,7 +283,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry
  */
-BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo) {
+ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo) {
     pfn *page;
     ULONG64 frameNumber;
 
@@ -332,20 +352,9 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
     leavePageLock(page, threadInfo);
 
     InterlockedIncrement64(&vm.misc.numRescues);
-    if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
-        DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %p to page %llX\n", (PVOID) arbitrary_va, frameNumber);
-        return FALSE;
-    }
-
-    ASSERT(entryContents.entireFormat == currentPTE->entireFormat);
-    entryContents.validFormat.valid = 1;
-    entryContents.validFormat.isTransition = 0;
-
-    writePTE(currentPTE, entryContents);
 
 
-    return !REDO_FAULT;
+    return frameNumber;
 }
 
 
@@ -361,7 +370,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
  * @post The caller must unlock the page table entry.
  */
 
-BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
+ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
     pfn *page;
     ULONG64 frameNumber;
     PTHREAD_INFO threadInfo;
@@ -436,27 +445,9 @@ BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
         modified_read(currentPTE, frameNumber, threadInfo);
     }
 
-    //validate the pte
-    
-    pte localPTE;
-
-    localPTE.entireFormat = currentPTE->entireFormat;
-    localPTE.validFormat.frameNumber = frameNumber;
-    localPTE.validFormat.valid = 1;
-
-    writePTE(currentPTE, localPTE);
-    
-
     page->pte = currentPTE;
 
-    if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
-        DebugBreak();
-        printf("full_virtual_memory_test : could not map VA %llu to page %llX\n", arbitrary_va, frameNumber);
-        return FALSE;
-    }
-
-
-    return !REDO_FAULT;
+    return frameNumber;
 }
 
 

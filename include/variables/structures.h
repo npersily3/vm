@@ -106,7 +106,7 @@ typedef struct {
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
 
-#define REDO_FAULT TRUE
+#define REDO_FAULT 0
 #define REDO_FREE TRUE
 //
 // Thread configuration
@@ -127,7 +127,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 1
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared
