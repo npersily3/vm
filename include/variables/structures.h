@@ -127,7 +127,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 1
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared

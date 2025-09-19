@@ -341,6 +341,7 @@ BOOL rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo)
     ASSERT(entryContents.entireFormat == currentPTE->entireFormat);
     entryContents.validFormat.valid = 1;
     entryContents.validFormat.isTransition = 0;
+    entryContents.validFormat.access = 1;
 
     writePTE(currentPTE, entryContents);
 
@@ -443,6 +444,7 @@ BOOL mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
     localPTE.entireFormat = currentPTE->entireFormat;
     localPTE.validFormat.frameNumber = frameNumber;
     localPTE.validFormat.valid = 1;
+    localPTE.validFormat.access = 1;
 
     writePTE(currentPTE, localPTE);
     
