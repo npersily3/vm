@@ -23,12 +23,12 @@ boolean setAccessBit(ULONG64 va) {
     pte returnValue;
 
     pteAddress = va_to_pte(va);
-    oldPTE.entireFormat = ReadULong64NoFence(pteAddress);
+    oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64*)pteAddress);
     newPTE.entireFormat = oldPTE.entireFormat;
 
     newPTE.validFormat.access = 1;
 
-   returnValue.entireFormat = InterlockedCompareExchange64(pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
+   returnValue.entireFormat = InterlockedCompareExchange64((volatile ULONG64*) pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
 
     if (returnValue.validFormat.valid == 0) {
         return REDO_FAULT;
@@ -217,7 +217,7 @@ DWORD testVM(LPVOID lpParam) {
 
         } else {
 
-            setAccessBit(arbitrary_va);
+            setAccessBit((ULONG64) arbitrary_va);
             redo_try_same_address = FALSE;
 
 
@@ -263,6 +263,7 @@ main(int argc, char **argv) {
     // This is where we can be as creative as we like, the sky's the limit !
     memset (&vm, 0, sizeof(vm));
     //calls get physical pages, because his parameters might change
+    init_base_config();
 
     if (argc > 1) {
         if (argc != 5) {
@@ -276,9 +277,9 @@ main(int argc, char **argv) {
         ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
 
 
-        init_config_params(userThreads, vaSizeInGigs, paSizeInGigs, numFreeLists);
+
     } else {
-        init_base_config();
+
     }
     printf("%llu ",sizeof(pfn));
 #if DBG

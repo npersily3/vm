@@ -332,7 +332,7 @@ ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadIn
     }
     // If its on standby, remove it and set the disk space free
     else if (page->location == STAND_BY_LIST) {
-        removeFromMiddleOfList(&vm.lists.standby, page, threadInfo);
+        removeFromMiddleOfPageList(&vm.lists.standby, page, threadInfo);
 
         set_disk_space_free(page->diskIndex);
 #if DBG
@@ -342,7 +342,7 @@ ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadIn
 
 
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
-        removeFromMiddleOfList(&vm.lists.modified, page, threadInfo);
+        removeFromMiddleOfPageList(&vm.lists.modified, page, threadInfo);
 
     }
 

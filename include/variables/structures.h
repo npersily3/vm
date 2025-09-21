@@ -152,6 +152,9 @@ typedef struct {
     // indicates if where the virtual pages contents are
     ULONG64 isTransition: 1;
     // the physical frame number associated with the pte
+    ULONG64 age: 3;
+
+
     ULONG64 frameNumber: frame_number_size;
 } validPte;
 
@@ -164,6 +167,7 @@ typedef struct {
     ULONG64 access: 1;
     ULONG64 isTransition: 1;
 
+    ULONG64 age: 3;
     // disk slot where the contents are
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
@@ -180,6 +184,7 @@ typedef struct {
     // tracks if it can be rescued out of a write or trim
     ULONG64 isTransition: 1;
     // the frame number to retrieve the contents from
+    ULONG64 age: 3;
     ULONG64 frameNumber: frame_number_size;
 } transitionPte;
 
@@ -281,12 +286,14 @@ typedef struct _SHARED_HOLDER_DEBUG {
 //PTE_REGION  a section of 64 ptes
 //
 #define NUMBER_OF_AGES 8
+#define MAX_AGE (NUMBER_OF_AGES - 1)
 #define LENGTH_OF_PREDICTION 10
 
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
     sharedLock lock;
+    UCHAR numOfAge[NUMBER_OF_AGES];
 
     ULONG64: 1, hasActiveEntry;
 } PTE_REGION;
@@ -297,8 +304,8 @@ typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
     volatile ULONG64 length;
     sharedLock sharedLock;
-    volatile ULONG64 timeOfLastAccess;
     pfn page;
+    PTE_REGION* region;
 } listHead, *pListHead;
 
 typedef struct {

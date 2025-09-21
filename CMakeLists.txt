@@ -69,6 +69,7 @@ set(HEADERS
         include/utils/statistics_utils.h
         include/utils/random_utils.h
         include/threads/user_free.h
+        src/threads/ager_thread.c
 )
 
 # Create the executable
