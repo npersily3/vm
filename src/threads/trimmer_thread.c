@@ -93,7 +93,7 @@ DWORD page_trimmer(LPVOID info) {
                 currentRegion = vm.pte.RegionsBase;
             }
 
-            acquire_srw_exclusive(&currentRegion->lock, threadContext);
+            enterPTERegionLock(currentRegion, threadContext);
 
             // check to see if there are any active entries in this region
             if (currentRegion->hasActiveEntry == TRUE) {
@@ -139,13 +139,13 @@ DWORD page_trimmer(LPVOID info) {
                 addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
                 // Need to have this after because I could fault it back in before it is on the modified list
-                release_srw_exclusive(&currentRegion->lock);
+               leavePTERegionLock(currentRegion, threadContext);
 
                 InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             } else {
 
 
-                release_srw_exclusive(&currentRegion->lock);
+               leavePTERegionLock(currentRegion, threadContext);
                 currentRegion++;
                 counter++;
             }

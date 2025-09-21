@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define DBG 1
-#define DBG_DISK 1
+#define DBG 0
+#define DBG_DISK 0
 
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
