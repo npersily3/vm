@@ -49,9 +49,7 @@ full_virtual_memory_test(VOID) {
     ULONG64 start, end;
 
 
-    CRITICAL_SECTION cs;
-    InitializeCriticalSection(&cs);
-    EnterCriticalSection(&cs);
+
   
 
     init_virtual_memory();
@@ -60,6 +58,7 @@ full_virtual_memory_test(VOID) {
     start = GetTickCount64();
 
     printf("initialization done \n");
+    SetEvent(vm.events.agerStart);
     SetEvent(vm.events.userStart);
 
     int i;

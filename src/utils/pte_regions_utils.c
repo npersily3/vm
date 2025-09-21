@@ -265,7 +265,7 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
         ASSERT(Entry != ListHead)
 
         if (flinkOfRegionToRemove != NULL) {
-            leavePageLock(flinkOfRegionToRemove, threadInfo);
+            leavePTERegionLock(flinkOfRegionToRemove, threadInfo);
         }
 
        leavePTERegionLock(&head->region, threadInfo);
@@ -384,7 +384,7 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
             leavePTERegionLock(nextRegion, threadInfo);
         }
 
-        leavePTERegionLock(&head->page, threadInfo);
+        leavePTERegionLock(&head->region, threadInfo);
 
 
         release_srw_shared(&head->sharedLock);

@@ -114,6 +114,7 @@ DWORD page_trimmer(LPVOID info) {
                         }
                         localPTE.transitionFormat.mustBeZero = 0;
                         localPTE.transitionFormat.isTransition = 1;
+                        localPTE.transitionFormat.age = 0;
                         writePTE(currentPTE, localPTE);
 
 

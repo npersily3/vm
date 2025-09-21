@@ -1,6 +1,7 @@
 //
 // Created by nrper on 9/20/2025.
 //
+#include "utils/pte_regions_utils.h"
 #include "utils/pte_utils.h"
 #include "variables/structures.h"
 /**
@@ -47,7 +48,12 @@ ULONG64 getRegionAge(PTE_REGION* region) {
     return 0;
 }
 
-VOID ageRegion(PTE_REGION* region) {
+/**
+ *
+ * @param region
+ * @param threadInfo
+ */
+VOID ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     pte* pteAddress;
     ULONG64 previousAge;
     ULONG64 newAge;
@@ -65,10 +71,47 @@ VOID ageRegion(PTE_REGION* region) {
     newAge = getRegionAge(region);
 
     if (newAge != previousAge) {
-        //removeFromMiddleOfList(region);
-        //addToList(region);
+        removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[previousAge], region, threadInfo);
+        addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
     }
 
-// VOID ageLoop()
+}
 
+DWORD ager_thread(LPVOID info) {
+
+
+
+
+    HANDLE events[2];
+    DWORD returnEvent;
+    events[0] = vm.events.agerStart;
+    events[1] = vm.events.systemShutdown;
+
+    PTE_REGION* currentRegion;
+    PTHREAD_INFO threadInfo;
+
+    threadInfo = (PTHREAD_INFO)info;
+    currentRegion = vm.pte.RegionsBase;
+
+    while (TRUE) {
+        returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
+
+
+        //if the system shutdown event was signaled, exit
+        if (returnEvent - WAIT_OBJECT_0 == 1) {
+            return 0;
+        }
+
+        for (int i = 0; i < vm.config.number_of_pte_regions; i++) {
+
+            enterPTERegionLock(currentRegion, threadInfo);
+            if (currentRegion->hasActiveEntry == TRUE) {
+                ageRegion(currentRegion, threadInfo);
+            }
+            leavePTERegionLock(currentRegion, threadInfo);
+
+            currentRegion++;
+        }
+
+    }
 }

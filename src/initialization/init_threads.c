@@ -130,7 +130,7 @@ VOID createEvents(VOID) {
     vm.events.writingStart = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     vm.events.trimmingStart = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     vm.events.writingEnd = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
-    //  zeroingStartEvent = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
+    vm.events.agerStart = CreateEvent(NULL, AUTO_RESET, EVENT_START_OFF, NULL);
     vm.events.systemShutdown = CreateEvent(NULL, MANUAL_RESET, EVENT_START_OFF, NULL);
 }
 VOID initCriticalSections(VOID) {
