@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define DBG 0
-#define DBG_DISK 0
+#define DBG 1
+#define DBG_DISK 1
 
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
@@ -292,7 +292,8 @@ typedef struct _SHARED_HOLDER_DEBUG {
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
-    sharedLock lock;
+  //  sharedLock lock;
+    CRITICAL_SECTION lock;
     UCHAR numOfAge[NUMBER_OF_AGES];
 
     ULONG64: 1, hasActiveEntry;
@@ -305,7 +306,7 @@ typedef struct __declspec(align(64)) {
     volatile ULONG64 length;
     sharedLock sharedLock;
     pfn page;
-    PTE_REGION* region;
+    PTE_REGION region;
 } listHead, *pListHead;
 
 typedef struct {
@@ -448,6 +449,8 @@ typedef struct __declspec(align(512)) {
 
 #if DBG
     ULONG64 pagelocksHeld;
+    ULONG64 regionlocksHeld;
+
 
     debugPFN pagelockIndices[512];
 

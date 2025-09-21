@@ -22,4 +22,9 @@ VOID recordPTEAccess(pte* pteAddress, pte NewPteContents);
 #endif
 
 
+VOID enterPTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo);
+VOID leavePTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo);
+boolean tryEnterPTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo);
+
+
 #endif //PTE_UTILS_H

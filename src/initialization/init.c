@@ -199,6 +199,12 @@ VOID init_pte_regions(VOID) {
 
     //nptodo add the case where NUMPTES is not divisible by 64
     vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
+
+    PTE_REGION* currentRegion = vm.pte.RegionsBase;
+    for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
+        InitializeCriticalSection(&currentRegion->lock);
+        currentRegion++;
+    }
 }
 
 VOID init_pageTable(VOID) {
@@ -374,6 +380,7 @@ VOID init_list_head(pListHead head) {
     InitializeSRWLock(&head->sharedLock.sharedLock);
 
     InitializeCriticalSection(&head->page.lock);
+    InitializeCriticalSection(&head->region.lock);
 
 #if DBG
     head->sharedLock.numHeldShared = 0;

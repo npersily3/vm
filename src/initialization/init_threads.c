@@ -144,11 +144,11 @@ VOID initCriticalSections(VOID) {
 VOID initializePageTableLocks(VOID) {
     PTE_REGION* p;
 
-    p = vm.pte.RegionsBase;
-    for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
-        InitializeSRWLock(&p->lock.sharedLock);
-        p++;
-    }
+    // p = vm.pte.RegionsBase;
+    // for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
+    //     InitializeSRWLock(&p->lock.sharedLock);
+    //     p++;
+    // }
 }
 
 

@@ -70,6 +70,8 @@ set(HEADERS
         include/utils/random_utils.h
         include/threads/user_free.h
         src/threads/ager_thread.c
+        src/utils/pte_regions_utils.c
+        include/utils/pte_regions_utils.h
 )
 
 # Create the executable

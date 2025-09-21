@@ -46,6 +46,21 @@ BOOL isPTEValid(pte* pte) {
 
     return ((ULONG64)pte >= (ULONG64) vm.pte.table) && ((ULONG64)pte < ((ULONG64) vm.pte.table + vm.config.page_table_size_in_bytes) );
 }
+
+VOID enterPTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo) {
+
+    EnterCriticalSection(&region->lock);
+
+}
+VOID leavePTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo) {
+    LeaveCriticalSection(&region->lock);
+}
+boolean tryEnterPTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo) {
+    return TryEnterCriticalSection(&region->lock);
+}
+
+
+
 VOID lockPTE(pte* pte) {
 
     PTE_REGION* region = getPTERegion(pte);
@@ -60,7 +75,7 @@ VOID lockPTE(pte* pte) {
 #endif
 
 
-    acquire_srw_exclusive(&region->lock, NULL);
+    EnterCriticalSection(&region->lock);
     //ASSERT(pte->transitionFormat.access == 0);
 }
 
@@ -69,7 +84,7 @@ VOID unlockPTE(pte* pte) {
     //ASSERT(pte->transitionFormat.access == 0);
 
    // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
-    release_srw_exclusive(&region->lock);
+    LeaveCriticalSection(&region->lock);
 }
 
 /**
