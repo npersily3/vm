@@ -83,7 +83,14 @@ VOID init_base_config(VOID) {
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
     vm.config.number_of_aging_threads = 1;
-    vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.number_of_writing_threads;
+    vm.config.number_of_scheduler_threads = 1;
+
+    vm.config.number_of_threads = vm.config.number_of_user_threads +
+        vm.config.number_of_trimming_threads +
+            vm.config.number_of_writing_threads +
+                vm.config.number_of_aging_threads +
+                    vm.config.number_of_scheduler_threads;
+
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
     vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;

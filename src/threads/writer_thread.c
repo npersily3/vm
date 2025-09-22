@@ -150,9 +150,9 @@ for (int i = 0; i < BATCH_SIZE; ++i)
         // this needs to be in a sharedLock to avoid
         // the race condition where it is reset right after it is
         // TODO think about this
-        acquire_srw_exclusive(&vm.lists.standby.sharedLock, (PTHREAD_INFO) threadContext);
+      //  acquire_srw_exclusive(&vm.lists.standby.sharedLock, (PTHREAD_INFO) threadContext);
         SetEvent(vm.events.writingEnd);
-        release_srw_exclusive(&vm.lists.standby.sharedLock);
+      //  release_srw_exclusive(&vm.lists.standby.sharedLock);
     }
 
 }

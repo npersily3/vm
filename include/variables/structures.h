@@ -44,9 +44,12 @@ typedef struct {
     ULONG64 disk_division_size_in_pages;
 
     ULONG64 number_of_user_threads;
+
     ULONG64 number_of_trimming_threads;
     ULONG64 number_of_writing_threads;
     ULONG64 number_of_aging_threads;
+    ULONG64 number_of_scheduler_threads;
+
     ULONG64 number_of_threads;
     ULONG64 number_of_system_threads;
 
@@ -312,7 +315,7 @@ typedef struct __declspec(align(64)) {
 
 typedef struct {
     listHead* heads;
-    volatile LONG64 length;
+    volatile ULONG64 length;
 
 } freeList;
 

@@ -20,11 +20,13 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     ULONG64 beenAccessed;
     ULONG64 returnValue;
 
+    returnValue = 0;
+
     pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
 
     // if the pte is not valid, we don't need to age it
     if (pteContents.validFormat.valid == 0) {
-        returnValue = 0;
+
         return returnValue;
     }
     newPTEContents.entireFormat = pteContents.entireFormat;
@@ -36,12 +38,13 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     // if the pte was accessed and has been previously aged,
     // we need to reset the age
     if (beenAccessed == TRUE && currentAge != 0) {
-        returnValue = 0;
         newAge = 0;
     } else {
         if (currentAge != MAX_AGE) {
             returnValue = 1;
             newAge = currentAge + 1;
+        } else {
+            newAge = MAX_AGE;
         }
     }
     // regardless of what happens, we need to clear the access bit
@@ -147,7 +150,13 @@ DWORD ager_thread(LPVOID info) {
             leavePTERegionLock(currentRegion, threadInfo);
 
             totalPTEsToAge -= numPTEsAged;
-            currentRegion++;
+
+            if (currentRegion == vm.pte.RegionsBase + vm.config.number_of_pte_regions - 1) {
+                currentRegion = vm.pte.RegionsBase;
+            } else {
+                currentRegion++;
+            }
+
         }
         InterlockedExchange64(&vm.pte.numToAge, 0);
 

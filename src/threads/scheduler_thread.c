@@ -4,6 +4,8 @@
 //
 #include "variables/structures.h"
 DWORD scheduler_thread(LPVOID info) {
+
+
     PTHREAD_INFO threadInfo;
 
     threadInfo = (PTHREAD_INFO) info;
@@ -14,8 +16,18 @@ DWORD scheduler_thread(LPVOID info) {
             return 0;
         }
 
+        ULONG64 pagesLeft;
+
+        pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
+
+        if ((double) pagesLeft / vm.config.number_of_physical_pages < 0.5) {
+            //TODO find a way to look at the number of pages in local caches
+            InterlockedExchange64(&vm.pte.numToAge, vm.config.number_of_physical_pages / 3);
+            SetEvent(vm.events.agerStart);
+            DebugBreak();
+        }
 
 
-        _sleep(100);
+        Sleep(100);
     }
 }
