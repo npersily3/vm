@@ -46,6 +46,7 @@ set(SOURCES
         src/utils/random_utils.c
         src/debug.c
         src/threads/user_free.c
+        src/threads/scheduler_thread.c
 
 )
 

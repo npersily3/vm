@@ -398,6 +398,7 @@ typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
     listHead ageList[NUMBER_OF_AGES];
+    volatile ULONG64 numToAge;
 
 #if DBG
     volatile ULONG64 debugBufferIndex;
