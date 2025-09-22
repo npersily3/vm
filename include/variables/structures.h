@@ -46,6 +46,7 @@ typedef struct {
     ULONG64 number_of_user_threads;
     ULONG64 number_of_trimming_threads;
     ULONG64 number_of_writing_threads;
+    ULONG64 number_of_aging_threads;
     ULONG64 number_of_threads;
     ULONG64 number_of_system_threads;
 
@@ -294,7 +295,7 @@ typedef struct {
     stochastic_data statistics;
   //  sharedLock lock;
     CRITICAL_SECTION lock;
-    UCHAR numOfAge[NUMBER_OF_AGES];
+    DWORD numOfAge[NUMBER_OF_AGES];
 
     ULONG64: 1, hasActiveEntry;
 } PTE_REGION;

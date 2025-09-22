@@ -82,6 +82,7 @@ VOID init_base_config(VOID) {
     vm.config.number_of_user_threads = 8;
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
+    vm.config.number_of_aging_threads = 1;
     vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.number_of_writing_threads;
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
@@ -195,14 +196,26 @@ init_virtual_memory(VOID) {
 
 
 }
+VOID initAgeList(VOID) {
+    for (int i = 0; i < NUMBER_OF_AGES; ++i) {
+        init_list_head(&vm.pte.ageList[i]);
+
+    }
+
+}
+
 VOID init_pte_regions(VOID) {
+
+    initAgeList();
 
     //nptodo add the case where NUMPTES is not divisible by 64
     vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
 
     PTE_REGION* currentRegion = vm.pte.RegionsBase;
     for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
+        currentRegion->numOfAge[0] = vm.config.number_of_ptes_per_region;
         InitializeCriticalSection(&currentRegion->lock);
+        InsertTailList(&vm.pte.ageList[0], &currentRegion->entry);
         currentRegion++;
     }
 }

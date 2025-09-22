@@ -72,6 +72,7 @@ set(HEADERS
         src/threads/ager_thread.c
         src/utils/pte_regions_utils.c
         include/utils/pte_regions_utils.h
+        include/threads/ager_thread.h
 )
 
 # Create the executable

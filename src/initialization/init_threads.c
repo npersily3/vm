@@ -15,6 +15,7 @@
 #include "../../include/vm.h"
 #include "initialization/init.h"
 #include "threads/statistics.h"
+#include "threads/ager_thread.h"
 #include "utils/random_utils.h"
 
 
@@ -37,7 +38,8 @@ VOID createThreads(VOID) {
     PTHREAD_INFO UserThreadInfo = init_memory(vm.config.number_of_user_threads * sizeof(THREAD_INFO));
     PTHREAD_INFO TrimmerThreadInfo = init_memory(vm.config.number_of_trimming_threads * sizeof(THREAD_INFO));
     PTHREAD_INFO WriterThreadInfo =  init_memory(vm.config.number_of_writing_threads * sizeof(THREAD_INFO));
-   // THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
+    PTHREAD_INFO AgingThreadInfo =  init_memory(vm.config.number_of_aging_threads * sizeof(THREAD_INFO));
+        // THREAD_INFO ZeroIngThreadInfo[NUMBER_OF_ZEROING_THREADS] = {0};
    // THREAD_INFO SchedulerThreadInfo[NUMBER_OF_SCHEDULING_THREADS] = {0};
 
     ULONG maxThread = 0;
@@ -96,6 +98,20 @@ VOID createThreads(VOID) {
         maxThread++;
     }
 
+    for (int i = 0; i < vm.config.number_of_aging_threads; ++i) {
+        ThreadContext = &AgingThreadInfo[i];
+        ThreadContext->ThreadNumber = maxThread;
+        ThreadContext->TransferVaIndex = 0;
+
+        Handle = createNewThread(ager_thread,ThreadContext);
+
+        ThreadContext->ThreadHandle = Handle;
+
+        vm.events.systemThreadHandles[maxThread-threadHandleArrayOffset] = Handle;
+
+        maxThread++;
+    }
+
     // for (int i = 0; i < NUMBER_OF_ZEROING_THREADS; ++i) {
     //     ThreadContext = &ZeroIngThreadInfo[i];
     //     ThreadContext->ThreadNumber = maxThread;
@@ -137,13 +153,13 @@ VOID initCriticalSections(VOID) {
 
 
 
-    initializePageTableLocks();
+    //initializePageTableLocks();
 
 }
 
 VOID initializePageTableLocks(VOID) {
-    PTE_REGION* p;
-
+//    PTE_REGION* p;
+    return;
     // p = vm.pte.RegionsBase;
     // for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
     //     InitializeSRWLock(&p->lock.sharedLock);
