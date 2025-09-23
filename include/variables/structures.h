@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define DBG 1
 #define DBG_DISK 0
 
 #if DBG

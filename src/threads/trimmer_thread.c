@@ -40,6 +40,7 @@ DWORD page_trimmer(LPVOID info) {
     pfn* page;
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
+    ULONG64 age;
 
     PTHREAD_INFO threadContext;
     threadContext = (PTHREAD_INFO)info;
@@ -100,22 +101,32 @@ DWORD page_trimmer(LPVOID info) {
                 currentPTE = getFirstPTEInRegion(currentRegion);
 
                 trimmedPagesInRegion = 0;
-                for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+                for (; trimmedPagesInRegion < vm.config.number_of_ptes_per_region; trimmedPagesInRegion++) {
 
                     // when we find a valid pte, invalidate it and store its info in stack variables
                     pte localPTE;
-                    localPTE.entireFormat = currentPTE->entireFormat;
+                    localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
+
                     if (localPTE.validFormat.valid == 1) {
+
+                         age = localPTE.validFormat.age;
+                        //regardless of what happens, I the age should be 0
+                        localPTE.validFormat.age = 0;
 
                         if (localPTE.validFormat.access == 1) {
                             localPTE.validFormat.access = 0;
+
                             writePTE(currentPTE, localPTE);
                             continue;
                         }
+
+
                         localPTE.transitionFormat.mustBeZero = 0;
                         localPTE.transitionFormat.isTransition = 1;
                         localPTE.transitionFormat.age = 0;
                         writePTE(currentPTE, localPTE);
+                        currentRegion->numOfAge[age]--;
+                        currentRegion->numOfAge[0]++;
 
 
 
@@ -125,7 +136,7 @@ DWORD page_trimmer(LPVOID info) {
                         virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                         pages[trimmedPagesInRegion] = page;
 
-                        trimmedPagesInRegion++;
+
                         totalTrimmedPages++;
 
                     }

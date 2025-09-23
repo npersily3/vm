@@ -5,6 +5,22 @@
 #include "utils/pte_utils.h"
 #include "variables/structures.h"
 
+
+
+
+#if DBG
+
+VOID sumOfAges(PTE_REGION* region) {
+    ULONG sum = 0;
+
+    for (int i = 0; i < NUMBER_OF_AGES; i++) {
+        sum+= region->numOfAge[i];
+    }
+    ASSERT(sum == vm.config.number_of_ptes_per_region)
+}
+
+
+#endif
 /**
  * @brief A function that ages a pte.
  * @param pteAddress The address of the pte to age
@@ -27,7 +43,6 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     // if the pte is not valid, we don't need to age it
     if (pteContents.validFormat.valid == 0) {
 
-        return returnValue;
     }
     newPTEContents.entireFormat = pteContents.entireFormat;
 
@@ -56,6 +71,9 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     region->numOfAge[newAge]++;
 
     writePTE(pteAddress, newPTEContents);
+    if (newAge == 5) {
+        DebugBreak();
+    }
 
     return returnValue;
 }
@@ -81,12 +99,19 @@ ULONG64 getRegionAge(PTE_REGION* region) {
  * @param region The region to age
  * @param threadInfo The thread info of the caller. Used for debugging.
  * @return How many PTEs were aged
+ * @pre The region in the parameter must be locked
+ * @post The region in the parameter must be unlocked
  */
 ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     pte* pteAddress;
     ULONG64 previousAge;
     ULONG64 newAge;
     ULONG64 numPTEsAged;
+
+
+#if DBG
+    sumOfAges(region);
+#endif
 
     numPTEsAged = 0;
     previousAge = getRegionAge(region);
@@ -95,9 +120,13 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
         numPTEsAged += agePTE(pteAddress, region);
         pteAddress++;
+#if DBG
+        sumOfAges(region);
+#endif
     }
 
     newAge = getRegionAge(region);
+
 
 
     if (newAge != previousAge) {
@@ -105,6 +134,9 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
         addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
 
     }
+#if DBG
+    sumOfAges(region);
+#endif
 
     return numPTEsAged;
 

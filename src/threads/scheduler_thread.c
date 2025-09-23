@@ -24,7 +24,7 @@ DWORD scheduler_thread(LPVOID info) {
             //TODO find a way to look at the number of pages in local caches
             InterlockedExchange64(&vm.pte.numToAge, vm.config.number_of_physical_pages / 3);
             SetEvent(vm.events.agerStart);
-            DebugBreak();
+
         }
 
 

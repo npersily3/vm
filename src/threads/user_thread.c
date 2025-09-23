@@ -248,10 +248,13 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                 return FALSE;
             }
 
+            //region->numOfAge[0]++;
+
             newPTE.entireFormat = 0;
             newPTE.validFormat.frameNumber = frameNumber;
             newPTE.validFormat.valid = 1;
             newPTE.validFormat.access = 1;
+            newPTE.validFormat.age = 0;
             writePTE(currentPTE, newPTE);
 
         }
