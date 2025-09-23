@@ -1,6 +1,8 @@
 //
 // Created by nrper on 9/20/2025.
 //
+#include <stdio.h>
+
 #include "utils/pte_regions_utils.h"
 #include "utils/pte_utils.h"
 #include "variables/structures.h"
@@ -11,12 +13,13 @@
 #if DBG
 
 VOID sumOfAges(PTE_REGION* region) {
-    ULONG sum = 0;
+    ULONG64 sum = 0;
 
     for (int i = 0; i < NUMBER_OF_AGES; i++) {
         sum+= region->numOfAge[i];
     }
     ASSERT(sum == vm.config.number_of_ptes_per_region)
+
 }
 
 
@@ -36,13 +39,23 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     ULONG64 beenAccessed;
     ULONG64 returnValue;
 
+#if DBG
+    sumOfAges(region);
+
+    ULONG64 index;
+
+    index = pteAddress - getFirstPTEInRegion(region);
+
+
+#endif
+
     returnValue = 0;
 
     pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
 
     // if the pte is not valid, we don't need to age it
     if (pteContents.validFormat.valid == 0) {
-
+        return returnValue;
     }
     newPTEContents.entireFormat = pteContents.entireFormat;
 
@@ -67,13 +80,16 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     newPTEContents.validFormat.age = newAge;
 
     // keep track of region stats
+    ASSERT(region->numOfAge[currentAge] != 0)
+    ASSERT(region->numOfAge[newAge] != vm.config.number_of_ptes_per_region)
+
     region->numOfAge[currentAge]--;
     region->numOfAge[newAge]++;
 
     writePTE(pteAddress, newPTEContents);
-    if (newAge == 5) {
-        DebugBreak();
-    }
+#if DBG
+    sumOfAges(region);
+#endif
 
     return returnValue;
 }
@@ -120,9 +136,7 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
         numPTEsAged += agePTE(pteAddress, region);
         pteAddress++;
-#if DBG
-        sumOfAges(region);
-#endif
+
     }
 
     newAge = getRegionAge(region);

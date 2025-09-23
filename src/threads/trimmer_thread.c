@@ -101,7 +101,8 @@ DWORD page_trimmer(LPVOID info) {
                 currentPTE = getFirstPTEInRegion(currentRegion);
 
                 trimmedPagesInRegion = 0;
-                for (; trimmedPagesInRegion < vm.config.number_of_ptes_per_region; trimmedPagesInRegion++) {
+                ULONG64 pteIndex = 0;
+                for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
 
                     // when we find a valid pte, invalidate it and store its info in stack variables
                     pte localPTE;
@@ -110,13 +111,20 @@ DWORD page_trimmer(LPVOID info) {
                     if (localPTE.validFormat.valid == 1) {
 
                          age = localPTE.validFormat.age;
-                        //regardless of what happens, I the age should be 0
-                        localPTE.validFormat.age = 0;
+
+                        ASSERT(currentRegion->numOfAge[age] != 0)
+
 
                         if (localPTE.validFormat.access == 1) {
                             localPTE.validFormat.access = 0;
+                            localPTE.validFormat.age = 0;
+                            currentRegion->numOfAge[age]--;
+                            currentRegion->numOfAge[0]++;
 
                             writePTE(currentPTE, localPTE);
+
+
+                            currentPTE++;
                             continue;
                         }
 
@@ -136,7 +144,7 @@ DWORD page_trimmer(LPVOID info) {
                         virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                         pages[trimmedPagesInRegion] = page;
 
-
+                        trimmedPagesInRegion++;
                         totalTrimmedPages++;
 
                     }

@@ -300,7 +300,11 @@ typedef struct {
     CRITICAL_SECTION lock;
     DWORD numOfAge[NUMBER_OF_AGES];
 
-    ULONG64: 1, hasActiveEntry;
+    ULONG64 hasActiveEntry: 1;
+#if DBG
+    ULONG64 ageMap[64];
+#endif
+
 } PTE_REGION;
 
 

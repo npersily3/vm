@@ -226,6 +226,12 @@ VOID init_pte_regions(VOID) {
         currentRegion->numOfAge[0] = (DWORD) vm.config.number_of_ptes_per_region;
         InitializeCriticalSection(&currentRegion->lock);
         InsertTailList(&vm.pte.ageList[0], &currentRegion->entry);
+
+#if DBG
+    memset(currentRegion->ageMap, 0 , 64 * sizeof(ULONG64));
+#endif
+
+
         currentRegion++;
     }
 }
