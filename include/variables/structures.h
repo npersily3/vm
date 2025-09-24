@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 1
+#define DBG 0
 #define DBG_DISK 0
 
 #if DBG
@@ -441,6 +441,7 @@ typedef struct {
     volatile ULONG64 totalTimeWaiting;
 
     volatile boolean standByPruningInProgress;
+    volatile boolean agingInProgress;
     volatile ULONG64 numTrims;
     volatile ULONG64 numWrites;
     volatile ULONG64 pagesFromStandBy;

@@ -171,7 +171,8 @@ DWORD ager_thread(LPVOID info) {
 
     threadInfo = (PTHREAD_INFO)info;
     currentRegion = vm.pte.RegionsBase;
-    ULONG64 totalPTEsToAge;
+    ULONG64 initialTotalPTEsToAge;
+    ULONG64 totalPTEsLeftToAge;
     ULONG64 numPTEsAged;
 
     while (TRUE) {
@@ -183,10 +184,10 @@ DWORD ager_thread(LPVOID info) {
             return 0;
         }
 
-        totalPTEsToAge = ReadULong64NoFence(&vm.pte.numToAge);
+        initialTotalPTEsToAge = ReadULong64NoFence(&vm.pte.numToAge);
+        totalPTEsLeftToAge = initialTotalPTEsToAge;
 
-
-        while (totalPTEsToAge > 0) {
+        while (totalPTEsLeftToAge > 0) {
             numPTEsAged = 0;
             enterPTERegionLock(currentRegion, threadInfo);
 
@@ -195,7 +196,14 @@ DWORD ager_thread(LPVOID info) {
             }
             leavePTERegionLock(currentRegion, threadInfo);
 
-            totalPTEsToAge -= numPTEsAged;
+
+
+
+            if (totalPTEsLeftToAge < numPTEsAged) {
+                totalPTEsLeftToAge = 0;
+            } else {
+                totalPTEsLeftToAge -= numPTEsAged;
+            }
 
             if (currentRegion == vm.pte.RegionsBase + vm.config.number_of_pte_regions - 1) {
                 currentRegion = vm.pte.RegionsBase;
@@ -205,6 +213,7 @@ DWORD ager_thread(LPVOID info) {
 
         }
         InterlockedExchange64(&vm.pte.numToAge, 0);
+        InterlockedExchange((volatile LONG *) &vm.misc.agingInProgress,FALSE);
 
     }
 }

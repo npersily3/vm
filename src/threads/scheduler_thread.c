@@ -9,6 +9,7 @@ DWORD scheduler_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
 
     threadInfo = (PTHREAD_INFO) info;
+    LONG isAgingInProgress;
 
     while (TRUE) {
 
@@ -18,13 +19,17 @@ DWORD scheduler_thread(LPVOID info) {
 
         ULONG64 pagesLeft;
 
-        pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
+        isAgingInProgress = InterlockedCompareExchange((volatile LONG *) &vm.misc.agingInProgress, TRUE, FALSE);
 
-        if ((double) pagesLeft / vm.config.number_of_physical_pages < 0.5) {
-            //TODO find a way to look at the number of pages in local caches
-            InterlockedExchange64(&vm.pte.numToAge, vm.config.number_of_physical_pages / 3);
-            SetEvent(vm.events.agerStart);
+        if (isAgingInProgress == FALSE) {
+            pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
 
+            if ((double) pagesLeft / vm.config.number_of_physical_pages < 0.5) {
+                //TODO find a way to look at the number of pages in local caches
+                InterlockedExchange64(&vm.pte.numToAge, vm.config.number_of_physical_pages / 3);
+                SetEvent(vm.events.agerStart);
+
+            }
         }
 
 
