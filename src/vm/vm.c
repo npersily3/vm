@@ -24,13 +24,16 @@ boolean setAccessBit(ULONG64 va) {
 
     pteAddress = va_to_pte(va);
     oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64*)pteAddress);
+    if (oldPTE.validFormat.valid == 0) {
+        return REDO_FAULT;
+    }
     newPTE.entireFormat = oldPTE.entireFormat;
 
     newPTE.validFormat.access = 1;
 
    returnValue.entireFormat = InterlockedCompareExchange64((volatile ULONG64*) pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
 
-    if (returnValue.validFormat.valid == 0) {
+    if (returnValue.entireFormat != oldPTE.entireFormat) {
         return REDO_FAULT;
     }
     return !REDO_FAULT;

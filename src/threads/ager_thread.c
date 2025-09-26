@@ -188,6 +188,7 @@ DWORD ager_thread(LPVOID info) {
         totalPTEsLeftToAge = initialTotalPTEsToAge;
 
         while (totalPTEsLeftToAge > 0) {
+            ASSERT(FALSE)
             numPTEsAged = 0;
             enterPTERegionLock(currentRegion, threadInfo);
 

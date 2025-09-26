@@ -33,6 +33,6 @@ DWORD scheduler_thread(LPVOID info) {
         }
 
 
-        Sleep(100);
+        Sleep(1);
     }
 }
