@@ -20,6 +20,84 @@
  *@brief This file contains protocal for unmapping active pages and adding them to a modified list.
  *@author Noah Persily
 */
+
+VOID trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
+
+    pfn* pages[BATCH_SIZE];
+    ULONG64 virtualAddresses[BATCH_SIZE];
+    ULONG64 totalTrimmedPages;
+    ULONG64 trimmedPagesInRegion;
+    pte* currentPTE;
+    pfn* page;
+    ULONG64 age;
+
+     currentPTE = getFirstPTEInRegion(currentRegion);
+
+    trimmedPagesInRegion = 0;
+    ULONG64 pteIndex = 0;
+
+    for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
+
+        // when we find a valid pte, invalidate it and store its info in stack variables
+        pte localPTE;
+        localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
+
+        if (localPTE.validFormat.valid == 1) {
+
+             age = localPTE.validFormat.age;
+
+            ASSERT(currentRegion->numOfAge[age] != 0)
+
+
+            if (localPTE.validFormat.access == 1) {
+                localPTE.validFormat.access = 0;
+                localPTE.validFormat.age = 0;
+                currentRegion->numOfAge[age]--;
+                currentRegion->numOfAge[0]++;
+
+                writePTE(currentPTE, localPTE);
+
+
+                currentPTE++;
+                continue;
+            }
+
+
+            localPTE.transitionFormat.mustBeZero = 0;
+            localPTE.transitionFormat.isTransition = 1;
+            localPTE.transitionFormat.age = 0;
+            writePTE(currentPTE, localPTE);
+            currentRegion->numOfAge[age]--;
+            currentRegion->numOfAge[0]++;
+
+
+
+            page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
+            page->location = MODIFIED_LIST;
+
+            virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+            pages[trimmedPagesInRegion] = page;
+
+            trimmedPagesInRegion++;
+            totalTrimmedPages++;
+
+        }
+
+        currentPTE++;
+    }
+    currentRegion->hasActiveEntry = FALSE;
+
+    unmapBatch(virtualAddresses, trimmedPagesInRegion);
+    addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
+
+
+    InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
+}
+
+
+
+
+
 /**
  * @brief This is the function that deals with unmapping pages.
  * It will first retrieve all the pages from local caches and add them to the free list.
@@ -29,6 +107,7 @@
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
  * @retval 0 If the program succeeds
  */
+
 
 #define VERBOSE 0
 DWORD page_trimmer(LPVOID info) {
