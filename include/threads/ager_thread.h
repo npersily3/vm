@@ -6,6 +6,6 @@
 #define AGER_THREAD_H
 
 
-
+ULONG64 getRegionAge(PTE_REGION* region);
 DWORD ager_thread(LPVOID info);
 #endif //AGER_THREAD_H

@@ -13,7 +13,9 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
+#include "threads/ager_thread.h"
 #include "threads/user_thread.h"
+#include "utils/pte_regions_utils.h"
 
 /**
  *@file trimmer_thread.c
@@ -21,11 +23,10 @@
  *@author Noah Persily
 */
 
-VOID trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
+ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
 
     pfn* pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
-    ULONG64 totalTrimmedPages;
     ULONG64 trimmedPagesInRegion;
     pte* currentPTE;
     pfn* page;
@@ -50,7 +51,7 @@ VOID trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
 
 
             if (localPTE.validFormat.access == 1) {
-                localPTE.validFormat.access = 0;
+                localPTE.validFormat.access = 1;
                 localPTE.validFormat.age = 0;
                 currentRegion->numOfAge[age]--;
                 currentRegion->numOfAge[0]++;
@@ -79,7 +80,7 @@ VOID trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
             pages[trimmedPagesInRegion] = page;
 
             trimmedPagesInRegion++;
-            totalTrimmedPages++;
+
 
         }
 
@@ -91,7 +92,7 @@ VOID trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
 
-    InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
+    return  trimmedPagesInRegion;
 }
 
 
@@ -114,19 +115,12 @@ DWORD page_trimmer(LPVOID info) {
 
     ULONG64 counter;
 
-
-    sharedLock* trimmedPageTableLock;
-    pfn* page;
-    pfn* pages[BATCH_SIZE];
-    ULONG64 virtualAddresses[BATCH_SIZE];
-    ULONG64 age;
-
     PTHREAD_INFO threadContext;
     threadContext = (PTHREAD_INFO)info;
     PTE_REGION* currentRegion;
-    ULONG64 totalTrimmedPages;
+
     ULONG64 trimmedPagesInRegion;
-    pte* currentPTE;
+    ULONG64 totalTrimmedPages;
 
 
 
@@ -150,7 +144,7 @@ DWORD page_trimmer(LPVOID info) {
 
         totalTrimmedPages = 0;
         counter = 0;
-        trimmedPageTableLock = NULL;
+
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
@@ -177,74 +171,33 @@ DWORD page_trimmer(LPVOID info) {
 
             // check to see if there are any active entries in this region
             if (currentRegion->hasActiveEntry == TRUE) {
-                currentPTE = getFirstPTEInRegion(currentRegion);
 
-                trimmedPagesInRegion = 0;
-                ULONG64 pteIndex = 0;
-                for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
+                ULONG64 initialAge;
+                ULONG64 finalAge;
 
-                    // when we find a valid pte, invalidate it and store its info in stack variables
-                    pte localPTE;
-                    localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
+                initialAge = getRegionAge(currentRegion);
 
-                    if (localPTE.validFormat.valid == 1) {
+                trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
+                totalTrimmedPages += trimmedPagesInRegion;
 
-                         age = localPTE.validFormat.age;
-
-                        ASSERT(currentRegion->numOfAge[age] != 0)
+                ASSERT(0)
+                finalAge = getRegionAge(currentRegion);
 
 
-                        if (localPTE.validFormat.access == 1) {
-                            localPTE.validFormat.access = 0;
-                            localPTE.validFormat.age = 0;
-                            currentRegion->numOfAge[age]--;
-                            currentRegion->numOfAge[0]++;
-
-                            writePTE(currentPTE, localPTE);
-
-
-                            currentPTE++;
-                            continue;
-                        }
-
-
-                        localPTE.transitionFormat.mustBeZero = 0;
-                        localPTE.transitionFormat.isTransition = 1;
-                        localPTE.transitionFormat.age = 0;
-                        writePTE(currentPTE, localPTE);
-                        currentRegion->numOfAge[age]--;
-                        currentRegion->numOfAge[0]++;
-
-
-
-                        page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
-                        page->location = MODIFIED_LIST;
-
-                        virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
-                        pages[trimmedPagesInRegion] = page;
-
-                        trimmedPagesInRegion++;
-                        totalTrimmedPages++;
-
-                    }
-
-                    currentPTE++;
+                if (finalAge != initialAge) {
+                    removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[initialAge], currentRegion, threadContext);
+                    addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
                 }
-                currentRegion->hasActiveEntry = FALSE;
 
-
-
-                unmapBatch(virtualAddresses, trimmedPagesInRegion);
-                addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
                 // Need to have this after because I could fault it back in before it is on the modified list
-               leavePTERegionLock(currentRegion, threadContext);
+                leavePTERegionLock(currentRegion, threadContext);
 
                 InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             } else {
 
 
-               leavePTERegionLock(currentRegion, threadContext);
+                leavePTERegionLock(currentRegion, threadContext);
                 currentRegion++;
                 counter++;
             }

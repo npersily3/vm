@@ -184,11 +184,12 @@ DWORD ager_thread(LPVOID info) {
             return 0;
         }
 
+
         initialTotalPTEsToAge = ReadULong64NoFence(&vm.pte.numToAge);
         totalPTEsLeftToAge = initialTotalPTEsToAge;
 
         while (totalPTEsLeftToAge > 0) {
-            ASSERT(FALSE)
+
             numPTEsAged = 0;
             enterPTERegionLock(currentRegion, threadInfo);
 
@@ -213,6 +214,7 @@ DWORD ager_thread(LPVOID info) {
             }
 
         }
+
         InterlockedExchange64(&vm.pte.numToAge, 0);
         InterlockedExchange((volatile LONG *) &vm.misc.agingInProgress,FALSE);
 

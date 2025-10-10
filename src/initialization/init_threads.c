@@ -125,6 +125,7 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    vm.misc.agingInProgress = FALSE;
 
 
 

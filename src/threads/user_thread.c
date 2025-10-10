@@ -147,7 +147,6 @@ VOID checkIfPrune(PTHREAD_INFO threadInfo) {
         InterlockedExchange((volatile LONG *) &vm.misc.standByPruningInProgress, FALSE);
     }
 
-
 }
 
 /**
