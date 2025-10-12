@@ -21,6 +21,9 @@ DWORD scheduler_thread(LPVOID info) {
 
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
 
+        // circular buffer, ages times, trim times, write times and how many pages/ptes aged/trimmed/written.
+        // for ages, figure out how long until you are almost out, then divide by NUM_AGES
+        // keep track of page consuption in circular buffer.
 
 
 

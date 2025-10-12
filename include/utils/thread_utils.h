@@ -18,7 +18,7 @@ VOID release_srw_exclusive(sharedLock* lock);
 
 VOID acquire_srw_shared(sharedLock* lock);
 VOID release_srw_shared(sharedLock* lock);
-
+VOID recordWork(PTHREAD_INFO info, ULONG64 time, ULONG64 work);
 
 
 VOID enterPageLock(pfn* page, PTHREAD_INFO info);
