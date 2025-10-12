@@ -23,14 +23,17 @@ boolean setAccessBit(ULONG64 va) {
     pte returnValue;
 
     pteAddress = va_to_pte(va);
-    oldPTE.entireFormat = ReadULong64NoFence(pteAddress);
+    oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64*)pteAddress);
+    if (oldPTE.validFormat.valid == 0) {
+        return REDO_FAULT;
+    }
     newPTE.entireFormat = oldPTE.entireFormat;
 
     newPTE.validFormat.access = 1;
 
-   returnValue.entireFormat = InterlockedCompareExchange64(pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
+   returnValue.entireFormat = InterlockedCompareExchange64((volatile ULONG64*) pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
 
-    if (returnValue.validFormat.valid == 0) {
+    if (returnValue.entireFormat != oldPTE.entireFormat) {
         return REDO_FAULT;
     }
     return !REDO_FAULT;
@@ -49,9 +52,7 @@ full_virtual_memory_test(VOID) {
     ULONG64 start, end;
 
 
-    CRITICAL_SECTION cs;
-    InitializeCriticalSection(&cs);
-    EnterCriticalSection(&cs);
+
   
 
     init_virtual_memory();
@@ -60,6 +61,7 @@ full_virtual_memory_test(VOID) {
     start = GetTickCount64();
 
     printf("initialization done \n");
+
     SetEvent(vm.events.userStart);
 
     int i;
@@ -151,7 +153,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
 //MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(5); i++) {
+ for (; i < MB(3); i++) {
 //while (TRUE) {
         #endif
 
@@ -217,7 +219,7 @@ DWORD testVM(LPVOID lpParam) {
 
         } else {
 
-            setAccessBit(arbitrary_va);
+            setAccessBit((ULONG64) arbitrary_va);
             redo_try_same_address = FALSE;
 
 
@@ -263,6 +265,7 @@ main(int argc, char **argv) {
     // This is where we can be as creative as we like, the sky's the limit !
     memset (&vm, 0, sizeof(vm));
     //calls get physical pages, because his parameters might change
+    init_base_config();
 
     if (argc > 1) {
         if (argc != 5) {
@@ -276,9 +279,9 @@ main(int argc, char **argv) {
         ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
 
 
-        init_config_params(userThreads, vaSizeInGigs, paSizeInGigs, numFreeLists);
+
     } else {
-        init_base_config();
+
     }
     printf("%llu ",sizeof(pfn));
 #if DBG

@@ -65,8 +65,7 @@ VOID validateList(pListHead head) {
     while (currentEntry != &head->entry && forwardLength < MAX_EXPECTED_LENGTH) {
         // Check for cross-list corruption
         ASSERT(currentEntry != &vm.lists.modified.entry &&
-            currentEntry != &vm.lists.standby.entry &&
-            currentEntry != &vm.lists.active.entry);
+            currentEntry != &vm.lists.standby.entry);
 
         // Validate bidirectional linking
         if (currentEntry->Blink->Flink != currentEntry) {

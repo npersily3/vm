@@ -12,8 +12,9 @@
 
 
 // Debug macros
-#define DBG 0
-#define DBG_DISK 0
+#define DBG 1
+#define DBG_DISK 1
+
 
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();
@@ -44,8 +45,12 @@ typedef struct {
     ULONG64 disk_division_size_in_pages;
 
     ULONG64 number_of_user_threads;
+
     ULONG64 number_of_trimming_threads;
     ULONG64 number_of_writing_threads;
+    ULONG64 number_of_aging_threads;
+    ULONG64 number_of_scheduler_threads;
+
     ULONG64 number_of_threads;
     ULONG64 number_of_system_threads;
 
@@ -152,6 +157,9 @@ typedef struct {
     // indicates if where the virtual pages contents are
     ULONG64 isTransition: 1;
     // the physical frame number associated with the pte
+    ULONG64 age: 3;
+
+
     ULONG64 frameNumber: frame_number_size;
 } validPte;
 
@@ -164,6 +172,7 @@ typedef struct {
     ULONG64 access: 1;
     ULONG64 isTransition: 1;
 
+    ULONG64 age: 3;
     // disk slot where the contents are
     ULONG64 diskIndex: frame_number_size;
 } invalidPte;
@@ -180,6 +189,7 @@ typedef struct {
     // tracks if it can be rescued out of a write or trim
     ULONG64 isTransition: 1;
     // the frame number to retrieve the contents from
+    ULONG64 age: 3;
     ULONG64 frameNumber: frame_number_size;
 } transitionPte;
 
@@ -281,14 +291,21 @@ typedef struct _SHARED_HOLDER_DEBUG {
 //PTE_REGION  a section of 64 ptes
 //
 #define NUMBER_OF_AGES 8
+#define MAX_AGE (NUMBER_OF_AGES - 1)
 #define LENGTH_OF_PREDICTION 10
 
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
-    sharedLock lock;
+  //  sharedLock lock;
+    CRITICAL_SECTION lock;
+    DWORD numOfAge[NUMBER_OF_AGES];
 
-    ULONG64: 1, hasActiveEntry;
+    ULONG64 hasActiveEntry: 1;
+#if DBG
+    ULONG64 ageMap[64];
+#endif
+
 } PTE_REGION;
 
 
@@ -297,13 +314,13 @@ typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
     volatile ULONG64 length;
     sharedLock sharedLock;
-    volatile ULONG64 timeOfLastAccess;
     pfn page;
+    PTE_REGION region;
 } listHead, *pListHead;
 
 typedef struct {
     listHead* heads;
-    volatile LONG64 length;
+    volatile ULONG64 length;
 
 } freeList;
 
@@ -388,6 +405,8 @@ typedef struct {
 typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
+    listHead ageList[NUMBER_OF_AGES];
+    volatile ULONG64 numToAge;
 
 #if DBG
     volatile ULONG64 debugBufferIndex;
@@ -408,6 +427,7 @@ typedef struct {
     HANDLE writingStart;
     HANDLE writingEnd;
     HANDLE userStart;
+    HANDLE agerStart;
     HANDLE userEnd;
     HANDLE zeroingStartEvent;
     HANDLE systemShutdown;
@@ -422,6 +442,7 @@ typedef struct {
     volatile ULONG64 totalTimeWaiting;
 
     volatile boolean standByPruningInProgress;
+    volatile boolean agingInProgress;
     volatile ULONG64 numTrims;
     volatile ULONG64 numWrites;
     volatile ULONG64 pagesFromStandBy;
@@ -441,6 +462,8 @@ typedef struct __declspec(align(512)) {
 
 #if DBG
     ULONG64 pagelocksHeld;
+    ULONG64 regionlocksHeld;
+
 
     debugPFN pagelockIndices[512];
 

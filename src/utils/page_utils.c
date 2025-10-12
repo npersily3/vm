@@ -234,7 +234,7 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
  * @param page The page being removed
  * @param threadInfo The info of the calling thread to help debug lock errors
  */
-VOID removeFromMiddleOfList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
+VOID removeFromMiddleOfPageList(pListHead head,pfn* page, PTHREAD_INFO threadInfo) {
 
 
 

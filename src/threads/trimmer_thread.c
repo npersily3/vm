@@ -13,13 +13,104 @@
 #include "../../include/utils/page_utils.h"
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
+#include "threads/ager_thread.h"
 #include "threads/user_thread.h"
+#include "utils/pte_regions_utils.h"
 
 /**
  *@file trimmer_thread.c
  *@brief This file contains protocal for unmapping active pages and adding them to a modified list.
  *@author Noah Persily
 */
+
+ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
+
+    pfn* pages[BATCH_SIZE];
+    ULONG64 virtualAddresses[BATCH_SIZE];
+    ULONG64 trimmedPagesInRegion;
+    pte* currentPTE;
+    pfn* page;
+    ULONG64 age;
+
+     currentPTE = getFirstPTEInRegion(currentRegion);
+
+    trimmedPagesInRegion = 0;
+    ULONG64 pteIndex = 0;
+
+    for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
+
+        // when we find a valid pte, invalidate it and store its info in stack variables
+        pte localPTE;
+        localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
+
+        if (localPTE.validFormat.valid == 1) {
+
+             age = localPTE.validFormat.age;
+
+            ASSERT(currentRegion->numOfAge[age] != 0)
+
+
+            if (localPTE.validFormat.access == 1) {
+                localPTE.validFormat.access = 1;
+                localPTE.validFormat.age = 0;
+                currentRegion->numOfAge[age]--;
+                currentRegion->numOfAge[0]++;
+
+                writePTE(currentPTE, localPTE);
+
+
+                currentPTE++;
+                continue;
+            }
+
+
+            localPTE.transitionFormat.mustBeZero = 0;
+            localPTE.transitionFormat.isTransition = 1;
+            localPTE.transitionFormat.age = 0;
+            writePTE(currentPTE, localPTE);
+            currentRegion->numOfAge[age]--;
+            currentRegion->numOfAge[0]++;
+
+
+
+            page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
+            page->location = MODIFIED_LIST;
+
+            virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+            pages[trimmedPagesInRegion] = page;
+
+            trimmedPagesInRegion++;
+
+
+        }
+
+        currentPTE++;
+    }
+    currentRegion->hasActiveEntry = FALSE;
+
+    unmapBatch(virtualAddresses, trimmedPagesInRegion);
+    addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
+
+
+    return  trimmedPagesInRegion;
+}
+
+PTE_REGION* getOldestRegion(PTHREAD_INFO threadContext) {
+
+    LONG64 age;
+    age = MAX_AGE;
+    while (age != 0) {
+
+        return RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
+        age--;
+    }
+    return NULL;
+}
+
+
+
+
+
 /**
  * @brief This is the function that deals with unmapping pages.
  * It will first retrieve all the pages from local caches and add them to the free list.
@@ -30,23 +121,18 @@
  * @retval 0 If the program succeeds
  */
 
+
 #define VERBOSE 0
 DWORD page_trimmer(LPVOID info) {
 
     ULONG64 counter;
 
-
-    sharedLock* trimmedPageTableLock;
-    pfn* page;
-    pfn* pages[BATCH_SIZE];
-    ULONG64 virtualAddresses[BATCH_SIZE];
-
     PTHREAD_INFO threadContext;
     threadContext = (PTHREAD_INFO)info;
     PTE_REGION* currentRegion;
-    ULONG64 totalTrimmedPages;
+
     ULONG64 trimmedPagesInRegion;
-    pte* currentPTE;
+    ULONG64 totalTrimmedPages;
 
 
 
@@ -70,7 +156,7 @@ DWORD page_trimmer(LPVOID info) {
 
         totalTrimmedPages = 0;
         counter = 0;
-        trimmedPageTableLock = NULL;
+
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
@@ -88,64 +174,39 @@ DWORD page_trimmer(LPVOID info) {
         // if we have trimmed enough, or have combed through everything
         while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
 
-            //check for overflow then wrap.
-            if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
-                currentRegion = vm.pte.RegionsBase;
+            // this function exits with the lock held
+            currentRegion = getOldestRegion(threadContext);
+
+            if (currentRegion == NULL) {
+
+                break;
             }
 
-            acquire_srw_exclusive(&currentRegion->lock, threadContext);
 
             // check to see if there are any active entries in this region
             if (currentRegion->hasActiveEntry == TRUE) {
-                currentPTE = getFirstPTEInRegion(currentRegion);
-
-                trimmedPagesInRegion = 0;
-                for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
-
-                    // when we find a valid pte, invalidate it and store its info in stack variables
-                    pte localPTE;
-                    localPTE.entireFormat = currentPTE->entireFormat;
-                    if (localPTE.validFormat.valid == 1) {
-
-                        if (localPTE.validFormat.access == 1) {
-                            localPTE.validFormat.access = 0;
-                            writePTE(currentPTE, localPTE);
-                            continue;
-                        }
-                        localPTE.transitionFormat.mustBeZero = 0;
-                        localPTE.transitionFormat.isTransition = 1;
-                        writePTE(currentPTE, localPTE);
 
 
+                ULONG64 finalAge;
 
-                        page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
-                        page->location = MODIFIED_LIST;
-
-                        virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
-                        pages[trimmedPagesInRegion] = page;
-
-                        trimmedPagesInRegion++;
-                        totalTrimmedPages++;
-
-                    }
-
-                    currentPTE++;
-                }
-                currentRegion->hasActiveEntry = FALSE;
+                trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
+                totalTrimmedPages += trimmedPagesInRegion;
 
 
+                finalAge = getRegionAge(currentRegion);
 
-                unmapBatch(virtualAddresses, trimmedPagesInRegion);
-                addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
+                addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+
+
 
                 // Need to have this after because I could fault it back in before it is on the modified list
-                release_srw_exclusive(&currentRegion->lock);
+                leavePTERegionLock(currentRegion, threadContext);
 
                 InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
             } else {
 
 
-                release_srw_exclusive(&currentRegion->lock);
+                leavePTERegionLock(currentRegion, threadContext);
                 currentRegion++;
                 counter++;
             }

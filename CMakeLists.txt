@@ -46,6 +46,7 @@ set(SOURCES
         src/utils/random_utils.c
         src/debug.c
         src/threads/user_free.c
+        src/threads/scheduler_thread.c
 
 )
 
@@ -69,6 +70,11 @@ set(HEADERS
         include/utils/statistics_utils.h
         include/utils/random_utils.h
         include/threads/user_free.h
+        src/threads/ager_thread.c
+        src/utils/pte_regions_utils.c
+        include/utils/pte_regions_utils.h
+        include/threads/ager_thread.h
+        include/threads/scheduler_thread.h
 )
 
 # Create the executable
