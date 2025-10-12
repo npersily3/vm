@@ -102,7 +102,7 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
  */
 ULONG64 getRegionAge(PTE_REGION* region) {
 
-    for (int i = NUMBER_OF_AGES; i > 0; ++i) {
+    for (int i = MAX_AGE; i > 0; --i) {
         if (region->numOfAge[i] != 0) {
             return i;
         }
@@ -143,11 +143,14 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
 
 
 
-    if (newAge != previousAge) {
+    if (newAge == previousAge) {
+
+
+    } else {
         removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[previousAge], region, threadInfo);
         addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
-
     }
+
 #if DBG
     sumOfAges(region);
 #endif

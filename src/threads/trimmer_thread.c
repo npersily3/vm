@@ -95,6 +95,18 @@ ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
     return  trimmedPagesInRegion;
 }
 
+PTE_REGION* getOldestRegion(PTHREAD_INFO threadContext) {
+
+    LONG64 age;
+    age = MAX_AGE;
+    while (age != 0) {
+
+        return RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
+        age--;
+    }
+    return NULL;
+}
+
 
 
 
@@ -162,32 +174,29 @@ DWORD page_trimmer(LPVOID info) {
         // if we have trimmed enough, or have combed through everything
         while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
 
-            //check for overflow then wrap.
-            if ((currentRegion - vm.pte.RegionsBase) == vm.config.number_of_pte_regions) {
-                currentRegion = vm.pte.RegionsBase;
+            // this function exits with the lock held
+            currentRegion = getOldestRegion(threadContext);
+
+            if (currentRegion == NULL) {
+
+                break;
             }
 
-            enterPTERegionLock(currentRegion, threadContext);
 
             // check to see if there are any active entries in this region
             if (currentRegion->hasActiveEntry == TRUE) {
 
-                ULONG64 initialAge;
-                ULONG64 finalAge;
 
-                initialAge = getRegionAge(currentRegion);
+                ULONG64 finalAge;
 
                 trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
                 totalTrimmedPages += trimmedPagesInRegion;
 
-                ASSERT(0)
+
                 finalAge = getRegionAge(currentRegion);
 
+                addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
 
-                if (finalAge != initialAge) {
-                    removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[initialAge], currentRegion, threadContext);
-                    addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
-                }
 
 
                 // Need to have this after because I could fault it back in before it is on the modified list
