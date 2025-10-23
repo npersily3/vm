@@ -82,7 +82,8 @@ Each user thread maintains local caches of pages to minimize lock contention. Wi
 
 ## Current Project
 ### Scheduling
-    Right now I am working on making my age and trim activations elastic. Based on the time it takes to write and trim a page, I want to find the goldlocks number of ptes to age and pages to trim.    
+
+Right now I am working on making my age and trim activations elastic. Based on the time it takes to write and trim a page, I want to find the goldlocks number of ptes to age and pages to trim.    
 
 
 
