@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define DBG 1
-#define DBG_DISK 1
+#define DBG 0
+#define DBG_DISK 0
 
 
 #if DBG
@@ -451,7 +451,13 @@ typedef struct {
     volatile ULONG64 numRescues;
 } misc;
 
-// Main components are the transfer va index,
+typedef struct {
+    ULONG64 timeIntervals[16];
+    ULONG64 numWorkDone[16];
+    ULONG64 index;
+} workDone;
+
+
 typedef struct __declspec(align(512)) {
     ULONG ThreadNumber;
     ULONG ThreadId;
@@ -459,14 +465,12 @@ typedef struct __declspec(align(512)) {
     HANDLE ThreadHandle;
     THREAD_RNG_STATE rng;
     listHead localList;
+    workDone work;
 
 #if DBG
     ULONG64 pagelocksHeld;
     ULONG64 regionlocksHeld;
-
-
     debugPFN pagelockIndices[512];
-
 #endif
 
 } THREAD_INFO, *PTHREAD_INFO;

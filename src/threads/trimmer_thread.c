@@ -23,29 +23,26 @@
  *@author Noah Persily
 */
 
-ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
-
-    pfn* pages[BATCH_SIZE];
+ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
+    pfn *pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
     ULONG64 trimmedPagesInRegion;
-    pte* currentPTE;
-    pfn* page;
+    pte *currentPTE;
+    pfn *page;
     ULONG64 age;
 
-     currentPTE = getFirstPTEInRegion(currentRegion);
+    currentPTE = getFirstPTEInRegion(currentRegion);
 
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
 
     for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
-
         // when we find a valid pte, invalidate it and store its info in stack variables
         pte localPTE;
         localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
 
         if (localPTE.validFormat.valid == 1) {
-
-             age = localPTE.validFormat.age;
+            age = localPTE.validFormat.age;
 
             ASSERT(currentRegion->numOfAge[age] != 0)
 
@@ -72,7 +69,6 @@ ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
             currentRegion->numOfAge[0]++;
 
 
-
             page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
             page->location = MODIFIED_LIST;
 
@@ -80,8 +76,6 @@ ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
             pages[trimmedPagesInRegion] = page;
 
             trimmedPagesInRegion++;
-
-
         }
 
         currentPTE++;
@@ -92,23 +86,18 @@ ULONG64 trimRegion(PTE_REGION* currentRegion, PTHREAD_INFO threadContext) {
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
 
-    return  trimmedPagesInRegion;
+    return trimmedPagesInRegion;
 }
 
-PTE_REGION* getOldestRegion(PTHREAD_INFO threadContext) {
-
+PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
     while (age != 0) {
-
         return RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
         age--;
     }
     return NULL;
 }
-
-
-
 
 
 /**
@@ -123,17 +112,17 @@ PTE_REGION* getOldestRegion(PTHREAD_INFO threadContext) {
 
 
 #define VERBOSE 0
-DWORD page_trimmer(LPVOID info) {
 
+DWORD page_trimmer(LPVOID info) {
+    LARGE_INTEGER start, end;
     ULONG64 counter;
 
     PTHREAD_INFO threadContext;
-    threadContext = (PTHREAD_INFO)info;
-    PTE_REGION* currentRegion;
+    threadContext = (PTHREAD_INFO) info;
+    PTE_REGION *currentRegion;
 
     ULONG64 trimmedPagesInRegion;
     ULONG64 totalTrimmedPages;
-
 
 
     HANDLE events[2];
@@ -153,7 +142,6 @@ DWORD page_trimmer(LPVOID info) {
 
 
     while (TRUE) {
-
         totalTrimmedPages = 0;
         counter = 0;
 
@@ -164,8 +152,9 @@ DWORD page_trimmer(LPVOID info) {
         if (returnEvent - WAIT_OBJECT_0 == 1) {
             return 0;
         }
+        QueryPerformanceCounter(&start);
 
-      recallPagesFromLocalList(threadContext);
+        recallPagesFromLocalList(threadContext);
 
 #if VERBOSE
         start = __rdtsc();
@@ -173,20 +162,16 @@ DWORD page_trimmer(LPVOID info) {
 
         // if we have trimmed enough, or have combed through everything
         while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
-
             // this function exits with the lock held
             currentRegion = getOldestRegion(threadContext);
 
             if (currentRegion == NULL) {
-
                 break;
             }
 
 
             // check to see if there are any active entries in this region
             if (currentRegion->hasActiveEntry == TRUE) {
-
-
                 ULONG64 finalAge;
 
                 trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
@@ -198,27 +183,28 @@ DWORD page_trimmer(LPVOID info) {
                 addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
 
 
-
                 // Need to have this after because I could fault it back in before it is on the modified list
                 leavePTERegionLock(currentRegion, threadContext);
 
-                InterlockedAdd64(&vm.pfn.numActivePages,0-trimmedPagesInRegion);
+                InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
             } else {
-
-
                 leavePTERegionLock(currentRegion, threadContext);
                 currentRegion++;
                 counter++;
             }
-
-
         }
+
+        QueryPerformanceCounter(&end);
+
+        recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
+
+
 #if VERBOSE
         end = __rdtsc();
         printf("trim time: %llu\n", start-end);
 #endif
 
-        vm.misc.numTrims ++;
+        vm.misc.numTrims++;
 
         SetEvent(vm.events.writingStart);
     }
@@ -230,30 +216,27 @@ DWORD page_trimmer(LPVOID info) {
  * @return The number of pages that were recalled from the local lists.
  */
 ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
-
     PTHREAD_INFO currentThreadContext;
-    pfn* page;
+    pfn *page;
     ULONG64 counter;
     listHead trimmerLocalList;
     PLIST_ENTRY entry;
     pListHead head;
 
+
     counter = 0;
     init_list_head(&trimmerLocalList);
 
     for (int i = 0; i < vm.config.number_of_user_threads; i++) {
-
-
         currentThreadContext = &vm.threadInfo.user[i];
 
         head = &currentThreadContext->localList;
         acquire_srw_exclusive(&head->sharedLock, trimThreadContext);
 
 
-
         // make order one
         while (&head->entry != head->entry.Flink) {
-             entry = RemoveHeadList(head);
+            entry = RemoveHeadList(head);
             page = container_of(entry, pfn, entry);
             InsertHeadList(&trimmerLocalList, &page->entry);
         }
@@ -282,15 +265,13 @@ ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
 }
 
 
-
 /**
  * @brief Simple wrapper for a MapUserPhysicalPagesScatter call.
  * @param virtualAddresses An array of virtual addresses to unmap.
  * @param batchSize The size of the array.
  */
-VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
-
-    if (MapUserPhysicalPagesScatter((PVOID)virtualAddresses, batchSize, NULL) == FALSE) {
+VOID unmapBatch(PULONG64 virtualAddresses, ULONG64 batchSize) {
+    if (MapUserPhysicalPagesScatter((PVOID) virtualAddresses, batchSize, NULL) == FALSE) {
         DebugBreak();
         printf("full_virtual_memory_test : could not unmap VA %llu\n", virtualAddresses[0]);
         return;
@@ -304,9 +285,8 @@ VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize) {
  * @param threadContext The thread info of the caller
  */
 // TODO maybe a assemble a local list and then add it to modified in order to get the lock less
-VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO threadContext) {
-
-    pfn* page;
+VOID addBatchToModifiedList(pfn **pages, ULONG64 batchSize, PTHREAD_INFO threadContext) {
+    pfn *page;
 
     for (int i = 0; i < batchSize; ++i) {
         page = pages[i];
@@ -316,4 +296,3 @@ VOID addBatchToModifiedList (pfn** pages, ULONG64 batchSize, PTHREAD_INFO thread
         leavePageLock(page, threadContext);
     }
 }
-

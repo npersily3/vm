@@ -34,37 +34,59 @@ Next, I realized that disk locks are pretty self contained, so they should be th
 This order made sense, but there were a few times I had to break it. In the case where I was repurposing a page off of the standby list, I first need to look at the standby list then edit the pte of the page at the head.
 I cannot lock the pte first as I need to look at the standby list to determine the pte, and I cannot lock them out of order because a deadlock could occur. In order to solve this problem, I need to try and acquire the pte lock and if I cannot get it, I need to release the standby lock and redo the fault. 
 
----
+[//]: # (---)
 
-![diagram 1](images/figure1vector.svg)
----
+[//]: # ()
+[//]: # (![diagram 1]&#40;images/figure1vector.svg&#41;)
+
+[//]: # (---)
 
 ### Complex Multithreaded State Machine
 
-In order to improve my scalability, I needed to get smarter. I had to implement more sophisticated locking techniques among other strategies.
+To achieve better scalability, I implemented sophisticated locking techniques and optimizations across multiple areas.
 
-The first place I released contention from was the disk. Instead of having one big lock around the whole disk, I created a lock per slot. Then, I started using atomic interlocked operations to lock and unlock disk slots. Additionally, I switched my disk to a bitmap instead of a byte map. 
+#### Fine-Grained Disk Management
+I replaced the single disk lock with per-slot atomic interlocked operations and switched from a byte map to a bitmap representation. This eliminated disk contention as a bottleneck and allowed multiple threads to allocate disk slots simultaneously.
 
-Next, I started to look for a way to alleviate list contention, specifically on the standby list. Ideally, I wanted to be able to remove from the head, add to the tail, and remove from the middle simultaneously. 
-The way I thought to do this was to add locks on individual pages. Now, I could first try to lock all the pages I needed to edit, before grabbing the list lock exclusive and shutting everyone out. To implement this, I embedded a lock in my pfn and added a slim read-write lock to my listhead structure. 
+#### Advanced List Management with Page Locks
+To reduce list contention, particularly on the standby list, I implemented embedded locks within each page frame number (PFN) and added slim read-write locks to list head structures. This allows concurrent operations: removing from head, adding to tail, and removing from middle simultaneously. The page locks also serve as substitutes for page table entry locks when a PTE is linked to a PFN, reducing overall lock contention.
 
-The addition of pagelocks also helped me reduce my pagetable lock contention. In scenarios, where a pte was linked to a pfn I could use the page's lock as a stand-in for a pagetable lock. 
-Both my writes and my victimization of standby pages could now be done with only the page-lock. The only caveat was that in my rescue I had to check if the pte changed after I acquire the pagelock.
+#### Batching Optimizations
+I implemented batching across all thread types to amortize system call costs. The trimmer removes multiple pages from the active list and unmaps them with a single "MapUserPhysicalPagesScatter" call. The writer pre-acquires multiple disk slots and performs batched disk operations. User threads batch unmap operations on kernel virtual address space and batch transfers from standby to free lists and free lists to local caches. 
 
-Another key strategy I implemented was batching. I was able to implement batching in all three types of threads.
+#### Multidimensioned Free Lists
+To eliminate rather than just move contention, I dimensioned the free list across multiple instances. Unlike the standby list where ordering matters for aging, the free list can be safely partitioned, allowing multiple user threads to satisfy faults without interfering with each other.
 
-In the trimmer, I now remove multiple pages from the active list and unmap them all simultaneously with a call to the function "map user physical pages scatter". 
+#### Basic Aging Model
+I implemented a page aging system that exploits the non-random nature of real-world memory access patterns. Rather than assuming uniform access probability across all pages, the aging model maintains age-lists that track page access recency. Pages are organized into different age categories, and the trimmer preferentially selects older pages for eviction. This leverages temporal locality - pages accessed recently are more likely to be accessed again soon, while pages that haven't been touched in a while are good candidates for trimming.
 
-In the writer, I now preacquire multiple disk slots, instead of searching the disk individually. Moreover, during the actual process to write to disk, I could only do one map and unmap call per batch.
+#### Local Caches
+Each user thread maintains local caches of pages to minimize lock contention. With local caches, user threads only need to acquire PTE locks (which I consider inevitable for correctness) and can operate on their cached pages without additional synchronization overhead. This design dramatically reduces the frequency of expensive list operations. The trimmer intelligently targets pages from these local caches during memory pressure, as it's preferable to reclaim a page that hasn't been mapped to a virtual address rather than evicting an actively used page from the working set.
 
-The user thread used batching two places. First, I started to batch unmap my kernel virtual address space that I use to read disk contents into physical pages. Then, I started to batch remove pages from the standby list and place them onto the freelist in order to alleviate standby list contention.
+[//]: # (![legend]&#40;images/legend.svg&#41;)
 
-To actually fix the contention instead of moving it from the standby to freelist was to dimension my freelist. I could not do this with my standby list since the order in which they were added matters, but in the freelist it does not. In a multidimensioned free list, multiple users could be satisfying faults without interruption themselves
+[//]: # ()
+[//]: # ()
+[//]: # ()
+[//]: # (<br />)
+
+[//]: # (<br />)
+
+[//]: # (<br />)
+
+[//]: # (<br />)
+
+[//]: # ()
+[//]: # ()
+[//]: # (![diagram 2]&#40;images/figure2vector.svg&#41;)
+
+## Current Project
+### Scheduling
+    Right now I am working on making my age and trim activations elastic. Based on the time it takes to write and trim a page, I want to find the goldlocks number of ptes to age and pages to trim.    
 
 
-![diagram 2](images/figure2vector.svg)
 
-State Machine as of August 1st
+State Machine as of October 23rd
 
 
 

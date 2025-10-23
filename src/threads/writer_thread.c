@@ -82,6 +82,10 @@ DWORD diskWriter (LPVOID info) {
     events[0] = vm.events.writingStart;
     events[1] = vm.events.systemShutdown;
 
+    ULONG64 numPagesWritten;
+
+    LARGE_INTEGER start, end;
+
     while (TRUE) {
 
 
@@ -93,6 +97,8 @@ DWORD diskWriter (LPVOID info) {
         if (returnEvent - WAIT_OBJECT_0 == 1) {
             return 0;
         }
+
+        QueryPerformanceCounter(&start);
 
         localBatchSize = BATCH_SIZE;
 
@@ -130,29 +136,16 @@ DWORD diskWriter (LPVOID info) {
         // actual write to disk
         writeToDisk(localBatchSize, frameNumberArray, diskAddressArray, threadContext);
 
-        addToStandBy(localBatchSize, pfnArray, threadContext);
+        numPagesWritten = addToStandBy(localBatchSize, pfnArray, threadContext);
 
-// Usually it is fine to have stale data stored in these stack variables,
-// but for debugging it is useful to reset the variables
-#if DBG
-for (int i = 0; i < BATCH_SIZE; ++i)
-{
-     diskAddressArray[i] = 0;
-     diskIndexArray[i] = 0;
-     frameNumberArray[i] = 0;
-     pfnArray[i] = 0;
-
-}
-
-#endif
+        QueryPerformanceCounter(&end);
 
 
-        // this needs to be in a sharedLock to avoid
-        // the race condition where it is reset right after it is
-        // TODO think about this
-      //  acquire_srw_exclusive(&vm.lists.standby.sharedLock, (PTHREAD_INFO) threadContext);
+        recordWork(threadContext, end.QuadPart - start.QuadPart, numPagesWritten);
+
+
         SetEvent(vm.events.writingEnd);
-      //  release_srw_exclusive(&vm.lists.standby.sharedLock);
+
     }
 
 }
@@ -176,9 +169,10 @@ VOID freeUnusedDiskSlots(PULONG64 diskIndexArray, ULONG64 start, ULONG64 end) {
  * @param pfnArray An array of page pointers
  * @param info The info about the caller
  */
-VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
+ULONG64 addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
     pfn* page;
+    ULONG64 numAddedToModifiedList = 0;
 
 
     for (int i = 0; i < localBatchSize; ++i) {
@@ -204,7 +198,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
             }
         } else {
-
+            numAddedToModifiedList++;
             page->isBeingWritten = FALSE;
 
             // this expects me to come in with the lock and does not release it for me
@@ -214,6 +208,7 @@ VOID addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
 
         leavePageLock(page, info);
     }
+    return numAddedToModifiedList;
 }
 
 /**

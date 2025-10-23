@@ -302,3 +302,20 @@ VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
 
     ASSERT((ULONG64)page->lock.OwningThread != GetCurrentThreadId())
 }
+
+VOID recordWork(PTHREAD_INFO info, ULONG64 time, ULONG64 work) {
+    ULONG64 index = info->work.index;
+
+    if (index == 16) {
+        index = 0;
+    }
+
+    info->work.timeIntervals[index] = time;
+    info->work.numWorkDone[index] = work;
+
+    index++;
+
+    info->work.index = index;
+
+
+}
