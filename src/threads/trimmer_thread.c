@@ -35,7 +35,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
-
+    // for every pte
     for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
         // when we find a valid pte, invalidate it and store its info in stack variables
         pte localPTE;
@@ -46,9 +46,9 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
             ASSERT(currentRegion->numOfAge[age] != 0)
 
-
+            // if it was accessed, bump the age to zero, but do not clear the bit, if we do so it will be aged unfairly
             if (localPTE.validFormat.access == 1) {
-                localPTE.validFormat.access = 1;
+
                 localPTE.validFormat.age = 0;
                 currentRegion->numOfAge[age]--;
                 currentRegion->numOfAge[0]++;
@@ -60,6 +60,8 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                 continue;
             }
 
+
+            // edit pte, region, and stack variables for batched operation
 
             localPTE.transitionFormat.mustBeZero = 0;
             localPTE.transitionFormat.isTransition = 1;
@@ -82,6 +84,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     }
     currentRegion->hasActiveEntry = FALSE;
 
+    // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
@@ -89,6 +92,12 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     return trimmedPagesInRegion;
 }
 
+/**
+ *
+ * @param threadContext The thread info of the caller.
+ * @return a region from the head of the oldest agelist
+
+ */
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
@@ -174,6 +183,7 @@ DWORD page_trimmer(LPVOID info) {
             if (currentRegion->hasActiveEntry == TRUE) {
                 ULONG64 finalAge;
 
+                // get a region, trim it, and move it to the tail of the age list
                 trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
                 totalTrimmedPages += trimmedPagesInRegion;
 
@@ -183,7 +193,7 @@ DWORD page_trimmer(LPVOID info) {
                 addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
 
 
-                // Need to have this after because I could fault it back in before it is on the modified list
+
                 leavePTERegionLock(currentRegion, threadContext);
 
                 InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
