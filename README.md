@@ -10,8 +10,8 @@
 
 
 The goal of this program is to simulate a virtual memory manager that exists in all modern operating systems. 
-In order to mimic the experience of a user accessing places in memory, I reserve but not commit a large portion of virtual address space with the function VirtualAlloc.
-Then in a loop the program tries to access parts of the reserved space. Since the space is not commited exceptions are generated. These exceptions are how I know there is a page fault. Once I get a page fault it is my duty to map a page as quickly as possible. 
+In order to mimic the experience of a user accessing places in memory, I reserve but do not commit a large portion of virtual address space with the function VirtualAlloc.
+Then, in a loop, the program tries to access parts of the reserved space. Because the space is not committed, exceptions are generated. These exceptions are how I know there is a page fault. Once I get a page fault it is my duty to map a page as quickly as possible. 
 
 
 ## Roadmap
