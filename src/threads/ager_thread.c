@@ -68,6 +68,7 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     if (beenAccessed == TRUE && currentAge != 0) {
         newAge = 0;
     } else {
+        // if the pte was not accessed, we need to increment the age
         if (currentAge != MAX_AGE) {
             returnValue = 1;
             newAge = currentAge + 1;
