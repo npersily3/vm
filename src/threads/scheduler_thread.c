@@ -6,18 +6,29 @@
 
 #include "variables/structures.h"
 
+
+ULONG64 historyIndex;
+ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
+
 DWORD scheduler_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
 
     threadInfo = (PTHREAD_INFO) info;
     LONG isAgingInProgress;
+    ULONG64 pagesLeft;
+    ULONG64 localPagesConsumed;
+
+    historyIndex = 0;
 
     while (TRUE) {
         if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
             return 0;
         }
 
-        ULONG64 pagesLeft;
+        localPagesConsumed = ReadULong64NoFence(&vm.pfn.pagesConsumed);
+        InterlockedExchange64(&vm.pfn.pagesConsumed, 0);
+        pageConsumptionHistory[historyIndex] = localPagesConsumed;
+        historyIndex = (historyIndex + 1) % PAGES_CONSUMED_LENGTH;
 
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
 

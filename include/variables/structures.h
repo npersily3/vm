@@ -246,7 +246,7 @@ typedef struct {
 
 
 } pfn;
-
+#define PAGES_CONSUMED_LENGTH 512
 
 #define NUMBER_OF_TIME_STAMPS 16
 #define BASELINE_HAZARD (1)
@@ -389,6 +389,7 @@ typedef struct __declspec(align(256)){
 
 
 typedef struct {
+    volatile ULONG64 pagesConsumed;
     ULONG_PTR physical_page_count;
     PULONG_PTR physical_page_numbers;
     pfn *start;

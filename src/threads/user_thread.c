@@ -449,6 +449,8 @@ ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
 
     page->pte = currentPTE;
 
+    InterlockedIncrement64(&vm.pfn.pagesConsumed);
+
     return frameNumber;
 }
 
