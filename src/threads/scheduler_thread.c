@@ -7,8 +7,7 @@
 #include "variables/structures.h"
 
 
-ULONG64 historyIndex;
-ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
+
 
 DWORD scheduler_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
@@ -17,20 +16,36 @@ DWORD scheduler_thread(LPVOID info) {
     LONG isAgingInProgress;
     ULONG64 pagesLeft;
     ULONG64 localPagesConsumed;
+    ULONG64 timeUntilOut;
+    ULONG64 historyIndex;
+    ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
 
     historyIndex = 0;
+    memset(pageConsumptionHistory, 0, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
 
     while (TRUE) {
         if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
             return 0;
         }
 
+        //track history of page consumption
         localPagesConsumed = ReadULong64NoFence(&vm.pfn.pagesConsumed);
         InterlockedExchange64(&vm.pfn.pagesConsumed, 0);
         pageConsumptionHistory[historyIndex] = localPagesConsumed;
         historyIndex = (historyIndex + 1) % PAGES_CONSUMED_LENGTH;
 
+        // basically, i am assuming I will not age in the first 16 schedule wakeups , however for the first sixteen times my numbers will be innacurate.
+        ULONG64 averagePagesConsumed = 0;
+        for (int i = 0; i < PAGES_CONSUMED_LENGTH; i++) {
+            averagePagesConsumed += pageConsumptionHistory[i];
+        }
+        averagePagesConsumed /= PAGES_CONSUMED_LENGTH;
+        averagePagesConsumed += 1;
+
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
+
+        timeUntilOut = (pagesLeft / averagePagesConsumed);
+
 
         // circular buffer, ages times, trim times, write times and how many pages/ptes aged/trimmed/written.
         // for ages, figure out how long until you are almost out, then divide by NUM_AGES

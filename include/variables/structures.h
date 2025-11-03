@@ -246,7 +246,7 @@ typedef struct {
 
 
 } pfn;
-#define PAGES_CONSUMED_LENGTH 512
+#define PAGES_CONSUMED_LENGTH 16
 
 #define NUMBER_OF_TIME_STAMPS 16
 #define BASELINE_HAZARD (1)
