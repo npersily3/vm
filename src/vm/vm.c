@@ -16,6 +16,61 @@
 static __inline unsigned __int64 GetTimeStampCounter(void) {
     return __rdtsc();
 }
+
+void do_work_to_slow_consumption(PTHREAD_INFO threadInfo) {
+    int WORK_TIME = 10;
+    ULONG64 data = 19941994;
+    for (int j = 0; j < WORK_TIME; ++j) {
+        YieldProcessor();
+        GetNextRandom(&threadInfo->rng);
+    }
+}
+
+
+PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
+    ULONG64 random_number;
+
+    random_number = GetNextRandom(&thread_info->rng);
+
+    random_number %= vm.config.virtual_address_size_in_unsigned_chunks;
+
+    // Write the virtual address into each page. If we need to
+    // debug anything, we'll be able to see these in the pages.
+
+
+    // Ensure the write to the arbitrary virtual address doesn't
+    // straddle a PAGE_SIZE boundary just to keep things simple for now.
+    random_number &= ~0x7;
+    return vm.va.start + random_number;
+
+}
+
+
+
+#define PAGE_JUMP_PROBABILITY .1
+
+PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO threadInfo) {
+
+    // Generate the next VA
+    PULONG_PTR new_va = (previous_va + 1);
+    if (new_va >= vm.va.end)
+        new_va = vm.va.start;
+
+    // If we are still within a given page, return this VA and continue on.
+    if ((ULONG64) new_va % PAGE_SIZE != 0) return new_va;
+
+    // Otherwise, we will move on to the next page with a certain probability p
+    // And we will jump to a random page with a probability (1-p)
+
+    double p = (double) (GetNextRandom(&threadInfo->rng) >> 11) * (1.0 / 9007199254740992.0);
+    if (p < PAGE_JUMP_PROBABILITY)
+        new_va = get_arbitrary_va(threadInfo);
+
+    return new_va;
+}
+
+
+
 boolean setAccessBit(ULONG64 va) {
     pte* pteAddress;
     pte newPTE;
@@ -130,7 +185,6 @@ DWORD testVM(LPVOID lpParam) {
    // DebugBreak();
 
     PULONG_PTR arbitrary_va;
-    ULONG64 random_number;
     unsigned i;
     PTHREAD_INFO thread_info;
 
@@ -145,7 +199,9 @@ DWORD testVM(LPVOID lpParam) {
     redo_try_same_address = FALSE;
 
     InitializeThreadRNG(&thread_info->rng);
-      // Now perform random accesses
+    arbitrary_va = get_arbitrary_va(thread_info);
+    // Now perform random accesses
+
 
 #if DBG || spinEvents
     while (TRUE) {
@@ -175,26 +231,12 @@ DWORD testVM(LPVOID lpParam) {
 
 
             if (redo_try_same_address == FALSE) {
-                random_number = GetNextRandom(&thread_info->rng);
-#if 0
-                random_number += KB(256)*(thread_info->ThreadNumber + 2);
-                random_number <<= 18;
-                random_number |= (rand() & (KB(256) -1));
-#else
-            //    random_number += KB(256)*(thread_info->ThreadNumber + 2);
-#endif
-
-                random_number %= vm.config.virtual_address_size_in_unsigned_chunks;
-
                 // Write the virtual address into each page. If we need to
                 // debug anything, we'll be able to see these in the pages.
-
-
                 // Ensure the write to the arbitrary virtual address doesn't
                 // straddle a PAGE_SIZE boundary just to keep things simple for now.
-                random_number &= ~0x7;
-                arbitrary_va = vm.va.start + random_number;
-               // printf("arbitrary_va %p\n", arbitrary_va);
+
+                arbitrary_va = get_next_va(arbitrary_va, thread_info);
 
             }
         __try {

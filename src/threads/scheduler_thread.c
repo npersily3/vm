@@ -46,6 +46,7 @@ DWORD scheduler_thread(LPVOID info) {
 
         timeUntilOut = (pagesLeft / averagePagesConsumed);
 
+        printf("time until out %llu \n", timeUntilOut);
 
         // circular buffer, ages times, trim times, write times and how many pages/ptes aged/trimmed/written.
         // for ages, figure out how long until you are almost out, then divide by NUM_AGES
@@ -53,7 +54,7 @@ DWORD scheduler_thread(LPVOID info) {
 
 
 
-        if ((double) pagesLeft / vm.config.number_of_physical_pages < 0.5) {
+        if ((double) pagesLeft / vm.config.number_of_physical_pages < 0.8) {
             isAgingInProgress = InterlockedCompareExchange((volatile LONG *) &vm.misc.agingInProgress, TRUE, FALSE);
 
             if (isAgingInProgress == FALSE) {
