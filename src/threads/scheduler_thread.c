@@ -6,8 +6,21 @@
 
 #include "variables/structures.h"
 
+//TODO your units are wrong here
+ULONG64 getPagesPerTime(workDone work) {
+    ULONG64 time = 0;
+    ULONG64 pages = 0;
 
+    for (int i = 0; i < 16; ++i) {
+        time += work.timeIntervals[i];
+        pages += work.numPagesProccessed[i];
+    }
+    if (time == 0) {
+        return 0;
+    }
 
+    return pages / time;
+}
 
 DWORD scheduler_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
@@ -19,11 +32,16 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 timeUntilOut;
     ULONG64 historyIndex;
     ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
+    workDone agerWork;
+    ULONG64 numActivePages;
 
     historyIndex = 0;
+    ULONG64 pageAgeRate = 0;
+    ULONG64 numToAge;
     memset(pageConsumptionHistory, 0, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
 
     while (TRUE) {
+        Sleep(1);
         if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
             return 0;
         }
@@ -36,17 +54,36 @@ DWORD scheduler_thread(LPVOID info) {
 
         // basically, i am assuming I will not age in the first 16 schedule wakeups , however for the first sixteen times my numbers will be innacurate.
         ULONG64 averagePagesConsumed = 0;
-        for (int i = 0; i < PAGES_CONSUMED_LENGTH; i++) {
+
+        int i = 0;
+
+        for (; i < PAGES_CONSUMED_LENGTH; i++) {
+            if (pageConsumptionHistory[i] == 0) {
+                break;
+            }
             averagePagesConsumed += pageConsumptionHistory[i];
         }
-        averagePagesConsumed /= PAGES_CONSUMED_LENGTH;
-        averagePagesConsumed += 1;
+        if (i == 0) {
+            continue;
+        }
+        averagePagesConsumed /= i;
+
 
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
 
         timeUntilOut = (pagesLeft / averagePagesConsumed);
 
-        printf("time until out %llu \n", timeUntilOut);
+        agerWork = vm.threadInfo.aging->work;
+        pageAgeRate = getPagesPerTime(agerWork);
+
+        if (pageAgeRate == 0) {
+            continue;
+        }
+
+        numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
+        numToAge = numActivePages * NUMBER_OF_AGES;
+
+
 
         // circular buffer, ages times, trim times, write times and how many pages/ptes aged/trimmed/written.
         // for ages, figure out how long until you are almost out, then divide by NUM_AGES
@@ -65,6 +102,6 @@ DWORD scheduler_thread(LPVOID info) {
         }
 
 
-        Sleep(1);
+
     }
 }

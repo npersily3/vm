@@ -132,7 +132,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 1
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -454,7 +454,7 @@ typedef struct {
 
 typedef struct {
     ULONG64 timeIntervals[16];
-    ULONG64 numWorkDone[16];
+    ULONG64 numPagesProccessed[16];
     ULONG64 index;
 } workDone;
 
@@ -481,6 +481,8 @@ typedef struct {
     PTHREAD_INFO user;
     PTHREAD_INFO trimmer;
     PTHREAD_INFO writer;
+    PTHREAD_INFO aging;
+    PTHREAD_INFO scheduler;
 
 } threadInfo;
 

@@ -311,7 +311,7 @@ VOID recordWork(PTHREAD_INFO info, ULONG64 time, ULONG64 work) {
     }
 
     info->work.timeIntervals[index] = time;
-    info->work.numWorkDone[index] = work;
+    info->work.numPagesProccessed[index] = work;
 
     index++;
 
