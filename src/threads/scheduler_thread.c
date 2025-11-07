@@ -32,6 +32,9 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 timeUntilOut;
     ULONG64 historyIndex;
     ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
+    memset(pageConsumptionHistory, 1, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
+
+
     workDone agerWork;
     ULONG64 numActivePages;
 
@@ -57,8 +60,9 @@ DWORD scheduler_thread(LPVOID info) {
 
         int i = 0;
 
+        // find the average page consumption over the last 16 wakeups
         for (; i < PAGES_CONSUMED_LENGTH; i++) {
-            if (pageConsumptionHistory[i] == 0) {
+            if (pageConsumptionHistory[i] == MAXULONG64) {
                 break;
             }
             averagePagesConsumed += pageConsumptionHistory[i];
@@ -71,6 +75,9 @@ DWORD scheduler_thread(LPVOID info) {
 
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
 
+        if (averagePagesConsumed == 0) {
+            continue;
+        }
         timeUntilOut = (pagesLeft / averagePagesConsumed);
 
         agerWork = vm.threadInfo.aging->work;
