@@ -21,6 +21,7 @@ ULONG64 getPagesPerTime(workDone work) {
 
     return pages / time;
 }
+#define MS_TO_100NS (10000)
 
 DWORD scheduler_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
@@ -28,20 +29,52 @@ DWORD scheduler_thread(LPVOID info) {
     threadInfo = (PTHREAD_INFO) info;
     LONG isAgingInProgress;
     ULONG64 pagesLeft;
-    ULONG64 localPagesConsumed;
-    ULONG64 timeUntilOut;
+    ULONG64 localPagesConsumedPerWakeUp;
+    ULONG64 timeUntilOutIn100ns;
     ULONG64 historyIndex;
     ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
     memset(pageConsumptionHistory, 1, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
 
+    ULONG64 timeToMakePagesAvailable;
 
     workDone agerWork;
+    workDone trimmerWork;
+    workDone writerWork;
+
     ULONG64 numActivePages;
 
     historyIndex = 0;
-    ULONG64 pageAgeRate = 0;
-    ULONG64 numToAge;
+
+    ULONG64 pageAgeRate;
+    ULONG64 pageTrimRate;
+    ULONG64 pageWriteRate;
+
+
+
+
+    ULONG64 numToAgeTotal;
+    ULONG64 numToAgeThisWakeup;
+
+    ULONG64 numToTrimTotal;
+    ULONG64 numToTrimThisWakeup;
+
+    ULONG64 numToWriteTotal;
+    ULONG64 numToWriteThisWakeup;
+
+    ULONG64 timeToAge;
+    ULONG64 timeToTrim;
+    ULONG64 timeToWrite;
+
+
     memset(pageConsumptionHistory, 0, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
+
+
+    ULONG64 averagePagesConsumedPerWakeup = 0;
+    ULONG64 averagePagesConsumedPer100Ns = 0;
+
+    // Wait a bit until the system has good data
+    Sleep(1000);
+
 
     while (TRUE) {
         Sleep(1);
@@ -50,13 +83,14 @@ DWORD scheduler_thread(LPVOID info) {
         }
 
         //track history of page consumption
-        localPagesConsumed = ReadULong64NoFence(&vm.pfn.pagesConsumed);
+        localPagesConsumedPerWakeUp = ReadULong64NoFence(&vm.pfn.pagesConsumed);
         InterlockedExchange64(&vm.pfn.pagesConsumed, 0);
-        pageConsumptionHistory[historyIndex] = localPagesConsumed;
+        pageConsumptionHistory[historyIndex] = localPagesConsumedPerWakeUp;
         historyIndex = (historyIndex + 1) % PAGES_CONSUMED_LENGTH;
 
-        // basically, i am assuming I will not age in the first 16 schedule wakeups , however for the first sixteen times my numbers will be innacurate.
-        ULONG64 averagePagesConsumed = 0;
+
+
+        averagePagesConsumedPerWakeup = 0;
 
         int i = 0;
 
@@ -65,36 +99,50 @@ DWORD scheduler_thread(LPVOID info) {
             if (pageConsumptionHistory[i] == MAXULONG64) {
                 break;
             }
-            averagePagesConsumed += pageConsumptionHistory[i];
+            averagePagesConsumedPerWakeup += pageConsumptionHistory[i];
         }
         if (i == 0) {
             continue;
         }
-        averagePagesConsumed /= i;
+        if (averagePagesConsumedPerWakeup == 0) {
+            continue;
+        }
+        averagePagesConsumedPerWakeup /= i;
+
+
+        // convert to pages per 100ns because QPC uses that.
+        //TODO check if this is always 0
+        averagePagesConsumedPer100Ns = averagePagesConsumedPerWakeup / MS_TO_100NS;
 
 
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
+        timeUntilOutIn100ns = (pagesLeft / averagePagesConsumedPer100Ns);
 
-        if (averagePagesConsumed == 0) {
-            continue;
-        }
-        timeUntilOut = (pagesLeft / averagePagesConsumed);
 
+        trimmerWork = vm.threadInfo.trimmer->work;
+        pageTrimRate = getPagesPerTime(trimmerWork);
+
+        writerWork = vm.threadInfo.writer->work;
+        pageWriteRate = getPagesPerTime(writerWork);
+
+        timeToMakePagesAvailable = pageTrimRate + pageWriteRate;
+
+
+
+        // create a copy of the agers circular buffer
         agerWork = vm.threadInfo.aging->work;
         pageAgeRate = getPagesPerTime(agerWork);
 
-        if (pageAgeRate == 0) {
-            continue;
-        }
-
         numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
-        numToAge = numActivePages * NUMBER_OF_AGES;
+        numToAgeTotal = numActivePages * NUMBER_OF_AGES;
+        timeToAge = numToAgeTotal / pageAgeRate;
+
 
 
 
         // circular buffer, ages times, trim times, write times and how many pages/ptes aged/trimmed/written.
         // for ages, figure out how long until you are almost out, then divide by NUM_AGES
-        // keep track of page consuption in circular buffer.
+        // keep track of page consumption in circular buffer.
 
 
 
