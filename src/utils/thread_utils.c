@@ -303,14 +303,26 @@ VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
     ASSERT((ULONG64)page->lock.OwningThread != GetCurrentThreadId())
 }
 
-VOID recordWork(PTHREAD_INFO info, ULONG64 time, ULONG64 work) {
+VOID recordWork(PTHREAD_INFO info, ULONG64 timeInQPC, ULONG64 work) {
+    static LARGE_INTEGER frequency = {0};
+
+    // Initialize frequency once on first call
+    if (frequency.QuadPart == 0) {
+        QueryPerformanceFrequency(&frequency);
+    }
+
+    // Convert QPC ticks to 100ns units
+    // 1 second = 10,000,000 * 100ns
+    // time_in_100ns = (ticks * 10,000,000) / ticks_per_second
+    ULONG64 timeIn100ns = (timeInQPC * 10000000ULL) / frequency.QuadPart;
+
     ULONG64 index = info->work.index;
 
     if (index == 16) {
         index = 0;
     }
 
-    info->work.timeIntervals[index] = time;
+    info->work.timeIntervals[index] = timeIn100ns;  // Now stored in 100ns units
     info->work.numPagesProccessed[index] = work;
 
     index++;
