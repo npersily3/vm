@@ -21,6 +21,7 @@ ULONG64 getPagesPerTime(workDone work) {
 
     return pages / time;
 }
+
 #define MS_TO_100NS (10000)
 
 DWORD scheduler_thread(LPVOID info) {
@@ -50,8 +51,6 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 pageWriteRate;
 
 
-
-
     ULONG64 numToAgeTotal;
     ULONG64 numToAgeThisWakeup;
 
@@ -62,6 +61,7 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 numToWriteThisWakeup;
 
     ULONG64 timeToAge;
+    ULONG64 perfectTimeToAge;
     ULONG64 timeToTrim;
     ULONG64 timeToWrite;
 
@@ -70,7 +70,7 @@ DWORD scheduler_thread(LPVOID info) {
 
 
     ULONG64 averagePagesConsumedPerWakeup = 0;
-    ULONG64 averagePagesConsumedPer100Ns = 0;
+    ULONG64 averagePagesConsumedPerWakupIn100Ns = 0;
 
     // Wait a bit until the system has good data
     Sleep(1000);
@@ -87,7 +87,6 @@ DWORD scheduler_thread(LPVOID info) {
         InterlockedExchange64(&vm.pfn.pagesConsumed, 0);
         pageConsumptionHistory[historyIndex] = localPagesConsumedPerWakeUp;
         historyIndex = (historyIndex + 1) % PAGES_CONSUMED_LENGTH;
-
 
 
         averagePagesConsumedPerWakeup = 0;
@@ -110,13 +109,11 @@ DWORD scheduler_thread(LPVOID info) {
         averagePagesConsumedPerWakeup /= i;
 
 
-        // convert to pages per 100ns because QPC uses that.
-        //TODO check if this is always 0
-        averagePagesConsumedPer100Ns = averagePagesConsumedPerWakeup / MS_TO_100NS;
+        averagePagesConsumedPerWakupIn100Ns = averagePagesConsumedPerWakeup / MS_TO_100NS;
 
 
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
-        timeUntilOutIn100ns = (pagesLeft / averagePagesConsumedPer100Ns);
+        timeUntilOutIn100ns = (pagesLeft / averagePagesConsumedPerWakupIn100Ns);
 
 
         trimmerWork = vm.threadInfo.trimmer->work;
@@ -125,8 +122,9 @@ DWORD scheduler_thread(LPVOID info) {
         writerWork = vm.threadInfo.writer->work;
         pageWriteRate = getPagesPerTime(writerWork);
 
-        timeToMakePagesAvailable = pageTrimRate + pageWriteRate;
-
+        // once aging is done, this is the amount of time it takes to make those pages available.
+        timeToMakePagesAvailable = pageTrimRate * averagePagesConsumedPerWakupIn100Ns +
+                                   pageWriteRate * averagePagesConsumedPerWakupIn100Ns;
 
 
         // create a copy of the agers circular buffer
@@ -136,27 +134,26 @@ DWORD scheduler_thread(LPVOID info) {
         numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
         numToAgeTotal = numActivePages * NUMBER_OF_AGES;
         timeToAge = numToAgeTotal / pageAgeRate;
+        perfectTimeToAge = timeUntilOutIn100ns - timeToMakePagesAvailable;
 
-
-
-
-        // circular buffer, ages times, trim times, write times and how many pages/ptes aged/trimmed/written.
-        // for ages, figure out how long until you are almost out, then divide by NUM_AGES
-        // keep track of page consumption in circular buffer.
-
-
-
-        if ((double) pagesLeft / vm.config.number_of_physical_pages < 0.8) {
-            isAgingInProgress = InterlockedCompareExchange((volatile LONG *) &vm.misc.agingInProgress, TRUE, FALSE);
-
-            if (isAgingInProgress == FALSE) {
-
-                InterlockedExchange64(&vm.pte.numToAge, vm.config.number_of_physical_pages / 3);
-                SetEvent(vm.events.agerStart);
-            }
+        //TODO does the time it takes to age matter?
+        //TODO a bunch of if statements
+        if (timeToAge < perfectTimeToAge) {
+            numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge / MS_TO_100NS);
+        } else {
+           numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge / MS_TO_100NS);
         }
 
+        // I really think it is this easy.
+        numToTrimThisWakeup = averagePagesConsumedPerWakeup;
+        numToWriteThisWakeup = averagePagesConsumedPerWakeup;
 
+        InterlockedExchange64(&vm.pte.numToAge, numToAgeThisWakeup);
+        InterlockedExchange64(&vm.pte.numToTrim, numToTrimThisWakeup);
+        InterlockedExchange64(&vm.pte.numToWrite, numToWriteThisWakeup);
 
+        SetEvent(vm.events.agerStart);
+        SetEvent(vm.events.trimmingStart);
+        SetEvent(vm.events.writingStart);
     }
 }

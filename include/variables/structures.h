@@ -408,6 +408,8 @@ typedef struct {
     pte* table;
     listHead ageList[NUMBER_OF_AGES];
     volatile ULONG64 numToAge;
+    volatile ULONG64 numToTrim;
+    volatile ULONG64 numToWrite;
 
 #if DBG
     volatile ULONG64 debugBufferIndex;

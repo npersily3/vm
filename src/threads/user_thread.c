@@ -421,14 +421,7 @@ ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
     }
 
 
-    // if we seem to be running low on free and standby pages wake the trimmer
-    if (((double) (vm.lists.standby.length + ReadULong64NoFence(&vm.lists.free.length)) / ((double) vm.config.
-             number_of_physical_pages)) < .95) {
-        SetEvent(vm.events.trimmingStart);
-    }
-
     frameNumber = getFrameNumber(page);
-
 
     // Zero the page if we are on a first fault, otherwise read from disk
     if (currentPTE->invalidFormat.diskIndex == EMPTY_PTE) {
