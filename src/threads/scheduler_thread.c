@@ -6,23 +6,28 @@
 
 #include "variables/structures.h"
 
+#define S_TO_100NS (10000000)
+
 //TODO your units are wrong here
-ULONG64 getPagesPerTime(workDone work) {
+ULONG64 getPagesPerSecond(workDone work) {
     ULONG64 time = 0;
     ULONG64 pages = 0;
+
 
     for (int i = 0; i < 16; ++i) {
         time += work.timeIntervals[i];
         pages += work.numPagesProccessed[i];
     }
     if (time == 0) {
-        return 0;
+        return 1000;
     }
 
-    return pages / time;
+    ULONG64 scaleFactor = (S_TO_100NS) / time;
+
+    // upscale our current pages to represent the number in seconds.
+    return pages * scaleFactor;
 }
 
-#define MS_TO_100NS (10000)
 
 DWORD scheduler_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
@@ -31,10 +36,10 @@ DWORD scheduler_thread(LPVOID info) {
 
     ULONG64 pagesLeft;
     ULONG64 localPagesConsumedPerWakeUp;
-    ULONG64 timeUntilOutIn100ns;
+    ULONG64 timeUntilOutInSecs;
     ULONG64 historyIndex;
     ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
-    memset(pageConsumptionHistory, 1, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
+    memset(pageConsumptionHistory, 0, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
 
     ULONG64 timeToMakePagesAvailable;
 
@@ -65,6 +70,9 @@ DWORD scheduler_thread(LPVOID info) {
     // ULONG64 timeToTrim;
     // ULONG64 timeToWrite;
 
+    ULONG64 numRoundsToAge;
+
+    LONG64 localnumOfAge[NUMBER_OF_AGES];
 
     memset(pageConsumptionHistory, 0, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
 
@@ -72,12 +80,19 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 averagePagesConsumedPerWakeup = 0;
     ULONG64 averagePagesConsumedPer100Ns = 0;
 
+
+    ULONG64 futureTotalOfMaxAge;
+    // this variable is used to store how many pages will be of max age we think by the end of aging.
+
     // Wait a bit until the system has good data
     Sleep(100);
 
 
     while (TRUE) {
-        Sleep(1);
+
+
+
+        Sleep(1000);
         if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
             return 0;
         }
@@ -110,20 +125,29 @@ DWORD scheduler_thread(LPVOID info) {
 
 
         // Convert pages/ms to pages/100ns rate
-        averagePagesConsumedPer100Ns = averagePagesConsumedPerWakeup / MS_TO_100NS;
 
-        printf("averagePagesPerWakup: %llu. averPagesPer100ns %llu \n", averagePagesConsumedPerWakeup, averagePagesConsumedPer100Ns);
+
+    //    printf("averagePagesPerWakup: %llu. averPagesPer100ns %llu \n", averagePagesConsumedPerWakeup,
+             //  averagePagesConsumedPer100Ns);
 
 #if 1
         pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
-        timeUntilOutIn100ns = (pagesLeft / averagePagesConsumedPer100Ns);
+        timeUntilOutInSecs = (pagesLeft / averagePagesConsumedPerWakeup);
 
 
         trimmerWork = vm.threadInfo.trimmer->work;
-        pageTrimRate = getPagesPerTime(trimmerWork);  // pages/100ns
+        pageTrimRate = getPagesPerSecond(trimmerWork);
+        if (pageTrimRate == 0) {
+            pageTrimRate = 10000;
+        }
+//        printf("pageTrimRate %llu \n", pageTrimRate);
 
         writerWork = vm.threadInfo.writer->work;
-        pageWriteRate = getPagesPerTime(writerWork);  // pages/100ns
+        pageWriteRate = getPagesPerSecond(writerWork);
+        if (pageWriteRate == 0) {
+            pageWriteRate = 10000;
+        }
+      //  printf("pageWriteRate %llu \n", pageWriteRate);
 
         // Calculate time to process the average pages consumed: time = pages / (pages/time)
         // Time to trim the consumed pages (in 100ns units)
@@ -137,35 +161,66 @@ DWORD scheduler_thread(LPVOID info) {
 
         // create a copy of the agers circular buffer
         agerWork = vm.threadInfo.aging->work;
-        pageAgeRate = getPagesPerTime(agerWork);
+        pageAgeRate = getPagesPerSecond(agerWork);
 
         numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
-        numToAgeTotal = numActivePages * NUMBER_OF_AGES;
 
-        if (pageAgeRate = 0) {
-            timeToAge = MAXULONG64;
-        } else {
+
+
+        // this copy is not a perfect copy as inbetween loops, anything can happen, but it is good enough
+        for (int j = 0; j < NUMBER_OF_AGES; ++j) {
+            localnumOfAge[j] = ReadULong64NoFence(&vm.pte.globalNumOfAge[j]);
+        }
+
+
+        futureTotalOfMaxAge = 0;
+        numRoundsToAge = 0;
+
+        //here we figure out how much aging we have to do, based on the current age lists
+        for (; numRoundsToAge < NUMBER_OF_AGES; ++numRoundsToAge) {
+            futureTotalOfMaxAge += localnumOfAge[NUMBER_OF_AGES - numRoundsToAge - 1];
+
+            if (futureTotalOfMaxAge > averagePagesConsumedPerWakeup) {
+                break;
+            }
+        }
+
+        numToAgeTotal = numActivePages * numRoundsToAge;
+
+
+        // if we have done some aging, use it
+        if (pageAgeRate != 0) {
             timeToAge = numToAgeTotal / pageAgeRate;
         }
 
 
-        perfectTimeToAge = timeUntilOutIn100ns - timeToMakePagesAvailable;
 
+        //todo make sure this is not zero and not negative.
+        //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
+        perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
 
-
-        // Basically, if I can age faster than I can consume, only age the perfect amount.
-        // otherwise, age the perceived max number of pages.
-        if (timeToAge < perfectTimeToAge) {
-            numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge / MS_TO_100NS);
+        // if we have't aged yet, or should't age some small amount to get more data
+        if (pageAgeRate == 0 || numToAgeTotal == 0) {
+            numToAgeThisWakeup = 1000000;
         } else {
-           numToAgeThisWakeup = numToAgeTotal / (timeToAge / MS_TO_100NS);
+
+            // Basically, if I can age faster than I can consume, only age the perfect amount.
+            // otherwise, age the perceived max number of pages.
+            if(timeToAge < perfectTimeToAge) {
+                numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge);
+            } else {
+                numToAgeThisWakeup = numToAgeTotal / (timeToAge);
+            }
         }
 
-        // I really think it is this easy. law of equivalent exchange
+        //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages left and you will be out in 10s, you only need to trim in the last 2 seconds.
+
+
         numToTrimThisWakeup = averagePagesConsumedPerWakeup;
         numToWriteThisWakeup = averagePagesConsumedPerWakeup;
 
         InterlockedExchange64(&vm.pte.numToAge, numToAgeThisWakeup);
+
         InterlockedExchange64(&vm.pte.numToTrim, numToTrimThisWakeup);
         InterlockedExchange64(&vm.pte.numToWrite, numToWriteThisWakeup);
 #endif

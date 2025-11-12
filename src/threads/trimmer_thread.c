@@ -51,7 +51,10 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                 localPTE.validFormat.access = 1;
                 localPTE.validFormat.age = 0;
                 currentRegion->numOfAge[age]--;
+                InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+
                 currentRegion->numOfAge[0]++;
+                InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
 
                 writePTE(currentPTE, localPTE);
 
@@ -66,7 +69,12 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
             localPTE.transitionFormat.age = 0;
             writePTE(currentPTE, localPTE);
             currentRegion->numOfAge[age]--;
+            InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+
+
+
             currentRegion->numOfAge[0]++;
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
 
 
             page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);

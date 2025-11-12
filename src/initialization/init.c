@@ -209,7 +209,6 @@ init_virtual_memory(VOID) {
 VOID initAgeList(VOID) {
     for (int i = 0; i < NUMBER_OF_AGES; ++i) {
         init_list_head(&vm.pte.ageList[i]);
-
     }
 
 }
@@ -220,6 +219,7 @@ VOID init_pte_regions(VOID) {
 
     //nptodo add the case where NUMPTES is not divisible by 64
     vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
+    vm.pte.globalNumOfAge[0] = vm.config.number_of_ptes;
 
     PTE_REGION* currentRegion = vm.pte.RegionsBase;
     for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {

@@ -407,6 +407,7 @@ typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
     listHead ageList[NUMBER_OF_AGES];
+    volatile LONG64 globalNumOfAge[NUMBER_OF_AGES];
     volatile ULONG64 numToAge;
     volatile ULONG64 numToTrim;
     volatile ULONG64 numToWrite;
