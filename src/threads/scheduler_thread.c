@@ -201,7 +201,7 @@ DWORD scheduler_thread(LPVOID info) {
 
         // if we have't aged yet, or should't age some small amount to get more data
         if (pageAgeRate == 0 || numToAgeTotal == 0) {
-            numToAgeThisWakeup = 1000000;
+            numToAgeThisWakeup = 10000;
         } else {
 
             // Basically, if I can age faster than I can consume, only age the perfect amount.
@@ -211,6 +211,10 @@ DWORD scheduler_thread(LPVOID info) {
             } else {
                 numToAgeThisWakeup = numToAgeTotal / (timeToAge);
             }
+        }
+
+        if (numToAgeThisWakeup == 0) {
+            numToAgeThisWakeup = 10000;
         }
 
         //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages left and you will be out in 10s, you only need to trim in the last 2 seconds.
@@ -224,6 +228,8 @@ DWORD scheduler_thread(LPVOID info) {
         InterlockedExchange64(&vm.pte.numToTrim, numToTrimThisWakeup);
         InterlockedExchange64(&vm.pte.numToWrite, numToWriteThisWakeup);
 #endif
+
+
 
         SetEvent(vm.events.agerStart);
         SetEvent(vm.events.trimmingStart);

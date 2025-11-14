@@ -201,6 +201,7 @@ DWORD ager_thread(LPVOID info) {
 
             if (currentRegion->hasActiveEntry == TRUE) {
                 numPTEsAged = ageRegion(currentRegion, threadInfo);
+
             }
             leavePTERegionLock(currentRegion, threadInfo);
 

@@ -97,6 +97,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     return trimmedPagesInRegion;
 }
 
+//TODO rewrite to return age 0 regions
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
@@ -141,13 +142,8 @@ DWORD page_trimmer(LPVOID info) {
 
     currentRegion = vm.pte.RegionsBase;
 
-#if VERBOSE
-    ULONG64 start;
-    ULONG64 end;
-
-
-#endif
-
+    ULONG64 numToTrimLocal;
+    ULONG64 numFromLocalList;
 
     while (TRUE) {
         totalTrimmedPages = 0;
@@ -162,17 +158,23 @@ DWORD page_trimmer(LPVOID info) {
         }
         QueryPerformanceCounter(&start);
 
-        recallPagesFromLocalList(threadContext);
+        numToTrimLocal = ReadULong64NoFence(&vm.pte.numToTrim);
+        numFromLocalList = recallPagesFromLocalList(threadContext);
 
-#if VERBOSE
-        start = __rdtsc();
-#endif
+        if (numFromLocalList >= numToTrimLocal) {
+            WriteULong64NoFence(&vm.pte.numToTrim, 0);
+            SetEvent(vm.events.writingStart);
+            continue;
+        }
+        numToTrimLocal -= numFromLocalList;
+
 
         // if we have trimmed enough, or have combed through everything
-        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
+        while (totalTrimmedPages < numToTrimLocal && counter < vm.config.number_of_pte_regions) {
             // this function exits with the lock held
             currentRegion = getOldestRegion(threadContext);
 
+            //nothing to trim
             if (currentRegion == NULL) {
                 break;
             }
@@ -206,11 +208,9 @@ DWORD page_trimmer(LPVOID info) {
 
         recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
 
+        ASSERT(FALSE)
 
-#if VERBOSE
-        end = __rdtsc();
-        printf("trim time: %llu\n", start-end);
-#endif
+
 
         vm.misc.numTrims++;
 
