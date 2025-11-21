@@ -219,13 +219,13 @@ VOID init_pte_regions(VOID) {
 
     //nptodo add the case where NUMPTES is not divisible by 64
     vm.pte.RegionsBase = (PTE_REGION*) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
-    vm.pte.globalNumOfAge[0] = vm.config.number_of_ptes;
+    vm.pte.globalNumOfAge[0] = 0;
 
     PTE_REGION* currentRegion = vm.pte.RegionsBase;
     for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
         currentRegion->numOfAge[0] = (DWORD) vm.config.number_of_ptes_per_region;
         InitializeCriticalSection(&currentRegion->lock);
-        InsertTailList(&vm.pte.ageList[0], &currentRegion->entry);
+
 
 #if DBG
     memset(currentRegion->ageMap, 0 , 64 * sizeof(ULONG64));

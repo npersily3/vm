@@ -73,8 +73,6 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
 
 
-            currentRegion->numOfAge[0]++;
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
 
 
             page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
@@ -101,10 +99,13 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
-    while (age != 0) {
+
+    for (; age >= 0; age--) {
         return RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
-        age--;
     }
+
+
+
     return NULL;
 }
 
@@ -170,7 +171,7 @@ DWORD page_trimmer(LPVOID info) {
 
 
         // if we have trimmed enough, or have combed through everything
-        while (totalTrimmedPages < numToTrimLocal && counter < vm.config.number_of_pte_regions) {
+        while (totalTrimmedPages < numToTrimLocal) {
             // this function exits with the lock held
             currentRegion = getOldestRegion(threadContext);
 
@@ -208,7 +209,7 @@ DWORD page_trimmer(LPVOID info) {
 
         recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
 
-        ASSERT(FALSE)
+
 
 
 

@@ -14,6 +14,7 @@
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
+#include "utils/pte_regions_utils.h"
 
 #if spinEvents
 
@@ -197,6 +198,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     pte pteContents;
     ULONG64 frameNumber;
     pte newPTE;
+    ULONG64 regionStatus;
 
 
     currentPTE = va_to_pte((ULONG64) arbitrary_va);
@@ -236,7 +238,11 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
         // keeps track of pte region so that trimmer can skip blank ones
         if (returnValue != REDO_FAULT) {
             PTE_REGION *region = getPTERegion(currentPTE);
-            region->hasActiveEntry = TRUE;
+
+            regionStatus = region->hasActiveEntry;
+
+
+
             InterlockedIncrement64(&vm.pfn.numActivePages);
 
 
@@ -247,7 +253,12 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                 return FALSE;
             }
 
-            //region->numOfAge[0]++;
+            // if this is the first active pte make it an aging candidate
+            if (regionStatus == FALSE) {
+                addRegionToTail(&vm.pte.ageList[0], region, threadContext);
+            }
+            region->hasActiveEntry = TRUE;
+            region->numOfAge[0]++;
 
             newPTE.entireFormat = 0;
             newPTE.validFormat.frameNumber = frameNumber;

@@ -40,7 +40,7 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     ULONG64 returnValue;
 
 #if DBG
-    sumOfAges(region);
+
 
     ULONG64 index;
 
@@ -90,9 +90,7 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
 
     writePTE(pteAddress, newPTEContents);
-#if DBG
-    sumOfAges(region);
-#endif
+
 
     return returnValue;
 }
@@ -115,7 +113,7 @@ ULONG64 getRegionAge(PTE_REGION* region) {
 
 /**
  *@brief Ages a singular PTE region
- * @param region The region to age
+ * @param region The region to age.
  * @param threadInfo The thread info of the caller. Used for debugging.
  * @return How many PTEs were aged
  * @pre The region in the parameter must be locked
@@ -128,9 +126,7 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     ULONG64 numPTEsAged;
 
 
-#if DBG
-    sumOfAges(region);
-#endif
+
 
     numPTEsAged = 0;
     previousAge = getRegionAge(region);
@@ -139,7 +135,6 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
         numPTEsAged += agePTE(pteAddress, region);
         pteAddress++;
-
     }
 
     newAge = getRegionAge(region);
@@ -154,9 +149,7 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
         addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
     }
 
-#if DBG
-    sumOfAges(region);
-#endif
+
 
     return numPTEsAged;
 
