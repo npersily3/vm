@@ -257,6 +257,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             if (regionStatus == FALSE) {
                 addRegionToTail(&vm.pte.ageList[0], region, threadContext);
             }
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
             region->hasActiveEntry = TRUE;
             region->numOfAge[0]++;
 

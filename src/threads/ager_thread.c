@@ -83,6 +83,8 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     ASSERT(region->numOfAge[currentAge] != 0)
     ASSERT(region->numOfAge[newAge] != vm.config.number_of_ptes_per_region)
 
+
+    ASSERT(region->numOfAge[currentAge] > 0)
     region->numOfAge[currentAge]--;
     InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
 

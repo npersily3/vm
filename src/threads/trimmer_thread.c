@@ -50,6 +50,8 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
             if (localPTE.validFormat.access == 1) {
                 localPTE.validFormat.access = 1;
                 localPTE.validFormat.age = 0;
+
+                ASSERT(currentRegion->numOfAge > 0)
                 currentRegion->numOfAge[age]--;
                 InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
 
@@ -68,6 +70,8 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
             localPTE.transitionFormat.isTransition = 1;
             localPTE.transitionFormat.age = 0;
             writePTE(currentPTE, localPTE);
+
+            ASSERT(currentRegion->numOfAge > 0)
             currentRegion->numOfAge[age]--;
             InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
 
@@ -99,9 +103,13 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
+    PTE_REGION *oldestRegion = NULL;
 
     for (; age >= 0; age--) {
-        return RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
+        oldestRegion = RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
+        if (oldestRegion != NULL) {
+            return oldestRegion;
+        }
     }
 
 

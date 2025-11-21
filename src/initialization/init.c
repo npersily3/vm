@@ -223,7 +223,7 @@ VOID init_pte_regions(VOID) {
 
     PTE_REGION* currentRegion = vm.pte.RegionsBase;
     for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
-        currentRegion->numOfAge[0] = (DWORD) vm.config.number_of_ptes_per_region;
+
         InitializeCriticalSection(&currentRegion->lock);
 
 
