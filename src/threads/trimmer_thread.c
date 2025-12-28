@@ -30,6 +30,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pte *currentPTE;
     pfn *page;
     ULONG64 age;
+    boolean regionHasActiveEntry;
 
     currentPTE = getFirstPTEInRegion(currentRegion);
 
@@ -90,7 +91,15 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
         currentPTE++;
     }
-    currentRegion->hasActiveEntry = FALSE;
+    currentPTE = getFirstPTEInRegion(currentRegion);
+    regionHasActiveEntry = FALSE;
+    for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+        if (currentPTE->validFormat.valid == 1) {
+            regionHasActiveEntry = TRUE;
+            break;
+        }
+    }
+    currentRegion->hasActiveEntry = regionHasActiveEntry;
 
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);

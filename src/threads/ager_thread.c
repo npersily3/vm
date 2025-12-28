@@ -10,20 +10,6 @@
 
 
 
-#if DBG
-
-VOID sumOfAges(PTE_REGION* region) {
-    ULONG64 sum = 0;
-
-    for (int i = 0; i < NUMBER_OF_AGES; i++) {
-        sum+= region->numOfAge[i];
-    }
-    ASSERT(sum == vm.config.number_of_ptes_per_region)
-
-}
-
-
-#endif
 /**
  * @brief A function that ages a pte.
  * @param pteAddress The address of the pte to age
