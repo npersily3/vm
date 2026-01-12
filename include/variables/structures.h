@@ -294,6 +294,7 @@ typedef struct _SHARED_HOLDER_DEBUG {
 #define MAX_AGE (NUMBER_OF_AGES - 1)
 #define LENGTH_OF_PREDICTION 10
 
+#define NOT_ON_LIST (-1)
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
@@ -303,7 +304,9 @@ typedef struct {
 
     ULONG64 hasActiveEntry: 1;
 #if DBG
+
     ULONG64 ageMap[64];
+    LONG64 ageListNumber;
 #endif
 
 } PTE_REGION;

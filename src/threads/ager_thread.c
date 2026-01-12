@@ -8,6 +8,11 @@
 #include "variables/structures.h"
 
 
+//access bit with interlocked compare exchange.
+//write pte can only use nofence if the pte was previously invalid.
+//agePte should loop continuously until it succeeds.
+//all pte writes should be re-examined.
+//debug pte region field about what list a pte region is on and check the max age stuff
 
 
 /**
@@ -20,65 +25,78 @@
 ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
     pte pteContents;
     pte newPTEContents;
+    pte pteAtTimeOfWrite;
     ULONG64 currentAge;
     ULONG64 newAge;
     ULONG64 beenAccessed;
     ULONG64 returnValue;
 
+
 #if DBG
 
 
-    ULONG64 index;
+        ULONG64 index;
 
-    index = pteAddress - getFirstPTEInRegion(region);
+        index = pteAddress - getFirstPTEInRegion(region);
 
 
 #endif
 
-    returnValue = 0;
-
-    pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
-
-    // if the pte is not valid, we don't need to age it
-    if (pteContents.validFormat.valid == 0) {
-        return returnValue;
-    }
-    newPTEContents.entireFormat = pteContents.entireFormat;
 
 
-    currentAge = pteContents.validFormat.age;
-    beenAccessed = pteContents.validFormat.access;
+        pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
 
-    // if the pte was accessed and has been previously aged,
-    // we need to reset the age
-    if (beenAccessed == TRUE && currentAge != 0) {
-        newAge = 0;
-    } else {
-        if (currentAge != MAX_AGE) {
-            returnValue = 1;
-            newAge = currentAge + 1;
+    while (true) {
+
+        returnValue = 0;
+        // if the pte is not valid, we don't need to age it
+        if (pteContents.validFormat.valid == 0) {
+            return returnValue;
+        }
+        newPTEContents.entireFormat = pteContents.entireFormat;
+
+
+        currentAge = pteContents.validFormat.age;
+        beenAccessed = pteContents.validFormat.access;
+
+        // if the pte was accessed and has been previously aged,
+        // we need to reset the age
+        if (beenAccessed == TRUE) {
+            newAge = 0;
         } else {
-            newAge = MAX_AGE;
+            if (currentAge != MAX_AGE) {
+                returnValue = 1;
+                newAge = currentAge + 1;
+            } else {
+                newAge = MAX_AGE;
+            }
+        }
+        // regardless of what happens, we need to clear the access bit
+        newPTEContents.validFormat.access = FALSE;
+        newPTEContents.validFormat.age = newAge;
+
+        // keep track of region stats
+        ASSERT(region->numOfAge[currentAge] != 0)
+
+
+
+        ASSERT(region->numOfAge[currentAge] > 0)
+        region->numOfAge[currentAge]--;
+        InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
+
+        region->numOfAge[newAge]++;
+        InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
+
+        pteAtTimeOfWrite.entireFormat = writePTE(pteAddress, newPTEContents, pteContents).entireFormat;
+
+        // if when writing the pte, the contents have changed, we need to loop again with the new contents
+        // otherwise we are trampling on someone else's work to that pte
+        if (pteAtTimeOfWrite.entireFormat == pteContents.entireFormat) {
+            break;
+        } else {
+            pteContents.entireFormat = pteAtTimeOfWrite.entireFormat;
         }
     }
-    // regardless of what happens, we need to clear the access bit
-    newPTEContents.validFormat.access = FALSE;
-    newPTEContents.validFormat.age = newAge;
-
-    // keep track of region stats
-    ASSERT(region->numOfAge[currentAge] != 0)
-    ASSERT(region->numOfAge[newAge] != vm.config.number_of_ptes_per_region)
-
-
-    ASSERT(region->numOfAge[currentAge] > 0)
-    region->numOfAge[currentAge]--;
-    InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
-
-    region->numOfAge[newAge]++;
-    InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
-
-    writePTE(pteAddress, newPTEContents);
-
 
     return returnValue;
 }
@@ -91,11 +109,13 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
  */
 ULONG64 getRegionAge(PTE_REGION* region) {
 
-    for (int i = MAX_AGE; i > 0; --i) {
+    for (int i = MAX_AGE; i >= 0; --i) {
         if (region->numOfAge[i] != 0) {
             return i;
         }
     }
+
+    ASSERT(FALSE);
     return 0;
 }
 
@@ -118,6 +138,11 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
 
     numPTEsAged = 0;
     previousAge = getRegionAge(region);
+
+#if DBG
+    ASSERT(region->ageListNumber == previousAge)
+#endif
+
     pteAddress = getFirstPTEInRegion(region);
 
     for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
@@ -135,6 +160,9 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     } else {
         removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[previousAge], region, threadInfo);
         addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
+#if DBG
+        region->ageListNumber = newAge;
+#endif
     }
 
 

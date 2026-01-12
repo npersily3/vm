@@ -8,6 +8,7 @@
 #include "variables/structures.h"
 #include "utils/thread_utils.h"
 
+//TODO check the neighbors to see if they are on the right list
 
 // Called with page's pageLock held
 /**

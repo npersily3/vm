@@ -23,6 +23,8 @@
  *@author Noah Persily
 */
 
+
+
 ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pfn *pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
@@ -34,59 +36,74 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
     currentPTE = getFirstPTEInRegion(currentRegion);
 
+    pte oldPTEContents;
+    pte newPTEContents;
+    pte pteAtTimeOfWrite;
+
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
 
     for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
         // when we find a valid pte, invalidate it and store its info in stack variables
-        pte localPTE;
-        localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
 
-        if (localPTE.validFormat.valid == 1) {
-            age = localPTE.validFormat.age;
+        oldPTEContents.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
 
-            ASSERT(currentRegion->numOfAge[age] != 0)
+        while (true) {
+            newPTEContents.entireFormat = oldPTEContents.entireFormat;
 
+            if (oldPTEContents.validFormat.valid == 1) {
+                age = oldPTEContents.validFormat.age;
 
-            if (localPTE.validFormat.access == 1) {
-                localPTE.validFormat.access = 1;
-                localPTE.validFormat.age = 0;
-
-                ASSERT(currentRegion->numOfAge > 0)
-                currentRegion->numOfAge[age]--;
-                InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
-
-                currentRegion->numOfAge[0]++;
-                InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
-
-                writePTE(currentPTE, localPTE);
+                ASSERT(currentRegion->numOfAge[age] != 0)
 
 
-                currentPTE++;
-                continue;
+                if (oldPTEContents.validFormat.access == 1) {
+                    newPTEContents.validFormat.access = 1;
+                    newPTEContents.validFormat.age = 0;
+
+                    ASSERT(currentRegion->numOfAge > 0)
+                    currentRegion->numOfAge[age]--;
+                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+
+                    currentRegion->numOfAge[0]++;
+                    InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
+
+                    pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
+
+                    if (pteAtTimeOfWrite.entireFormat != oldPTEContents.entireFormat) {
+                        oldPTEContents.entireFormat = pteAtTimeOfWrite.entireFormat;
+                        continue;
+                    } else {
+                        break;
+                    }
+                }
+
+
+                newPTEContents.transitionFormat.mustBeZero = 0;
+                newPTEContents.transitionFormat.isTransition = 1;
+                newPTEContents.transitionFormat.age = 0;
+                pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
+
+                if (pteAtTimeOfWrite.entireFormat != oldPTEContents.entireFormat) {
+                    oldPTEContents.entireFormat = pteAtTimeOfWrite.entireFormat;
+                    continue;
+                } else {
+                    ASSERT(currentRegion->numOfAge > 0)
+                    currentRegion->numOfAge[age]--;
+                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+
+
+
+                    page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
+                    page->location = MODIFIED_LIST;
+
+                    virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+                    pages[trimmedPagesInRegion] = page;
+
+                    trimmedPagesInRegion++;
+                    break;
+                }
             }
-
-
-            localPTE.transitionFormat.mustBeZero = 0;
-            localPTE.transitionFormat.isTransition = 1;
-            localPTE.transitionFormat.age = 0;
-            writePTE(currentPTE, localPTE);
-
-            ASSERT(currentRegion->numOfAge > 0)
-            currentRegion->numOfAge[age]--;
-            InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
-
-
-
-
-
-            page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
-            page->location = MODIFIED_LIST;
-
-            virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
-            pages[trimmedPagesInRegion] = page;
-
-            trimmedPagesInRegion++;
         }
 
         currentPTE++;
@@ -98,6 +115,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
             regionHasActiveEntry = TRUE;
             break;
         }
+        currentPTE++;
     }
     currentRegion->hasActiveEntry = regionHasActiveEntry;
 
@@ -116,12 +134,15 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
     for (; age >= 0; age--) {
         oldestRegion = RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
+
+
         if (oldestRegion != NULL) {
+#if DBG
+            ASSERT(oldestRegion->ageListNumber == age)
+#endif
             return oldestRegion;
         }
     }
-
-
 
     return NULL;
 }
@@ -209,6 +230,10 @@ DWORD page_trimmer(LPVOID info) {
                 finalAge = getRegionAge(currentRegion);
 
                 addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+#if DBG
+                currentRegion->ageListNumber = finalAge;
+#endif
+
 
 
                 // Need to have this after because I could fault it back in before it is on the modified list
@@ -216,8 +241,11 @@ DWORD page_trimmer(LPVOID info) {
 
                 InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
             } else {
+#if DBG
+                currentRegion->ageListNumber = NOT_ON_LIST;
+#endif
+
                 leavePTERegionLock(currentRegion, threadContext);
-                currentRegion++;
                 counter++;
             }
         }

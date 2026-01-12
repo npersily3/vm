@@ -86,13 +86,8 @@ boolean setAccessBit(ULONG64 va) {
 
     newPTE.validFormat.access = 1;
 
-   returnValue.entireFormat = InterlockedCompareExchange64((volatile ULONG64*) pteAddress, newPTE.entireFormat, oldPTE.entireFormat);
-
-    if (returnValue.entireFormat != oldPTE.entireFormat) {
-        return REDO_FAULT;
-    }
-    return !REDO_FAULT;
-
+   writePTE(pteAddress, newPTE, oldPTE);
+    return 0;
 }
 
 ULONG64 noah;

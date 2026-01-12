@@ -85,7 +85,8 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
     pfn *page;
     pfn *nextPage;
-    pte localPTE;
+    pte new_pte_contents;
+    pte old_pte_contents;
     pte *currentPTE;
 
 
@@ -110,15 +111,20 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     while (&page->entry != &localList.entry) {
         // We can do this without a pte lock because the page lock protects it from rescues
         currentPTE = page->pte;
-        localPTE.entireFormat = 0;
-        localPTE.invalidFormat.isTransition = 0;
-        localPTE.invalidFormat.diskIndex = page->diskIndex;
+        old_pte_contents.entireFormat = ReadULong64NoFence((DWORD64 const volatile *) currentPTE);
+        new_pte_contents.entireFormat = 0;
+        new_pte_contents.invalidFormat.isTransition = 0;
+        new_pte_contents.invalidFormat.diskIndex = page->diskIndex;
 
 #if DBG
         page->diskIndex = 0;
 #endif
+        // This pte must be invalid because we are removing it from the standby list
+        ASSERT(old_pte_contents.invalidFormat.mustBeZero == 0)
+        ASSERT(old_pte_contents.transitionFormat.isTransition == 1)
 
-        writePTE(currentPTE, localPTE);
+        // I do not have to check for the return value because the only person who updates the pte when it is invalid needs a lock
+        writePTE(currentPTE, new_pte_contents, old_pte_contents);
 
         // cannot have this line because we need to store the contents
         // set_disk_space_free(page->diskIndex);
@@ -215,7 +221,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
     lockPTE(currentPTE);
-    pteContents = *currentPTE;
+    pteContents.entireFormat = ReadULong64NoFence((volatile ULONG64*)  currentPTE);
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
@@ -256,6 +262,9 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             // if this is the first active pte make it an aging candidate
             if (regionStatus == FALSE) {
                 addRegionToTail(&vm.pte.ageList[0], region, threadContext);
+#if DBG
+                region->ageListNumber = 0;
+#endif
             }
             InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
             region->hasActiveEntry = TRUE;
@@ -266,7 +275,8 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             newPTE.validFormat.valid = 1;
             newPTE.validFormat.access = 1;
             newPTE.validFormat.age = 0;
-            writePTE(currentPTE, newPTE);
+            // i do not have to check the result because we have the lock and we expect it to be invalid
+            writePTE(currentPTE, newPTE, pteContents);
         }
     }
 
@@ -474,7 +484,8 @@ ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
  */
 pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     pfn *page;
-    pte local;
+    pte oldPteContents;
+    pte newPteContents;
 
 
     // Exits with page lock held
@@ -489,11 +500,11 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     // if another faulter tries to get this the pagelock will stop it in the rescue
     // if the rescue sees a change in the pte it will redo the fault
     // We have to write no fence here in order to avoid tearing
+    oldPteContents.entireFormat = ReadULong64NoFence((volatile ULONG64*) page->pte);
 
-
-    local.entireFormat = 0;
-    local.transitionFormat.isTransition = 0;
-    local.invalidFormat.diskIndex = page->diskIndex;
+    newPteContents.entireFormat = 0;
+    newPteContents.transitionFormat.isTransition = 0;
+    newPteContents.invalidFormat.diskIndex = page->diskIndex;
 #if DBG
 
 #if DBG_DISK
@@ -513,7 +524,8 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
 #endif
 
-    writePTE(page->pte, local);
+    // do not have to check the result because we have the lock and we know the pte is invalid
+    writePTE(page->pte, newPteContents, oldPteContents);
 
     leavePageLock(page, threadInfo);
 
