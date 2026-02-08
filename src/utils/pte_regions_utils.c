@@ -319,6 +319,7 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
 
 
         if (tryEnterPTERegionLock(nextRegion, threadInfo) == TRUE) {
+            ASSERT(nextRegion->entry.Flink == &head->entry);
             obtainedPageLocks = TRUE;
             break;
         }

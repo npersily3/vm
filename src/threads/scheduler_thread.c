@@ -84,9 +84,11 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 futureTotalOfMaxAge;
     // this variable is used to store how many pages will be of max age we think by the end of aging.
 
-    // Wait a bit until the system has good data
+    // Wait a bit until sufficient pages have been accessed
     Sleep(100);
 
+    bool isCalibrating = true;
+    int calibrationCounter = 0;
 
     while (TRUE) {
 
@@ -97,131 +99,145 @@ DWORD scheduler_thread(LPVOID info) {
             return 0;
         }
 
-        //track history of page consumption
-        localPagesConsumedPerWakeUp = ReadULong64NoFence(&vm.pfn.pagesConsumed);
-        InterlockedExchange64(&vm.pfn.pagesConsumed, 0);
-        pageConsumptionHistory[historyIndex] = localPagesConsumedPerWakeUp;
-        historyIndex = (historyIndex + 1) % PAGES_CONSUMED_LENGTH;
+        if (isCalibrating) {
+            // Fixed amounts during warmup
+            numToAgeThisWakeup = 1000;  // Based on typical workload
+            numToTrimThisWakeup = 1000;
+            numToWriteThisWakeup = 1000;
 
 
-        averagePagesConsumedPerWakeup = 0;
-
-        int i = 0;
-
-        // find the average page consumption over the last 16 wakeups
-        for (; i < PAGES_CONSUMED_LENGTH; i++) {
-            if (pageConsumptionHistory[i] == 0) {
-                break;
+            calibrationCounter++;
+            if (calibrationCounter >= 4) {
+                isCalibrating = false;
             }
-            averagePagesConsumedPerWakeup += pageConsumptionHistory[i];
-        }
-        if (i == 0) {
-            continue;
-        }
-        if (averagePagesConsumedPerWakeup == 0) {
-            continue;
-        }
-        averagePagesConsumedPerWakeup /= i;
+            //ASSERT(FALSE);
+        } else {
+            //track history of page consumption
+            localPagesConsumedPerWakeUp = ReadULong64NoFence(&vm.pfn.pagesConsumed);
+            InterlockedExchange64(&vm.pfn.pagesConsumed, 0);
+            pageConsumptionHistory[historyIndex] = localPagesConsumedPerWakeUp;
+            historyIndex = (historyIndex + 1) % PAGES_CONSUMED_LENGTH;
 
 
-        // Convert pages/ms to pages/100ns rate
+            averagePagesConsumedPerWakeup = 0;
+
+            int i = 0;
+
+            // find the average page consumption over the last 16 wakeups
+            for (; i < PAGES_CONSUMED_LENGTH; i++) {
+                if (pageConsumptionHistory[i] == 0) {
+                    break;
+                }
+                averagePagesConsumedPerWakeup += pageConsumptionHistory[i];
+            }
+            if (i == 0) {
+                continue;
+            }
+            if (averagePagesConsumedPerWakeup == 0) {
+                continue;
+            }
+            averagePagesConsumedPerWakeup /= i;
 
 
-    //    printf("averagePagesPerWakup: %llu. averPagesPer100ns %llu \n", averagePagesConsumedPerWakeup,
-             //  averagePagesConsumedPer100Ns);
+            // Convert pages/ms to pages/100ns rate
+
+
+            //    printf("averagePagesPerWakup: %llu. averPagesPer100ns %llu \n", averagePagesConsumedPerWakeup,
+            //  averagePagesConsumedPer100Ns);
 
 #if 1
-        pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
-        timeUntilOutInSecs = (pagesLeft / averagePagesConsumedPerWakeup);
+            pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
+            timeUntilOutInSecs = (pagesLeft / averagePagesConsumedPerWakeup);
 
 
-        trimmerWork = vm.threadInfo.trimmer->work;
-        pageTrimRate = getPagesPerSecond(trimmerWork);
-        if (pageTrimRate == 0) {
-            pageTrimRate = 10000;
-        }
-//        printf("pageTrimRate %llu \n", pageTrimRate);
-
-        writerWork = vm.threadInfo.writer->work;
-        pageWriteRate = getPagesPerSecond(writerWork);
-        if (pageWriteRate == 0) {
-            pageWriteRate = 10000;
-        }
-      //  printf("pageWriteRate %llu \n", pageWriteRate);
-
-        // Calculate time to process the average pages consumed: time = pages / (pages/time)
-        // Time to trim the consumed pages (in 100ns units)
-        ULONG64 timeToTrim = (pageTrimRate > 0) ? (averagePagesConsumedPerWakeup / pageTrimRate) : 0;
-        // Time to write the consumed pages (in 100ns units)
-        ULONG64 timeToWrite = (pageWriteRate > 0) ? (averagePagesConsumedPerWakeup / pageWriteRate) : 0;
-
-        // Total time to make pages available after aging (trim + write, or max if parallel?)
-        timeToMakePagesAvailable = timeToTrim + timeToWrite;
-
-
-        // create a copy of the agers circular buffer
-        agerWork = vm.threadInfo.aging->work;
-        pageAgeRate = getPagesPerSecond(agerWork);
-
-        numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
-
-
-
-        // this copy is not a perfect copy as inbetween loops, anything can happen, but it is good enough
-        for (int j = 0; j < NUMBER_OF_AGES; ++j) {
-            localnumOfAge[j] = ReadULong64NoFence(&vm.pte.globalNumOfAge[j]);
-        }
-
-
-        futureTotalOfMaxAge = 0;
-        numRoundsToAge = 0;
-
-        //here we figure out how much aging we have to do, based on the current age lists
-        for (; numRoundsToAge < NUMBER_OF_AGES; ++numRoundsToAge) {
-            futureTotalOfMaxAge += localnumOfAge[NUMBER_OF_AGES - numRoundsToAge - 1];
-
-            if (futureTotalOfMaxAge > averagePagesConsumedPerWakeup) {
-                break;
+            trimmerWork = vm.threadInfo.trimmer->work;
+            pageTrimRate = getPagesPerSecond(trimmerWork);
+            if (pageTrimRate == 0) {
+                pageTrimRate = 10000;
             }
-        }
+            //        printf("pageTrimRate %llu \n", pageTrimRate);
 
-        numToAgeTotal = numActivePages * numRoundsToAge;
+            writerWork = vm.threadInfo.writer->work;
+            pageWriteRate = getPagesPerSecond(writerWork);
+            if (pageWriteRate == 0) {
+                pageWriteRate = 10000;
+            }
+            //  printf("pageWriteRate %llu \n", pageWriteRate);
+
+            // Calculate time to process the average pages consumed: time = pages / (pages/time)
+            // Time to trim the consumed pages (in 100ns units)
+            ULONG64 timeToTrim = (pageTrimRate > 0) ? (averagePagesConsumedPerWakeup / pageTrimRate) : 0;
+            // Time to write the consumed pages (in 100ns units)
+            ULONG64 timeToWrite = (pageWriteRate > 0) ? (averagePagesConsumedPerWakeup / pageWriteRate) : 0;
+
+            // Total time to make pages available after aging (trim + write, or max if parallel?)
+            timeToMakePagesAvailable = timeToTrim + timeToWrite;
 
 
-        // if we have done some aging, use it
-        if (pageAgeRate != 0) {
-            timeToAge = numToAgeTotal / pageAgeRate;
-        }
+            // create a copy of the agers circular buffer
+            agerWork = vm.threadInfo.aging->work;
+            pageAgeRate = getPagesPerSecond(agerWork);
+
+            numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
 
 
 
-        //todo make sure this is not zero and not negative.
-        //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
-        perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
+            // this copy is not a perfect copy as inbetween loops, anything can happen, but it is good enough
+            for (int j = 0; j < NUMBER_OF_AGES; ++j) {
+                localnumOfAge[j] = ReadULong64NoFence(&vm.pte.globalNumOfAge[j]);
+            }
 
-        // if we have't aged yet, or should't age some small amount to get more data
-        if (pageAgeRate == 0 || numToAgeTotal == 0) {
-            numToAgeThisWakeup = 10000;
-        } else {
 
-            // Basically, if I can age faster than I can consume, only age the perfect amount.
-            // otherwise, age the perceived max number of pages.
-            if(timeToAge < perfectTimeToAge) {
-                numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge);
+            futureTotalOfMaxAge = 0;
+            numRoundsToAge = 0;
+
+            //here we figure out how much aging we have to do, based on the current age lists
+            for (; numRoundsToAge < NUMBER_OF_AGES; ++numRoundsToAge) {
+                futureTotalOfMaxAge += localnumOfAge[NUMBER_OF_AGES - numRoundsToAge - 1];
+
+                if (futureTotalOfMaxAge > averagePagesConsumedPerWakeup) {
+                    break;
+                }
+            }
+
+            numToAgeTotal = numActivePages * numRoundsToAge;
+
+
+            // if we have done some aging, use it
+            if (pageAgeRate != 0) {
+                timeToAge = numToAgeTotal / pageAgeRate;
+            }
+
+
+
+            //todo make sure this is not zero and not negative.
+            //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
+            perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
+
+            // if we have't aged yet, or should't age some small amount to get more data
+            if (pageAgeRate == 0 || numToAgeTotal == 0) {
+                numToAgeThisWakeup = 10000;
             } else {
-                numToAgeThisWakeup = numToAgeTotal / (timeToAge);
+
+                // Basically, if I can age faster than I can consume, only age the perfect amount.
+                // otherwise, age the perceived max number of pages.
+                if(timeToAge < perfectTimeToAge) {
+                    numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge);
+                } else {
+                    numToAgeThisWakeup = numToAgeTotal / (timeToAge);
+                }
             }
+
+            if (numToAgeThisWakeup == 0) {
+                numToAgeThisWakeup = 10000;
+            }
+
+            //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages left and you will be out in 10s, you only need to trim in the last 2 seconds.
+
+
+            numToTrimThisWakeup = averagePagesConsumedPerWakeup;
+            numToWriteThisWakeup = averagePagesConsumedPerWakeup;
         }
-
-        if (numToAgeThisWakeup == 0) {
-            numToAgeThisWakeup = 10000;
-        }
-
-        //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages left and you will be out in 10s, you only need to trim in the last 2 seconds.
-
-
-        numToTrimThisWakeup = averagePagesConsumedPerWakeup;
-        numToWriteThisWakeup = averagePagesConsumedPerWakeup;
 
         InterlockedExchange64(&vm.pte.numToAge, numToAgeThisWakeup);
 
@@ -233,6 +249,6 @@ DWORD scheduler_thread(LPVOID info) {
 
         SetEvent(vm.events.agerStart);
         SetEvent(vm.events.trimmingStart);
-        SetEvent(vm.events.writingStart);
+
     }
 }

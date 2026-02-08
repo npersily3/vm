@@ -56,7 +56,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                 ASSERT(currentRegion->numOfAge[age] != 0)
 
-
+                // if it is valid  we must clear the age but we cannot clear the access bit because that is unfair aging
                 if (oldPTEContents.validFormat.access == 1) {
                     newPTEContents.validFormat.access = 1;
                     newPTEContents.validFormat.age = 0;
@@ -70,15 +70,14 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                     pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
 
-                    if (pteAtTimeOfWrite.entireFormat != oldPTEContents.entireFormat) {
-                        oldPTEContents.entireFormat = pteAtTimeOfWrite.entireFormat;
-                        continue;
-                    } else {
-                        break;
-                    }
+
+                    // we can break regardless of the result, because the only guy who can change it simultaneously is the access bit setter
+                    // and we know that the access bit is already set, so no change will occur so that we can break regardless
+                    break;
+
                 }
 
-
+                // this is for the case when the pte is valid and unnaccessed
                 newPTEContents.transitionFormat.mustBeZero = 0;
                 newPTEContents.transitionFormat.isTransition = 1;
                 newPTEContents.transitionFormat.age = 0;
@@ -87,25 +86,25 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                 if (pteAtTimeOfWrite.entireFormat != oldPTEContents.entireFormat) {
                     oldPTEContents.entireFormat = pteAtTimeOfWrite.entireFormat;
                     continue;
-                } else {
-                    ASSERT(currentRegion->numOfAge > 0)
-                    currentRegion->numOfAge[age]--;
-                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
-
-
-
-                    page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
-                    page->location = MODIFIED_LIST;
-
-                    virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
-                    pages[trimmedPagesInRegion] = page;
-
-                    trimmedPagesInRegion++;
-                    break;
                 }
-            }
-        }
 
+                // case where write succeeds
+
+                ASSERT(currentRegion->numOfAge > 0)
+                currentRegion->numOfAge[age]--;
+                InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+
+
+                page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
+                page->location = MODIFIED_LIST;
+                virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+                pages[trimmedPagesInRegion] = page;
+                trimmedPagesInRegion++;
+
+            }
+
+            break;
+        }
         currentPTE++;
     }
     currentPTE = getFirstPTEInRegion(currentRegion);
@@ -137,8 +136,8 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
 
         if (oldestRegion != NULL) {
-#if DBG
-            ASSERT(oldestRegion->ageListNumber == age)
+            #if DBG
+        ASSERT(oldestRegion->ageListNumber == age)
 #endif
             return oldestRegion;
         }

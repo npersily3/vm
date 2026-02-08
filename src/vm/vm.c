@@ -70,7 +70,7 @@ PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO threadInfo) {
 }
 
 
-
+//TODO make it so I do not rewrite the access bit
 boolean setAccessBit(ULONG64 va) {
     pte* pteAddress;
     pte newPTE;

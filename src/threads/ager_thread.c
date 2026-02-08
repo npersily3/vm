@@ -80,22 +80,24 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
 
 
 
-        ASSERT(region->numOfAge[currentAge] > 0)
-        region->numOfAge[currentAge]--;
-        InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
-
-        region->numOfAge[newAge]++;
-        InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
-
         pteAtTimeOfWrite.entireFormat = writePTE(pteAddress, newPTEContents, pteContents).entireFormat;
 
         // if when writing the pte, the contents have changed, we need to loop again with the new contents
         // otherwise we are trampling on someone else's work to that pte
         if (pteAtTimeOfWrite.entireFormat == pteContents.entireFormat) {
+            // only write the values here or else if you collide with an access bit setter, you mistakenly will double change some data
+            ASSERT(region->numOfAge[currentAge] > 0)
+            region->numOfAge[currentAge]--;
+            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
+
+            region->numOfAge[newAge]++;
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
             break;
-        } else {
-            pteContents.entireFormat = pteAtTimeOfWrite.entireFormat;
         }
+
+        pteContents.entireFormat = pteAtTimeOfWrite.entireFormat;
+
+
     }
 
     return returnValue;
@@ -115,7 +117,7 @@ ULONG64 getRegionAge(PTE_REGION* region) {
         }
     }
 
-    ASSERT(FALSE);
+
     return 0;
 }
 
@@ -139,9 +141,8 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     numPTEsAged = 0;
     previousAge = getRegionAge(region);
 
-#if DBG
+
     ASSERT(region->ageListNumber == previousAge)
-#endif
 
     pteAddress = getFirstPTEInRegion(region);
 
