@@ -261,10 +261,12 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
             // if this is the first active pte make it an aging candidate
             if (regionStatus == FALSE) {
-                addRegionToTail(&vm.pte.ageList[0], region, threadContext);
 #if DBG
-                region->ageListNumber = 0;
+
+      ASSERT(region->ageListNumber == NOT_ON_LIST)
 #endif
+                addRegionToTail(&vm.pte.ageList[0], region, threadContext);
+
             }
             InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
             region->hasActiveEntry = TRUE;

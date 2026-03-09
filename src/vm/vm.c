@@ -75,7 +75,7 @@ boolean setAccessBit(ULONG64 va) {
     pte* pteAddress;
     pte newPTE;
     pte oldPTE;
-    pte returnValue;
+
 
     pteAddress = va_to_pte(va);
     oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64*)pteAddress);

@@ -192,6 +192,8 @@ DWORD scheduler_thread(LPVOID info) {
             numRoundsToAge = 0;
 
             //here we figure out how much aging we have to do, based on the current age lists
+            // the way it works it that we add the number of the oldest age to the current count and if that exceeds
+            // how many pages we need, we are set, otherwise we need at least one more round, so we increment the round count.
             for (; numRoundsToAge < NUMBER_OF_AGES; ++numRoundsToAge) {
                 futureTotalOfMaxAge += localnumOfAge[NUMBER_OF_AGES - numRoundsToAge - 1];
 
@@ -205,7 +207,11 @@ DWORD scheduler_thread(LPVOID info) {
 
             // if we have done some aging, use it
             if (pageAgeRate != 0) {
-                timeToAge = numToAgeTotal / pageAgeRate;
+                if (numToAgeTotal > pageAgeRate) {
+                    timeToAge = numToAgeTotal / pageAgeRate;
+                } else {
+                    timeToAge = 1;
+                }
             }
 
 

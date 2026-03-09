@@ -309,7 +309,7 @@ typedef struct {
     LONG64 ageListNumber;
 #endif
 
-} PTE_REGION;
+}  PTE_REGION;
 
 
 

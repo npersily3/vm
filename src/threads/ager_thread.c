@@ -118,7 +118,11 @@ ULONG64 getRegionAge(PTE_REGION* region) {
     }
 
 
-    return 0;
+    if (region->numOfAge[0] == 0) {
+        return MAXULONG64;
+    } else {
+        return 0;
+    }
 }
 
 /**
@@ -161,9 +165,7 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     } else {
         removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[previousAge], region, threadInfo);
         addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
-#if DBG
-        region->ageListNumber = newAge;
-#endif
+
     }
 
 

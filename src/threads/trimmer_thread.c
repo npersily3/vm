@@ -136,9 +136,7 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
 
         if (oldestRegion != NULL) {
-            #if DBG
-        ASSERT(oldestRegion->ageListNumber == age)
-#endif
+
             return oldestRegion;
         }
     }
@@ -226,12 +224,13 @@ DWORD page_trimmer(LPVOID info) {
                 totalTrimmedPages += trimmedPagesInRegion;
 
 
-                finalAge = getRegionAge(currentRegion);
+                if (currentRegion->hasActiveEntry == TRUE) {
+                    finalAge = getRegionAge(currentRegion);
 
-                addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
-#if DBG
-                currentRegion->ageListNumber = finalAge;
-#endif
+                    addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+                }
+
+
 
 
 
@@ -240,9 +239,7 @@ DWORD page_trimmer(LPVOID info) {
 
                 InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
             } else {
-#if DBG
-                currentRegion->ageListNumber = NOT_ON_LIST;
-#endif
+
 
                 leavePTERegionLock(currentRegion, threadContext);
                 counter++;
