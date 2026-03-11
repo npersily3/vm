@@ -249,7 +249,15 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
 
-            InterlockedIncrement64(&vm.pfn.numActivePages);
+           ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
+            if (numActivePages <  vm.config.number_of_physical_pages/3) {
+              //  printf("numActivePages %llX\n", numActivePages);
+                InterlockedExchange64(&vm.pte.numToTrim,   vm.config.number_of_physical_pages/5);
+                InterlockedExchange64(&vm.pte.numToWrite,   vm.config.number_of_physical_pages/5);
+
+                SetEvent(vm.events.trimmingStart);
+
+            }
 
 
             if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
@@ -284,6 +292,8 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
     unlockPTE(currentPTE);
+
+
 
 
     return returnValue;

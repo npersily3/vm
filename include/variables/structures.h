@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define DBG 1
-#define DBG_DISK 1
+#define DBG 0
+#define DBG_DISK 0
 
 
 #if DBG
@@ -132,7 +132,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 0
+#define spinEvents 1
 
 
 // this one does not malloc and is used for the array that is statically declared

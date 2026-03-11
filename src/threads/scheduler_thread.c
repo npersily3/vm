@@ -8,7 +8,7 @@
 
 #define S_TO_100NS (10000000)
 
-//TODO your units are wrong here
+//this is in seconds
 ULONG64 getPagesPerSecond(workDone work) {
     ULONG64 time = 0;
     ULONG64 pages = 0;
@@ -59,10 +59,10 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 numToAgeTotal;
     ULONG64 numToAgeThisWakeup;
 
-    // ULONG64 numToTrimTotal;
+    ULONG64 numToTrimTotal;
     ULONG64 numToTrimThisWakeup;
 
-    // ULONG64 numToWriteTotal;
+    ULONG64 numToWriteTotal;
     ULONG64 numToWriteThisWakeup;
 
     ULONG64 timeToAge;
@@ -155,20 +155,17 @@ DWORD scheduler_thread(LPVOID info) {
             if (pageTrimRate == 0) {
                 pageTrimRate = 10000;
             }
-            //        printf("pageTrimRate %llu \n", pageTrimRate);
+
 
             writerWork = vm.threadInfo.writer->work;
             pageWriteRate = getPagesPerSecond(writerWork);
             if (pageWriteRate == 0) {
                 pageWriteRate = 10000;
             }
-            //  printf("pageWriteRate %llu \n", pageWriteRate);
 
-            // Calculate time to process the average pages consumed: time = pages / (pages/time)
-            // Time to trim the consumed pages (in 100ns units)
-            ULONG64 timeToTrim = (pageTrimRate > 0) ? (averagePagesConsumedPerWakeup / pageTrimRate) : 0;
-            // Time to write the consumed pages (in 100ns units)
-            ULONG64 timeToWrite = (pageWriteRate > 0) ? (averagePagesConsumedPerWakeup / pageWriteRate) : 0;
+            ULONG64 timeToTrim =  (averagePagesConsumedPerWakeup / pageTrimRate);
+
+            ULONG64 timeToWrite = (averagePagesConsumedPerWakeup / pageWriteRate) ;
 
             // Total time to make pages available after aging (trim + write, or max if parallel?)
             timeToMakePagesAvailable = timeToTrim + timeToWrite;
@@ -216,17 +213,23 @@ DWORD scheduler_thread(LPVOID info) {
 
 
 
-            //todo make sure this is not zero and not negative.
+
             //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
+            if (timeUntilOutInSecs < timeToMakePagesAvailable) {
+                perfectTimeToAge = 0;
+            } else {
+                perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
+            }
+
             perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
 
-            // if we have't aged yet, or should't age some small amount to get more data
+            // if we have't aged yet, or should't, age some small amount to get more data
             if (pageAgeRate == 0 || numToAgeTotal == 0) {
                 numToAgeThisWakeup = 10000;
             } else {
 
                 // Basically, if I can age faster than I can consume, only age the perfect amount.
-                // otherwise, age the perceived max number of pages.
+                // otherwise, age the perceived max number of ptes that can be aged in one second.
                 if(timeToAge < perfectTimeToAge) {
                     numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge);
                 } else {
@@ -238,7 +241,10 @@ DWORD scheduler_thread(LPVOID info) {
                 numToAgeThisWakeup = 10000;
             }
 
-            //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages left and you will be out in 10s, you only need to trim in the last 2 seconds.
+            //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages active and you will be out in 10s, you only need to trim in the last 2 seconds.
+
+
+
 
 
             numToTrimThisWakeup = averagePagesConsumedPerWakeup;
