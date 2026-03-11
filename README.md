@@ -1,71 +1,71 @@
-# Multithreaded Virtual Memory Manager
+## **By Noah Persily**
 
-## By Noah Persily
-### Summer 2025, Reach out to me with more questions at *nrpersily@gmail.com*
+### **Summer 2025, Reach out to me with more questions at *nrpersily@gmail.com***
 
+## **The Goal**
 
+The goal of this program is to simulate the memory manager in the Windows OS. I reserve a large portion of virtual address space, but I do not back it with physical memory.  Then, in a loop, I simulate access to the user VA space. Because the space is not committed, pagefaults are generated. Once I get a page fault it is the program’s duty to map a page as quickly as possible. The core loop of the program is that pages are mapped to virtual space, then once we are out of pages, we unmap them and write their contents out to disk. Once that virtual address is reaccessed, the contents are read back in from the disk
 
-## The Goal
+## **Roadmap**
 
+### **Single Threaded State Machine**
 
+I started this journey by making a single threaded virtual memory manager. The main focus was to use the Windows APIs effectively and ti understand the moving parts of the state machine. The key primitives that were used in this implementation were page table entries (PTEs), page frame numbers (PFNs), linked lists, and disk metadata.
 
-The goal of this program is to simulate a virtual memory manager that exists in all modern operating systems. 
-In order to mimic the experience of a user accessing places in memory, I reserve but not commit a large portion of virtual address space with the function VirtualAlloc.
-Then in a loop the program tries to access parts of the reserved space. Since the space is not commited exceptions are generated. These exceptions are how I know there is a page fault. Once I get a page fault it is my duty to map a page as quickly as possible. 
+A PTE is a 64 bit code that corresponds to a page of virtual space. In the PTE 40 bits are dedicated to storing the physical frame number and the other 24 bits are mine to use. I use exactly 40 bits because the address bus line in a computer is only 52 bits wide, and since each PTE maps to a page, I do not need the lower 12 bits to get the offset within the page (252 / 212 \= 240). Of the 24 other bits, the most relevant bit is the valid bit which says whether the virtual space is backed by physical memory. In a real operating system that does not have to use Windows APIs, a page is mapped and unmapped by setting and clearing that bit. When the PTE is invalid, the 40 bits that hold a frame number store a disk index instead, so when that PTE is faulted on, the program knows where to go to get the contents of the virtual memory.
 
+A PFN is a data structure that contains information about exactly one physical page of memory. At first, the struct had three fields, one for the actual frame number, the corresponding PTE, and a Windows ListEntry struct which is just two pointers. For my final single threaded design, I took out the frame number field because I realized I could use a sparse array to get the frame number in constant time.
 
-## Roadmap
+	At the start, I had two lists of PFNs, an active list which represents pages with valid PTEs and a free list which contains free pages. An advantage of an active list is that it keeps the pages automatically sorted based on age, so it is always possible to find the oldest page in constant time.
 
-### Single Threaded State Machine
+	To simulate a disk, I allocated a large portion of memory. The diskfile region allocated has two pieces of metadata that inform the program where to look for free disk slots, a bytemap and a count for the number of free disk slots in a region. The bytemap keeps track of whether a slot is free for a page of data that needs to be written out to disk. The disk is split into arbitrarily-sized regions, and my counts inform the program of which region has the most free disk space. 
 
-I started this journey by making single threaded virtual memory manager. The main focus was to use the Windows APIs effectively and understand the moving parts of the state machine. In this implementation the user would also serve the role of the system. If there was no page on the standby or free list it would trim an active page and write it to disk before eventually mapping it to the faulted on virtual address.
+	With all these structures, we can create a program that manages page faults. When a virtual address is faulted on, it is translated into its PTE that should have a cleared valid bit. Then, the program checks the pagelists. First, the program checks the freelist to see if there is any physical memory not in use. Then it gets a page off of the active list. The contents of the page are written to disk and the victim PTE’s valid bit is cleared. The faulting PTE’s contents are then read onto the physical page and the valid bit is set.
 
-### Basic Multithreaded Machine 
+### **Basic Multithreaded Machine**
 
-Now that I was very familiar with the moving parts of this state machine, I had to figure out what parts to separate into their own threads.
-Initially, I only thought about having a user thread and a trimmer/writer thread, but performance traces showed that both writing and trimming were costly, so I decided to split them into their own threads.
+Now that I was very familiar with the moving parts of this state machine, I had to figure out what parts to separate into their own threads. Initially, I only thought about having a user thread and a trimmer/writer thread, but performance traces showed that both writing and trimming were costly, so I decided to split them into their own threads.
 
-A new challenge to tackle in multithreaded was page table entries in transition between threads. I needed to create two new lists, modified and standby. The modified list had contain pages that have been unmapped from their virtual addresses, but not yet written to disk. The standby list contains pages that have contents in both a disk slot and a physical page.
-Since the pages on these lists still have the contents of the virtual page on them, we can save ourselves from doing a disk read by mapping that specific frame if the previous virtual address was faulted on again. I have used the term rescue to describe this sequence of events. 
+A new challenge to tackle in multithreaded was PTEs in transition between threads. I needed to create two new page lists, modified and standby. The modified list contains pages that have been unmapped from their virtual addresses, but not yet written to disk. The standby list contains pages that have contents in both a disk slot and the physical page. Since the pages on these lists still have the contents of the virtual page on them, we can save ourselves from doing a disk read by mapping that specific frame if the previous virtual address was faulted on again. I have used the term rescue to describe this sequence of events. Additionally, I had to use one more of the 24 status bits to mark a PTE as transition, and one more bit in the PFN to encode which list the page was on (modified or standby). If a page is on stand-by that means it can be repurposed for a new PTE as long as the PTE that currently maps to the page has its transition bit cleared.
 
-Another new consideration in the multithreaded world was a lock hierarchy. In this simple multithreaded state machine I only had three types of locks to consider, page table entry, list locks, and disk locks. 
-Since I need to look at a page table entry to determine a list to go to, I thought that they should be at the top of my hierarchy. 
-Next, I realized that disk locks are pretty self contained, so they should be the last lock I acquire.  
-This order made sense, but there were a few times I had to break it. In the case where I was repurposing a page off of the standby list, I first need to look at the standby list then edit the pte of the page at the head.
-I cannot lock the pte first as I need to look at the standby list to determine the pte, and I cannot lock them out of order because a deadlock could occur. In order to solve this problem, I need to try and acquire the pte lock and if I cannot get it, I need to release the standby lock and redo the fault. 
+Another new consideration in the multithreaded world was a lock hierarchy. In this simple multithreaded state machine I only had three types of locks to consider, page table entry, list locks, and disk locks. Since I need to look at a page table entry to determine a list to go to, I thought that they should be at the top of my hierarchy. Next, I realized that disk locks are pretty self contained, so they should be the last lock I acquire.
 
----
+This order made sense, but there were a few times I had to break it. In the case where I was repurposing a page off of the standby list, I first needed to look at the standby list then edit the PTE of the page at the head. I cannot lock the PTE first as I need to look at the standby list to determine the PTE, and I cannot lock them out of order because a deadlock could occur. In order to solve this problem, I need to try and acquire the PTE lock and if I cannot get it, I need to release the standby lock and redo the fault.
 
-![diagram 1](images/figure1vector.svg)
----
+### **Complex Multithreaded State Machine**
 
-### Complex Multithreaded State Machine
+To achieve better scalability, I implemented sophisticated locking techniques and optimizations across multiple areas.
 
-In order to improve my scalability, I needed to get smarter. I had to implement more sophisticated locking techniques among other strategies.
+#### **Fine-Grained Disk Management**
 
-The first place I released contention from was the disk. Instead of having one big lock around the whole disk, I created a lock per slot. Then, I started using atomic interlocked operations to lock and unlock disk slots. Additionally, I switched my disk to a bitmap instead of a byte map. 
+I replaced the single disk lock with per-slot atomic interlocked operations and switched from a byte map to a bitmap representation. This eliminated disk contention as a bottleneck and allowed multiple threads to allocate disk slots simultaneously.
 
-Next, I started to look for a way to alleviate list contention, specifically on the standby list. Ideally, I wanted to be able to remove from the head, add to the tail, and remove from the middle simultaneously. 
-The way I thought to do this was to add locks on individual pages. Now, I could first try to lock all the pages I needed to edit, before grabbing the list lock exclusive and shutting everyone out. To implement this, I embedded a lock in my pfn and added a slim read-write lock to my listhead structure. 
+#### **Advanced List Management with Page Locks**
 
-The addition of pagelocks also helped me reduce my pagetable lock contention. In scenarios, where a pte was linked to a pfn I could use the page's lock as a stand-in for a pagetable lock. 
-Both my writes and my victimization of standby pages could now be done with only the page-lock. The only caveat was that in my rescue I had to check if the pte changed after I acquire the pagelock.
+To reduce list contention, particularly on the standby list, I implemented embedded locks within each page frame number (PFN) and added slim read-write locks to list head structures. This allows concurrent operations: removing from head, adding to tail, and removing from middle simultaneously. The page locks also serve as substitutes for page table entry locks when a PTE is linked to a PFN, reducing overall lock contention. A case where a PTE has to refault was eliminated.
 
-Another key strategy I implemented was batching. I was able to implement batching in all three types of threads.
+#### **Batching Optimizations**
 
-In the trimmer, I now remove multiple pages from the active list and unmap them all simultaneously with a call to the function "map user physical pages scatter". 
+I implemented batching across all thread types to amortize system call costs. The trimmer removes multiple pages from the active list and unmaps them with a single function call. The writer pre-acquires multiple disk slots and performs batched disk operations. If there are not enough pages on the modified list, the program frees the extra disk slots.
 
-In the writer, I now preacquire multiple disk slots, instead of searching the disk individually. Moreover, during the actual process to write to disk, I could only do one map and unmap call per batch.
+User threads batch unmap operations on kernel virtual address space and batch transfers from standby to free lists and free lists to local caches.
 
-The user thread used batching two places. First, I started to batch unmap my kernel virtual address space that I use to read disk contents into physical pages. Then, I started to batch remove pages from the standby list and place them onto the freelist in order to alleviate standby list contention.
+#### **Multidimensioned Free Lists**
 
-To actually fix the contention instead of moving it from the standby to freelist was to dimension my freelist. I could not do this with my standby list since the order in which they were added matters, but in the freelist it does not. In a multidimensioned free list, multiple users could be satisfying faults without interruption themselves
+To eliminate rather than just move contention, I dimensioned the free list across multiple instances. Unlike the standby list where ordering matters for aging, the free list can be safely partitioned, allowing multiple user threads to satisfy faults without interfering with each other.
 
+#### **Basic Aging Model**
 
-![diagram 2](images/figure2vector.svg)
+I implemented a page aging system that exploits the non-random nature of real-world memory access patterns. Rather than assuming uniform access probability across all pages, the aging model maintains age-lists that track page access recency. Pages are organized into different age categories, and the trimmer preferentially selects older pages for eviction. This leverages temporal locality \- pages accessed recently are more likely to be accessed again soon, while pages that haven't been touched in a while are good candidates for trimming.
 
-State Machine as of August 1st
+#### **Local Caches**
 
+Each user thread maintains local caches of pages to minimize lock contention. With local caches, user threads only need to acquire PTE locks (which I consider inevitable for correctness) and can operate on their cached pages without additional synchronization overhead. This design dramatically reduces the frequency of expensive list operations. The trimmer intelligently targets pages from these local caches during memory pressure, as it's preferable to reclaim a page that hasn't been mapped to a virtual address rather than evicting an actively used page from the working set.
 
+## **Current Project**
 
+### **Scheduling**
 
+Right now I am working on making my age and trim activations elastic. Based on the time it takes to write and trim a page, I want to find the goldilocks number of ptes to age and pages to trim.
+
+State Machine as of October 23rd  

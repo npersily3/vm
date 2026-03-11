@@ -42,7 +42,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
-
+    // for every pte
     for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
         // when we find a valid pte, invalidate it and store its info in stack variables
 
@@ -118,6 +118,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     }
     currentRegion->hasActiveEntry = regionHasActiveEntry;
 
+    // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
@@ -220,6 +221,7 @@ DWORD page_trimmer(LPVOID info) {
             if (currentRegion->hasActiveEntry == TRUE) {
                 ULONG64 finalAge;
 
+                // get a region, trim it, and move it to the tail of the age list
                 trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
                 totalTrimmedPages += trimmedPagesInRegion;
 
@@ -234,7 +236,7 @@ DWORD page_trimmer(LPVOID info) {
 
 
 
-                // Need to have this after because I could fault it back in before it is on the modified list
+
                 leavePTERegionLock(currentRegion, threadContext);
 
                 InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
