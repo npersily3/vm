@@ -8,6 +8,7 @@
 #include "variables/structures.h"
 #include "utils/thread_utils.h"
 
+//TODO check the neighbors to see if they are on the right list
 
 // Called with page's pageLock held
 /**
@@ -28,7 +29,11 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
 
     obtainedPageLocks = FALSE;
 
+#if DBG
 
+    ASSERT(region->ageListNumber == head - vm.pte.ageList)
+
+#endif
 
     acquire_srw_shared(&head->sharedLock);
 
@@ -129,6 +134,10 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
     } else {
         release_srw_exclusive(&head->sharedLock);
     }
+#if DBG
+    region->ageListNumber = NOT_ON_LIST;
+#endif
+
     // we must still hold the pagelock other wise a concurrent operation on the same page would corrupt data
 }
 
@@ -153,6 +162,7 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
 
 
     acquire_srw_shared(&head->sharedLock);
+
 
 
     // try to get page locks
@@ -279,6 +289,12 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
 
 
     ASSERT((ULONG64)head->page.lock.OwningThread != threadInfo->ThreadId);
+#if DBG
+
+    ULONG64 expectedAge = head - vm.pte.ageList;
+    ASSERT(regionToRemove->ageListNumber == expectedAge);
+    regionToRemove->ageListNumber = NOT_ON_LIST;
+#endif
 
     // leave with page lock held
 
@@ -289,7 +305,7 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
 /**
  *
  * @param head Head to add to
- * @param page Page that is beeing added
+ * @param page Page that is being added
  * @param threadInfo Thread info of the caller
  * @pre Page must be locked
  * @post Page must be locked
@@ -300,6 +316,7 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
 
     PTE_REGION* nextRegion;
 
+    ASSERT(region->ageListNumber == NOT_ON_LIST)
 
     acquire_srw_shared(&head->sharedLock);
 
@@ -318,6 +335,7 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
 
 
         if (tryEnterPTERegionLock(nextRegion, threadInfo) == TRUE) {
+            ASSERT(nextRegion->entry.Flink == &head->entry);
             obtainedPageLocks = TRUE;
             break;
         }
@@ -376,6 +394,12 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
 #endif
 
 
+#if DBG
+
+    region->ageListNumber = head - vm.pte.ageList;
+
+#endif
+
 // Release locks
     if (obtainedPageLocks == TRUE) {
 
@@ -391,5 +415,7 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
     } else {
         release_srw_exclusive(&head->sharedLock);
     }
+
+
 }
 

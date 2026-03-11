@@ -84,6 +84,8 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    vm.threadInfo.trimmer = TrimmerThreadInfo;
+
     for (int i = 0; i < vm.config.number_of_writing_threads; ++i) {
         ThreadContext = &WriterThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
@@ -97,6 +99,7 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    vm.threadInfo.writer = WriterThreadInfo;
 
     for (int i = 0; i < vm.config.number_of_aging_threads; ++i) {
         ThreadContext = &AgingThreadInfo[i];
@@ -111,6 +114,7 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    vm.threadInfo.aging = AgingThreadInfo;
 
     for (int i = 0; i < vm.config.number_of_aging_threads; ++i) {
         ThreadContext = &SchedulerThreadInfo[i];

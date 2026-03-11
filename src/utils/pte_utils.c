@@ -91,12 +91,24 @@ VOID unlockPTE(pte* pte) {
  * @brief NoFence write to a PTE. In debug mode, this function keeps track of how the pte has changed and the stack trace
  * @param pteAddress The address to write to
  * @param NewPteContents The new contents
+ * @param expectedOldPteContents The expected old contents.
+ * @return The contents of the PTE before the write happened
  */
-VOID writePTE(pte* pteAddress, pte NewPteContents) {
+pte writePTE(pte* pteAddress, pte NewPteContents, pte expectedOldPteContents) {
 #if DBG
     recordPTEAccess(pteAddress, NewPteContents);
 #endif
-    WriteULong64NoFence(&pteAddress->entireFormat, NewPteContents.entireFormat);
+//make a check to see if we always have to use interlocked compare exchange if the previous entries valid bit is 0, then we can use the normal write
+
+    pte returnVal;
+
+    if (expectedOldPteContents.validFormat.valid == 0) {
+        WriteULong64NoFence(&pteAddress->entireFormat, NewPteContents.entireFormat);
+        return expectedOldPteContents;
+    }
+
+    returnVal.entireFormat = InterlockedCompareExchange64((volatile LONG64*) &pteAddress->entireFormat, NewPteContents.entireFormat, expectedOldPteContents.entireFormat);
+    return returnVal;
 
 }
 

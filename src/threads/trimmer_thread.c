@@ -23,6 +23,8 @@
  *@author Noah Persily
 */
 
+
+
 ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pfn *pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
@@ -30,59 +32,91 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pte *currentPTE;
     pfn *page;
     ULONG64 age;
+    boolean regionHasActiveEntry;
 
     currentPTE = getFirstPTEInRegion(currentRegion);
+
+    pte oldPTEContents;
+    pte newPTEContents;
+    pte pteAtTimeOfWrite;
 
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
     // for every pte
     for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
         // when we find a valid pte, invalidate it and store its info in stack variables
-        pte localPTE;
-        localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
 
-        if (localPTE.validFormat.valid == 1) {
-            age = localPTE.validFormat.age;
+        oldPTEContents.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
 
-            ASSERT(currentRegion->numOfAge[age] != 0)
+        while (true) {
+            newPTEContents.entireFormat = oldPTEContents.entireFormat;
 
-            // if it was accessed, bump the age to zero, but do not clear the bit, if we do so it will be aged unfairly
-            if (localPTE.validFormat.access == 1) {
+            if (oldPTEContents.validFormat.valid == 1) {
+                age = oldPTEContents.validFormat.age;
 
-                localPTE.validFormat.age = 0;
+                ASSERT(currentRegion->numOfAge[age] != 0)
+
+                // if it is valid  we must clear the age but we cannot clear the access bit because that is unfair aging
+                if (oldPTEContents.validFormat.access == 1) {
+                    newPTEContents.validFormat.access = 1;
+                    newPTEContents.validFormat.age = 0;
+
+                    ASSERT(currentRegion->numOfAge > 0)
+                    currentRegion->numOfAge[age]--;
+                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+
+                    currentRegion->numOfAge[0]++;
+                    InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
+
+                    pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
+
+
+                    // we can break regardless of the result, because the only guy who can change it simultaneously is the access bit setter
+                    // and we know that the access bit is already set, so no change will occur so that we can break regardless
+                    break;
+
+                }
+
+                // this is for the case when the pte is valid and unnaccessed
+                newPTEContents.transitionFormat.mustBeZero = 0;
+                newPTEContents.transitionFormat.isTransition = 1;
+                newPTEContents.transitionFormat.age = 0;
+                pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
+
+                if (pteAtTimeOfWrite.entireFormat != oldPTEContents.entireFormat) {
+                    oldPTEContents.entireFormat = pteAtTimeOfWrite.entireFormat;
+                    continue;
+                }
+
+                // case where write succeeds
+
+                ASSERT(currentRegion->numOfAge > 0)
                 currentRegion->numOfAge[age]--;
-                currentRegion->numOfAge[0]++;
-
-                writePTE(currentPTE, localPTE);
+                InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
 
 
-                currentPTE++;
-                continue;
+                page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
+                page->location = MODIFIED_LIST;
+                virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
+                pages[trimmedPagesInRegion] = page;
+                trimmedPagesInRegion++;
+
             }
 
-
-            // edit pte, region, and stack variables for batched operation
-
-            localPTE.transitionFormat.mustBeZero = 0;
-            localPTE.transitionFormat.isTransition = 1;
-            localPTE.transitionFormat.age = 0;
-            writePTE(currentPTE, localPTE);
-            currentRegion->numOfAge[age]--;
-            currentRegion->numOfAge[0]++;
-
-
-            page = getPFNfromFrameNumber(localPTE.transitionFormat.frameNumber);
-            page->location = MODIFIED_LIST;
-
-            virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
-            pages[trimmedPagesInRegion] = page;
-
-            trimmedPagesInRegion++;
+            break;
         }
-
         currentPTE++;
     }
-    currentRegion->hasActiveEntry = FALSE;
+    currentPTE = getFirstPTEInRegion(currentRegion);
+    regionHasActiveEntry = FALSE;
+    for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+        if (currentPTE->validFormat.valid == 1) {
+            regionHasActiveEntry = TRUE;
+            break;
+        }
+        currentPTE++;
+    }
+    currentRegion->hasActiveEntry = regionHasActiveEntry;
 
     // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
@@ -92,19 +126,22 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     return trimmedPagesInRegion;
 }
 
-/**
- *
- * @param threadContext The thread info of the caller.
- * @return a region from the head of the oldest agelist
-
- */
+//TODO rewrite to return age 0 regions
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
-    while (age != 0) {
-        return RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
-        age--;
+    PTE_REGION *oldestRegion = NULL;
+
+    for (; age >= 0; age--) {
+        oldestRegion = RemoveFromHeadofRegionList(&vm.pte.ageList[age], threadContext);
+
+
+        if (oldestRegion != NULL) {
+
+            return oldestRegion;
+        }
     }
+
     return NULL;
 }
 
@@ -142,13 +179,8 @@ DWORD page_trimmer(LPVOID info) {
 
     currentRegion = vm.pte.RegionsBase;
 
-#if VERBOSE
-    ULONG64 start;
-    ULONG64 end;
-
-
-#endif
-
+    ULONG64 numToTrimLocal;
+    ULONG64 numFromLocalList;
 
     while (TRUE) {
         totalTrimmedPages = 0;
@@ -163,17 +195,23 @@ DWORD page_trimmer(LPVOID info) {
         }
         QueryPerformanceCounter(&start);
 
-        recallPagesFromLocalList(threadContext);
+        numToTrimLocal = ReadULong64NoFence(&vm.pte.numToTrim);
+        numFromLocalList = recallPagesFromLocalList(threadContext);
 
-#if VERBOSE
-        start = __rdtsc();
-#endif
+        if (numFromLocalList >= numToTrimLocal) {
+            WriteULong64NoFence(&vm.pte.numToTrim, 0);
+            SetEvent(vm.events.writingStart);
+            continue;
+        }
+        numToTrimLocal -= numFromLocalList;
+
 
         // if we have trimmed enough, or have combed through everything
-        while (totalTrimmedPages < BATCH_SIZE && counter < vm.config.number_of_pte_regions) {
+        while (totalTrimmedPages < numToTrimLocal) {
             // this function exits with the lock held
             currentRegion = getOldestRegion(threadContext);
 
+            //nothing to trim
             if (currentRegion == NULL) {
                 break;
             }
@@ -188,9 +226,14 @@ DWORD page_trimmer(LPVOID info) {
                 totalTrimmedPages += trimmedPagesInRegion;
 
 
-                finalAge = getRegionAge(currentRegion);
+                if (currentRegion->hasActiveEntry == TRUE) {
+                    finalAge = getRegionAge(currentRegion);
 
-                addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+                    addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+                }
+
+
+
 
 
 
@@ -198,8 +241,9 @@ DWORD page_trimmer(LPVOID info) {
 
                 InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
             } else {
+
+
                 leavePTERegionLock(currentRegion, threadContext);
-                currentRegion++;
                 counter++;
             }
         }
@@ -209,10 +253,8 @@ DWORD page_trimmer(LPVOID info) {
         recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
 
 
-#if VERBOSE
-        end = __rdtsc();
-        printf("trim time: %llu\n", start-end);
-#endif
+
+
 
         vm.misc.numTrims++;
 

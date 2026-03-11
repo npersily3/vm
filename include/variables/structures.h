@@ -132,7 +132,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 0
+#define spinEvents 1
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -246,7 +246,7 @@ typedef struct {
 
 
 } pfn;
-
+#define PAGES_CONSUMED_LENGTH 16
 
 #define NUMBER_OF_TIME_STAMPS 16
 #define BASELINE_HAZARD (1)
@@ -294,6 +294,7 @@ typedef struct _SHARED_HOLDER_DEBUG {
 #define MAX_AGE (NUMBER_OF_AGES - 1)
 #define LENGTH_OF_PREDICTION 10
 
+#define NOT_ON_LIST (-1)
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
@@ -303,10 +304,12 @@ typedef struct {
 
     ULONG64 hasActiveEntry: 1;
 #if DBG
+
     ULONG64 ageMap[64];
+    LONG64 ageListNumber;
 #endif
 
-} PTE_REGION;
+}  PTE_REGION;
 
 
 
@@ -389,6 +392,7 @@ typedef struct __declspec(align(256)){
 
 
 typedef struct {
+    volatile ULONG64 pagesConsumed;
     ULONG_PTR physical_page_count;
     PULONG_PTR physical_page_numbers;
     pfn *start;
@@ -406,7 +410,10 @@ typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
     listHead ageList[NUMBER_OF_AGES];
+    volatile LONG64 globalNumOfAge[NUMBER_OF_AGES];
     volatile ULONG64 numToAge;
+    volatile ULONG64 numToTrim;
+    volatile ULONG64 numToWrite;
 
 #if DBG
     volatile ULONG64 debugBufferIndex;
@@ -453,7 +460,7 @@ typedef struct {
 
 typedef struct {
     ULONG64 timeIntervals[16];
-    ULONG64 numWorkDone[16];
+    ULONG64 numPagesProccessed[16];
     ULONG64 index;
 } workDone;
 
@@ -480,6 +487,8 @@ typedef struct {
     PTHREAD_INFO user;
     PTHREAD_INFO trimmer;
     PTHREAD_INFO writer;
+    PTHREAD_INFO aging;
+    PTHREAD_INFO scheduler;
 
 } threadInfo;
 
