@@ -22,7 +22,6 @@
  * * @brief This function spins while waiting so waits show up as time on a performance trace
  */
 VOID spinWhileWaiting(VOID) {
-
     DWORD status;
 
     while (TRUE) {
@@ -31,7 +30,6 @@ VOID spinWhileWaiting(VOID) {
             return;
         }
     }
-
 }
 #endif
 
@@ -221,7 +219,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
     lockPTE(currentPTE);
-    pteContents.entireFormat = ReadULong64NoFence((volatile ULONG64*)  currentPTE);
+    pteContents.entireFormat = ReadULong64NoFence((volatile ULONG64 *) currentPTE);
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
@@ -248,16 +246,18 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             regionStatus = region->hasActiveEntry;
 
 
+            ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
 
-           ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
-            if (numActivePages <  vm.config.number_of_physical_pages/3) {
-              //  printf("numActivePages %llX\n", numActivePages);
-                InterlockedExchange64(&vm.pte.numToTrim,   vm.config.number_of_physical_pages/5);
-                InterlockedExchange64(&vm.pte.numToWrite,   vm.config.number_of_physical_pages/5);
-
-                SetEvent(vm.events.trimmingStart);
-
+            if (numActivePages >  2*vm.config.number_of_physical_pages/2) {
+                if (InterlockedCompareExchange64(&vm.misc.trimmerPending, 1, 0) == 0) {
+                    InterlockedExchange64(&vm.pte.numToTrim,   vm.config.number_of_physical_pages/5);
+                    InterlockedExchange64(&vm.pte.numToWrite,   vm.config.number_of_physical_pages/5);
+                    SetEvent(vm.events.trimmingStart);
+                }
             }
+
+
+
 
 
             if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
@@ -271,10 +271,9 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             if (regionStatus == FALSE) {
 #if DBG
 
-      ASSERT(region->ageListNumber == NOT_ON_LIST)
+                ASSERT(region->ageListNumber == NOT_ON_LIST)
 #endif
                 addRegionToTail(&vm.pte.ageList[0], region, threadContext);
-
             }
             InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
             region->hasActiveEntry = TRUE;
@@ -292,8 +291,6 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 
 
     unlockPTE(currentPTE);
-
-
 
 
     return returnValue;
@@ -356,7 +353,7 @@ ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadIn
     // Instead, the writer will free its disk space
     if (page->isBeingWritten == TRUE) {
 #if DBG
-    page->hasBeenRescuedWhileWritten = 1;
+        page->hasBeenRescuedWhileWritten = 1;
 
 #endif
         page->isBeingWritten = FALSE;
@@ -512,7 +509,7 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     // if another faulter tries to get this the pagelock will stop it in the rescue
     // if the rescue sees a change in the pte it will redo the fault
     // We have to write no fence here in order to avoid tearing
-    oldPteContents.entireFormat = ReadULong64NoFence((volatile ULONG64*) page->pte);
+    oldPteContents.entireFormat = ReadULong64NoFence((volatile ULONG64 *) page->pte);
 
     newPteContents.entireFormat = 0;
     newPteContents.transitionFormat.isTransition = 0;
@@ -521,7 +518,7 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
 #if DBG_DISK
 
-        ULONG64 count = 0;
+    ULONG64 count = 0;
 
     for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
         if (vm.disk.activeVa[i] == page->pte) {
@@ -588,7 +585,7 @@ modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
 
     if (currentPTE != NULL) {
         for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
-            if (vm.disk.activeVa[i] == currentPTE ) {
+            if (vm.disk.activeVa[i] == currentPTE) {
                 DebugBreak();
             }
         }
