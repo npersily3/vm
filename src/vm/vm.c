@@ -26,7 +26,11 @@ void do_work_to_slow_consumption(PTHREAD_INFO threadInfo) {
     }
 }
 
-
+/**
+ * @brief Gets the next va based on an algorithm that decides if it should access sequentially or randomly
+ * @param thread_info The thread info of the caller. Used to look at the rng seed
+ * @return A pointer at the arbitrary va to try next
+ */
 PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
     ULONG64 random_number;
 
@@ -34,23 +38,21 @@ PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
 
     random_number %= vm.config.virtual_address_size_in_unsigned_chunks;
 
-    // Write the virtual address into each page. If we need to
-    // debug anything, we'll be able to see these in the pages.
 
-
-    // Ensure the write to the arbitrary virtual address doesn't
-    // straddle a PAGE_SIZE boundary just to keep things simple for now.
     random_number &= ~0x7;
     return vm.va.start + random_number;
-
 }
-
 
 
 #define PAGE_JUMP_PROBABILITY .1
 
-PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO threadInfo) {
-
+/**
+ * @brief Gets the next va based on an algorithm that decides if it should access sequentially or randomly
+ * @param thread_info The thread info of the caller. Used to look at the rng seed
+ * @param previous_va The previous VA accessed
+ * @return A pointer at the arbitrary va to try next
+ */
+PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO thread_info) {
     // Generate the next VA
     PULONG_PTR new_va = (previous_va + 1);
     if (new_va >= vm.va.end)
@@ -62,23 +64,27 @@ PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO threadInfo) {
     // Otherwise, we will move on to the next page with a certain probability p
     // And we will jump to a random page with a probability (1-p)
 
-    double p = (double) (GetNextRandom(&threadInfo->rng) >> 11) * (1.0 / 9007199254740992.0);
+    double p = (double) (GetNextRandom(&thread_info->rng) >> 11) * (1.0 / 9007199254740992.0);
     if (p < PAGE_JUMP_PROBABILITY)
-        new_va = get_arbitrary_va(threadInfo);
+        new_va = get_arbitrary_va(thread_info);
 
     return new_va;
 }
 
 
-//TODO make it so I do not rewrite the access bit
+/**
+ * @brief This function mimics the piece of hardware that sets access bits in the cpu. It is not guaranteed to work, but it will not trample on others' work
+ * @param va The VA to set the access bit of its corresponding PTE
+ * @return Whether the write succeeded or not
+ */
 boolean setAccessBit(ULONG64 va) {
-    pte* pteAddress;
+    pte *pteAddress;
     pte newPTE;
     pte oldPTE;
 
 
     pteAddress = va_to_pte(va);
-    oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64*)pteAddress);
+    oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64 *) pteAddress);
     if (oldPTE.validFormat.valid == 0) {
         return REDO_FAULT;
     }
@@ -86,24 +92,17 @@ boolean setAccessBit(ULONG64 va) {
 
     newPTE.validFormat.access = 1;
 
-   writePTE(pteAddress, newPTE, oldPTE);
+    writePTE(pteAddress, newPTE, oldPTE);
     return 0;
 }
 
-ULONG64 noah;
 
+/**
+ * @brief This is the main orchestrating thread that initializes the simulation, waits for all threads to exit, and prints final statistics
+ */
 VOID
 full_virtual_memory_test(VOID) {
-
-
-
-    noah = 1;
-
     ULONG64 start, end;
-
-
-
-  
 
     init_virtual_memory();
 
@@ -114,25 +113,27 @@ full_virtual_memory_test(VOID) {
 
     SetEvent(vm.events.userStart);
 
-    int i;
-    i = 0;
+    int i = 0;
 
 
+    // wait for users to end
+    for (; i < vm.config.number_of_user_threads; ++i) {
+        WaitForSingleObject(vm.events.userThreadHandles[i], INFINITE);
+    }
 
-     for (; i < vm.config.number_of_user_threads; ++i) {
-         WaitForSingleObject(vm.events.userThreadHandles[i], INFINITE);
-     }
+    // once users are over, shut down system threads
     SetEvent(vm.events.systemShutdown);
-
     i = 0;
     for (; i < vm.config.number_of_system_threads; ++i) {
         WaitForSingleObject(vm.events.systemThreadHandles[i], INFINITE);
     }
+
     ResetEvent(vm.events.systemShutdown);
 
     end = GetTickCount64();
     // Now that we're done with our memory we can be a good
     // citizen and free it.
+    //TODO free everything else
     VirtualFree(vm.va.start, 0, MEM_RELEASE);
 
     printf("Elapsed time: %llu ms\n", end - start);
@@ -142,12 +143,12 @@ full_virtual_memory_test(VOID) {
     printf("Free length %llu \n", vm.lists.free.length);
     printf("Active length %llu \n", vm.pfn.numActivePages);
 
-    printf("pagewaits %llu \n",   vm.misc.pageWaits);
-    printf("total time waiting %llu ticks\n",   (vm.misc.totalTimeWaiting));
+    printf("pagewaits %llu \n", vm.misc.pageWaits);
+    printf("total time waiting %llu ticks\n", (vm.misc.totalTimeWaiting));
 
 
-    printf("num physical: %llu \n", vm.config.number_of_physical_pages* PAGE_SIZE/GB(1));
-    printf("num virtual: %llu G\n", vm.config.virtual_address_size/GB(1));
+    printf("num physical: %llu \n", vm.config.number_of_physical_pages * PAGE_SIZE / GB(1));
+    printf("num virtual: %llu G\n", vm.config.virtual_address_size / GB(1));
     printf("num userthreads: %llu \n", vm.config.number_of_user_threads);
     printf("num freelists: %llu \n", vm.config.number_of_free_lists);
 
@@ -160,24 +161,27 @@ full_virtual_memory_test(VOID) {
     printf("num faults %.0f \n", totalFaults);
     printf("num hard faults %.0f \n", totalHardFaults);
 
-    printf("rescue percentage: %.2f%% \n", ((vm.misc.numRescues/totalFaults)*100));
-    printf("hard fault percentage: %.2f%% \n", ((totalHardFaults/totalFaults)*100));
+    printf("rescue percentage: %.2f%% \n", ((vm.misc.numRescues / totalFaults) * 100));
+    printf("hard fault percentage: %.2f%% \n", ((totalHardFaults / totalFaults) * 100));
     printf("Percentages of hard faults:\n");
 
-    printf("num freeList: %.2f%% \n", vm.misc.pagesFromFree/totalHardFaults*100);
-    printf("num localCache: %.2f%% \n", vm.misc.pagesFromLocalCache/totalHardFaults*100);
-    printf("num standBy: %.2f%% \n", vm.misc.pagesFromStandBy/totalHardFaults*100);
+    printf("num freeList: %.2f%% \n", vm.misc.pagesFromFree / totalHardFaults * 100);
+    printf("num localCache: %.2f%% \n", vm.misc.pagesFromLocalCache / totalHardFaults * 100);
+    printf("num standBy: %.2f%% \n", vm.misc.pagesFromStandBy / totalHardFaults * 100);
 
     return;
 }
 
-
+/**
+ * @brief The function which represents one user thread accessing the shared VA space.
+ * @param lpParam The thread info passed in
+ * @return
+ */
 DWORD testVM(LPVOID lpParam) {
-
     WaitForSingleObject(vm.events.userStart, INFINITE);
 
 
-   // DebugBreak();
+    // DebugBreak();
 
     PULONG_PTR arbitrary_va;
     unsigned i;
@@ -189,7 +193,7 @@ DWORD testVM(LPVOID lpParam) {
     ULONG64 counter;
 
     i = 1;
-    thread_info = (PTHREAD_INFO)lpParam;
+    thread_info = (PTHREAD_INFO) lpParam;
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
 
@@ -197,16 +201,16 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = get_arbitrary_va(thread_info);
     // Now perform random accesses
 
-
+// Depending on if we are in debug/performance test mode, spin forever
 #if DBG || spinEvents
     while (TRUE) {
-        
+
 #else
 
-//MB(1)/NUMBER_OF_USER_THREADS
- for (; i < MB(200); i++) {
-//while (TRUE) {
-        #endif
+    //MB(1)/NUMBER_OF_USER_THREADS
+    for (; i < MB(50); i++) {
+        //while (TRUE) {
+#endif
 
 
         // Randomly access different portions of the virtual address
@@ -224,51 +228,41 @@ DWORD testVM(LPVOID lpParam) {
         page_faulted = FALSE;
 
 
+        if (redo_try_same_address == FALSE) {
+            // Write the virtual address into each page. If we need to
+            // debug anything, we'll be able to see these in the pages.
+            // Ensure the write to the arbitrary virtual address doesn't
+            // straddle a PAGE_SIZE boundary just to keep things simple for now.
 
-            if (redo_try_same_address == FALSE) {
-                // Write the virtual address into each page. If we need to
-                // debug anything, we'll be able to see these in the pages.
-                // Ensure the write to the arbitrary virtual address doesn't
-                // straddle a PAGE_SIZE boundary just to keep things simple for now.
-
-                arbitrary_va = get_next_va(arbitrary_va, thread_info);
-
-            }
+            arbitrary_va = get_next_va(arbitrary_va, thread_info);
+        }
         __try {
             *arbitrary_va = (ULONG_PTR) arbitrary_va;
-
-
         } __except (EXCEPTION_EXECUTE_HANDLER) {
             page_faulted = TRUE;
         }
 
         if (page_faulted) {
-
             //continuously fault on the same va
             redo_fault = REDO_FAULT;
             counter = 0;
             while (redo_fault == REDO_FAULT) {
                 redo_fault = pageFault(arbitrary_va, lpParam);
-
             }
             redo_try_same_address = TRUE;
             i--;
-
         } else {
-
             setAccessBit((ULONG64) arbitrary_va);
             redo_try_same_address = FALSE;
 
 
-
-#if 0 || DBG
-    if (i % KB(512) == 0) {
-        printf(".");
-    }
+#if 1 || DBG
+            if (i % MB(1) == 0) {
+                printf(".");
+            }
 #endif
         }
-    i++;
-}
+    }
 
     printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
 
@@ -276,8 +270,6 @@ DWORD testVM(LPVOID lpParam) {
 }
 
 
-
-VOID
 main(int argc, char **argv) {
     // Test our very complicated usermode virtual implementation.
     //
@@ -300,7 +292,7 @@ main(int argc, char **argv) {
     // store, bringing them back from backing store, protecting them, etc.
     //
     // This is where we can be as creative as we like, the sky's the limit !
-    memset (&vm, 0, sizeof(vm));
+    memset(&vm, 0, sizeof(vm));
     //calls get physical pages, because his parameters might change
     init_base_config();
 
@@ -314,22 +306,13 @@ main(int argc, char **argv) {
         ULONG64 vaSizeInGigs = (ULONG64) atoi(argv[2]);
         ULONG64 paSizeInGigs = (ULONG64) atoi(argv[3]);
         ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
-
-
-
     } else {
-
     }
-    printf("%llu ",sizeof(pfn));
+    printf("%llu ", sizeof(pfn));
 #if DBG
-    printf("%llu ",sizeof(debugPFN));
+    printf("%llu ", sizeof(debugPFN));
 #endif
 
 
-
-
     full_virtual_memory_test();
-
 }
-
-

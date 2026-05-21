@@ -193,6 +193,7 @@ DWORD page_trimmer(LPVOID info) {
         if (returnEvent - WAIT_OBJECT_0 == 1) {
             return 0;
         }
+        InterlockedExchange64(&vm.misc.trimmerPending, 0);
         QueryPerformanceCounter(&start);
 
         numToTrimLocal = ReadULong64NoFence(&vm.pte.numToTrim);

@@ -132,7 +132,7 @@ InitializeCriticalSection(x)
 #endif
 
 
-#define spinEvents 1
+#define spinEvents 0
 
 
 // this one does not malloc and is used for the array that is statically declared
@@ -245,7 +245,7 @@ typedef struct {
     CRITICAL_SECTION lock;
 
 
-} pfn;
+}pfn;
 #define PAGES_CONSUMED_LENGTH 16
 
 #define NUMBER_OF_TIME_STAMPS 16
@@ -456,6 +456,7 @@ typedef struct {
     volatile ULONG64 pagesFromFree;
     volatile ULONG64 pagesFromLocalCache;
     volatile ULONG64 numRescues;
+    volatile LONG64 trimmerPending;
 } misc;
 
 typedef struct {

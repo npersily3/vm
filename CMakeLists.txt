@@ -10,20 +10,45 @@ project(VirtualMemorySystem
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Set build type to Debug if not specified
-if(NOT CMAKE_BUILD_TYPE)
- set(CMAKE_BUILD_TYPE Debug)
+# Default to Release for performance unless overridden (single-config generators only)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+ set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+ set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
 endif()
 
-# Compiler-specific options
+# Compiler-specific options.
+# Note: CMake already injects sensible per-config defaults for MSVC
+# (Debug: /MDd /Zi /Ob0 /Od /RTC1 ; Release: /MD /O2 /Ob2 /DNDEBUG).
+# We only ADD extras here so we don't fight the defaults.
 if(MSVC)
- # MSVC specific flags
- add_compile_options(/W3 /Zi /TC)
- add_link_options(/DEBUG)
+ # Always-on
+ add_compile_options(/W3 /TC)
+ # Release-only extras for max throughput
+ add_compile_options("$<$<CONFIG:Release>:/Oi>")  # intrinsics
+ add_compile_options("$<$<CONFIG:Release>:/Ot>")  # favor speed
+ add_compile_options("$<$<CONFIG:Release>:/GL>")  # whole-program opt (pairs with /LTCG)
+ # Linker
+ add_link_options("$<$<CONFIG:Debug>:/DEBUG>")
+ add_link_options("$<$<CONFIG:Release>:/LTCG>")
+ add_link_options("$<$<CONFIG:Release>:/OPT:REF>")
+ add_link_options("$<$<CONFIG:Release>:/OPT:ICF>")
+ add_link_options("$<$<CONFIG:RelWithDebInfo>:/DEBUG>")
+ add_link_options("$<$<CONFIG:RelWithDebInfo>:/OPT:REF>")
+ add_link_options("$<$<CONFIG:RelWithDebInfo>:/OPT:ICF>")
 else()
- # GCC/Clang flags
- add_compile_options(-Wall -Wextra -g)
+ add_compile_options(-Wall -Wextra)
+ add_compile_options("$<$<CONFIG:Debug>:-g>")
+ add_compile_options("$<$<CONFIG:Debug>:-O0>")
+ add_compile_options("$<$<CONFIG:Release>:-O3>")
+ add_compile_options("$<$<CONFIG:Release>:-DNDEBUG>")
+ add_compile_options("$<$<CONFIG:RelWithDebInfo>:-O2>")
+ add_compile_options("$<$<CONFIG:RelWithDebInfo>:-g>")
+ add_compile_options("$<$<CONFIG:RelWithDebInfo>:-DNDEBUG>")
 endif()
+
+# Link-time optimization for non-Debug builds when the toolchain supports it
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_ok OUTPUT ipo_msg)
 
 # Include directories
 include_directories(include)
@@ -79,6 +104,11 @@ set(HEADERS
 
 # Create the executable
 add_executable(vm ${SOURCES} ${HEADERS})
+
+if(ipo_ok)
+ set_property(TARGET vm PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+ set_property(TARGET vm PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
+endif()
 
 # Link required libraries
 if(WIN32)
