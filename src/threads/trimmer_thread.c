@@ -294,6 +294,11 @@ DWORD page_trimmer(LPVOID info) {
                 leavePTERegionLock(currentRegion, threadContext);
                 counter++;
             }
+            
+            if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
+                return 0;
+            }
+
         }
 
         QueryPerformanceCounter(&end);

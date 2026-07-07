@@ -93,16 +93,16 @@ DWORD scheduler_thread(LPVOID info) {
     int calibrationCounter = 0;
 
     while (TRUE) {
-        Sleep(1000);
+        Sleep(SCHEDULER_PERIOD_MS);
         if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
             return 0;
         }
 
         if (isCalibrating) {
-            // Fixed amounts during warmup
-            numToAgeThisWakeup = 1000; // Based on typical workload
-            numToTrimThisWakeup = 1000;
-            numToWriteThisWakeup = 1000;
+            // Fixed amounts during warmup, scaled to the wakeup period (roughly 1000 pages/sec assumed typical workload)
+            numToAgeThisWakeup = SCHEDULER_PERIOD_MS;
+            numToTrimThisWakeup = SCHEDULER_PERIOD_MS;
+            numToWriteThisWakeup = SCHEDULER_PERIOD_MS;
 
 
             calibrationCounter++;
@@ -145,8 +145,13 @@ DWORD scheduler_thread(LPVOID info) {
             //  averagePagesConsumedPer100Ns);
 
 #if 1
+            // averagePagesConsumedPerWakeup is pages per SCHEDULER_PERIOD_MS, not pages per second --
+            // convert to a true rate before mixing it with anything measured in real seconds (like pageTrimRate/
+            // pageWriteRate/pageAgeRate, which come from QueryPerformanceCounter and don't depend on the period).
+            ULONG64 averagePagesConsumedPerSecond = averagePagesConsumedPerWakeup * 1000 / SCHEDULER_PERIOD_MS;
+
             pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
-            timeUntilOutInSecs = (pagesLeft / averagePagesConsumedPerWakeup);
+            timeUntilOutInSecs = pagesLeft * SCHEDULER_PERIOD_MS / (averagePagesConsumedPerWakeup * 1000);
 
 
             trimmerWork = vm.threadInfo.trimmer->work;
@@ -225,10 +230,12 @@ DWORD scheduler_thread(LPVOID info) {
             } else {
                 // Basically, if I can age faster than I can consume, only age the perfect amount.
                 // otherwise, age the perceived max number of ptes that can be aged in one second.
+                // numToAgeTotal / perfectTimeToAge (or / timeToAge) is a true rate in pages/sec (both
+                // are real seconds); scale it down to how much of that we should do in one wakeup period.
                 if (timeToAge < perfectTimeToAge) {
-                    numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge);
+                    numToAgeThisWakeup = numToAgeTotal * SCHEDULER_PERIOD_MS / (perfectTimeToAge * 1000);
                 } else {
-                    numToAgeThisWakeup = numToAgeTotal / (timeToAge);
+                    numToAgeThisWakeup = numToAgeTotal * SCHEDULER_PERIOD_MS / (timeToAge * 1000);
                 }
             }
 
@@ -237,12 +244,15 @@ DWORD scheduler_thread(LPVOID info) {
             }
 
             // Reorder-point pacing: trim+write are now a pipelined relay (trimmer wakes the writer after its
-            // first batch, so they run concurrently), so the combined lead time to make r = averagePagesConsumedPerWakeup
-            // pages available is L = max(r/t, r/w). We only need to start once our runway (pagesLeft/r) shrinks to L --
-            // starting earlier reclaims pages we don't need yet. Using x <= max(a,b) <=> x<=a OR x<=b, and
-            // cross-multiplying to avoid integer-division truncation: p/r <= r/t  <=>  p*t <= r*r  (same for w).
-            if (pagesLeft * pageTrimRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerWakeup ||
-                pagesLeft * pageWriteRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerWakeup) {
+            // first batch, so they run concurrently), so the combined lead time to make r pages/sec (=
+            // averagePagesConsumedPerSecond, the true rate) available is L = max(r/t, r/w). We only need to
+            // start once our runway (pagesLeft/r, true seconds) shrinks to L -- starting earlier reclaims
+            // pages we don't need yet. Using x <= max(a,b) <=> x<=a OR x<=b, and cross-multiplying to avoid
+            // integer-division truncation: p/r <= r/t  <=>  p*t <= r*r. Since numToTrimThisWakeup is handed
+            // out per-period (averagePagesConsumedPerWakeup), not per-second, the right-hand "r*r" has to be
+            // the per-period count times the true per-second rate, not the per-period count squared.
+            if (pagesLeft * pageTrimRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerSecond ||
+                pagesLeft * pageWriteRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerSecond) {
                 numToTrimThisWakeup = averagePagesConsumedPerWakeup;
                 numToWriteThisWakeup = averagePagesConsumedPerWakeup;
             } else {
