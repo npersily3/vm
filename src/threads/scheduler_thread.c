@@ -30,6 +30,8 @@ ULONG64 getPagesPerSecond(workDone work) {
 
 
 DWORD scheduler_thread(LPVOID info) {
+    SetThreadDescription(GetCurrentThread(), L"Scheduler");
+
     PTHREAD_INFO threadInfo;
 
     threadInfo = (PTHREAD_INFO) info;
@@ -177,7 +179,7 @@ DWORD scheduler_thread(LPVOID info) {
 
             // this copy is not a perfect copy as inbetween loops, anything can happen, but it is good enough
             for (int j = 0; j < NUMBER_OF_AGES; ++j) {
-                localnumOfAge[j] = ReadULong64NoFence(&vm.pte.globalNumOfAge[j]);
+                localnumOfAge[j] = ReadULong64NoFence(&vm.pte.globalNumOfAge[j].count);
             }
 
 

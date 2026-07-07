@@ -70,10 +70,10 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                     ASSERT(currentRegion->numOfAge > 0)
                     currentRegion->numOfAge[age]--;
-                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
                     currentRegion->numOfAge[0]++;
-                    InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
+                    InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
 
                     pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
 
@@ -99,7 +99,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                 ASSERT(currentRegion->numOfAge > 0)
                 currentRegion->numOfAge[age]--;
-                InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+                InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
 
                 page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
@@ -180,6 +180,8 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 #define VERBOSE 0
 
 DWORD page_trimmer(LPVOID info) {
+    SetThreadDescription(GetCurrentThread(), L"Trimmer");
+
     LARGE_INTEGER start, end;
     ULONG64 counter;
 

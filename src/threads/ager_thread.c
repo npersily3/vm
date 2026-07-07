@@ -85,10 +85,10 @@ ULONG64 agePTE(pte *pteAddress, PTE_REGION *region) {
             // only write the values here or else if you collide with an access bit setter, you mistakenly will double change some data
             ASSERT(region->numOfAge[currentAge] > 0)
             region->numOfAge[currentAge]--;
-            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
+            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge].count);
 
             region->numOfAge[newAge]++;
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge].count);
             break;
         }
 
@@ -161,6 +161,8 @@ ULONG64 ageRegion(PTE_REGION *region, PTHREAD_INFO threadInfo) {
 }
 
 DWORD ager_thread(LPVOID info) {
+    SetThreadDescription(GetCurrentThread(), L"Ager");
+
     HANDLE events[2];
     DWORD returnEvent;
     events[0] = vm.events.agerStart;

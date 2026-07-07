@@ -6,6 +6,7 @@
 #include "../../include/utils/pte_utils.h"
 #include "../../include/disk/disk.h"
 #include <stdio.h>
+#include <wchar.h>
 #include "vm.h"
 #include "../../include/variables/macros.h"
 #include "threads/user_thread.h"
@@ -196,6 +197,10 @@ DWORD testVM(LPVOID lpParam) {
     thread_info = (PTHREAD_INFO) lpParam;
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
+
+    WCHAR threadName[16];
+    swprintf(threadName, ARRAYSIZE(threadName), L"User_%lu", thread_info->ThreadNumber);
+    SetThreadDescription(GetCurrentThread(), threadName);
 
     InitializeThreadRNG(&thread_info->rng);
     arbitrary_va = get_arbitrary_va(thread_info);

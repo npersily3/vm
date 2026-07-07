@@ -62,6 +62,8 @@ VOID freeWriterThreadMapping(PTHREAD_INFO threadContext) {
  * @retval 0 If the program succeeds
  */
 DWORD diskWriter(LPVOID info) {
+    SetThreadDescription(GetCurrentThread(), L"Writer");
+
     ULONG64 localBatchSize;
     ULONG64 previousBatchSize;
 

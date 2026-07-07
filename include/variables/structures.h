@@ -406,11 +406,18 @@ typedef struct {
 
 
 } pfns;
+// padded to a full cache line so incrementing/decrementing one age bucket doesn't
+// false-share the line with the other ages, which are hit by every user/ager/trimmer thread
+typedef struct {
+    volatile LONG64 count;
+    char _padding[64 - sizeof(LONG64)];
+} AGE_COUNTER;
+
 typedef struct {
     PTE_REGION* RegionsBase;
     pte* table;
     listHead ageList[NUMBER_OF_AGES];
-    volatile LONG64 globalNumOfAge[NUMBER_OF_AGES];
+    AGE_COUNTER globalNumOfAge[NUMBER_OF_AGES];
     volatile ULONG64 numToAge;
     volatile ULONG64 numToTrim;
     volatile ULONG64 numToWrite;
