@@ -510,7 +510,9 @@ typedef struct {
 
 extern state vm;
 
-
+//this is for the mode where I want to ensure correction at the expense of perf
+#define CORRECTNESS 1
+#define CORRECTNESS_SIZE 500
 
 #define useSharedLock 1
 

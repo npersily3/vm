@@ -43,7 +43,6 @@ InsertTailListDebug(
 
 // Basic validation function of a list
 VOID validateList(pListHead head) {
-
     return;
 
     LIST_ENTRY *currentEntry;
@@ -195,9 +194,9 @@ VOID debug_release_srw_exclusive(sharedLock *lock) {
 #endif
 
 #if DBG
-VOID recordPFNLock(pfn* page, PTHREAD_INFO info) {
+VOID recordPFNLock(pfn *page, PTHREAD_INFO info) {
     ULONG64 threadId;
-    debugPFN* pfn;
+    debugPFN *pfn;
 
     ULONG64 index;
     threadId = GetCurrentThreadId();
@@ -211,11 +210,10 @@ VOID recordPFNLock(pfn* page, PTHREAD_INFO info) {
     pfn->oldContents = *page;
     pfn->threadId = threadId;
 
-    CaptureStackBackTrace(0,FRAMES_TO_CAPTURE,pfn->stacktrace,NULL);
+    CaptureStackBackTrace(0, FRAMES_TO_CAPTURE, pfn->stacktrace,NULL);
 
 
     ULONG64 localDebugBufferIndex;
-
 
 
     for (localDebugBufferIndex = 0; localDebugBufferIndex < 512; localDebugBufferIndex++) {
@@ -227,8 +225,6 @@ VOID recordPFNLock(pfn* page, PTHREAD_INFO info) {
 
 
     ASSERT(localDebugBufferIndex < 512)
-
-
 }
 
 #endif
@@ -236,7 +232,7 @@ VOID recordPFNLock(pfn* page, PTHREAD_INFO info) {
 VOID enterPageLock(pfn *page, PTHREAD_INFO info) {
     ULONG64 threadId;
 
-    threadId =  GetCurrentThreadId();
+    threadId = GetCurrentThreadId();
     ASSERT(threadId != (ULONG64) page->lock.OwningThread)
     EnterCriticalSection(&page->lock);
 
@@ -256,7 +252,7 @@ boolean tryEnterPageLock(pfn *page, PTHREAD_INFO info) {
     bool result;
     ULONG64 threadId;
 
-    threadId =  GetCurrentThreadId();
+    threadId = GetCurrentThreadId();
     ASSERT(threadId != (ULONG64) page->lock.OwningThread)
     result = TryEnterCriticalSection(&page->lock);
 
@@ -278,7 +274,6 @@ VOID leavePageLock(pfn *page, PTHREAD_INFO info) {
     //ASSERT((ULONG64) page->lock.DebugInfo == MAXULONG_PTR)
 
     ASSERT(info->pagelocksHeld > 0)
-
 
 
 #if DBG
@@ -322,12 +317,10 @@ VOID recordWork(PTHREAD_INFO info, ULONG64 timeInQPC, ULONG64 work) {
         index = 0;
     }
 
-    info->work.timeIntervals[index] = timeIn100ns;  // Now stored in 100ns units
+    info->work.timeIntervals[index] = timeIn100ns; // Now stored in 100ns units
     info->work.numPagesProccessed[index] = work;
 
     index++;
 
     info->work.index = index;
-
-
 }

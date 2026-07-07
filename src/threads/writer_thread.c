@@ -19,8 +19,6 @@
 */
 
 
-
-
 /**
  *@brief A function that gets the current transfer virtual address that a thread needs.
  *@param threadContext The thread info of the caller. It is used to update the per thread index into its transfer virtual address space.
@@ -31,7 +29,7 @@ PVOID getWriterThreadMapping(PTHREAD_INFO threadContext) {
     // Get the current thread's transfer va space
     PVOID currentTransferVa = vm.va.writing;
     // Index into it
-    PVOID va = (PVOID) ((ULONG64) currentTransferVa + BATCH_SIZE * PAGE_SIZE  * threadContext->TransferVaIndex);
+    PVOID va = (PVOID) ((ULONG64) currentTransferVa + BATCH_SIZE * PAGE_SIZE * threadContext->TransferVaIndex);
 
     threadContext->TransferVaIndex += 1;
     ASSERT(threadContext->TransferVaIndex <= vm.config.size_of_user_thread_transfer_va_space_in_pages);
@@ -44,14 +42,14 @@ PVOID getWriterThreadMapping(PTHREAD_INFO threadContext) {
  * @param threadContext The thread info of the caller. It is used to index into the correct transfer virtual address space.
  */
 VOID freeWriterThreadMapping(PTHREAD_INFO threadContext) {
-
     // If we are at the end, reset and unmap everything
     if (threadContext->TransferVaIndex == NUM_WRITING_BATCHES) {
         threadContext->TransferVaIndex = 0;
 
         if (MapUserPhysicalPages(vm.va.writing, BATCH_SIZE * NUM_WRITING_BATCHES, NULL) == FALSE) {
             DebugBreak();
-            printf("full_virtual_memory_test : could not unmap VA %p\n", vm.va.userThreadTransfer[threadContext->ThreadNumber]);
+            printf("full_virtual_memory_test : could not unmap VA %p\n",
+                   vm.va.userThreadTransfer[threadContext->ThreadNumber]);
             return;
         }
     }
@@ -63,9 +61,7 @@ VOID freeWriterThreadMapping(PTHREAD_INFO threadContext) {
  * @param info A pointer to a thread info struct. Passed in during the function CreateThread
  * @retval 0 If the program succeeds
  */
-DWORD diskWriter (LPVOID info) {
-
-
+DWORD diskWriter(LPVOID info) {
     ULONG64 localBatchSize;
     ULONG64 previousBatchSize;
 
@@ -73,9 +69,9 @@ DWORD diskWriter (LPVOID info) {
     ULONG64 diskIndexArray[BATCH_SIZE];
 
     ULONG64 frameNumberArray[BATCH_SIZE];
-    pfn* pfnArray[BATCH_SIZE];
+    pfn *pfnArray[BATCH_SIZE];
 
-    PTHREAD_INFO threadContext = (PTHREAD_INFO)info;
+    PTHREAD_INFO threadContext = (PTHREAD_INFO) info;
 
     HANDLE events[2];
     DWORD returnEvent;
@@ -87,11 +83,8 @@ DWORD diskWriter (LPVOID info) {
     LARGE_INTEGER start, end;
 
     while (TRUE) {
-
-
-
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
-        vm.misc.numWrites ++;
+        vm.misc.numWrites++;
 
         //if the system shutdown event was signaled, exit
         if (returnEvent - WAIT_OBJECT_0 == 1) {
@@ -115,8 +108,8 @@ DWORD diskWriter (LPVOID info) {
         previousBatchSize = localBatchSize;
 
         // fill our local page and frame number arrays
-        localBatchSize = getPagesFromModifiedList(localBatchSize, pfnArray, diskIndexArray, frameNumberArray,  threadContext);
-
+        localBatchSize = getPagesFromModifiedList(localBatchSize, pfnArray, diskIndexArray, frameNumberArray,
+                                                  threadContext);
 
 
         // if the amount of pages we got off the modified list is less than the amount of disk slots we acquired free the disk slots
@@ -145,9 +138,7 @@ DWORD diskWriter (LPVOID info) {
 
 
         SetEvent(vm.events.writingEnd);
-
     }
-
 }
 
 /**
@@ -157,7 +148,7 @@ DWORD diskWriter (LPVOID info) {
  * @param end Where to finish freeing in the array of disk indices.
  */
 VOID freeUnusedDiskSlots(PULONG64 diskIndexArray, ULONG64 start, ULONG64 end) {
-    for (;start < end; start++) {
+    for (; start < end; start++) {
         set_disk_space_free(diskIndexArray[start]);
     }
 }
@@ -169,14 +160,12 @@ VOID freeUnusedDiskSlots(PULONG64 diskIndexArray, ULONG64 start, ULONG64 end) {
  * @param pfnArray An array of page pointers
  * @param info The info about the caller
  */
-ULONG64 addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) {
-
-    pfn* page;
+ULONG64 addToStandBy(ULONG64 localBatchSize, pfn **pfnArray, PTHREAD_INFO info) {
+    pfn *page;
     ULONG64 numAddedToModifiedList = 0;
 
 
     for (int i = 0; i < localBatchSize; ++i) {
-
         page = pfnArray[i];
 
 
@@ -184,7 +173,7 @@ ULONG64 addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) 
 
         //if it has been rescued, free up the disk space and do not put it on the standby list because the faulter
         // will put it on the active list
-        if(page->isBeingWritten == FALSE) {
+        if (page->isBeingWritten == FALSE) {
             set_disk_space_free(page->diskIndex);
 #if DBG
             page->diskIndex = 0;
@@ -195,7 +184,6 @@ ULONG64 addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) 
             if (page->isBeingFreed == TRUE) {
                 page->isBeingFreed = FALSE;
                 addPageToFreeList(page, info);
-
             }
         } else {
             numAddedToModifiedList++;
@@ -203,7 +191,6 @@ ULONG64 addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) 
 
             // this expects me to come in with the lock and does not release it for me
             addPageToTail(&vm.lists.standby, page, info);
-
         }
 
         leavePageLock(page, info);
@@ -219,26 +206,23 @@ ULONG64 addToStandBy(ULONG64 localBatchSize, pfn** pfnArray, PTHREAD_INFO info) 
  * @param ThreadContext The info of the caller
  */
 
-VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray, PTHREAD_INFO ThreadContext) {
-
+VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 diskAddressArray,
+                 PTHREAD_INFO ThreadContext) {
     PVOID va;
 
     va = getWriterThreadMapping(ThreadContext);
 
     if (MapUserPhysicalPages(vm.va.writing, localBatchSize, frameNumberArray) == FALSE) {
-
         DebugBreak();
         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", vm.va.writing, frameNumberArray[0]);
-        return ;
+        return;
     }
 
     for (int i = 0; i < localBatchSize; ++i) {
-        memcpy((PVOID)diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE) , PAGE_SIZE);
+        memcpy((PVOID) diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE), PAGE_SIZE);
     }
 
     freeWriterThreadMapping(ThreadContext);
-
-
 }
 
 /**
@@ -250,10 +234,10 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
  * @param frameNumberArray An array of frame numbers to be filled in.
  * @param threadContext The thread info of the caller.
  */
-ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG64 diskIndexArray, PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
-
+ULONG64 getPagesFromModifiedList(ULONG64 localBatchSize, pfn **pfnArray, PULONG64 diskIndexArray,
+                                 PULONG64 frameNumberArray, PTHREAD_INFO threadContext) {
     ULONG64 i;
-    pfn* page;
+    pfn *page;
     ULONG64 frameNumber;
     ULONG64 newBatchSize;
 
@@ -269,11 +253,7 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
     newBatchSize = removeBatchFromList(&vm.lists.modified, &head, threadContext, localBatchSize);
 
 
-
     for (; i < newBatchSize; i++) {
-
-
-
         page = container_of(RemoveHeadList(&head), pfn, entry);
 
         frameNumber = getFrameNumber(page);
@@ -311,9 +291,7 @@ ULONG64 getPagesFromModifiedList (ULONG64 localBatchSize, pfn** pfnArray, PULONG
  * @post The caller must release the page lock.
  */
 
-VOID updatePage (pfn* page, ULONG64 diskIndex) {
-
-
+VOID updatePage(pfn *page, ULONG64 diskIndex) {
 #if DBG_DISK
 
     for (int i = 0; i < vm.config.disk_size_in_pages; i++) {
@@ -328,7 +306,6 @@ VOID updatePage (pfn* page, ULONG64 diskIndex) {
     page->isBeingWritten = TRUE;
     page->diskIndex = diskIndex;
     page->location = STAND_BY_LIST;
-
 }
 
 /**
@@ -342,4 +319,3 @@ VOID getDiskAddressesFromDiskIndices(PULONG64 indices, PULONG64 addresses, ULONG
         addresses[i] = indices[i] * PAGE_SIZE + (ULONG64) vm.disk.start;
     }
 }
-

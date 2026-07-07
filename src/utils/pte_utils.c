@@ -134,3 +134,13 @@ VOID recordPTEAccess(pte* pteAddress, pte NewPteContents) {
 
 
 #endif
+
+#if CORRECTNESS
+
+VOID checkVA(PULONG_PTR va) {
+    for (int i = 0; i < PAGE_SIZE/sizeof(ULONG_PTR); ++i) {
+        ASSERT(&va[i] == va[i]);
+    }
+}
+
+#endif

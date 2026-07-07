@@ -25,6 +25,13 @@
 
 
 
+
+#if CORRECTNESS
+
+volatile PULONG64 correctness;
+
+#endif
+
 ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pfn *pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
@@ -120,6 +127,20 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
     // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
+
+#if CORRECTNESS
+
+    // trigger tlb flush
+    VirtualProtect(correctness, PAGE_SIZE * CORRECTNESS_SIZE, PAGE_READONLY, NULL);
+
+    volatile ULONG64 counter;
+
+    for (int i = 0; i < CORRECTNESS_SIZE; i++) {
+        counter = correctness[i*PAGE_SIZE/sizeof(ULONG64)];
+    }
+#endif
+
+
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
 
@@ -137,7 +158,6 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
 
         if (oldestRegion != NULL) {
-
             return oldestRegion;
         }
     }
@@ -181,6 +201,21 @@ DWORD page_trimmer(LPVOID info) {
 
     ULONG64 numToTrimLocal;
     ULONG64 numFromLocalList;
+
+
+#if CORRECTNESS
+
+    correctness = VirtualAlloc(NULL, PAGE_SIZE * CORRECTNESS_SIZE, MEM_RESERVE | MEM_COMMIT,PAGE_READWRITE);
+
+    if (correctness == NULL ) {
+        DebugBreak();
+    }
+
+    for (int i = 0; i < CORRECTNESS_SIZE; i++) {
+        correctness[i*PAGE_SIZE/sizeof(ULONG64)] = 0;
+    }
+
+#endif
 
     while (TRUE) {
         totalTrimmedPages = 0;

@@ -290,6 +290,13 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     }
 
 
+#if CORRECTNESS
+    //if we are in correctness mode run the validation code
+
+
+#endif
+
+
     unlockPTE(currentPTE);
 
 

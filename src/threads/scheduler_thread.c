@@ -91,9 +91,6 @@ DWORD scheduler_thread(LPVOID info) {
     int calibrationCounter = 0;
 
     while (TRUE) {
-
-
-
         Sleep(1000);
         if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
             return 0;
@@ -101,7 +98,7 @@ DWORD scheduler_thread(LPVOID info) {
 
         if (isCalibrating) {
             // Fixed amounts during warmup
-            numToAgeThisWakeup = 1000;  // Based on typical workload
+            numToAgeThisWakeup = 1000; // Based on typical workload
             numToTrimThisWakeup = 1000;
             numToWriteThisWakeup = 1000;
 
@@ -163,9 +160,9 @@ DWORD scheduler_thread(LPVOID info) {
                 pageWriteRate = 10000;
             }
 
-            ULONG64 timeToTrim =  (averagePagesConsumedPerWakeup / pageTrimRate);
+            ULONG64 timeToTrim = (averagePagesConsumedPerWakeup / pageTrimRate);
 
-            ULONG64 timeToWrite = (averagePagesConsumedPerWakeup / pageWriteRate) ;
+            ULONG64 timeToWrite = (averagePagesConsumedPerWakeup / pageWriteRate);
 
             // Total time to make pages available after aging (trim + write, or max if parallel?)
             timeToMakePagesAvailable = timeToTrim + timeToWrite;
@@ -176,7 +173,6 @@ DWORD scheduler_thread(LPVOID info) {
             pageAgeRate = getPagesPerSecond(agerWork);
 
             numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
-
 
 
             // this copy is not a perfect copy as inbetween loops, anything can happen, but it is good enough
@@ -212,8 +208,6 @@ DWORD scheduler_thread(LPVOID info) {
             }
 
 
-
-
             //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
             if (timeUntilOutInSecs < timeToMakePagesAvailable) {
                 perfectTimeToAge = 0;
@@ -227,10 +221,9 @@ DWORD scheduler_thread(LPVOID info) {
             if (pageAgeRate == 0 || numToAgeTotal == 0) {
                 numToAgeThisWakeup = 10000;
             } else {
-
                 // Basically, if I can age faster than I can consume, only age the perfect amount.
                 // otherwise, age the perceived max number of ptes that can be aged in one second.
-                if(timeToAge < perfectTimeToAge) {
+                if (timeToAge < perfectTimeToAge) {
                     numToAgeThisWakeup = numToAgeTotal / (perfectTimeToAge);
                 } else {
                     numToAgeThisWakeup = numToAgeTotal / (timeToAge);
@@ -244,9 +237,6 @@ DWORD scheduler_thread(LPVOID info) {
             //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages active and you will be out in 10s, you only need to trim in the last 2 seconds.
 
 
-
-
-
             numToTrimThisWakeup = averagePagesConsumedPerWakeup;
             numToWriteThisWakeup = averagePagesConsumedPerWakeup;
         }
@@ -258,9 +248,7 @@ DWORD scheduler_thread(LPVOID info) {
 #endif
 
 
-
         SetEvent(vm.events.agerStart);
         SetEvent(vm.events.trimmingStart);
-
     }
 }
