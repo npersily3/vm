@@ -266,6 +266,10 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                        frameNumber);
                 return FALSE;
             }
+#if CORRECTNESS
+            //if we are in correctness mode run the validation code
+            checkVA(arbitrary_va);
+#endif
 
             // if this is the first active pte make it an aging candidate
             if (regionStatus == FALSE) {
@@ -290,11 +294,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
     }
 
 
-#if CORRECTNESS
-    //if we are in correctness mode run the validation code
 
-
-#endif
 
 
     unlockPTE(currentPTE);

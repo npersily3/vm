@@ -29,6 +29,7 @@ if(MSVC)
  add_compile_options("$<$<CONFIG:Release>:/GL>")  # whole-program opt (pairs with /LTCG)
  # Linker
  add_link_options("$<$<CONFIG:Debug>:/DEBUG>")
+ add_link_options("$<$<CONFIG:Release>:/DEBUG>")
  add_link_options("$<$<CONFIG:Release>:/LTCG>")
  add_link_options("$<$<CONFIG:Release>:/OPT:REF>")
  add_link_options("$<$<CONFIG:Release>:/OPT:ICF>")

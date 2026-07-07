@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define DBG 0
+#define         DBG 0
 #define DBG_DISK 0
 
 
@@ -511,7 +511,7 @@ typedef struct {
 extern state vm;
 
 //this is for the mode where I want to ensure correction at the expense of perf
-#define CORRECTNESS 1
+#define CORRECTNESS 0
 #define CORRECTNESS_SIZE 500
 
 #define useSharedLock 1

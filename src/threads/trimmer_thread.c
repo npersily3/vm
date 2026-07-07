@@ -131,7 +131,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 #if CORRECTNESS
 
     // trigger tlb flush
-    VirtualProtect(correctness, PAGE_SIZE * CORRECTNESS_SIZE, PAGE_READONLY, NULL);
+    //VirtualProtect(correctness, PAGE_SIZE * CORRECTNESS_SIZE, PAGE_READONLY, NULL);
 
     volatile ULONG64 counter;
 
