@@ -219,9 +219,12 @@ DWORD page_trimmer(LPVOID info) {
 
 #endif
 
+    boolean signaledWriter;
+
     while (TRUE) {
         totalTrimmedPages = 0;
         counter = 0;
+        signaledWriter = FALSE;
 
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
@@ -263,6 +266,13 @@ DWORD page_trimmer(LPVOID info) {
                 trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
                 totalTrimmedPages += trimmedPagesInRegion;
 
+                // wake the writer as soon as the first batch lands, instead of waiting for our whole
+                // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
+                if (signaledWriter == FALSE && trimmedPagesInRegion > 0) {
+                    SetEvent(vm.events.writingStart);
+                    signaledWriter = TRUE;
+                }
+
 
                 if (currentRegion->hasActiveEntry == TRUE) {
                     finalAge = getRegionAge(currentRegion);
@@ -296,7 +306,11 @@ DWORD page_trimmer(LPVOID info) {
 
         vm.misc.numTrims++;
 
-        SetEvent(vm.events.writingStart);
+        // fallback: if we never trimmed anything this cycle, the writer still needs a chance to
+        // drain whatever's already on the modified list from before
+        if (signaledWriter == FALSE) {
+            SetEvent(vm.events.writingStart);
+        }
     }
 }
 

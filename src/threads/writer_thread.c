@@ -81,6 +81,13 @@ DWORD diskWriter(LPVOID info) {
     events[1] = vm.events.systemShutdown;
 
     ULONG64 numPagesWritten;
+    ULONG64 numToWriteLocal;
+    ULONG64 totalWritten;
+
+    // how many times in a row we've found the modified list empty while still short of quota
+    // (bounded so we don't spin forever if the trimmer genuinely has nothing left to give us)
+    int emptyRetries;
+    const int MAX_EMPTY_RETRIES = 50;
 
     LARGE_INTEGER start, end;
 
@@ -95,48 +102,61 @@ DWORD diskWriter(LPVOID info) {
 
         QueryPerformanceCounter(&start);
 
-        localBatchSize = BATCH_SIZE;
+        numToWriteLocal = ReadULong64NoFence(&vm.pte.numToWrite);
+        totalWritten = 0;
+        emptyRetries = 0;
 
-        // pre acquire all the disk slots
-        localBatchSize = getMultipleDiskIndices(diskIndexArray);
+        while (totalWritten < numToWriteLocal) {
+            localBatchSize = BATCH_SIZE;
 
-        // the disk was empty upon entry
-        if (localBatchSize == COULD_NOT_FIND_SLOT) {
-            SetEvent(vm.events.writingEnd);
-            continue;
+            // pre acquire all the disk slots
+            localBatchSize = getMultipleDiskIndices(diskIndexArray);
+
+            // the disk itself is full -- nothing more we can do this cycle
+            if (localBatchSize == COULD_NOT_FIND_SLOT) {
+                break;
+            }
+
+            // save how many disk indices we got
+            previousBatchSize = localBatchSize;
+
+            // fill our local page and frame number arrays
+            localBatchSize = getPagesFromModifiedList(localBatchSize, pfnArray, diskIndexArray, frameNumberArray,
+                                                      threadContext);
+
+
+            // if the amount of pages we got off the modified list is less than the amount of disk slots we acquired free the disk slots
+            if (previousBatchSize != localBatchSize) {
+                freeUnusedDiskSlots(diskIndexArray, localBatchSize, previousBatchSize);
+            }
+
+            // modified list is momentarily empty -- the trimmer may still be feeding it (we run
+            // concurrently with it now), so give it a short chance to catch up before giving up
+            if (localBatchSize == 0) {
+                emptyRetries++;
+                if (emptyRetries >= MAX_EMPTY_RETRIES ||
+                    WaitForSingleObject(vm.events.systemShutdown, 1) == WAIT_OBJECT_0) {
+                    break;
+                }
+                continue;
+            }
+            emptyRetries = 0;
+
+            // simply converts indices to addresses
+            getDiskAddressesFromDiskIndices(diskIndexArray, diskAddressArray, localBatchSize);
+
+            // actual write to disk
+            writeToDisk(localBatchSize, frameNumberArray, diskAddressArray, threadContext);
+
+            numPagesWritten = addToStandBy(localBatchSize, pfnArray, threadContext);
+
+            totalWritten += numPagesWritten;
         }
-
-        // save how many disk indices we got
-        previousBatchSize = localBatchSize;
-
-        // fill our local page and frame number arrays
-        localBatchSize = getPagesFromModifiedList(localBatchSize, pfnArray, diskIndexArray, frameNumberArray,
-                                                  threadContext);
-
-
-        // if the amount of pages we got off the modified list is less than the amount of disk slots we acquired free the disk slots
-        if (previousBatchSize != localBatchSize) {
-            freeUnusedDiskSlots(diskIndexArray, localBatchSize, previousBatchSize);
-        }
-
-        // modified list is empty
-        if (localBatchSize == 0) {
-            SetEvent(vm.events.writingEnd);
-            continue;
-        }
-
-        // simply converts indices to addresses
-        getDiskAddressesFromDiskIndices(diskIndexArray, diskAddressArray, localBatchSize);
-
-        // actual write to disk
-        writeToDisk(localBatchSize, frameNumberArray, diskAddressArray, threadContext);
-
-        numPagesWritten = addToStandBy(localBatchSize, pfnArray, threadContext);
 
         QueryPerformanceCounter(&end);
 
 
-        recordWork(threadContext, end.QuadPart - start.QuadPart, numPagesWritten);
+        recordWork(threadContext, end.QuadPart - start.QuadPart, totalWritten);
 
 
         SetEvent(vm.events.writingEnd);

@@ -236,11 +236,19 @@ DWORD scheduler_thread(LPVOID info) {
                 numToAgeThisWakeup = 10000;
             }
 
-            //TODO I need to multiply this by the trim rate. Think of the hypothetical where you can trim 50 p/s and you have 100 pages active and you will be out in 10s, you only need to trim in the last 2 seconds.
-
-
-            numToTrimThisWakeup = averagePagesConsumedPerWakeup;
-            numToWriteThisWakeup = averagePagesConsumedPerWakeup;
+            // Reorder-point pacing: trim+write are now a pipelined relay (trimmer wakes the writer after its
+            // first batch, so they run concurrently), so the combined lead time to make r = averagePagesConsumedPerWakeup
+            // pages available is L = max(r/t, r/w). We only need to start once our runway (pagesLeft/r) shrinks to L --
+            // starting earlier reclaims pages we don't need yet. Using x <= max(a,b) <=> x<=a OR x<=b, and
+            // cross-multiplying to avoid integer-division truncation: p/r <= r/t  <=>  p*t <= r*r  (same for w).
+            if (pagesLeft * pageTrimRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerWakeup ||
+                pagesLeft * pageWriteRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerWakeup) {
+                numToTrimThisWakeup = averagePagesConsumedPerWakeup;
+                numToWriteThisWakeup = averagePagesConsumedPerWakeup;
+            } else {
+                numToTrimThisWakeup = 0;
+                numToWriteThisWakeup = 0;
+            }
         }
 
         InterlockedExchange64(&vm.pte.numToAge, numToAgeThisWakeup);
