@@ -25,6 +25,13 @@
 
 
 
+
+#if CORRECTNESS
+
+volatile PULONG64 correctness;
+
+#endif
+
 ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pfn *pages[BATCH_SIZE];
     ULONG64 virtualAddresses[BATCH_SIZE];
@@ -63,10 +70,10 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                     ASSERT(currentRegion->numOfAge > 0)
                     currentRegion->numOfAge[age]--;
-                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+                    InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
                     currentRegion->numOfAge[0]++;
-                    InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
+                    InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
 
                     pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
 
@@ -92,7 +99,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                 ASSERT(currentRegion->numOfAge > 0)
                 currentRegion->numOfAge[age]--;
-                InterlockedDecrement64(&vm.pte.globalNumOfAge[age]);
+                InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
 
                 page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
@@ -120,6 +127,20 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
     // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
+
+#if CORRECTNESS
+
+    // trigger tlb flush
+    //VirtualProtect(correctness, PAGE_SIZE * CORRECTNESS_SIZE, PAGE_READONLY, NULL);
+
+    volatile ULONG64 counter;
+
+    for (int i = 0; i < CORRECTNESS_SIZE; i++) {
+        counter = correctness[i*PAGE_SIZE/sizeof(ULONG64)];
+    }
+#endif
+
+
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
 
@@ -137,7 +158,6 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
 
         if (oldestRegion != NULL) {
-
             return oldestRegion;
         }
     }
@@ -160,6 +180,8 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 #define VERBOSE 0
 
 DWORD page_trimmer(LPVOID info) {
+    SetThreadDescription(GetCurrentThread(), L"Trimmer");
+
     LARGE_INTEGER start, end;
     ULONG64 counter;
 
@@ -182,9 +204,27 @@ DWORD page_trimmer(LPVOID info) {
     ULONG64 numToTrimLocal;
     ULONG64 numFromLocalList;
 
+
+#if CORRECTNESS
+
+    correctness = VirtualAlloc(NULL, PAGE_SIZE * CORRECTNESS_SIZE, MEM_RESERVE | MEM_COMMIT,PAGE_READWRITE);
+
+    if (correctness == NULL ) {
+        DebugBreak();
+    }
+
+    for (int i = 0; i < CORRECTNESS_SIZE; i++) {
+        correctness[i*PAGE_SIZE/sizeof(ULONG64)] = 0;
+    }
+
+#endif
+
+    boolean signaledWriter;
+
     while (TRUE) {
         totalTrimmedPages = 0;
         counter = 0;
+        signaledWriter = FALSE;
 
 
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
@@ -226,6 +266,13 @@ DWORD page_trimmer(LPVOID info) {
                 trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
                 totalTrimmedPages += trimmedPagesInRegion;
 
+                // wake the writer as soon as the first batch lands, instead of waiting for our whole
+                // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
+                if (signaledWriter == FALSE && trimmedPagesInRegion > 0) {
+                    SetEvent(vm.events.writingStart);
+                    signaledWriter = TRUE;
+                }
+
 
                 if (currentRegion->hasActiveEntry == TRUE) {
                     finalAge = getRegionAge(currentRegion);
@@ -247,6 +294,11 @@ DWORD page_trimmer(LPVOID info) {
                 leavePTERegionLock(currentRegion, threadContext);
                 counter++;
             }
+            
+            if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
+                return 0;
+            }
+
         }
 
         QueryPerformanceCounter(&end);
@@ -259,7 +311,11 @@ DWORD page_trimmer(LPVOID info) {
 
         vm.misc.numTrims++;
 
-        SetEvent(vm.events.writingStart);
+        // fallback: if we never trimmed anything this cycle, the writer still needs a chance to
+        // drain whatever's already on the modified list from before
+        if (signaledWriter == FALSE) {
+            SetEvent(vm.events.writingStart);
+        }
     }
 }
 

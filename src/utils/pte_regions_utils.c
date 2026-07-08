@@ -18,13 +18,9 @@
  * @param page The page being removed
  * @param threadInfo The info of the calling thread to help debug lock errors
  */
-VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PTHREAD_INFO threadInfo) {
-
-
-
-
-    PTE_REGION* Flink;
-    PTE_REGION* Blink;
+VOID removeFromMiddleOfPageTableRegionList(pListHead head, PTE_REGION *region, PTHREAD_INFO threadInfo) {
+    PTE_REGION *Flink;
+    PTE_REGION *Blink;
     boolean obtainedPageLocks;
 
     obtainedPageLocks = FALSE;
@@ -39,7 +35,6 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
 
     // try to only get pagelocks for a certain amount of attempts
     for (int i = 0; i < 5; ++i) {
-
         // reaching into the neighbors is safe because we have the pagelock
         Flink = container_of(region->entry.Flink, PTE_REGION, entry);
         Blink = container_of(region->entry.Blink, PTE_REGION, entry);
@@ -64,14 +59,11 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
             }
             leavePTERegionLock(Flink, threadInfo);
         }
-
     }
 
 
     // now we need to acquire exclusive
     if (obtainedPageLocks == FALSE) {
-
-
         release_srw_shared(&head->sharedLock);
 
 
@@ -88,7 +80,7 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
     }
 
 #if DBG
- //   validateList(head);
+    //   validateList(head);
     ASSERT(Flink->entry.Blink == &region->entry)
     if (Blink != NULL) {
         ASSERT(Blink->entry.Flink == &region->entry)
@@ -96,8 +88,7 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
 #endif
 
 
-
-// actual list operation
+    // actual list operation
     if (Blink == NULL) {
         ASSERT(head->length == 1)
 
@@ -106,8 +97,8 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
     } else {
         ASSERT(head->length > 1)
 
-        LIST_ENTRY* prevEntry = &Blink->entry;
-        LIST_ENTRY* nextEntry = &Flink->entry;
+        LIST_ENTRY *prevEntry = &Blink->entry;
+        LIST_ENTRY *nextEntry = &Flink->entry;
         prevEntry->Flink = nextEntry;
         nextEntry->Blink = prevEntry;
     }
@@ -117,13 +108,11 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
 
 
 #if DBG
-  //  validateList(head);
+    //  validateList(head);
 #endif
 
 
     if (obtainedPageLocks == TRUE) {
-
-
         if (Blink != NULL) {
             leavePTERegionLock(Blink, threadInfo);
         }
@@ -148,33 +137,25 @@ VOID removeFromMiddleOfPageTableRegionList(pListHead head,PTE_REGION* region, PT
  * @return The page at the head of list passed in
  * @retval Returns 0 if the list is empty
  */
-PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) {
-
-
-
-
-    PTE_REGION* regionToRemove;
-    PTE_REGION* flinkOfRegionToRemove;
+PTE_REGION *RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) {
+    PTE_REGION *regionToRemove;
+    PTE_REGION *flinkOfRegionToRemove;
     boolean obtainedPageLocks;
 
     obtainedPageLocks = FALSE;
 
 
-
     acquire_srw_shared(&head->sharedLock);
-
 
 
     // try to get page locks
     for (int i = 0; i < 5; ++i) {
-
         // the pagelock s
         enterPTERegionLock(&head->region, threadInfo);
-        
+
         regionToRemove = container_of(head->entry.Flink, PTE_REGION, entry);
 
         if (&regionToRemove->entry == &head->entry) {
-
             leavePTERegionLock(&head->region, threadInfo);
             release_srw_shared(&head->sharedLock);
             return LIST_IS_EMPTY;
@@ -207,14 +188,11 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
 
     // switch to exclusive mode
     if (obtainedPageLocks == FALSE) {
-
-
         release_srw_shared(&head->sharedLock);
 
 
         // keep trying to acquire the page lock of the page we want to remove, then the list lock exclusive to maintain our order
         while (TRUE) {
-
             regionToRemove = container_of(head->entry.Flink, PTE_REGION, entry);
 
             if (&regionToRemove->entry == &head->entry) {
@@ -236,7 +214,7 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
         flinkOfRegionToRemove = container_of(regionToRemove->entry.Flink, PTE_REGION, entry);
         // dont get listhead twice
         if (&flinkOfRegionToRemove->entry == &head->entry) {
-           flinkOfRegionToRemove = NULL;
+            flinkOfRegionToRemove = NULL;
         }
     }
 
@@ -244,18 +222,18 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
 
 
 #if DBG
-   // validateList(head);
+    // validateList(head);
 #endif
     // actual list operation
 
-    LIST_ENTRY* ListHead = &head->entry;
-    LIST_ENTRY* Entry = &regionToRemove->entry;
+    LIST_ENTRY *ListHead = &head->entry;
+    LIST_ENTRY *Entry = &regionToRemove->entry;
 
     if (flinkOfRegionToRemove == NULL) {
         ListHead->Flink = ListHead;
         ListHead->Blink = ListHead;
     } else {
-        LIST_ENTRY* Flink = &flinkOfRegionToRemove->entry;
+        LIST_ENTRY *Flink = &flinkOfRegionToRemove->entry;
 
         ListHead->Flink = Flink;
         Flink->Blink = ListHead;
@@ -266,20 +244,18 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
 
 
 #if DBG
-   // validateList(head);
+    // validateList(head);
 #endif
 
     // release the lock if neccesary
     if (obtainedPageLocks == TRUE) {
-
         ASSERT(Entry != ListHead)
 
         if (flinkOfRegionToRemove != NULL) {
             leavePTERegionLock(flinkOfRegionToRemove, threadInfo);
         }
 
-       leavePTERegionLock(&head->region, threadInfo);
-
+        leavePTERegionLock(&head->region, threadInfo);
 
 
         release_srw_shared(&head->sharedLock);
@@ -299,7 +275,6 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
     // leave with page lock held
 
     return regionToRemove;
-
 }
 
 /**
@@ -310,11 +285,11 @@ PTE_REGION* RemoveFromHeadofRegionList(pListHead head, PTHREAD_INFO threadInfo) 
  * @pre Page must be locked
  * @post Page must be locked
  */
-VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo) {
+VOID addRegionToTail(pListHead head, PTE_REGION *region, PTHREAD_INFO threadInfo) {
     boolean obtainedPageLocks = FALSE;
 
 
-    PTE_REGION* nextRegion;
+    PTE_REGION *nextRegion;
 
     ASSERT(region->ageListNumber == NOT_ON_LIST)
 
@@ -340,15 +315,11 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
             break;
         }
         leavePTERegionLock(&head->region, threadInfo);
-
     }
 
 
     if (obtainedPageLocks == FALSE) {
-
-
         release_srw_shared(&head->sharedLock);
-
 
 
         acquire_srw_exclusive(&head->sharedLock, threadInfo);
@@ -361,9 +332,8 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
     }
 
 
-
 #if DBG
-   // validateList(head);
+    // validateList(head);
 #endif
 
     // Actual list operations
@@ -378,8 +348,6 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
         region->entry.Flink = &head->entry;
         region->entry.Blink = &head->entry;
     } else {
-
-
         head->entry.Blink = &region->entry;
         nextRegion->entry.Flink = &region->entry;
         region->entry.Blink = &nextRegion->entry;
@@ -390,7 +358,7 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
     InterlockedIncrement64(&head->length);
 
 #if DBG
-  //  validateList(head);
+    //  validateList(head);
 #endif
 
 
@@ -400,10 +368,8 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
 
 #endif
 
-// Release locks
+    // Release locks
     if (obtainedPageLocks == TRUE) {
-
-
         if (nextRegion != NULL) {
             leavePTERegionLock(nextRegion, threadInfo);
         }
@@ -415,7 +381,4 @@ VOID addRegionToTail(pListHead head, PTE_REGION* region, PTHREAD_INFO threadInfo
     } else {
         release_srw_exclusive(&head->sharedLock);
     }
-
-
 }
-

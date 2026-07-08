@@ -6,6 +6,7 @@
 #include "../../include/utils/pte_utils.h"
 #include "../../include/disk/disk.h"
 #include <stdio.h>
+#include <wchar.h>
 #include "vm.h"
 #include "../../include/variables/macros.h"
 #include "threads/user_thread.h"
@@ -197,6 +198,10 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = NULL;
     redo_try_same_address = FALSE;
 
+    WCHAR threadName[16];
+    swprintf(threadName, ARRAYSIZE(threadName), L"User_%lu", thread_info->ThreadNumber);
+    SetThreadDescription(GetCurrentThread(), threadName);
+
     InitializeThreadRNG(&thread_info->rng);
     arbitrary_va = get_arbitrary_va(thread_info);
     // Now perform random accesses
@@ -208,7 +213,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < MB(50); i++) {
+    for (; i < MB(500); i++) {
         //while (TRUE) {
 #endif
 
@@ -257,7 +262,7 @@ DWORD testVM(LPVOID lpParam) {
 
 
 #if 1 || DBG
-            if (i % MB(1) == 0) {
+            if (i % MB(10) == 0) {
                 printf(".");
             }
 #endif

@@ -266,6 +266,10 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                        frameNumber);
                 return FALSE;
             }
+#if CORRECTNESS
+            //if we are in correctness mode run the validation code
+            checkVA(arbitrary_va);
+#endif
 
             // if this is the first active pte make it an aging candidate
             if (regionStatus == FALSE) {
@@ -275,7 +279,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
 #endif
                 addRegionToTail(&vm.pte.ageList[0], region, threadContext);
             }
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[0]);
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
             region->hasActiveEntry = TRUE;
             region->numOfAge[0]++;
 
@@ -288,6 +292,9 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             writePTE(currentPTE, newPTE, pteContents);
         }
     }
+
+
+
 
 
     unlockPTE(currentPTE);

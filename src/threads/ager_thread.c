@@ -22,7 +22,7 @@
  * @retval 1 if the PTE was aged
  * @retval 0 if the PTE was not aged
  */
-ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
+ULONG64 agePTE(pte *pteAddress, PTE_REGION *region) {
     pte pteContents;
     pte newPTEContents;
     pte pteAtTimeOfWrite;
@@ -35,19 +35,17 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
 #if DBG
 
 
-        ULONG64 index;
+    ULONG64 index;
 
-        index = pteAddress - getFirstPTEInRegion(region);
+    index = pteAddress - getFirstPTEInRegion(region);
 
 
 #endif
 
 
-
-        pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
+    pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
 
     while (true) {
-
         returnValue = 0;
         // if the pte is not valid, we don't need to age it
         if (pteContents.validFormat.valid == 0) {
@@ -79,7 +77,6 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
         ASSERT(region->numOfAge[currentAge] != 0)
 
 
-
         pteAtTimeOfWrite.entireFormat = writePTE(pteAddress, newPTEContents, pteContents).entireFormat;
 
         // if when writing the pte, the contents have changed, we need to loop again with the new contents
@@ -88,16 +85,14 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
             // only write the values here or else if you collide with an access bit setter, you mistakenly will double change some data
             ASSERT(region->numOfAge[currentAge] > 0)
             region->numOfAge[currentAge]--;
-            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge]);
+            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge].count);
 
             region->numOfAge[newAge]++;
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge]);
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge].count);
             break;
         }
 
         pteContents.entireFormat = pteAtTimeOfWrite.entireFormat;
-
-
     }
 
     return returnValue;
@@ -109,8 +104,7 @@ ULONG64 agePTE(pte* pteAddress, PTE_REGION* region) {
  * @param region The region to get the age of
  * @return The highest age pte in the region
  */
-ULONG64 getRegionAge(PTE_REGION* region) {
-
+ULONG64 getRegionAge(PTE_REGION *region) {
     for (int i = MAX_AGE; i >= 0; --i) {
         if (region->numOfAge[i] != 0) {
             return i;
@@ -133,13 +127,11 @@ ULONG64 getRegionAge(PTE_REGION* region) {
  * @pre The region in the parameter must be locked
  * @post The region in the parameter must be unlocked
  */
-ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
-    pte* pteAddress;
+ULONG64 ageRegion(PTE_REGION *region, PTHREAD_INFO threadInfo) {
+    pte *pteAddress;
     ULONG64 previousAge;
     ULONG64 newAge;
     ULONG64 numPTEsAged;
-
-
 
 
     numPTEsAged = 0;
@@ -158,36 +150,28 @@ ULONG64 ageRegion(PTE_REGION* region, PTHREAD_INFO threadInfo) {
     newAge = getRegionAge(region);
 
 
-
     if (newAge == previousAge) {
-
-
     } else {
         removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[previousAge], region, threadInfo);
         addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
-
     }
 
 
-
     return numPTEsAged;
-
 }
 
 DWORD ager_thread(LPVOID info) {
-
-
-
+    SetThreadDescription(GetCurrentThread(), L"Ager");
 
     HANDLE events[2];
     DWORD returnEvent;
     events[0] = vm.events.agerStart;
     events[1] = vm.events.systemShutdown;
 
-    PTE_REGION* currentRegion;
+    PTE_REGION *currentRegion;
     PTHREAD_INFO threadInfo;
 
-    threadInfo = (PTHREAD_INFO)info;
+    threadInfo = (PTHREAD_INFO) info;
     currentRegion = vm.pte.RegionsBase;
     ULONG64 initialTotalPTEsToAge;
     ULONG64 totalPTEsLeftToAge;
@@ -207,17 +191,13 @@ DWORD ager_thread(LPVOID info) {
         totalPTEsLeftToAge = initialTotalPTEsToAge;
 
         while (totalPTEsLeftToAge > 0) {
-
             numPTEsAged = 0;
             enterPTERegionLock(currentRegion, threadInfo);
 
             if (currentRegion->hasActiveEntry == TRUE) {
                 numPTEsAged = ageRegion(currentRegion, threadInfo);
-
             }
             leavePTERegionLock(currentRegion, threadInfo);
-
-
 
 
             if (totalPTEsLeftToAge < numPTEsAged) {
@@ -231,11 +211,9 @@ DWORD ager_thread(LPVOID info) {
             } else {
                 currentRegion++;
             }
-
         }
 
         InterlockedExchange64(&vm.pte.numToAge, 0);
         InterlockedExchange((volatile LONG *) &vm.misc.agingInProgress,FALSE);
-
     }
 }

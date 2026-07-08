@@ -8,7 +8,7 @@
 // AI generated better randomness
 
 // Initialize RNG state with non-deterministic seed
-VOID InitializeThreadRNG(THREAD_RNG_STATE* rng) {
+VOID InitializeThreadRNG(THREAD_RNG_STATE *rng) {
     LARGE_INTEGER perfCounter;
     ULONG64 rdtsc = __rdtsc();
     ULONG64 processId = GetCurrentProcessId();
@@ -18,8 +18,8 @@ VOID InitializeThreadRNG(THREAD_RNG_STATE* rng) {
 
     // Combine multiple entropy sources for non-deterministic seed
     rng->state = rdtsc ^ perfCounter.QuadPart ^
-                (processId << 32) ^ (threadId << 16) ^
-                ((ULONG64)rng << 8);  // Use stack address as additional entropy
+                 (processId << 32) ^ (threadId << 16) ^
+                 ((ULONG64) rng << 8); // Use stack address as additional entropy
 
     // Ensure state is never zero (would break XOR shift)
     if (rng->state == 0) {
@@ -35,7 +35,7 @@ VOID InitializeThreadRNG(THREAD_RNG_STATE* rng) {
 }
 
 // High-quality XOR shift generator
-ULONG64 GetNextRandom(THREAD_RNG_STATE* rng) {
+ULONG64 GetNextRandom(THREAD_RNG_STATE *rng) {
     ULONG64 x = rng->state;
 
     // High-quality XOR shift with good statistical properties
@@ -48,10 +48,9 @@ ULONG64 GetNextRandom(THREAD_RNG_STATE* rng) {
 
     // Occasionally reseed with fresh entropy to maintain non-determinism
     if ((rng->counter & 0xFFFF) == 0) {
-        x ^= __rdtsc();  // Mix in fresh entropy periodically
+        x ^= __rdtsc(); // Mix in fresh entropy periodically
         rng->state = x;
     }
 
     return x;
 }
-

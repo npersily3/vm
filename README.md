@@ -64,22 +64,20 @@ Grouping PTEs into regions rather than tracking individual PTEs amortizes the ov
 
 Each user thread maintains local caches of pages to minimize lock contention. With local caches, user threads only need to acquire PTE locks (which are unavoidable for correctness) and can operate on cached pages without additional synchronization overhead. This dramatically reduces the frequency of expensive list operations. The trimmer intelligently targets pages from local caches during memory pressure, as it is preferable to reclaim a page that has not yet been mapped to a virtual address rather than evicting an actively used page from the working set.
 
+#### **Trimmer Signaling**
+
+The trimmer now signals the writer after the first batch is complete so they run concurrently. The trimmer will likely always be slightly faster than the writer because it does not have read and write from disk. Once the trimmer has built up enough of an initial batch, the writer can start and likely will run out of work. 
+
 #### **Adaptive Scheduler Thread**
 
 I added a dedicated scheduler thread that wakes up periodically and decides how much work to dispatch to the ager, trimmer, and writer threads each cycle. Rather than waking these threads with fixed work targets, the scheduler observes each thread's recent throughput (pages processed per unit time) and the current rate of page consumption across user threads.
 
-The scheduler solves a timing problem: aging must complete before trimming can produce pages, and trimming must complete before writing can recycle disk slots. Given the measured rates and an estimate of how long until the system runs out of available pages, the scheduler computes the minimum amount of aging needed this cycle and dispatches just that much — avoiding both under-aging (which stalls the trimmer) and over-aging (wasted CPU). A short calibration phase at startup collects baseline throughput data before the adaptive logic engages.
+The scheduler solves a timing problem: aging must complete before trimming and writing can produce free pages. Given the measured rates and an estimate of how long until the system runs out of available pages, the scheduler computes the minimum amount of aging needed this cycle and dispatches just that much — avoiding both under-aging and over-aging . A short calibration phase at startup collects baseline throughput data before the adaptive logic engages. 
 
-## **Current Focus: Optimizations**
 
-Feature development is on hold. The current goal is to squeeze as much performance out of the existing state machine as possible before adding anything new. The areas of interest are:
 
-**Reducing syscall overhead** — Event signaling and kernel transitions are expensive. Work is ongoing to ensure that `SetEvent` calls in the hot fault path fire only when necessary. For example, the trimmer wakeup signal from the fault handler is now gated behind an atomic flag so that only one thread pays the kernel-entry cost per trimmer cycle, regardless of how many threads are simultaneously above the memory pressure threshold.
 
-**Reducing contention** — The lock hierarchy and batching strategies already help, but there are still hot spots in the standby and modified lists under high thread counts. The goal is to identify these through profiling and either partition them further or replace them with lock-free structures where feasible.
+## **Current Focus: Multilevel Pagetable**
 
-**Improving scheduler accuracy** — The adaptive scheduler's throughput estimates are rolling averages and can lag behind sudden changes in workload. Tightening the feedback loop so that the scheduler reacts faster to spikes in page consumption is an active area of work.
 
-**Access pattern improvements** — The user thread's access pattern drives everything else in the system. Tuning the pattern to better stress the aging and eviction logic will help surface bottlenecks that are currently hidden.
-
-State Machine as of May 2026
+State Machine as of July 2026
