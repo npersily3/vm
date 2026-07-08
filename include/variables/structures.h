@@ -36,6 +36,9 @@
 
 typedef struct {
     ULONG64 number_of_page_table_layers;
+    //number of pages able to commit (total resources - pt size)
+    ULONG64 max_commit_size_in_pages;
+
     ULONG64 virtual_address_size;
     ULONG64 number_of_physical_pages;
     ULONG64 virtual_address_size_in_unsigned_chunks;

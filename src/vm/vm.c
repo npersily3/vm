@@ -206,7 +206,7 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = get_arbitrary_va(thread_info);
     // Now perform random accesses
 
-// Depending on if we are in debug/performance test mode, spin forever
+    // Depending on if we are in debug/performance test mode, spin forever
 #if DBG || spinEvents
     while (TRUE) {
 
@@ -275,7 +275,7 @@ DWORD testVM(LPVOID lpParam) {
 }
 
 
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
     // Test our very complicated usermode virtual implementation.
     //
     // We will control the virtual and physical address space management
@@ -298,20 +298,23 @@ main(int argc, char **argv) {
     //
     // This is where we can be as creative as we like, the sky's the limit !
     memset(&vm, 0, sizeof(vm));
-    //calls get physical pages, because his parameters might change
-    init_base_config();
 
     if (argc > 1) {
-        if (argc != 5) {
-            printf("should be of format -> vm_debug [numUserThreads] [vaSizeInGigs] [paSizeInGigs]  [numFreeLists]");
+        if (argc != 6) {
+            printf("should be of format -> vm_debug [numUserThreads] [layers] [paSizeInGigs]  [numFreeLists] [diskInGigs]");
             exit(1);
         }
 
         ULONG64 userThreads = (ULONG64) atoi(argv[1]);
-        ULONG64 vaSizeInGigs = (ULONG64) atoi(argv[2]);
+        ULONG64 num_layers = (ULONG64) atoi(argv[2]);
         ULONG64 paSizeInGigs = (ULONG64) atoi(argv[3]);
         ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
+        ULONG64 diskSizeInGigs = (ULONG64) atoi(argv[5]);
+
+        init_config_params(userThreads, num_layers, paSizeInGigs, numFreeLists, diskSizeInGigs);
     } else {
+        // default: 8 user threads, 3 pte layers, 2 GB physical, 16 free lists, 2 GB disk
+        init_config_params(8, 3, 2, 16, 2);
     }
     printf("%llu ", sizeof(pfn));
 #if DBG

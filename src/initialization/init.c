@@ -26,13 +26,13 @@
 
 state vm;
 
-// todo, consolidate init config params, and init default. Also add a max commit size to this, which is calculated off of the disk space and physical memory.
+// todo Also add a max commit size to this, which is calculated off of the disk space and physical memory.
 // Disk is no longer dependent on virtual memory size
-VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, ULONG64 physicalInGigs,
-                        ULONG64 numFreeLists) {
+VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULONG64 physicalInGigs, ULONG64 numFreeLists, ULONG64 diskInGigs) {
 
-    vm.config.number_of_page_table_layers = 3;
-    vm.config.virtual_address_size = pow(512, vm.config.number_of_page_table_layers);\
+
+    vm.config.number_of_page_table_layers = num_layers;
+    vm.config.virtual_address_size = pow(512, vm.config.number_of_page_table_layers);
 
     vm.config.number_of_physical_pages = GB(physicalInGigs) / PAGE_SIZE;
 
@@ -41,54 +41,16 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, UL
     getPhysicalPages();
 
     vm.config.number_of_disk_divisions = 1;
-    vm.config.disk_size_in_bytes = (vm.config.virtual_address_size - (PAGE_SIZE * vm.config.number_of_physical_pages) +
-                                    (2 * PAGE_SIZE));
+
+    vm.config.disk_size_in_bytes = diskInGigs;
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
     vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
+
+    // one page for zero slot, one for transfering
+    vm.config.max_commit_size_in_pages = vm.config.number_of_physical_pages + vm.config.disk_size_in_pages - 2;
+
 
     vm.config.number_of_user_threads = number_of_user_threads;
-    vm.config.number_of_trimming_threads = 1;
-    vm.config.number_of_writing_threads = 1;
-    vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.
-                                  number_of_writing_threads;
-    vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
-
-    vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
-    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
-    vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
-
-
-    vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
-    vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
-
-    vm.config.number_of_ptes_per_region = 64;
-    vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
-
-    vm.config.number_of_free_lists = numFreeLists;
-    vm.config.time_until_recall_pages = 2500000;
-}
-
-
-VOID init_base_config(VOID) {
-#if DBG
-    vm.config.virtual_address_size = MB(128);
-    vm.config.number_of_physical_pages = MB(64) / PAGE_SIZE;
-#else
-
-    vm.config.virtual_address_size = GB(4);
-    vm.config.number_of_physical_pages = GB(2) / PAGE_SIZE;
-#endif
-    vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
-
-    getPhysicalPages();
-
-    vm.config.number_of_disk_divisions = 1;
-    vm.config.disk_size_in_bytes = (vm.config.virtual_address_size - (PAGE_SIZE * vm.config.number_of_physical_pages) +
-                                    (2 * PAGE_SIZE));
-    vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
-    vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
-
-    vm.config.number_of_user_threads = 8;
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
     vm.config.number_of_aging_threads = 1;
@@ -99,7 +61,6 @@ VOID init_base_config(VOID) {
                                   vm.config.number_of_writing_threads +
                                   vm.config.number_of_aging_threads +
                                   vm.config.number_of_scheduler_threads;
-
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
     vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
@@ -110,15 +71,15 @@ VOID init_base_config(VOID) {
     vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
     vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
 
-
 #if DBG
     vm.config.number_of_ptes_per_region = 64;
 #else
     vm.config.number_of_ptes_per_region = 512;
 #endif
     vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
+
+    vm.config.number_of_free_lists = numFreeLists;
     vm.config.time_until_recall_pages = 2500000;
-    vm.config.number_of_free_lists = 16;
 }
 
 BOOL
