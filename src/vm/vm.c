@@ -262,7 +262,7 @@ DWORD testVM(LPVOID lpParam) {
 
 
 #if 1 || DBG
-            if (i % MB(1) == 0) {
+            if (i % MB(10) == 0) {
                 printf(".");
             }
 #endif

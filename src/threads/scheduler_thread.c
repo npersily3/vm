@@ -138,12 +138,6 @@ DWORD scheduler_thread(LPVOID info) {
             averagePagesConsumedPerWakeup /= i;
 
 
-            // Convert pages/ms to pages/100ns rate
-
-
-            //    printf("averagePagesPerWakup: %llu. averPagesPer100ns %llu \n", averagePagesConsumedPerWakeup,
-            //  averagePagesConsumedPer100Ns);
-
 #if 1
             // averagePagesConsumedPerWakeup is pages per SCHEDULER_PERIOD_MS, not pages per second --
             // convert to a true rate before mixing it with anything measured in real seconds (like pageTrimRate/
@@ -172,8 +166,12 @@ DWORD scheduler_thread(LPVOID info) {
             ULONG64 timeToWrite = (averagePagesConsumedPerWakeup / pageWriteRate);
 
             // Total time to make pages available after aging (trim + write, or max if parallel?)
-            timeToMakePagesAvailable = timeToTrim + timeToWrite;
-
+            if (timeToWrite > timeToTrim) {
+                timeToMakePagesAvailable = timeToWrite;
+            } else {
+                timeToMakePagesAvailable = timeToTrim;
+            }
+           // timeToMakePagesAvailable = timeToWrite + timeToTrim;
 
             // create a copy of the agers circular buffer
             agerWork = vm.threadInfo.aging->work;
@@ -251,6 +249,8 @@ DWORD scheduler_thread(LPVOID info) {
             // integer-division truncation: p/r <= r/t  <=>  p*t <= r*r. Since numToTrimThisWakeup is handed
             // out per-period (averagePagesConsumedPerWakeup), not per-second, the right-hand "r*r" has to be
             // the per-period count times the true per-second rate, not the per-period count squared.
+
+            // pages left/ avPagesPer second is time till out and the other one is time till make free
             if (pagesLeft * pageTrimRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerSecond ||
                 pagesLeft * pageWriteRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerSecond) {
                 numToTrimThisWakeup = averagePagesConsumedPerWakeup;
