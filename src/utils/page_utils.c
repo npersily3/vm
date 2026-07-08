@@ -51,7 +51,7 @@ volatile ULONG64 pagesremoved;
  * @post All the pages added to the local list need to be unlocked
  */
 #if 1
-// todo Right now I am making a conscious design choice to back up immediately, I assume there is a smart way to back up, but right now I am just going to quit immeadiately
+
 ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo,
                             ULONG64 number_of_pages) {
     pfn *firstPage;

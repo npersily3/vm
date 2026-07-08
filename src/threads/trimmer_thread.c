@@ -147,7 +147,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     return trimmedPagesInRegion;
 }
 
-//TODO rewrite to return age 0 regions
+
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;

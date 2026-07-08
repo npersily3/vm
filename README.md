@@ -75,8 +75,7 @@ I added a dedicated scheduler thread that wakes up periodically and decides how 
 The scheduler solves a timing problem: aging must complete before trimming and writing can produce free pages. Given the measured rates and an estimate of how long until the system runs out of available pages, the scheduler computes the minimum amount of aging needed this cycle and dispatches just that much — avoiding both under-aging and over-aging . A short calibration phase at startup collects baseline throughput data before the adaptive logic engages. 
 
 
-
-
+ 
 ## **Current Focus: Multilevel Pagetable**
 
 

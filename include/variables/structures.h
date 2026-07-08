@@ -35,6 +35,7 @@
 
 
 typedef struct {
+    ULONG64 number_of_page_table_layers;
     ULONG64 virtual_address_size;
     ULONG64 number_of_physical_pages;
     ULONG64 virtual_address_size_in_unsigned_chunks;
@@ -195,14 +196,36 @@ typedef struct {
     ULONG64 frameNumber: frame_number_size;
 } transitionPte;
 
+// this is for all ptes who point at pagetables. I assume there is some funky stuff with the lock bit and access bit
+typedef struct {
+    // in this format a pte must be unmapped
+    ULONG64 mustBeZero: 1;
+    // 1 bit shared lock
+    ULONG64 lock: 1;
+    // tracks accesses
+    ULONG64 access: 1;
+    // tracks if it can be rescued out of a write or trim
+    ULONG64 isTransition: 1;
+    // the frame number to retrieve the contents from
+    ULONG64 age: 3;
+    ULONG64 frameNumber: frame_number_size;
+} branchPte;
+
 typedef struct {
     union {
         validPte validFormat;
         invalidPte invalidFormat;
         transitionPte transitionFormat;
+        branchPte branchFormat;
         ULONG64 entireFormat;
     };
 } pte;
+
+
+typedef struct {
+    pte pagetable [PAGE_SIZE/sizeof(pte)];
+
+} pagetable, *ppagetable;
 
 //
 // Page table configuration
@@ -228,8 +251,6 @@ typedef struct {
 //
 // PFN (Page Frame Number) structure
 //
-
-
 #define MODIFIED_LIST 0
 #define STAND_BY_LIST 1
 typedef struct {
@@ -246,8 +267,10 @@ typedef struct {
 #endif
     CRITICAL_SECTION lock;
 
-
 }pfn;
+
+
+// circular buffer length of scheduler thread page consumption
 #define PAGES_CONSUMED_LENGTH 16
 
 #define NUMBER_OF_TIME_STAMPS 16
@@ -314,7 +337,8 @@ typedef struct {
 }  PTE_REGION;
 
 
-
+// all this the lists will be next to each other in global memory therefore we should cache allign them so there is not
+// a huge bus slowdown.
 typedef struct __declspec(align(64)) {
     LIST_ENTRY entry;
     volatile ULONG64 length;
@@ -323,6 +347,8 @@ typedef struct __declspec(align(64)) {
     PTE_REGION region;
 } listHead, *pListHead;
 
+
+//this is the structure containg a dimensioned freelist.
 typedef struct {
     listHead* heads;
     volatile ULONG64 length;

@@ -6,6 +6,9 @@
 #include "../../include/variables/structures.h"
 #include "../../include/variables/globals.h"
 #include "../../include/initialization/init.h"
+
+#include <math.h>
+
 #include "../../include/variables/macros.h"
 #include "../../include/initialization/init_threads.h"
 
@@ -23,9 +26,14 @@
 
 state vm;
 
+// todo, consolidate init config params, and init default. Also add a max commit size to this, which is calculated off of the disk space and physical memory.
+// Disk is no longer dependent on virtual memory size
 VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, ULONG64 physicalInGigs,
                         ULONG64 numFreeLists) {
-    vm.config.virtual_address_size = GB(vaSizeInGigs);
+
+    vm.config.number_of_page_table_layers = 3;
+    vm.config.virtual_address_size = pow(512, vm.config.number_of_page_table_layers);\
+
     vm.config.number_of_physical_pages = GB(physicalInGigs) / PAGE_SIZE;
 
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
