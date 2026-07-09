@@ -26,30 +26,52 @@
 
 state vm;
 
-// todo Also add a max commit size to this, which is calculated off of the disk space and physical memory.
-// Disk is no longer dependent on virtual memory size
-VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULONG64 physicalInGigs, ULONG64 numFreeLists, ULONG64 diskInGigs) {
+
+// makes life easy
+ULONG64 power(ULONG64 base, ULONG64 power) {
+
+    for (ULONG64 i = 0; i < power; i++) {
+        base *= base;
+    }
+    return base;
+}
+
+VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULONG64 physicalInGigs,
+                        ULONG64 numFreeLists, ULONG64 diskInGigs) {
 
 
     vm.config.number_of_page_table_layers = num_layers;
-    vm.config.virtual_address_size = pow(512, vm.config.number_of_page_table_layers);
+    vm.config.pte_entries_per_pagetable = PAGE_SIZE / sizeof(pte);
 
-    vm.config.number_of_physical_pages = GB(physicalInGigs) / PAGE_SIZE;
+
+    // this is only the reservable space.
+    vm.config.number_of_leaf_ptes  = power(vm.config.pte_entries_per_pagetable, num_layers);
+    vm.config.virtual_address_size = vm.config.number_of_leaf_ptes * PAGE_SIZE;
+
+    // this is in pagetables
+    vm.config.cumulative_number_of_page_tables = 0;
+    for (ULONG i = 0; i < num_layers; i++) {
+        vm.config.cumulative_number_of_page_tables += power(vm.config.pte_entries_per_pagetable, (i+1));
+    }
 
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
+    vm.config.number_of_leaf_pagetables = vm.config.number_of_leaf_ptes / vm.config.pte_entries_per_pagetable;
 
+    // we might not get all our pages, but that is okay. We just have to make sure nothing is conditioned upon stale values
+    vm.config.number_of_physical_pages = GB(physicalInGigs) / PAGE_SIZE;
     getPhysicalPages();
 
+    // disk stuff
     vm.config.number_of_disk_divisions = 1;
-
     vm.config.disk_size_in_bytes = diskInGigs;
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
     vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
 
+    // amount actuable pageable (commitable)
     // one page for zero slot, one for transfering
     vm.config.max_commit_size_in_pages = vm.config.number_of_physical_pages + vm.config.disk_size_in_pages - 2;
 
-
+    //threads
     vm.config.number_of_user_threads = number_of_user_threads;
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
@@ -63,23 +85,18 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
                                   vm.config.number_of_scheduler_threads;
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
+    //misc
     vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
     vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages * 7 / 8;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
-
-
-    vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
-    vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
-
-#if DBG
-    vm.config.number_of_ptes_per_region = 64;
-#else
-    vm.config.number_of_ptes_per_region = 512;
-#endif
-    vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
-
     vm.config.number_of_free_lists = numFreeLists;
     vm.config.time_until_recall_pages = 2500000;
+
+    memset(&vm.config.parameter, 0, sizeof(vm.config.parameter));
+
+    // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
+    vm.config.parameter.Type = MemExtendedParameterUserPhysicalHandle;
+    vm.config.parameter.Handle = vm.events.physical_page_handle;
 }
 
 BOOL
@@ -179,11 +196,11 @@ VOID init_pte_regions(VOID) {
     initAgeList();
 
     //nptodo add the case where NUMPTES is not divisible by 64
-    vm.pte.RegionsBase = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
+    vm.pte.RegionsBase = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.number_of_leaf_pagetables);
     vm.pte.globalNumOfAge[0].count = 0;
 
     PTE_REGION *currentRegion = vm.pte.RegionsBase;
-    for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
+    for (int i = 0; i < vm.config.number_of_leaf_pagetables; ++i) {
         InitializeCriticalSection(&currentRegion->lock);
 
 
@@ -200,8 +217,25 @@ VOID init_pte_regions(VOID) {
 VOID init_pageTable(VOID) {
     ULONG64 numBytes;
     // Initialize the page table
-    numBytes = vm.config.page_table_size_in_bytes;
-    vm.pte.table = (pte *) init_memory(numBytes);
+    numBytes = vm.config.cumulative_number_of_page_tables * sizeof(PAGETABLE);
+    vm.pte.table = (PPAGETABLE) VirtualAlloc2(NULL,
+                                         NULL,
+                                         numBytes,
+                                         MEM_RESERVE | MEM_PHYSICAL,
+                                         PAGE_READWRITE,
+                                         &vm.config.parameter,
+                                         1);
+
+    // store the pointers to the start of each layer for easy pointer math
+    vm.pte.start_of_layer = malloc(vm.config.number_of_page_table_layers * sizeof(PPAGETABLE));
+    for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
+        vm.pte.start_of_layer[i] = vm.pte.table +  power(vm.config.pte_entries_per_pagetable, (i+1));
+    }
+
+    if (vm.pte.table == NULL) {
+        printf("Cannot allocate page table\n");
+        DebugBreak();
+    }
 
     init_pte_regions();
 #if DBG
@@ -413,18 +447,14 @@ BOOL getPhysicalPages(VOID) {
 
 
 BOOL initVA() {
-    MEM_EXTENDED_PARAMETER parameter = {0};
 
-    // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
-    parameter.Type = MemExtendedParameterUserPhysicalHandle;
-    parameter.Handle = vm.events.physical_page_handle;
 
     vm.va.start = (PULONG_PTR) VirtualAlloc2(NULL,
                                              NULL,
                                              vm.config.virtual_address_size,
                                              MEM_RESERVE | MEM_PHYSICAL,
                                              PAGE_READWRITE,
-                                             &parameter,
+                                             &vm.config.parameter,
                                              1);
     if (vm.va.start == NULL) {
         printf("Failed to allocate virtual address space: size %I64x \n ", vm.config.virtual_address_size);
@@ -439,7 +469,7 @@ BOOL initVA() {
                                                PAGE_SIZE * BATCH_SIZE * NUM_WRITING_BATCHES,
                                                MEM_RESERVE | MEM_PHYSICAL,
                                                PAGE_READWRITE,
-                                               &parameter,
+                                               &vm.config.parameter,
                                                1);
     if (vm.va.writing == NULL) {
         printf("Failed to allocate transfer VA for writing\n");
@@ -456,7 +486,7 @@ BOOL initVA() {
                                                                  PAGE_SIZE,
                                                                  MEM_RESERVE | MEM_PHYSICAL,
                                                                  PAGE_READWRITE,
-                                                                 &parameter,
+                                                                 &vm.config.parameter,
                                                                  1);
         if (vm.va.userThreadTransfer[i] == NULL) {
             printf("Failed to allocate user thread transfer VA %d\n", i);

@@ -63,11 +63,21 @@ typedef struct {
     ULONG64 number_of_pages_to_trim_from_stand_by;
     ULONG64 number_of_free_lists;
 
-    ULONG64 page_table_size_in_bytes;
-    ULONG64 number_of_ptes;
+    // this is in pagetable increments
+    ULONG64 cumulative_number_of_page_tables;
+
+    // always 512 in our case
+    ULONG64 pte_entries_per_pagetable;
+
+
+    ULONG64 number_of_leaf_ptes;
     ULONG64 number_of_ptes_per_region;
-    ULONG64 number_of_pte_regions;
+    ULONG64 number_of_leaf_pagetables;
     ULONG64 time_until_recall_pages;
+
+    MEM_EXTENDED_PARAMETER parameter;
+
+
 
 } configuration;
 
@@ -228,7 +238,7 @@ typedef struct {
 typedef struct {
     pte pagetable [PAGE_SIZE/sizeof(pte)];
 
-} pagetable, *ppagetable;
+} PAGETABLE, *PPAGETABLE;
 
 //
 // Page table configuration
@@ -446,7 +456,8 @@ typedef struct {
 
 typedef struct {
     PTE_REGION* RegionsBase;
-    pte* table;
+    PPAGETABLE table;
+    PPAGETABLE* start_of_layer;
     listHead ageList[NUMBER_OF_AGES];
     AGE_COUNTER globalNumOfAge[NUMBER_OF_AGES];
     volatile ULONG64 numToAge;

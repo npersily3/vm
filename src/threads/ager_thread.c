@@ -206,7 +206,7 @@ DWORD ager_thread(LPVOID info) {
                 totalPTEsLeftToAge -= numPTEsAged;
             }
 
-            if (currentRegion == vm.pte.RegionsBase + vm.config.number_of_pte_regions - 1) {
+            if (currentRegion == vm.pte.RegionsBase + vm.config.number_of_leaf_pagetables - 1) {
                 currentRegion = vm.pte.RegionsBase;
             } else {
                 currentRegion++;
