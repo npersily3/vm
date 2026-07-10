@@ -8,69 +8,120 @@
 
 #include "utils/thread_utils.h"
 // Simple conversion and validation functions
-pte*
+pte *
 va_to_pte(ULONG64 va) {
+
+    pte* currentPTE;
+    pte* oldPTE;
     ASSERT(isVaValid(va))
-    ULONG64 index = ((ULONG_PTR)va - (ULONG_PTR) vm.va.start)/PAGE_SIZE;
-    pte* pte = vm.pte.table + index;
+
+
+    va = PAGE_ALIGN(va));
+
+    ULONG64 index = (va - (ULONG64) vm.va.start);
+
+    // now get only the page table row numbers
+    // TODO replace magic numbers
+    index = index >> 12;
+
+    ULONG64 row = (index >> (9 * (vm.config.number_of_page_table_layers - 1)));
+
+    EnterCriticalSection(&vm.pte.rootLock);
+
+     currentPTE = ((pte*)vm.pte.table) + row;
+
+    if (currentPTE->validFormat.valid == 0) {
+        //some function that makes a pagetable valid
+    }
+    ASSERT(topPTE.validFormat.valid == 1);
+
+    // lock the pte
+    currentPTE->validFormat.lock = 1;
+    oldPTE = currentPTE;
+
+    LeaveCriticalSection(&vm.pte.rootLock);
+
+    // a ptes accessed in the loop will be locked. SO there is not a possibility of someone slipping in and trimming it
+    for (int i = 1; i < vm.config.number_of_page_table_layers; i++) {
+        // the minus one is becasue we are excluding ourselves,
+        // the bit mask is to onlay take the nine bits we care about
+
+        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1<<(9+1)) - 1);
+        currentPTE = (pte* )vm.pte.start_of_layer[i] + row;
+
+        if (currentPTE->validFormat.valid == 0) {
+            //some function that makes a pagetable valid
+        }
+        ASSERT(topPTE.validFormat.valid == 1);
+
+        // lock the pte
+        currentPTE->validFormat.lock = 1;
+
+        // unlock the old one
+        oldPTE->validFormat.lock = 0;
+
+        // start the descent into a new page table layer
+        oldPTE = currentPTE;
+    }
+
+
+    pte *pte = vm.pte.table + index;
     ASSERT(isPTEValid(pte))
     return pte;
 }
 
 PVOID
-pte_to_va(pte* pte) {
+pte_to_va(pte *pte) {
     ULONG64 index = (pte - vm.pte.table);
     ASSERT(isPTEValid(pte))
-    return (PVOID)((index * PAGE_SIZE) + (ULONG_PTR) vm.va.start);
+    return (PVOID) ((index * PAGE_SIZE) + (ULONG_PTR) vm.va.start);
 }
 
 
 BOOL isVaValid(ULONG64 va) {
-
     return (va >= (ULONG64) vm.va.start) && (va < (ULONG64) vm.va.end);
 }
-PTE_REGION* getPTERegion(pte* pte) {
+
+PTE_REGION *getPTERegion(pte *pte) {
     ULONG64 pageTableIndex = (pte - vm.pte.table);
     ULONG64 index = pageTableIndex / vm.config.number_of_ptes_per_region;
-    return  vm.pte.RegionsBase + index;
+    return vm.pte.RegionsBase + index;
 }
 
-pte* getFirstPTEInRegion(PTE_REGION* region) {
+pte *getFirstPTEInRegion(PTE_REGION *region) {
     ULONG64 regionIndex = (region - vm.pte.RegionsBase);
     ULONG64 pteIndex = regionIndex * vm.config.number_of_ptes_per_region;
 
     return vm.pte.table + pteIndex;
 }
 
-BOOL isPTEValid(pte* pte) {
-
-    return ((ULONG64)pte >= (ULONG64) vm.pte.table) && ((ULONG64)pte < ((ULONG64) vm.pte.table + vm.config.page_table_size_in_bytes) );
+BOOL isPTEValid(pte *pte) {
+    return ((ULONG64) pte >= (ULONG64) vm.pte.table) && (
+               (ULONG64) pte < ((ULONG64) vm.pte.table + vm.config.page_table_size_in_bytes));
 }
 
-VOID enterPTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo) {
-
+VOID enterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
     EnterCriticalSection(&region->lock);
-
 }
-VOID leavePTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo) {
+
+VOID leavePTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
     LeaveCriticalSection(&region->lock);
 }
-boolean tryEnterPTERegionLock(PTE_REGION* region, PTHREAD_INFO threadInfo) {
+
+boolean tryEnterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
     return TryEnterCriticalSection(&region->lock);
 }
 
 
-
-VOID lockPTE(pte* pte) {
-
-    PTE_REGION* region = getPTERegion(pte);
+VOID lockPTE(pte *pte) {
+    PTE_REGION *region = getPTERegion(pte);
 
 #if 0
     BOOL oldValue;
     acquire_srw_shared(&region->lock);
 
     do {
-        oldValue = _interlockedbittestandset64((volatile LONG64*)&pte->entireFormat, 1);
+        oldValue = _interlockedbittestandset64((volatile LONG64 *) &pte->entireFormat, 1);
     } while (oldValue == 1);
 #endif
 
@@ -79,11 +130,11 @@ VOID lockPTE(pte* pte) {
     //ASSERT(pte->transitionFormat.access == 0);
 }
 
-VOID unlockPTE(pte* pte) {
-    PTE_REGION* region = getPTERegion(pte);
+VOID unlockPTE(pte *pte) {
+    PTE_REGION *region = getPTERegion(pte);
     //ASSERT(pte->transitionFormat.access == 0);
 
-   // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
+    // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
     LeaveCriticalSection(&region->lock);
 }
 
@@ -94,11 +145,11 @@ VOID unlockPTE(pte* pte) {
  * @param expectedOldPteContents The expected old contents.
  * @return The contents of the PTE before the write happened
  */
-pte writePTE(pte* pteAddress, pte NewPteContents, pte expectedOldPteContents) {
+pte writePTE(pte *pteAddress, pte NewPteContents, pte expectedOldPteContents) {
 #if DBG
     recordPTEAccess(pteAddress, NewPteContents);
 #endif
-//make a check to see if we always have to use interlocked compare exchange if the previous entries valid bit is 0, then we can use the normal write
+    //make a check to see if we always have to use interlocked compare exchange if the previous entries valid bit is 0, then we can use the normal write
 
     pte returnVal;
 
@@ -107,17 +158,17 @@ pte writePTE(pte* pteAddress, pte NewPteContents, pte expectedOldPteContents) {
         return expectedOldPteContents;
     }
 
-    returnVal.entireFormat = InterlockedCompareExchange64((volatile LONG64*) &pteAddress->entireFormat, NewPteContents.entireFormat, expectedOldPteContents.entireFormat);
+    returnVal.entireFormat = InterlockedCompareExchange64((volatile LONG64 *) &pteAddress->entireFormat,
+                                                          NewPteContents.entireFormat,
+                                                          expectedOldPteContents.entireFormat);
     return returnVal;
-
 }
 
 
 #if DBG
 
-VOID recordPTEAccess(pte* pteAddress, pte NewPteContents) {
-
-    debugPTE* debug_pte;
+VOID recordPTEAccess(pte *pteAddress, pte NewPteContents) {
+    debugPTE *debug_pte;
     ULONG64 index;
 
     index = InterlockedIncrement64(&vm.pte.debugBufferIndex) - 1;
@@ -128,8 +179,7 @@ VOID recordPTEAccess(pte* pteAddress, pte NewPteContents) {
     debug_pte->oldPteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
     debug_pte->pteContents = NewPteContents;
     debug_pte->threadId = GetCurrentThreadId();
-    CaptureStackBackTrace(0,FRAMES_TO_CAPTURE,debug_pte->stacktrace,NULL);
-
+    CaptureStackBackTrace(0, FRAMES_TO_CAPTURE, debug_pte->stacktrace,NULL);
 }
 
 
@@ -139,7 +189,7 @@ VOID recordPTEAccess(pte* pteAddress, pte NewPteContents) {
 
 VOID
 checkVA(PULONG64 va) {
-    va = (PULONG64) ((ULONG64)va & ~(PAGE_SIZE - 1));
+    va = (PULONG64) ((ULONG64) va & ~(PAGE_SIZE - 1));
     for (int i = 0; i < PAGE_SIZE / 8; ++i) {
         if (!(*va == 0 || *va == (ULONG64) va)) {
             DebugBreak();

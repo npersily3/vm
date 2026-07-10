@@ -215,6 +215,9 @@ VOID init_pte_regions(VOID) {
 }
 
 VOID init_pageTable(VOID) {
+
+    InitializeCriticalSection(&vm.pte.rootLock);
+
     ULONG64 numBytes;
     // Initialize the page table
     numBytes = vm.config.cumulative_number_of_page_tables * sizeof(PAGETABLE);

@@ -252,7 +252,7 @@ DWORD testVM(LPVOID lpParam) {
             redo_fault = REDO_FAULT;
             counter = 0;
             while (redo_fault == REDO_FAULT) {
-                redo_fault = pageFault(arbitrary_va, lpParam);
+                redo_fault = pageFaultEntryPoint(arbitrary_va, lpParam);
             }
             redo_try_same_address = TRUE;
             i--;

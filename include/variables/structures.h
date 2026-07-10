@@ -27,6 +27,10 @@
 // Configuration constants
 //
 #define PAGE_SIZE                   4096
+
+#define PAGE_ALIGN(x) (x & (~(PAGE_SIZE - 1))
+
+
 // 52 bits is max that address bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
 #define frame_number_size           40
 #define KB(x)                       ((x) *  (ULONG64)1024)
@@ -463,6 +467,7 @@ typedef struct {
     volatile ULONG64 numToAge;
     volatile ULONG64 numToTrim;
     volatile ULONG64 numToWrite;
+    CRITICAL_SECTION rootLock;
 
 #if DBG
     volatile ULONG64 debugBufferIndex;
