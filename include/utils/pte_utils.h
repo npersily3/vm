@@ -16,6 +16,8 @@ pte* getFirstPTEInRegion(PTE_REGION* region);
 BOOL isPTEValid(pte* pte);
 VOID unlockPTE(pte* pte);
 VOID lockPTE(pte* pte);
+VOID setLockBit (pte* pte);
+VOID clearLockBit(pte *pte);
 pte writePTE(pte* pteAddress, pte NewPteContents, pte expectedOldPteContents);
 #if DBG
 VOID recordPTEAccess(pte* pteAddress, pte NewPteContents);

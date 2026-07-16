@@ -196,8 +196,10 @@ VOID freeThreadMapping(PTHREAD_INFO threadContext) {
  * @return
  */
 BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
-    pte* currentPTE;
-    pte* oldPTE;
+    pte* currentPTEAddress;
+    pte* oldPTEAddress;
+    pte localPTE;
+    pte expectedContents;
     ASSERT(isVaValid(va))
 
         // Checks to see if the user is accessing out of bounds va space
@@ -223,16 +225,20 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
 
     EnterCriticalSection(&vm.pte.rootLock);
 
-    currentPTE = ((pte*)vm.pte.table) + row;
+    currentPTEAddress = ((pte*)vm.pte.table) + row;
 
-    if (currentPTE->validFormat.valid == 0) {
-        while (pageFault(currentPTE, threadContext) == REDO_FAULT) {}
+    if (currentPTEAddress->validFormat.valid == 0) {
+        while (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {}
     }
-    ASSERT(topPTE.validFormat.valid == 1);
 
-    // lock the pte
-    currentPTE->validFormat.lock = 1;
-    oldPTE = currentPTE;
+
+    // guarantees to work
+    setLockBit(currentPTEAddress);
+
+    // TODO see if this has to be interlocked word tearing
+    currentPTEAddress->validFormat.access = 1;
+
+    oldPTEAddress = currentPTEAddress;
 
     LeaveCriticalSection(&vm.pte.rootLock);
 
@@ -240,46 +246,35 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     for (int i = 1; i < vm.config.number_of_page_table_layers; i++) {
         // the minus one is becasue we are excluding ourselves,
         // the bit mask is to onlay take the nine bits we care about
-
+        //TODO double check
         row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1<<(9+1)) - 1);
-        currentPTE = (pte* )vm.pte.start_of_layer[i] + row;
+        currentPTEAddress = (pte* )vm.pte.start_of_layer[i] + row;
 
-        if (currentPTE->validFormat.valid == 0) {
-            while (pageFault(currentPTE, threadContext) == REDO_FAULT) {}
+        if (currentPTEAddress->validFormat.valid == 0) {
+            while (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {}
         }
-        ASSERT(topPTE.validFormat.valid == 1);
 
-        // lock the pte
-        currentPTE->validFormat.lock = 1;
+
+        // guarantees to work
+        setLockBit(currentPTEAddress);
+
+        //TODO ask landy if this is okay
+        currentPTEAddress->validFormat.access = 1;
 
         // unlock the old one
-        oldPTE->validFormat.lock = 0;
+        clearLockBit(oldPTEAddress);
 
         // start the descent into a new page table layer
-        oldPTE = currentPTE;
+        oldPTEAddress = currentPTEAddress;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     #if CORRECTNESS
         //if we are in correctness mode run the validation code
         checkVA(parbitrary_va);
     #endif
+
+    return !REDO_FAULT;
 }
 
 
@@ -288,6 +283,7 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
  *@brief This function is the core of the program. It will culminate in the mapping of a physical page to the passed in virtual address.
  *@param arbitrary_va The virtual address that is being accessed and faulted on.
  *@param threadContext The information about the faulting thread.
+ *@pre the parents pte lock bit must be
  *@return A boolean that determines whether we need to back up and redo the fault.
 */
 
@@ -298,24 +294,18 @@ BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
     ULONG64 frameNumber;
     pte newPTE;
     ULONG64 regionStatus;
-
-
-
-
-
-
+    PULONG64 arbitrary_va;
 
 
     returnValue = !REDO_FAULT;
 
 
-    lockPTE(currentPTE);
     pteContents.entireFormat = ReadULong64NoFence((volatile ULONG64 *) currentPTE);
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
         // If the pte is in flight in the system threads
-        if ((currentPTE->transitionFormat.isTransition == TRUE)) {
+        if (currentPTE->transitionFormat.isTransition == TRUE) {
             // Determine if the rescue told us to back up or not
             frameNumber = rescue_page(currentPTE, (PTHREAD_INFO) threadContext);
             if (frameNumber == REDO_FAULT) {
@@ -339,6 +329,8 @@ BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
 
             ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
 
+
+            arbitrary_va = pte_to_va(currentPTE);
 
             if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
                 DebugBreak();
@@ -366,16 +358,11 @@ BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
             newPTE.validFormat.access = 1;
             newPTE.validFormat.age = 0;
             // i do not have to check the result because we have the lock and we expect it to be invalid
-            //
+            //TODO change this to not be a compare exchange
             writePTE(currentPTE, newPTE, pteContents);
         }
     }
 
-
-
-
-
-    unlockPTE(currentPTE);
 
 
     return returnValue;

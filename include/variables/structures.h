@@ -28,7 +28,7 @@
 //
 #define PAGE_SIZE                   4096
 
-#define PAGE_ALIGN(x) (x & (~(PAGE_SIZE - 1))
+#define PAGE_ALIGN(x) (x & (~(PAGE_SIZE - 1)))
 
 
 // 52 bits is max that address bus accepts and if each page is 4k or 12 bits, there is 40 bits left over
@@ -565,7 +565,7 @@ typedef struct {
 extern state vm;
 
 //this is for the mode where I want to ensure correction at the expense of perf
-#define CORRECTNESS 1
+#define CORRECTNESS 0
 #define CORRECTNESS_SIZE 500
 
 #define useSharedLock 1

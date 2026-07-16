@@ -10,13 +10,14 @@
 // Simple conversion and validation functions
 pte *
 va_to_pte(ULONG64 va) {
-
-    pte* currentPTE;
-    pte* oldPTE;
+    pte *currentPTE;
+    pte *oldPTE;
     ASSERT(isVaValid(va))
 
 
-    va = PAGE_ALIGN(va));
+    va = PAGE_ALIGN(va)
+    )
+    ;
 
     ULONG64 index = (va - (ULONG64) vm.va.start);
 
@@ -28,7 +29,7 @@ va_to_pte(ULONG64 va) {
 
     EnterCriticalSection(&vm.pte.rootLock);
 
-     currentPTE = ((pte*)vm.pte.table) + row;
+    currentPTE = ((pte *) vm.pte.table) + row;
 
     if (currentPTE->validFormat.valid == 0) {
         //some function that makes a pagetable valid
@@ -46,8 +47,8 @@ va_to_pte(ULONG64 va) {
         // the minus one is becasue we are excluding ourselves,
         // the bit mask is to onlay take the nine bits we care about
 
-        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1<<(9+1)) - 1);
-        currentPTE = (pte* )vm.pte.start_of_layer[i] + row;
+        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1 << (9 + 1)) - 1);
+        currentPTE = (pte *) vm.pte.start_of_layer[i] + row;
 
         if (currentPTE->validFormat.valid == 0) {
             //some function that makes a pagetable valid
@@ -70,11 +71,36 @@ va_to_pte(ULONG64 va) {
     return pte;
 }
 
+
+// assumes that all parent ptes are faulted in
 PVOID
-pte_to_va(pte *pte) {
-    ULONG64 index = (pte - vm.pte.table);
-    ASSERT(isPTEValid(pte))
-    return (PVOID) ((index * PAGE_SIZE) + (ULONG_PTR) vm.va.start);
+pte_to_va(pte *currentPTE) {
+    ULONG64 final = 0;
+    ULONG64 index;
+    pte* parentPTEAddress;
+
+    //TODO this only works for leave ptes
+
+    PPAGETABLE page = (PPAGETABLE) PAGE_ALIGN((ULONG64) currentPTE);
+
+
+    final += currentPTE - (pte*) page;
+
+    // the minus 1 is for zero index and we do not go to i = 0 because then we will go out of bounds
+    for (int i = vm.config.number_of_page_table_layers - 1; i > 0 ; i--) {
+        index = page - vm.pte.start_of_layer[i];
+        parentPTEAddress = index + (pte*) vm.pte.start_of_layer[i-1];
+        page = (PPAGETABLE) PAGE_ALIGN((ULONG64) parentPTEAddress);
+
+        index = parentPTEAddress - (pte*) page;
+
+        index = index << 9 * (vm.config.number_of_page_table_layers - i);
+
+        final |= index;
+
+    }
+
+    return (PVOID) (final << 12);
 }
 
 
@@ -112,6 +138,20 @@ boolean tryEnterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
     return TryEnterCriticalSection(&region->lock);
 }
 
+
+VOID setLockBit(pte *pte) {
+    BOOL oldValue;
+
+    do {
+        oldValue = _interlockedbittestandset64((volatile LONG64 *) &pte->entireFormat, 1);
+    } while (oldValue == 1);
+}
+
+VOID clearLockBit(pte *pte) {
+    int val = _interlockedbittestandreset64((volatile LONG64 *) &pte->entireFormat, 1);
+    // only unlock locked ptes
+    ASSERT(val == 1);
+}
 
 VOID lockPTE(pte *pte) {
     PTE_REGION *region = getPTERegion(pte);
