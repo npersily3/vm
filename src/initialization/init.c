@@ -196,10 +196,10 @@ VOID init_pte_regions(VOID) {
     initAgeList();
 
     //nptodo add the case where NUMPTES is not divisible by 64
-    vm.pte.RegionsBase = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.number_of_leaf_pagetables);
+    vm.pte.regions_base = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.number_of_leaf_pagetables);
     vm.pte.globalNumOfAge[0].count = 0;
 
-    PTE_REGION *currentRegion = vm.pte.RegionsBase;
+    PTE_REGION *currentRegion = vm.pte.regions_base;
     for (int i = 0; i < vm.config.number_of_leaf_pagetables; ++i) {
         InitializeCriticalSection(&currentRegion->lock);
 

@@ -199,7 +199,7 @@ DWORD page_trimmer(LPVOID info) {
     events[1] = vm.events.systemShutdown;
 
 
-    currentRegion = vm.pte.RegionsBase;
+    currentRegion = vm.pte.regions_base;
 
     ULONG64 numToTrimLocal;
     ULONG64 numFromLocalList;

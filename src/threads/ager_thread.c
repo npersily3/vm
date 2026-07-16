@@ -172,7 +172,7 @@ DWORD ager_thread(LPVOID info) {
     PTHREAD_INFO threadInfo;
 
     threadInfo = (PTHREAD_INFO) info;
-    currentRegion = vm.pte.RegionsBase;
+    currentRegion = vm.pte.regions_base;
     ULONG64 initialTotalPTEsToAge;
     ULONG64 totalPTEsLeftToAge;
     ULONG64 numPTEsAged;
@@ -206,8 +206,8 @@ DWORD ager_thread(LPVOID info) {
                 totalPTEsLeftToAge -= numPTEsAged;
             }
 
-            if (currentRegion == vm.pte.RegionsBase + vm.config.number_of_leaf_pagetables - 1) {
-                currentRegion = vm.pte.RegionsBase;
+            if (currentRegion == vm.pte.regions_base + vm.config.number_of_leaf_pagetables - 1) {
+                currentRegion = vm.pte.regions_base;
             } else {
                 currentRegion++;
             }

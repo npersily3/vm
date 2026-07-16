@@ -459,7 +459,7 @@ typedef struct {
 } AGE_COUNTER;
 
 typedef struct {
-    PTE_REGION* RegionsBase;
+    PTE_REGION* regions_base;
     PPAGETABLE table;
     PPAGETABLE* start_of_layer;
     listHead ageList[NUMBER_OF_AGES];

@@ -8,6 +8,8 @@
 
 #include "utils/thread_utils.h"
 // Simple conversion and validation functions
+
+// TODO make a version that only returns the address
 pte *
 va_to_pte(ULONG64 va) {
     pte *currentPTE;
@@ -77,27 +79,26 @@ PVOID
 pte_to_va(pte *currentPTE) {
     ULONG64 final = 0;
     ULONG64 index;
-    pte* parentPTEAddress;
+    pte *parentPTEAddress;
 
     //TODO this only works for leave ptes
 
     PPAGETABLE page = (PPAGETABLE) PAGE_ALIGN((ULONG64) currentPTE);
 
 
-    final += currentPTE - (pte*) page;
+    final += currentPTE - (pte *) page;
 
     // the minus 1 is for zero index and we do not go to i = 0 because then we will go out of bounds
-    for (int i = vm.config.number_of_page_table_layers - 1; i > 0 ; i--) {
+    for (int i = vm.config.number_of_page_table_layers - 1; i > 0; i--) {
         index = page - vm.pte.start_of_layer[i];
-        parentPTEAddress = index + (pte*) vm.pte.start_of_layer[i-1];
+        parentPTEAddress = index + (pte *) vm.pte.start_of_layer[i - 1];
         page = (PPAGETABLE) PAGE_ALIGN((ULONG64) parentPTEAddress);
 
-        index = parentPTEAddress - (pte*) page;
+        index = parentPTEAddress - (pte *) page;
 
         index = index << 9 * (vm.config.number_of_page_table_layers - i);
 
         final |= index;
-
     }
 
     return (PVOID) (final << 12);
@@ -109,22 +110,18 @@ BOOL isVaValid(ULONG64 va) {
 }
 
 PTE_REGION *getPTERegion(pte *pte) {
-    ULONG64 pageTableIndex = (pte - vm.pte.table);
-    ULONG64 index = pageTableIndex / vm.config.number_of_ptes_per_region;
-    return vm.pte.RegionsBase + index;
+    PPAGETABLE region = (PPAGETABLE) PAGE_ALIGN((ULONG64) pte);
+
+    ULONG64 regionIndex = region - vm.pte.table;
+
+    return vm.pte.regions_base + regionIndex;
 }
 
 pte *getFirstPTEInRegion(PTE_REGION *region) {
-    ULONG64 regionIndex = (region - vm.pte.RegionsBase);
-    ULONG64 pteIndex = regionIndex * vm.config.number_of_ptes_per_region;
-
-    return vm.pte.table + pteIndex;
+    ULONG64 regionIndex = (region - vm.pte.regions_base);
+    return (pte *) (vm.pte.table + regionIndex);
 }
 
-BOOL isPTEValid(pte *pte) {
-    return ((ULONG64) pte >= (ULONG64) vm.pte.table) && (
-               (ULONG64) pte < ((ULONG64) vm.pte.table + vm.config.page_table_size_in_bytes));
-}
 
 VOID enterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
     EnterCriticalSection(&region->lock);
