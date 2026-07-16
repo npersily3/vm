@@ -12,65 +12,25 @@
 // TODO make a version that only returns the address
 pte *
 va_to_pte(ULONG64 va) {
-    pte *currentPTE;
-    pte *oldPTE;
-    ASSERT(isVaValid(va))
+    // thirty layers = 2^(192) byts of va space way more
+    //TODO make this nicer
+    ULONG64 rows[30];
 
 
-    va = PAGE_ALIGN(va)
-    )
-    ;
 
-    ULONG64 index = (va - (ULONG64) vm.va.start);
+    pte* pte;
 
-    // now get only the page table row numbers
-    // TODO replace magic numbers
-    index = index >> 12;
+    // lower twelve do not matter
+    ULONG64 indices = va >> 12;
 
-    ULONG64 row = (index >> (9 * (vm.config.number_of_page_table_layers - 1)));
-
-    EnterCriticalSection(&vm.pte.rootLock);
-
-    currentPTE = ((pte *) vm.pte.table) + row;
-
-    if (currentPTE->validFormat.valid == 0) {
-        //some function that makes a pagetable valid
-    }
-    ASSERT(topPTE.validFormat.valid == 1);
-
-    // lock the pte
-    currentPTE->validFormat.lock = 1;
-    oldPTE = currentPTE;
-
-    LeaveCriticalSection(&vm.pte.rootLock);
-
-    // a ptes accessed in the loop will be locked. SO there is not a possibility of someone slipping in and trimming it
-    for (int i = 1; i < vm.config.number_of_page_table_layers; i++) {
+    for (int i = 0; i < vm.config.number_of_page_table_layers; i++) {
         // the minus one is becasue we are excluding ourselves,
         // the bit mask is to onlay take the nine bits we care about
+        //TODO double check
+        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1<<(9+1)) - 1);
+        currentPTEAddress = (pte* )vm.pte.start_of_layer[i] + row;
 
-        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1 << (9 + 1)) - 1);
-        currentPTE = (pte *) vm.pte.start_of_layer[i] + row;
-
-        if (currentPTE->validFormat.valid == 0) {
-            //some function that makes a pagetable valid
-        }
-        ASSERT(topPTE.validFormat.valid == 1);
-
-        // lock the pte
-        currentPTE->validFormat.lock = 1;
-
-        // unlock the old one
-        oldPTE->validFormat.lock = 0;
-
-        // start the descent into a new page table layer
-        oldPTE = currentPTE;
     }
-
-
-    pte *pte = vm.pte.table + index;
-    ASSERT(isPTEValid(pte))
-    return pte;
 }
 
 
