@@ -9,28 +9,37 @@
 #include "utils/thread_utils.h"
 // Simple conversion and validation functions
 
-// TODO make a version that only returns the address
-pte *
-va_to_pte(ULONG64 va) {
-    // thirty layers = 2^(192) byts of va space way more
-    //TODO make this nicer
-    ULONG64 rows[30];
 
 
+/**
+ * @brief slices the va to get what ever nine bits
+ * @param va
+ * @param layer
+ * @return
+ */
 
-    pte* pte;
+// this should work
 
-    // lower twelve do not matter
-    ULONG64 indices = va >> 12;
+//Decide what it does
+#define LAST_NINE_BITS_MASK ((1 << 10) - 1)
 
-    for (int i = 0; i < vm.config.number_of_page_table_layers; i++) {
-        // the minus one is becasue we are excluding ourselves,
-        // the bit mask is to onlay take the nine bits we care about
-        //TODO double check
-        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1<<(9+1)) - 1);
-        currentPTEAddress = (pte* )vm.pte.start_of_layer[i] + row;
+//TODO deal with pointer types
+pte* getNextLayer(pte* va, int layer, int row) {
+    ULONG64 index = va - (pte*) vm.pte.start_of_layer[layer - 1];
+    pte* base = (pte*) vm.pte.start_of_layer[layer];
+    return base + ((index << 9) + row);
+}
 
-    }
+/**
+ *
+ * @param va The va to index into
+ * @param layer what page table layer it represents
+ * @return The nine bit row value
+ */
+//TODO some checks
+ULONG64 getRowN(ULONG64 va, int layer) {
+    ULONG64 temp = va >> 12;
+    return (temp >> ((vm.config.number_of_page_table_layers - 1 - layer) * 9)) & (LAST_NINE_BITS_MASK);
 }
 
 

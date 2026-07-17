@@ -147,8 +147,7 @@ ListHead->entry.Blink->Flink = ListToAppend;
 ListHead->entry.Blink = ListToAppend->Blink;
 ListToAppend->Blink->Flink = &ListHead->entry;
 ListToAppend->Blink = ListEnd;
-// Note: This function appends an entire list, so length update would need to count the appended list
-// For now, we'll leave this as a TODO since it requires counting the appended list
+
 }
 
 FORCEINLINE
