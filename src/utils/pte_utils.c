@@ -130,14 +130,22 @@ int isLeafPTE(pte* currentPTE) {
 }
 
 
-//TODO I think this should more or less work, the main problem is the case where someone has to lock a highest level pte
-// then this will break.
+// A pte is protected by its parent's lock bit. Layer-0 (root) ptes have no parent, so they are
+// serialized by the global rootLock instead — hardcoded path here.
 VOID lockPTE(pte *currentPTE) {
+    if (findPTELayer(currentPTE) == 0) {
+        EnterCriticalSection(&vm.pte.rootLock);
+        return;
+    }
     pte *parent = getHigherLevelPTEAddress(currentPTE);
     setLockBit(parent);
 }
 
 VOID unlockPTE(pte *currentPTE) {
+    if (findPTELayer(currentPTE) == 0) {
+        LeaveCriticalSection(&vm.pte.rootLock);
+        return;
+    }
     pte *parent = getHigherLevelPTEAddress(currentPTE);
     clearLockBit(parent);
 }

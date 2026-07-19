@@ -84,12 +84,15 @@ boolean setAccessBit(ULONG64 va) {
     pte oldPTE;
     ULONG64 row;
 
-    pteAddress = (pte *) vm.pte.start_of_layer[0];
-
-
-   for (int i = 0; i < vm.config.number_of_page_table_layers - 1; ++i) {
+   for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
        row = parseVA_Row_value(va, i);
-       pteAddress = getNextLayer(pteAddress,i,row);
+       if (i == 0) {
+           // root pte: entry row0 of the single layer-0 pagetable
+           pteAddress = (pte *) vm.pte.start_of_layer[0] + row;
+       } else {
+           // descend from the layer i-1 parent into layer i
+           pteAddress = getNextLayer(pteAddress, i - 1, row);
+       }
 
        while (true) {
            __try {
@@ -333,8 +336,11 @@ int main(int argc, char **argv) {
 
         init_config_params(userThreads, num_layers, paSizeInGigs, numFreeLists, diskSizeInGigs);
     } else {
-        // default: 8 user threads, 3 pte layers, 2 GB physical, 16 free lists, 2 GB disk
-        init_config_params(8, 3, 2, 16, 2);
+        // default: 8 user threads, 2 pte layers (1 GB VA), 1 GB physical, 16 free lists, 1 GB disk.
+        // L=2 keeps VA (1 GB) fully backable by physical+disk, so uniform-random access stays
+        // within commit. TODO: support n layers by default (L=3 = 512 GB VA) once the test uses a
+        // locality-biased access pattern instead of uniform-random, so we don't outrun commit.
+        init_config_params(8, 2, 1, 16, 1);
     }
     printf("%llu ", sizeof(pfn));
 #if DBG

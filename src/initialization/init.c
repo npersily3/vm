@@ -199,12 +199,14 @@ VOID initAgeList(VOID) {
 VOID init_pte_regions(VOID) {
     initAgeList();
 
-    //nptodo add the case where NUMPTES is not divisible by 64
-    vm.pte.regions_base = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.number_of_leaf_pagetables);
+    // one region per pagetable across every layer: branch and leaf regions are uniform,
+    // so the ager/trimmer treat them identically. Indexed by whole-table pagetable offset
+    // (see getPTERegion: region - vm.pte.table).
+    vm.pte.regions_base = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.cumulative_number_of_page_tables);
     vm.pte.globalNumOfAge[0].count = 0;
 
     PTE_REGION *currentRegion = vm.pte.regions_base;
-    for (int i = 0; i < vm.config.number_of_leaf_pagetables; ++i) {
+    for (int i = 0; i < vm.config.cumulative_number_of_page_tables; ++i) {
         InitializeCriticalSection(&currentRegion->lock);
 
 
@@ -247,6 +249,16 @@ VOID init_pageTable(VOID) {
         vm.pte.start_of_layer[i] = vm.pte.table + pagetableOffset;
         pagetableOffset += power(vm.config.pte_entries_per_pagetable, i);
     }
+
+    // Pin the root page directory to the reserved frame 0 (withheld in init_free_list) so the
+    // root pte read at the top of every fault is always backed and never itself faults.
+    ULONG_PTR rootFrame = vm.pfn.physical_page_numbers[0];
+    if (MapUserPhysicalPages(vm.pte.table, 1, &rootFrame) == FALSE) {
+        printf("Failed to map root page directory\n");
+        DebugBreak();
+    }
+    // start its ptes invalid
+    memset(vm.pte.table, 0, sizeof(PAGETABLE));
 
     init_pte_regions();
 #if DBG
@@ -353,10 +365,13 @@ VOID init_free_list(VOID) {
         init_list_head(&vm.lists.free.heads[i]);
     }
 
-    vm.lists.free.length = vm.config.number_of_physical_pages;
+    // frame 0 (physical_page_numbers[0]) is reserved for the root page directory so it is always
+    // resident and the first pte read in every fault never itself faults. It is pinned in
+    // init_pageTable; the free list gets every other frame.
+    vm.lists.free.length = vm.pfn.physical_page_count - 1;
 
-    // Add every page to the free list
-    for (int i = 0; i < vm.pfn.physical_page_count; ++i) {
+    // Add every page except the reserved root frame to the free list
+    for (int i = 1; i < vm.pfn.physical_page_count; ++i) {
         pfn *new_pfn = (pfn *) (vm.pfn.start + vm.pfn.physical_page_numbers[i]);
 
         // Calculate the page-aligned range that contains this pfn structure

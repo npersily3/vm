@@ -212,9 +212,8 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     ULONG64 arbitrary_va = (ULONG64) parbitrary_va;
 
 
-    row = parseVA_Row_value(arbitrary_va, 0);
-
-    currentPTEAddress = getNextLayer((pte *) vm.pte.table, 0, row);
+    // seed with the actual root pte: entry row0 of the single layer-0 pagetable
+    currentPTEAddress = (pte *) vm.pte.start_of_layer[0] + parseVA_Row_value(arbitrary_va, 0);
 
 
     EnterCriticalSection(&vm.pte.rootLock);
@@ -245,8 +244,8 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     for (int i = 1; i < vm.config.number_of_page_table_layers; i++) {
         // i get the next row value
         row = parseVA_Row_value(arbitrary_va, i);
-        // I get the address of the pte
-        currentPTEAddress = getNextLayer(currentPTEAddress, i, row);
+        // I get the address of the pte (descend from the layer i-1 parent into layer i)
+        currentPTEAddress = getNextLayer(currentPTEAddress, i - 1, row);
 
         localPTE.entireFormat = ReadULong64NoFence(&currentPTEAddress->entireFormat);
 
