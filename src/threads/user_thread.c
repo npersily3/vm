@@ -199,9 +199,9 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     pte *currentPTEAddress;
     pte *oldPTEAddress;
     pte localPTE;
-    pte expectedContents;
+//    pte expectedContents;
     ULONG64 row;
-    ASSERT(isVaValid(va))
+    ASSERT(isVaValid((ULONG64) parbitrary_va))
 
     // Checks to see if the user is accessing out of bounds va space
     if (isVaValid((ULONG64) parbitrary_va) == FALSE) {
@@ -224,7 +224,7 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     if (localPTE.validFormat.valid == 0) {
         //TODO make sure everything works with onlockin in the loop
         while (true) {
-            if (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {
+            if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
                 break;
             }
         }
@@ -254,7 +254,7 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
         if (localPTE.validFormat.valid == 0) {
             //TODO make sure everything works with onlockin in the loop  ( we probably need to lock and unlock the pte)
             while (true) {
-                if (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {
+                if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
                     break;
                 }
             }

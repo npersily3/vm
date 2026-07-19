@@ -87,7 +87,7 @@ boolean setAccessBit(ULONG64 va) {
     pteAddress = (pte *) vm.pte.start_of_layer[0];
 
 
-   for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
+   for (int i = 0; i < vm.config.number_of_page_table_layers - 1; ++i) {
        row = parseVA_Row_value(va, i);
        pteAddress = getNextLayer(pteAddress,i,row);
 
@@ -101,9 +101,14 @@ boolean setAccessBit(ULONG64 va) {
 
                newPTE.validFormat.access = 1;
 
-               writePTE(pteAddress, newPTE, oldPTE);
+               // retry only if the compare-exchange lost a race; break once it lands
+               pte prev = writePTE(pteAddress, newPTE, oldPTE);
+               if (prev.entireFormat == oldPTE.entireFormat) {
+                   break;
+               }
            } __except(EXCEPTION_EXECUTE_HANDLER) {
                printf("?");
+               break;
            }
 
        }

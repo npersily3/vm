@@ -30,10 +30,14 @@ state vm;
 // makes life easy
 ULONG64 power(ULONG64 base, ULONG64 power) {
 
-    for (ULONG64 i = 0; i < power; i++) {
-        base *= base;
+    if (power == 0) return 1;
+
+    ULONG64 start = base;
+
+    for (ULONG64 i = 1; i < power; i++) {
+        start *= base;
     }
-    return base;
+    return start;
 }
 
 VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULONG64 physicalInGigs,
@@ -48,10 +52,10 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
     vm.config.number_of_leaf_ptes  = power(vm.config.pte_entries_per_pagetable, num_layers);
     vm.config.virtual_address_size = vm.config.number_of_leaf_ptes * PAGE_SIZE;
 
-    // this is in pagetables
+    // this is in pagetables: layer k holds 512^k pagetables, k = 0 .. num_layers-1
     vm.config.cumulative_number_of_page_tables = 0;
     for (ULONG i = 0; i < num_layers; i++) {
-        vm.config.cumulative_number_of_page_tables += power(vm.config.pte_entries_per_pagetable, (i+1));
+        vm.config.cumulative_number_of_page_tables += power(vm.config.pte_entries_per_pagetable, i);
     }
 
     vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
@@ -63,7 +67,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
 
     // disk stuff
     vm.config.number_of_disk_divisions = 1;
-    vm.config.disk_size_in_bytes = diskInGigs;
+    vm.config.disk_size_in_bytes = GB(diskInGigs);
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
     vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
 
@@ -229,15 +233,19 @@ VOID init_pageTable(VOID) {
                                          &vm.config.parameter,
                                          1);
 
-    // store the pointers to the start of each layer for easy pointer math
-    vm.pte.start_of_layer = malloc(vm.config.number_of_page_table_layers * sizeof(PPAGETABLE));
-    for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
-        vm.pte.start_of_layer[i] = vm.pte.table +  power(vm.config.pte_entries_per_pagetable, (i+1));
-    }
-
     if (vm.pte.table == NULL) {
         printf("Cannot allocate page table\n");
         DebugBreak();
+    }
+
+    // store the pointers to the start of each layer for easy pointer math.
+    // layer k holds 512^k pagetables, so layer i begins after the sum of all
+    // lower layers: start_of_layer[i] = table + (512^0 + ... + 512^(i-1)).
+    vm.pte.start_of_layer = malloc(vm.config.number_of_page_table_layers * sizeof(PPAGETABLE));
+    ULONG64 pagetableOffset = 0;
+    for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
+        vm.pte.start_of_layer[i] = vm.pte.table + pagetableOffset;
+        pagetableOffset += power(vm.config.pte_entries_per_pagetable, i);
     }
 
     init_pte_regions();
