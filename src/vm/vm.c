@@ -82,18 +82,33 @@ boolean setAccessBit(ULONG64 va) {
     pte *pteAddress;
     pte newPTE;
     pte oldPTE;
+    ULONG64 row;
+
+    pteAddress = (pte *) vm.pte.start_of_layer[0];
 
 
-    pteAddress = va_to_pte(va);
-    oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64 *) pteAddress);
-    if (oldPTE.validFormat.valid == 0) {
-        return REDO_FAULT;
-    }
-    newPTE.entireFormat = oldPTE.entireFormat;
+   for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
+       row = parseVA_Row_value(va, i);
+       pteAddress = getNextLayer(pteAddress,i,row);
 
-    newPTE.validFormat.access = 1;
+       while (true) {
+           __try {
+               oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64 *) pteAddress);
+               if (oldPTE.validFormat.valid == 0) {
+                   return REDO_FAULT;
+               }
+               newPTE.entireFormat = oldPTE.entireFormat;
 
-    writePTE(pteAddress, newPTE, oldPTE);
+               newPTE.validFormat.access = 1;
+
+               writePTE(pteAddress, newPTE, oldPTE);
+           } __except(EXCEPTION_EXECUTE_HANDLER) {
+               printf("?");
+           }
+
+       }
+   }
+
     return 0;
 }
 

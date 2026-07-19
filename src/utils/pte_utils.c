@@ -23,11 +23,13 @@
 #define LAST_NINE_BITS_MASK ((1 << 10) - 1)
 
 //TODO deal with pointer types
-pte *getNextLayer(pte *va, int current_layer, int row) {
+pte *getNextLayer(pte *va, int current_layer, ULONG64 row) {
     ULONG64 index = va - (pte *) vm.pte.start_of_layer[current_layer];
     pte *base = (pte *) vm.pte.start_of_layer[current_layer + 1];
     return base + ((index << 9) + row);
 }
+
+
 
 /**
  *
@@ -46,31 +48,13 @@ ULONG64 parseVA_Row_value(ULONG64 va, int layer) {
 // assumes that all parent ptes are faulted in
 PVOID
 pte_to_va(pte *currentPTE) {
-    ULONG64 final = 0;
-    ULONG64 index;
-    pte *parentPTEAddress;
-
-    //TODO this only works for leave ptes
-
-    PPAGETABLE page = (PPAGETABLE) PAGE_ALIGN((ULONG64) currentPTE);
-
-
-    final += currentPTE - (pte *) page;
-
-    // the minus 1 is for zero index and we do not go to i = 0 because then we will go out of bounds
-    for (int i = vm.config.number_of_page_table_layers - 1; i > 0; i--) {
-        index = page - vm.pte.start_of_layer[i];
-        parentPTEAddress = index + (pte *) vm.pte.start_of_layer[i - 1];
-        page = (PPAGETABLE) PAGE_ALIGN((ULONG64) parentPTEAddress);
-
-        index = parentPTEAddress - (pte *) page;
-
-        index = index << 9 * (vm.config.number_of_page_table_layers - i);
-
-        final |= index;
+    if (isLeafPTE(currentPTE)) {
+        ULONG64 index = currentPTE - (pte*) vm.pte.start_of_layer[vm.config.number_of_page_table_layers - 1];
+        return ((PPAGETABLE) vm.va.start) + index;
+    } else {
+        // I want to map to the lower level pagetable
+        return (PVOID) getStartOfLowerPagetable(currentPTE);
     }
-
-    return (PVOID) (final << 12);
 }
 
 

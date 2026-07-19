@@ -33,7 +33,7 @@ VOID checkVA(PULONG_PTR va);
 #endif
 
 
-pte* getNextLayer(pte* va, int current_layer, int row);
+pte* getNextLayer(pte* va, int current_layer, ULONG64 row);
 ULONG64 parseVA_Row_value(ULONG64 va, int layer);
 
 int findPTELayer(pte *pte);
