@@ -337,6 +337,7 @@ typedef struct _SHARED_HOLDER_DEBUG {
 #define LENGTH_OF_PREDICTION 10
 
 #define NOT_ON_LIST (-1)
+//TODO after new changes this only has to be the size of two pointers
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
@@ -344,7 +345,7 @@ typedef struct {
     CRITICAL_SECTION lock;
     DWORD numOfAge[NUMBER_OF_AGES];
 
-    ULONG64 hasActiveEntry: 1;
+    ULONG64 hasAgeableEntry: 1;
 #if DBG
 
     ULONG64 ageMap[64];

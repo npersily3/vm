@@ -33,5 +33,11 @@ VOID checkVA(PULONG_PTR va);
 #endif
 
 
+pte* getNextLayer(pte* va, int current_layer, int row);
+ULONG64 parseVA_Row_value(ULONG64 va, int layer);
 
+int findPTELayer(pte *pte);
+pte *getHigherLevelPTEAddress(pte *currentPTE);
+pte* getStartOfLowerPagetable(pte *currentPTE);
+int isLeafPTE(pte* currentPTE);
 #endif //PTE_UTILS_H

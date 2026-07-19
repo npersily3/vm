@@ -15,6 +15,24 @@
 //debug pte region field about what list a pte region is on and check the max age stuff
 
 
+int canPageTableBeAged(pte *pteAddress) {
+    // this can always be aged
+
+
+    if (isLeafPTE(pteAddress)) {
+        return TRUE;
+    }
+    pte *childPTE = getStartOfLowerPagetable(pteAddress);
+
+    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
+        if (childPTE[i].validFormat.valid == 1 || childPTE[i].transitionFormat.isTransition == 1) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+
 /**
  * @brief A function that ages a pte.
  * @param pteAddress The address of the pte to age
@@ -22,6 +40,7 @@
  * @retval 1 if the PTE was aged
  * @retval 0 if the PTE was not aged
  */
+
 ULONG64 agePTE(pte *pteAddress, PTE_REGION *region) {
     pte pteContents;
     pte newPTEContents;
@@ -30,18 +49,7 @@ ULONG64 agePTE(pte *pteAddress, PTE_REGION *region) {
     ULONG64 newAge;
     ULONG64 beenAccessed;
     ULONG64 returnValue;
-
-
-#if DBG
-
-
-    ULONG64 index;
-
-    index = pteAddress - getFirstPTEInRegion(region);
-
-
-#endif
-
+    int isAgeable;
 
     pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
 
@@ -60,15 +68,23 @@ ULONG64 agePTE(pte *pteAddress, PTE_REGION *region) {
         // if the pte was accessed and has been previously aged,
         // we need to reset the age
         if (beenAccessed == TRUE) {
-            newAge = 0;
+            isAgeable = canPageTableBeAged(pteAddress);
         } else {
-            if (currentAge != MAX_AGE) {
-                returnValue = 1;
-                newAge = currentAge + 1;
-            } else {
-                newAge = MAX_AGE;
-            }
+            isAgeable = TRUE;
         }
+
+        if (isAgeable == FALSE) {
+            break;
+        }
+
+        if (currentAge != MAX_AGE) {
+            returnValue = 1;
+            newAge = currentAge + 1;
+        } else {
+            newAge = MAX_AGE;
+        }
+
+
         // regardless of what happens, we need to clear the access bit
         newPTEContents.validFormat.access = FALSE;
         newPTEContents.validFormat.age = newAge;
@@ -194,7 +210,7 @@ DWORD ager_thread(LPVOID info) {
             numPTEsAged = 0;
             enterPTERegionLock(currentRegion, threadInfo);
 
-            if (currentRegion->hasActiveEntry == TRUE) {
+            if (currentRegion->hasAgeableEntry == TRUE) {
                 numPTEsAged = ageRegion(currentRegion, threadInfo);
             }
             leavePTERegionLock(currentRegion, threadInfo);

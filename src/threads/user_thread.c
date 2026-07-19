@@ -196,13 +196,14 @@ VOID freeThreadMapping(PTHREAD_INFO threadContext) {
  * @return
  */
 BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
-    pte* currentPTEAddress;
-    pte* oldPTEAddress;
+    pte *currentPTEAddress;
+    pte *oldPTEAddress;
     pte localPTE;
     pte expectedContents;
+    ULONG64 row;
     ASSERT(isVaValid(va))
 
-        // Checks to see if the user is accessing out of bounds va space
+    // Checks to see if the user is accessing out of bounds va space
     if (isVaValid((ULONG64) parbitrary_va) == FALSE) {
         DebugBreak();
         printf("invalid va %p\n", parbitrary_va);
@@ -211,24 +212,22 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     ULONG64 arbitrary_va = (ULONG64) parbitrary_va;
 
 
+    row = parseVA_Row_value(arbitrary_va, 0);
 
+    currentPTEAddress = getNextLayer((pte *) vm.pte.table, 0, row);
 
-    arbitrary_va = PAGE_ALIGN(arbitrary_va));
-
-    ULONG64 index = (arbitrary_va - (ULONG64) vm.va.start);
-
-    // now get only the page table row numbers
-    // TODO replace magic numbers
-    index = index >> 12;
-
-    ULONG64 row = (index >> (9 * (vm.config.number_of_page_table_layers - 1)));
 
     EnterCriticalSection(&vm.pte.rootLock);
 
-    currentPTEAddress = ((pte*)vm.pte.table) + row;
+    localPTE.entireFormat = ReadULong64NoFence(&currentPTEAddress->entireFormat);
 
-    if (currentPTEAddress->validFormat.valid == 0) {
-        while (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {}
+    if (localPTE.validFormat.valid == 0) {
+        //TODO make sure everything works with onlockin in the loop
+        while (true) {
+            if (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {
+                break;
+            }
+        }
     }
 
 
@@ -244,21 +243,27 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
 
     // a ptes accessed in the loop will be locked. SO there is not a possibility of someone slipping in and trimming it
     for (int i = 1; i < vm.config.number_of_page_table_layers; i++) {
-        // the minus one is becasue we are excluding ourselves,
-        // the bit mask is to onlay take the nine bits we care about
-        //TODO double check
-        row = (index >> (9 * (vm.config.number_of_page_table_layers - i - 1))) & ((1<<(9+1)) - 1);
-        currentPTEAddress = (pte* )vm.pte.start_of_layer[i] + row;
+        // i get the next row value
+        row = parseVA_Row_value(arbitrary_va, i);
+        // I get the address of the pte
+        currentPTEAddress = getNextLayer(currentPTEAddress, i, row);
 
-        if (currentPTEAddress->validFormat.valid == 0) {
-            while (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {}
+        localPTE.entireFormat = ReadULong64NoFence(&currentPTEAddress->entireFormat);
+
+        // I make sure the pte is valid
+        if (localPTE.validFormat.valid == 0) {
+            //TODO make sure everything works with onlockin in the loop  ( we probably need to lock and unlock the pte)
+            while (true) {
+                if (pageFault(currentPTEAddress, threadContext) == REDO_FAULT) {
+                    break;
+                }
+            }
         }
-
 
         // guarantees to work
         setLockBit(currentPTEAddress);
 
-        //TODO ask landy if this is okay
+        //TODO  (word tearing double check to see if we need to do interlocked)
         currentPTEAddress->validFormat.access = 1;
 
         // unlock the old one
@@ -269,14 +274,14 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     }
 
 
-    #if CORRECTNESS
-        //if we are in correctness mode run the validation code
-        checkVA(parbitrary_va);
-    #endif
+
+#if CORRECTNESS
+    //if we are in correctness mode run the validation code
+    checkVA(parbitrary_va);
+#endif
 
     return !REDO_FAULT;
 }
-
 
 
 /**
@@ -287,7 +292,7 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
  *@return A boolean that determines whether we need to back up and redo the fault.
 */
 
-BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
+BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
     BOOL returnValue;
 
     pte pteContents;
@@ -324,7 +329,7 @@ BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
         if (returnValue != REDO_FAULT) {
             PTE_REGION *region = getPTERegion(currentPTE);
 
-            regionStatus = region->hasActiveEntry;
+            regionStatus = region->hasAgeableEntry;
 
 
             ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
@@ -349,7 +354,7 @@ BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
                 addRegionToTail(&vm.pte.ageList[0], region, threadContext);
             }
             InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
-            region->hasActiveEntry = TRUE;
+            region->hasAgeableEntry = TRUE;
             region->numOfAge[0]++;
 
             newPTE.entireFormat = 0;
@@ -362,7 +367,6 @@ BOOL pageFault(pte* currentPTE, LPVOID threadContext) {
             writePTE(currentPTE, newPTE, pteContents);
         }
     }
-
 
 
     return returnValue;

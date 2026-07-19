@@ -123,7 +123,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
         }
         currentPTE++;
     }
-    currentRegion->hasActiveEntry = regionHasActiveEntry;
+    currentRegion->hasAgeableEntry = regionHasActiveEntry;
 
     // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
@@ -259,7 +259,7 @@ DWORD page_trimmer(LPVOID info) {
 
 
             // check to see if there are any active entries in this region
-            if (currentRegion->hasActiveEntry == TRUE) {
+            if (currentRegion->hasAgeableEntry == TRUE) {
                 ULONG64 finalAge;
 
                 // get a region, trim it, and move it to the tail of the age list
@@ -274,7 +274,7 @@ DWORD page_trimmer(LPVOID info) {
                 }
 
 
-                if (currentRegion->hasActiveEntry == TRUE) {
+                if (currentRegion->hasAgeableEntry == TRUE) {
                     finalAge = getRegionAge(currentRegion);
 
                     addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);

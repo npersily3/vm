@@ -10,7 +10,6 @@
 // Simple conversion and validation functions
 
 
-
 /**
  * @brief slices the va to get what ever nine bits
  * @param va
@@ -24,9 +23,9 @@
 #define LAST_NINE_BITS_MASK ((1 << 10) - 1)
 
 //TODO deal with pointer types
-pte* getNextLayer(pte* va, int layer, int row) {
-    ULONG64 index = va - (pte*) vm.pte.start_of_layer[layer - 1];
-    pte* base = (pte*) vm.pte.start_of_layer[layer];
+pte *getNextLayer(pte *va, int current_layer, int row) {
+    ULONG64 index = va - (pte *) vm.pte.start_of_layer[current_layer];
+    pte *base = (pte *) vm.pte.start_of_layer[current_layer + 1];
     return base + ((index << 9) + row);
 }
 
@@ -37,8 +36,9 @@ pte* getNextLayer(pte* va, int layer, int row) {
  * @return The nine bit row value
  */
 //TODO some checks
-ULONG64 getRowN(ULONG64 va, int layer) {
-    ULONG64 temp = va >> 12;
+ULONG64 parseVA_Row_value(ULONG64 va, int layer) {
+    ULONG64 temp = va - (ULONG64) vm.va.start;
+    temp = temp >> 12;
     return (temp >> ((vm.config.number_of_page_table_layers - 1 - layer) * 9)) & (LAST_NINE_BITS_MASK);
 }
 
@@ -119,30 +119,45 @@ VOID clearLockBit(pte *pte) {
     ASSERT(val == 1);
 }
 
-VOID lockPTE(pte *pte) {
-    PTE_REGION *region = getPTERegion(pte);
-
-#if 0
-    BOOL oldValue;
-    acquire_srw_shared(&region->lock);
-
-    do {
-        oldValue = _interlockedbittestandset64((volatile LONG64 *) &pte->entireFormat, 1);
-    } while (oldValue == 1);
-#endif
-
-
-    EnterCriticalSection(&region->lock);
-    //ASSERT(pte->transitionFormat.access == 0);
+int findPTELayer(pte *pte) {
+    for (int i = vm.config.number_of_page_table_layers - 1; i > 0; i--) {
+        if (vm.pte.start_of_layer[i] < (PPAGETABLE) pte) {
+            return i;
+        }
+    }
+    return 0;
 }
 
-VOID unlockPTE(pte *pte) {
-    PTE_REGION *region = getPTERegion(pte);
-    //ASSERT(pte->transitionFormat.access == 0);
+pte *getHigherLevelPTEAddress(pte *currentPTE) {
+    PPAGETABLE currentPagetable = (PPAGETABLE) PAGE_ALIGN((ULONG64) currentPTE);
+    ULONG64 layer = findPTELayer(currentPTE);
 
-    // _interlockedbittestandreset64((volatile LONG64*)&pte->entireFormat, 1);
-    LeaveCriticalSection(&region->lock);
+    ASSERT(layer == 0);
+    ULONG64 index = currentPagetable - vm.pte.start_of_layer[layer];
+    return ((pte *) vm.pte.start_of_layer[layer - 1] + index);
 }
+
+pte* getStartOfLowerPagetable(pte *currentPTE) {
+    return getNextLayer(currentPTE,findPTELayer(currentPTE),0);
+}
+
+int isLeafPTE(pte* currentPTE) {
+    return findPTELayer(currentPTE) == (vm.config.number_of_page_table_layers - 1);
+}
+
+
+//TODO I think this should more or less work, the main problem is the case where someone has to lock a highest level pte
+// then this will break.
+VOID lockPTE(pte *currentPTE) {
+    pte *parent = getHigherLevelPTEAddress(currentPTE);
+    setLockBit(parent);
+}
+
+VOID unlockPTE(pte *currentPTE) {
+    pte *parent = getHigherLevelPTEAddress(currentPTE);
+    clearLockBit(parent);
+}
+
 
 /**
  * @brief NoFence write to a PTE. In debug mode, this function keeps track of how the pte has changed and the stack trace
