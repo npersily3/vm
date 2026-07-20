@@ -56,7 +56,8 @@ PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
 PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO thread_info) {
     // Generate the next VA
     PULONG_PTR new_va = (previous_va + 1);
-    if (new_va >= vm.va.end)
+    // wrap at the committed window (not vm.va.end) so the sequential walk stays backable too
+    if (new_va >= vm.va.start + vm.config.virtual_address_size_in_unsigned_chunks)
         new_va = vm.va.start;
 
     // If we are still within a given page, return this VA and continue on.
@@ -285,7 +286,7 @@ DWORD testVM(LPVOID lpParam) {
 
 
 #if 1 || DBG
-            if (i % MB(10) == 0) {
+            if (i % MB(1) == 0) {
                 printf(".");
             }
 #endif
@@ -340,7 +341,12 @@ int main(int argc, char **argv) {
         // L=2 keeps VA (1 GB) fully backable by physical+disk, so uniform-random access stays
         // within commit. TODO: support n layers by default (L=3 = 512 GB VA) once the test uses a
         // locality-biased access pattern instead of uniform-random, so we don't outrun commit.
+#if DBG
+        init_config_params(8, 3, 1, 16, 1);
+
+#else
         init_config_params(8, 2, 1, 16, 1);
+#endif
     }
     printf("%llu ", sizeof(pfn));
 #if DBG

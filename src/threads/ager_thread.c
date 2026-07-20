@@ -158,7 +158,7 @@ ULONG64 ageRegion(PTE_REGION *region, PTHREAD_INFO threadInfo) {
 
     pteAddress = getFirstPTEInRegion(region);
 
-    for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
         numPTEsAged += agePTE(pteAddress, region);
         pteAddress++;
     }

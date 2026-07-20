@@ -50,7 +50,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
     // for every pte
-    for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
+    for (; pteIndex < vm.config.pte_entries_per_pagetable; pteIndex++) {
         // when we find a valid pte, invalidate it and store its info in stack variables
 
         oldPTEContents.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
@@ -116,7 +116,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     }
     currentPTE = getFirstPTEInRegion(currentRegion);
     regionHasActiveEntry = FALSE;
-    for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
+    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
         if (currentPTE->validFormat.valid == 1) {
             regionHasActiveEntry = TRUE;
             break;

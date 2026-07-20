@@ -58,7 +58,6 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
         vm.config.cumulative_number_of_page_tables += power(vm.config.pte_entries_per_pagetable, i);
     }
 
-    vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
     vm.config.number_of_leaf_pagetables = vm.config.number_of_leaf_ptes / vm.config.pte_entries_per_pagetable;
 
     // we might not get all our pages, but that is okay. We just have to make sure nothing is conditioned upon stale values
@@ -71,9 +70,23 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
     vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
 
-    // amount actuable pageable (commitable)
-    // one page for zero slot, one for transfering
-    vm.config.max_commit_size_in_pages = vm.config.number_of_physical_pages + vm.config.disk_size_in_pages - 2;
+    // amount actually pageable (commitable): physical + disk, minus the zero slot and transfer
+    // page, minus every possible page table frame. Page tables are physical-backed (never on
+    // disk) and are not commitable data; cumulative_number_of_page_tables already counts the
+    // pinned root, so we reserve for the whole tree here.
+    if (vm.config.cumulative_number_of_page_tables + 2 >=
+        vm.config.number_of_physical_pages + vm.config.disk_size_in_pages) {
+        printf("Not enough physical+disk to back the page tables; reduce layers or add memory/disk\n");
+        DebugBreak();
+    }
+    vm.config.max_commit_size_in_pages = vm.config.number_of_physical_pages + vm.config.disk_size_in_pages
+                                         - 2 - vm.config.cumulative_number_of_page_tables;
+
+    // Confine the access pattern to the committed (backable) space, so a large VA (e.g. 3 layers
+    // = 512 GB) never overcommits. Clamp to the real VA (number_of_leaf_ptes = VA in pages) so a
+    // fully-backable config (commit >= VA, e.g. the L=2 default) doesn't index past vm.va.end.
+    ULONG64 accessible_pages = min(vm.config.max_commit_size_in_pages, vm.config.number_of_leaf_ptes);
+    vm.config.virtual_address_size_in_unsigned_chunks = accessible_pages * (PAGE_SIZE / sizeof(ULONG64));
 
     //threads
     vm.config.number_of_user_threads = number_of_user_threads;

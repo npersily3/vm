@@ -12,8 +12,8 @@
 
 
 // Debug macros
-#define         DBG 1
-#define DBG_DISK 1
+#define         DBG 0
+#define DBG_DISK 0
 
 
 #if DBG
@@ -75,7 +75,6 @@ typedef struct {
 
 
     ULONG64 number_of_leaf_ptes;
-    ULONG64 number_of_ptes_per_region;
     ULONG64 number_of_leaf_pagetables;
     ULONG64 time_until_recall_pages;
 
