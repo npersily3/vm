@@ -274,6 +274,8 @@ typedef struct {
     pte *pte;
     ULONG64 diskIndex;
 
+    ULONG64 valid_transition_count;
+
     ULONG64 location: 1;
     ULONG64 isBeingWritten: 1;
     ULONG64 isBeingFreed: 1;

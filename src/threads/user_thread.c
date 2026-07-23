@@ -83,9 +83,13 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
     pfn *page;
     pfn *nextPage;
+
     pte new_pte_contents;
     pte old_pte_contents;
     pte *currentPTE;
+
+    pte* higherLevelPTE;
+    pfn* higherLevelPage;
 
 
     init_list_head(&localList);
@@ -123,6 +127,16 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 
         // I do not have to check for the return value because the only person who updates the pte when it is invalid needs a lock
         writePTE(currentPTE, new_pte_contents, old_pte_contents);
+
+        higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
+        //TODO can this tear,
+        higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
+
+        enterPageLock(higherLevelPage, threadInfo);
+        higherLevelPage->valid_transition_count--;
+        leavePageLock(higherLevelPage, threadInfo);
+
+
 
         // cannot have this line because we need to store the contents
         // set_disk_space_free(page->diskIndex);
@@ -300,6 +314,9 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
     ULONG64 regionStatus;
     PULONG64 arbitrary_va;
 
+    pte* higherLevelPTE;
+    pfn* higherLevelPage;
+
 
     returnValue = !REDO_FAULT;
 
@@ -326,9 +343,7 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
 
         // keeps track of pte region so that trimmer can skip blank ones
         if (returnValue != REDO_FAULT) {
-            PTE_REGION *region = getPTERegion(currentPTE);
 
-            regionStatus = region->hasAgeableEntry;
 
 
             ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
@@ -344,17 +359,13 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
             }
 
 
-            // if this is the first active pte make it an aging candidate
-            if (regionStatus == FALSE) {
-#if DBG
+            higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
+            //TODO can this tear,
+            higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
 
-                ASSERT(region->ageListNumber == NOT_ON_LIST)
-#endif
-                addRegionToTail(&vm.pte.ageList[0], region, threadContext);
-            }
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
-            region->hasAgeableEntry = TRUE;
-            region->numOfAge[0]++;
+            enterPageLock(higherLevelPage, threadContext);
+            higherLevelPage->valid_transition_count++;
+            leavePageLock(higherLevelPage, threadContext);
 
             newPTE.entireFormat = 0;
             newPTE.validFormat.frameNumber = frameNumber;

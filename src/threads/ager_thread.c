@@ -3,8 +3,10 @@
 //
 #include <stdio.h>
 
+#include "utils/page_utils.h"
 #include "utils/pte_regions_utils.h"
 #include "utils/pte_utils.h"
+#include "utils/thread_utils.h"
 #include "variables/structures.h"
 
 
@@ -373,8 +375,11 @@ DWORD ager_thread(LPVOID info) {
     PPAGETABLE currentPageTable;
     pte *currentPTE;
     pte *parentPTE;
+    pfn *page;
 
     pte localPTE;
+    pte newPTEContents;
+    pte PTEContentsAtTimeOfWrite;
 
     PTHREAD_INFO threadInfo;
 
@@ -406,42 +411,51 @@ DWORD ager_thread(LPVOID info) {
 
         initialTotalPTEsToAge = ReadULong64NoFence(&vm.pte.numToAge);
         totalPTEsLeftToAge = initialTotalPTEsToAge;
+        numPTEsAged = 0;
 
 
-        while (totalPTEsLeftToAge > 0) {
-            // all the locks are dealt with at the end of the while loop
+        while (numPTEsAged < totalPTEsLeftToAge) {
+            lockPTE(&currentPageTable->pagetable[row]);
+
             for (; row < vm.config.pte_entries_per_pagetable; row++) {
                 //put in agepte
                 currentPTE = &currentPageTable->pagetable[row];
                 localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
-
-                // I am saying transition ptes cannot be aged because then I have to deal with the case where a I am editing a repurpose pte, but the pte does note exist.
-                if (localPTE.validFormat.valid == 1 || localPTE.transitionFormat.isTransition == 1) {
-                    has_valid_or_transition = false;
-                }
 
                 // cannot age what is not valid
                 if (localPTE.validFormat.valid == 0) {
                     continue;
                 }
 
+                page = getPFNfromFrameNumber(localPTE.validFormat.frameNumber);
+
 
                 // I want to do recursion but with out the actual recursion, maybe a double break and a change to the stack variables
                 if (localPTE.validFormat.access == 1) {
-                    setLockBit(currentPTE);
-
-                    //TODO confirm if I have an off by one error
                     if (isSecondToLastLayer(layer)) {
-                        ageLeafRegion(currentPTE, threadInfo);
-
+                        setLockBit(currentPTE);
+                        numPTEsAged += ageLeafRegion(currentPTE, threadInfo);
                         clearLockBit(currentPTE);
                     } else {
                         //I am delving further deeper into the tree to see if I can trim this one
+                        enterPageLock(page, threadInfo);
 
-                        row = 0;
-                        currentPageTable = (PPAGETABLE) getStartOfLowerPagetable(currentPTE);
+                        // check if zero
+                        if (page->valid_transition_count == 0) {
+                            //then I clear the access bit and put it on age 0 list using interlocked compare exchange
+                            newPTEContents.entireFormat = localPTE.entireFormat;
+                            newPTEContents.validFormat.access = 0;
+                            //TODO do I have to check return value
+                            PTEContentsAtTimeOfWrite = writePTE(currentPTE, newPTEContents, localPTE);
 
-                        break;
+                            leavePageLock(page, threadInfo);
+                            continue;
+                        } else {
+                            // in this branch, I am diving deeper
+                            leavePageLock(page, threadInfo);
+                            row = 0;
+                            break;
+                        }
                     }
                 } else {
                     // valid and unaccessed: bump in place; the helper also shifts the global histogram
@@ -451,6 +465,7 @@ DWORD ager_thread(LPVOID info) {
                         row--;
                         continue;
                     }
+                    numPTEsAged += (newAge - oldAge);
 
                     // parent aged oldAge -> newAge, so move its child page table's region between
                     // age-lists; currentPTE's lock bit is that region's lock. The bump MUST come before
@@ -466,12 +481,15 @@ DWORD ager_thread(LPVOID info) {
             // there is a pathological case where someone slips in and accesses that pte after
             // The slip in does not matter because the only person who can change a valid to invalid needs the lock we hold.
 
-            //if the row is zero then we are going into the tree otherwise we are going out  (that means we have to change tables' lists
+
+
+            unlockPTE(currentPTE);
+
+            //if the row is zero then we are going into the tree otherwise we are going out/looping around  (that means we have to change tables' lists
             if (row == 0) {
-                parentPTE = currentPTE;
-                currentPageTable = (PPAGETABLE) getStartOfLowerPagetable(parentPTE);
+
+                currentPageTable = (PPAGETABLE) getStartOfLowerPagetable(currentPTE);
                 layer++;
-                has_valid_or_transition = false;
             } else {
                 //in this case we have finished aging everything and we can pop back up to the first pte
                 if (layer == 0) {
@@ -479,34 +497,19 @@ DWORD ager_thread(LPVOID info) {
                     row = 0;
                     currentPageTable = &vm.pte.table[0];
                 } else {
-                    currentPageTable = (PPAGETABLE) getHigherLevelPTEAddress(currentPTE);
+                    // this is the case where we are going in the more inside pte
+
+                    // I am getting the start of the upper page
+                    currentPageTable = (PPAGETABLE) PAGE_ALIGN((ULONG64) getHigherLevelPTEAddress(currentPTE));
                     // I want to return to the previous row I was iterating at
+                    layer--;
+
+                    // I am resetting row to the correct value (we were mid loop, broke, went deeper and now we have to return to that same place for fair aging)
                     row = (currentPTE - ((pte *) PAGE_ALIGN((ULONG64) currentPTE)));
-                    parentPTE = &currentPageTable->pagetable[row];
-
-                    // if the inner pagetable has no valid or transition I can clear the parent access bit
-                    can_clear_access_bit = !has_valid_or_transition;
-
-                    //Basically if we know we want to trim it on the next pass we want to try and see if we can out of order lock,
-                    // if we do not need to clear that access bit, then we have successfully delt with the parent pte and do not have to worry about someone slipping in
-                    //TODO demorgens laws unify the else branches with an and
-                    if (can_clear_access_bit ) {
-                        // if we cant lock it then we accept that when we go up, we have cannot hold both locks
-                        // therefore our can_clear_access_bit will be stale.
-                        if (tryLockPTE(parentPTE) == FALSE) {
-                            //TODO will doing row-- do unfair aging on the children
-                            can_clear_access_bit = FALSE;
-                        } else {
-                            unlockPTE(currentPTE);
-                            lockPTE(parentPTE);
-                        }
-                    } else {
-                        unlockPTE(currentPTE);
-                        lockPTE(parentPTE);
-                    }
                 }
             }
         }
+
 
         InterlockedExchange64(&vm.pte.numToAge, 0);
         InterlockedExchange((volatile LONG *) &vm.misc.agingInProgress,FALSE);

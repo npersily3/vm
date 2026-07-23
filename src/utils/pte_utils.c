@@ -77,11 +77,13 @@ pte *getFirstPTEInRegion(PTE_REGION *region) {
 
 
 VOID enterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
-    EnterCriticalSection(&region->lock);
+    pte* currentPTE = getFirstPTEInRegion(region);
+    lockPTE(currentPTE);
 }
 
 VOID leavePTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
-    LeaveCriticalSection(&region->lock);
+    pte* currentPTE = getFirstPTEInRegion(region);
+    unlockPTE(currentPTE);
 }
 
 boolean tryEnterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
