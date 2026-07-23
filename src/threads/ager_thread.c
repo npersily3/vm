@@ -176,6 +176,192 @@ ULONG64 ageRegion(PTE_REGION *region, PTHREAD_INFO threadInfo) {
     return numPTEsAged;
 }
 
+
+/**
+ * @brief Bumps a valid, already-unaccessed PTE's age by one (capped at MAX_AGE), clears the access
+ *        bit, and -- only if the write lands -- shifts the global age histogram. One interlocked
+ *        compare-exchange, no looping; the caller decides what to do on a failed (raced) write.
+ * @param pteAddress The PTE to age. Assumed valid with its access bit already clear.
+ * @param pteContents The caller's already-read snapshot; the CAS is made against it, so a race
+ *        since that read fails the write instead of clobbering the newer value.
+ * @param newAge Filled with the age written into the PTE.
+ * @return TRUE if the compare-exchange landed, FALSE if it raced.
+ */
+boolean ageUnnaccessedPTE(pte *pteAddress, pte pteContents, ULONG64 *newAge) {
+    pte newPTEContents;
+    pte pteAtTimeOfWrite;
+    ULONG64 currentAge;
+
+    currentAge = pteContents.validFormat.age;
+    *newAge = (currentAge != MAX_AGE) ? currentAge + 1 : MAX_AGE;
+
+    newPTEContents.entireFormat = pteContents.entireFormat;
+    newPTEContents.validFormat.access = FALSE;
+    newPTEContents.validFormat.age = *newAge;
+
+    pteAtTimeOfWrite.entireFormat = writePTE(pteAddress, newPTEContents, pteContents).entireFormat;
+
+    if (pteAtTimeOfWrite.entireFormat != pteContents.entireFormat) {
+        return FALSE;
+    }
+
+    InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge].count);
+    InterlockedIncrement64(&vm.pte.globalNumOfAge[*newAge].count);
+    return TRUE;
+}
+
+/**
+ * @brief Moves the region backing parentPTE's child page table from the oldAge age-list to the
+ *        newAge one. Same list shuffle as the tail of ageLeafRegion. No-op when the age is unchanged.
+ * @param parentPTE The PTE whose child page table's region should be re-listed.
+ * @param oldAge The age-list the region is currently on.
+ * @param newAge The age-list the region should move to.
+ * @param threadInfo The caller's thread info, forwarded to the list helpers.
+ * @pre The region must be locked.
+ */
+VOID shiftAgeList(pte *parentPTE, ULONG64 oldAge, ULONG64 newAge, PTHREAD_INFO threadInfo) {
+    PTE_REGION *region;
+
+    if (oldAge == newAge) {
+        return;
+    }
+
+    region = getPTERegion(getStartOfLowerPagetable(parentPTE));
+
+    removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[oldAge], region, threadInfo);
+    addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
+}
+
+
+/**
+ * @brief A leaf-only copy of the former agePTE. Same aging logic (accessed -> reset to 0,
+ *        otherwise advance up to MAX_AGE, always clearing the access bit), but it does NOT
+ *        touch the region's numOfAge counters. The global age counts are still maintained.
+ * @param pteAddress The address of the pte to age
+ * @param region The region the pte belongs to (kept for parity with agePTE; unused otherwise)
+ * @retval 1 if the PTE advanced in age
+ * @retval 0 otherwise
+ * @pre The region must be locked
+ */
+ULONG64 ageLeafPTE(pte *pteAddress, PTE_REGION *region) {
+    pte pteContents;
+    pte newPTEContents;
+    pte pteAtTimeOfWrite;
+    ULONG64 currentAge;
+    ULONG64 newAge;
+
+    pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
+
+    while (true) {
+        // if the pte is not valid, we don't need to age it
+        if (pteContents.validFormat.valid == 0) {
+            return 0;
+        }
+
+        currentAge = pteContents.validFormat.age;
+
+        // unaccessed: bump via the shared helper, which also shifts the global histogram
+        if (pteContents.validFormat.access == FALSE) {
+            if (ageUnnaccessedPTE(pteAddress, pteContents, &newAge)) {
+                return newAge > currentAge;
+            }
+            // raced: re-read and try again
+            pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
+            continue;
+        }
+
+        // accessed: reset the age to 0, clearing the access bit
+        newAge = 0;
+        newPTEContents.entireFormat = pteContents.entireFormat;
+        newPTEContents.validFormat.access = FALSE;
+        newPTEContents.validFormat.age = newAge;
+
+        pteAtTimeOfWrite.entireFormat = writePTE(pteAddress, newPTEContents, pteContents).entireFormat;
+
+        // only adjust the counters once the write actually lands
+        if (pteAtTimeOfWrite.entireFormat == pteContents.entireFormat) {
+            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge].count);
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge].count);
+            return 0;
+        }
+
+        // raced: loop again with the fresh contents
+        pteContents.entireFormat = pteAtTimeOfWrite.entireFormat;
+    }
+}
+
+
+/**
+ * @brief The leaf-region equivalent of getRegionAge. Since leaf regions do not maintain the
+ *        numOfAge counters, it derives the age by scanning the PTEs for the highest age among
+ *        the valid ones.
+ * @param region The region to inspect
+ * @return The highest age of any valid PTE in the region, or MAXULONG64 if the region has none
+ **/
+static ULONG64 getLeafRegionAge(PTE_REGION *region) {
+    pte *pteAddress = getFirstPTEInRegion(region);
+    LONG64 maxAge = -1;
+
+    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
+        pte contents;
+        contents.entireFormat = ReadULong64NoFence(&pteAddress[i].entireFormat);
+        if (contents.validFormat.valid == 1 && (LONG64) contents.validFormat.age > maxAge) {
+            maxAge = contents.validFormat.age;
+        }
+    }
+
+    return (maxAge < 0) ? MAXULONG64 : (ULONG64) maxAge;
+}
+
+
+/**
+ *@brief Ages a singular leaf PTE region. Same shape as the former ageRegion, minus the per-region
+ *       numOfAge bookkeeping; the region's age for list placement is scanned from the PTEs instead.
+ * @param parentPTE The PTE one layer up, pointing at the leaf page table to age.
+ * @param threadInfo The thread info of the caller. Used for debugging / the list helpers.
+ * @return How many PTEs were aged
+ * @pre The leaf region (the page table parentPTE points to) must be locked, and must hold at
+ *      least one valid PTE
+ * @post The leaf region remains locked
+ */
+ULONG64 ageLeafRegion(pte *parentPTE, PTHREAD_INFO threadInfo) {
+    PTE_REGION *region;
+    pte *pteAddress;
+    ULONG64 previousAge;
+    ULONG64 newAge;
+    ULONG64 numPTEsAged;
+
+
+    // descend from the parent into its leaf page table, then map that table back to its region
+    region = getPTERegion(getStartOfLowerPagetable(parentPTE));
+
+    numPTEsAged = 0;
+    previousAge = getLeafRegionAge(region);
+
+
+#if DBG
+    ASSERT(region->ageListNumber == (LONG64) previousAge)
+#endif
+
+    pteAddress = getFirstPTEInRegion(region);
+
+    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
+        numPTEsAged += ageLeafPTE(pteAddress, region);
+        pteAddress++;
+    }
+
+    newAge = getLeafRegionAge(region);
+
+    shiftAgeList(parentPTE, previousAge, newAge, threadInfo);
+
+    return numPTEsAged;
+}
+
+__forceinline
+boolean isSecondToLastLayer(int layer) {
+    return layer == vm.config.number_of_page_table_layers - 2;
+}
+
 DWORD ager_thread(LPVOID info) {
     SetThreadDescription(GetCurrentThread(), L"Ager");
 
@@ -184,15 +370,30 @@ DWORD ager_thread(LPVOID info) {
     events[0] = vm.events.agerStart;
     events[1] = vm.events.systemShutdown;
 
-    PTE_REGION *currentRegion;
+    PPAGETABLE currentPageTable;
+    pte *currentPTE;
+    pte *parentPTE;
+
+    pte localPTE;
+
     PTHREAD_INFO threadInfo;
 
     threadInfo = (PTHREAD_INFO) info;
-    currentRegion = vm.pte.regions_base;
+    currentPageTable = vm.pte.table;
     ULONG64 initialTotalPTEsToAge;
-    ULONG64 totalPTEsLeftToAge;
+    LONG64 totalPTEsLeftToAge;
     ULONG64 numPTEsAged;
+    ULONG64 newAge;
+    ULONG64 oldAge;
 
+    ULONG64 row = 0;
+    ULONG64 layer = 0;
+
+    boolean has_valid_or_transition;
+    boolean can_clear_access_bit;
+
+    has_valid_or_transition = true;
+    can_clear_access_bit = !has_valid_or_transition;
     while (TRUE) {
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
 
@@ -206,26 +407,104 @@ DWORD ager_thread(LPVOID info) {
         initialTotalPTEsToAge = ReadULong64NoFence(&vm.pte.numToAge);
         totalPTEsLeftToAge = initialTotalPTEsToAge;
 
+
         while (totalPTEsLeftToAge > 0) {
-            numPTEsAged = 0;
-            enterPTERegionLock(currentRegion, threadInfo);
+            // all the locks are dealt with at the end of the while loop
+            for (; row < vm.config.pte_entries_per_pagetable; row++) {
+                //put in agepte
+                currentPTE = &currentPageTable->pagetable[row];
+                localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
 
-            if (currentRegion->hasAgeableEntry == TRUE) {
-                numPTEsAged = ageRegion(currentRegion, threadInfo);
+                // I am saying transition ptes cannot be aged because then I have to deal with the case where a I am editing a repurpose pte, but the pte does note exist.
+                if (localPTE.validFormat.valid == 1 || localPTE.transitionFormat.isTransition == 1) {
+                    has_valid_or_transition = false;
+                }
+
+                // cannot age what is not valid
+                if (localPTE.validFormat.valid == 0) {
+                    continue;
+                }
+
+
+                // I want to do recursion but with out the actual recursion, maybe a double break and a change to the stack variables
+                if (localPTE.validFormat.access == 1) {
+                    setLockBit(currentPTE);
+
+                    //TODO confirm if I have an off by one error
+                    if (isSecondToLastLayer(layer)) {
+                        ageLeafRegion(currentPTE, threadInfo);
+
+                        clearLockBit(currentPTE);
+                    } else {
+                        //I am delving further deeper into the tree to see if I can trim this one
+
+                        row = 0;
+                        currentPageTable = (PPAGETABLE) getStartOfLowerPagetable(currentPTE);
+
+                        break;
+                    }
+                } else {
+                    // valid and unaccessed: bump in place; the helper also shifts the global histogram
+                    oldAge = localPTE.validFormat.age;
+                    if (ageUnnaccessedPTE(currentPTE, localPTE, &newAge) == FALSE) {
+                        //raced: redo this row (the loop's row++ brings us back). No shift -- nothing moved.
+                        row--;
+                        continue;
+                    }
+
+                    // parent aged oldAge -> newAge, so move its child page table's region between
+                    // age-lists; currentPTE's lock bit is that region's lock. The bump MUST come before
+                    // the lock: setLockBit flips a bit writePTE's CAS compares, so a held lock fails it.
+                    setLockBit(currentPTE);
+                    shiftAgeList(currentPTE, oldAge, newAge, threadInfo);
+                    clearLockBit(currentPTE);
+                    continue;
+                }
             }
-            leavePTERegionLock(currentRegion, threadInfo);
 
+            //NOTICE (Resolved but keeping comment) I think there is a huge bug, where there is no way for me to clear a parent access bit with absolute certainty that there is no valid ptes,
+            // there is a pathological case where someone slips in and accesses that pte after
+            // The slip in does not matter because the only person who can change a valid to invalid needs the lock we hold.
 
-            if (totalPTEsLeftToAge < numPTEsAged) {
-                totalPTEsLeftToAge = 0;
+            //if the row is zero then we are going into the tree otherwise we are going out  (that means we have to change tables' lists
+            if (row == 0) {
+                parentPTE = currentPTE;
+                currentPageTable = (PPAGETABLE) getStartOfLowerPagetable(parentPTE);
+                layer++;
+                has_valid_or_transition = false;
             } else {
-                totalPTEsLeftToAge -= numPTEsAged;
-            }
+                //in this case we have finished aging everything and we can pop back up to the first pte
+                if (layer == 0) {
+                    ASSERT(currentPTE == &vm.pte.table[0].pagetable[511])
+                    row = 0;
+                    currentPageTable = &vm.pte.table[0];
+                } else {
+                    currentPageTable = (PPAGETABLE) getHigherLevelPTEAddress(currentPTE);
+                    // I want to return to the previous row I was iterating at
+                    row = (currentPTE - ((pte *) PAGE_ALIGN((ULONG64) currentPTE)));
+                    parentPTE = &currentPageTable->pagetable[row];
 
-            if (currentRegion == vm.pte.regions_base + vm.config.cumulative_number_of_page_tables - 1) {
-                currentRegion = vm.pte.regions_base;
-            } else {
-                currentRegion++;
+                    // if the inner pagetable has no valid or transition I can clear the parent access bit
+                    can_clear_access_bit = !has_valid_or_transition;
+
+                    //Basically if we know we want to trim it on the next pass we want to try and see if we can out of order lock,
+                    // if we do not need to clear that access bit, then we have successfully delt with the parent pte and do not have to worry about someone slipping in
+                    //TODO demorgens laws unify the else branches with an and
+                    if (can_clear_access_bit ) {
+                        // if we cant lock it then we accept that when we go up, we have cannot hold both locks
+                        // therefore our can_clear_access_bit will be stale.
+                        if (tryLockPTE(parentPTE) == FALSE) {
+                            //TODO will doing row-- do unfair aging on the children
+                            can_clear_access_bit = FALSE;
+                        } else {
+                            unlockPTE(currentPTE);
+                            lockPTE(parentPTE);
+                        }
+                    } else {
+                        unlockPTE(currentPTE);
+                        lockPTE(parentPTE);
+                    }
+                }
             }
         }
 

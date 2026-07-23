@@ -15,6 +15,7 @@ PTE_REGION* getPTERegion(pte* pte);
 pte* getFirstPTEInRegion(PTE_REGION* region);
 BOOL isPTEValid(pte* pte);
 VOID unlockPTE(pte* pte);
+bool tryLockPTE(pte* currentPTE);
 VOID lockPTE(pte* pte);
 VOID setLockBit (pte* pte);
 VOID clearLockBit(pte *pte);

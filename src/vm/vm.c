@@ -301,7 +301,7 @@ DWORD testVM(LPVOID lpParam) {
 
 int main(int argc, char **argv) {
     // Test our very complicated usermode virtual implementation.
-    //
+    //\
     // We will control the virtual and physical address space management
     // ourselves with the only two exceptions being that we will :
     //

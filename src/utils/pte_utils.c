@@ -96,6 +96,10 @@ VOID setLockBit(pte *pte) {
         oldValue = _interlockedbittestandset64((volatile LONG64 *) &pte->entireFormat, 1);
     } while (oldValue == 1);
 }
+bool trySetLockBit(pte *pte) {
+    // it is good if it was previously unlocked (0)
+    return _interlockedbittestandset64((volatile LONG64 *) &pte->entireFormat, 1) == 0;
+}
 
 VOID clearLockBit(pte *pte) {
     int val = _interlockedbittestandreset64((volatile LONG64 *) &pte->entireFormat, 1);
@@ -139,6 +143,14 @@ VOID lockPTE(pte *currentPTE) {
     }
     pte *parent = getHigherLevelPTEAddress(currentPTE);
     setLockBit(parent);
+}
+
+bool tryLockPTE(pte* currentPTE) {
+    if (findPTELayer(currentPTE) == 0) {
+        return TryEnterCriticalSection(&vm.pte.rootLock);
+    }
+    pte *parent = getHigherLevelPTEAddress(currentPTE);
+    return trySetLockBit(parent);
 }
 
 VOID unlockPTE(pte *currentPTE) {
