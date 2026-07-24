@@ -10,172 +10,28 @@
 #include "variables/structures.h"
 
 
-//access bit with interlocked compare exchange.
-//write pte can only use nofence if the pte was previously invalid.
-//agePte should loop continuously until it succeeds.
-//all pte writes should be re-examined.
-//debug pte region field about what list a pte region is on and check the max age stuff
-
-
-int canPageTableBeAged(pte *pteAddress) {
-    // this can always be aged
-
-
-    if (isLeafPTE(pteAddress)) {
-        return TRUE;
-    }
-    pte *childPTE = getStartOfLowerPagetable(pteAddress);
-
-    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
-        if (childPTE[i].validFormat.valid == 1 || childPTE[i].transitionFormat.isTransition == 1) {
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
-
-
 /**
- * @brief A function that ages a pte.
- * @param pteAddress The address of the pte to age
- * @param region The region that the pte is in
- * @retval 1 if the PTE was aged
- * @retval 0 if the PTE was not aged
- */
-
-ULONG64 agePTE(pte *pteAddress, PTE_REGION *region) {
-    pte pteContents;
-    pte newPTEContents;
-    pte pteAtTimeOfWrite;
-    ULONG64 currentAge;
-    ULONG64 newAge;
-    ULONG64 beenAccessed;
-    ULONG64 returnValue;
-    int isAgeable;
-
-    pteContents.entireFormat = ReadULong64NoFence(&pteAddress->entireFormat);
-
-    while (true) {
-        returnValue = 0;
-        // if the pte is not valid, we don't need to age it
-        if (pteContents.validFormat.valid == 0) {
-            return returnValue;
-        }
-        newPTEContents.entireFormat = pteContents.entireFormat;
-
-
-        currentAge = pteContents.validFormat.age;
-        beenAccessed = pteContents.validFormat.access;
-
-        // if the pte was accessed and has been previously aged,
-        // we need to reset the age
-        if (beenAccessed == TRUE) {
-            isAgeable = canPageTableBeAged(pteAddress);
-        } else {
-            isAgeable = TRUE;
-        }
-
-        if (isAgeable == FALSE) {
-            break;
-        }
-
-        if (currentAge != MAX_AGE) {
-            returnValue = 1;
-            newAge = currentAge + 1;
-        } else {
-            newAge = MAX_AGE;
-        }
-
-
-        // regardless of what happens, we need to clear the access bit
-        newPTEContents.validFormat.access = FALSE;
-        newPTEContents.validFormat.age = newAge;
-
-        // keep track of region stats
-        ASSERT(region->numOfAge[currentAge] != 0)
-
-
-        pteAtTimeOfWrite.entireFormat = writePTE(pteAddress, newPTEContents, pteContents).entireFormat;
-
-        // if when writing the pte, the contents have changed, we need to loop again with the new contents
-        // otherwise we are trampling on someone else's work to that pte
-        if (pteAtTimeOfWrite.entireFormat == pteContents.entireFormat) {
-            // only write the values here or else if you collide with an access bit setter, you mistakenly will double change some data
-            ASSERT(region->numOfAge[currentAge] > 0)
-            region->numOfAge[currentAge]--;
-            InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge].count);
-
-            region->numOfAge[newAge]++;
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge].count);
-            break;
-        }
-
-        pteContents.entireFormat = pteAtTimeOfWrite.entireFormat;
-    }
-
-    return returnValue;
-}
-
-
-/**
- * @brief Gets the age of the oldest pte in a region
+ * @brief Gets the age of the oldest pte in a region by scanning its page table.
  * @param region The region to get the age of
- * @return The highest age pte in the region
+ * @return The highest age among the region's valid PTEs, or -1 if it has none
  */
-ULONG64 getRegionAge(PTE_REGION *region) {
-    for (int i = MAX_AGE; i >= 0; --i) {
-        if (region->numOfAge[i] != 0) {
-            return i;
+LONG64 getRegionAge(PTE_REGION *region) {
+    pte *pteAddress = getFirstPTEInRegion(region);
+    LONG64 champ = -1;   // reigning champ: highest age seen so far; -1 => no valid pte yet
+
+    for (ULONG64 i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
+        pte contents;
+        contents.entireFormat = ReadULong64NoFence(&pteAddress[i].entireFormat);
+
+        if (contents.validFormat.valid == 1 && (LONG64) contents.validFormat.age > champ) {
+            champ = contents.validFormat.age;
+            if (champ == MAX_AGE) {
+                break;   // nothing can beat MAX_AGE, stop scanning
+            }
         }
     }
 
-
-    if (region->numOfAge[0] == 0) {
-        return MAXULONG64;
-    } else {
-        return 0;
-    }
-}
-
-/**
- *@brief Ages a singular PTE region
- * @param region The region to age.
- * @param threadInfo The thread info of the caller. Used for debugging.
- * @return How many PTEs were aged
- * @pre The region in the parameter must be locked
- * @post The region in the parameter must be unlocked
- */
-ULONG64 ageRegion(PTE_REGION *region, PTHREAD_INFO threadInfo) {
-    pte *pteAddress;
-    ULONG64 previousAge;
-    ULONG64 newAge;
-    ULONG64 numPTEsAged;
-
-
-    numPTEsAged = 0;
-    previousAge = getRegionAge(region);
-
-
-    ASSERT(region->ageListNumber == previousAge)
-
-    pteAddress = getFirstPTEInRegion(region);
-
-    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
-        numPTEsAged += agePTE(pteAddress, region);
-        pteAddress++;
-    }
-
-    newAge = getRegionAge(region);
-
-
-    if (newAge == previousAge) {
-    } else {
-        removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[previousAge], region, threadInfo);
-        addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
-    }
-
-
-    return numPTEsAged;
+    return champ;
 }
 
 
@@ -230,7 +86,11 @@ VOID shiftAgeList(pte *parentPTE, ULONG64 oldAge, ULONG64 newAge, PTHREAD_INFO t
 
     region = getPTERegion(getStartOfLowerPagetable(parentPTE));
 
-    removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[oldAge], region, threadInfo);
+    // A region that isn't on any list (freshly faulted, or dropped after being emptied) has NULL
+    // links, so there is nothing to unlink -- removeFromMiddle would deref NULL. Just add it.
+    if (region->entry.Flink != NULL) {
+        removeFromMiddleOfPageTableRegionList(&vm.pte.ageList[oldAge], region, threadInfo);
+    }
     addRegionToTail(&vm.pte.ageList[newAge], region, threadInfo);
 }
 
@@ -294,29 +154,6 @@ ULONG64 ageLeafPTE(pte *pteAddress, PTE_REGION *region) {
 
 
 /**
- * @brief The leaf-region equivalent of getRegionAge. Since leaf regions do not maintain the
- *        numOfAge counters, it derives the age by scanning the PTEs for the highest age among
- *        the valid ones.
- * @param region The region to inspect
- * @return The highest age of any valid PTE in the region, or MAXULONG64 if the region has none
- **/
-static ULONG64 getLeafRegionAge(PTE_REGION *region) {
-    pte *pteAddress = getFirstPTEInRegion(region);
-    LONG64 maxAge = -1;
-
-    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
-        pte contents;
-        contents.entireFormat = ReadULong64NoFence(&pteAddress[i].entireFormat);
-        if (contents.validFormat.valid == 1 && (LONG64) contents.validFormat.age > maxAge) {
-            maxAge = contents.validFormat.age;
-        }
-    }
-
-    return (maxAge < 0) ? MAXULONG64 : (ULONG64) maxAge;
-}
-
-
-/**
  *@brief Ages a singular leaf PTE region. Same shape as the former ageRegion, minus the per-region
  *       numOfAge bookkeeping; the region's age for list placement is scanned from the PTEs instead.
  * @param parentPTE The PTE one layer up, pointing at the leaf page table to age.
@@ -338,12 +175,10 @@ ULONG64 ageLeafRegion(pte *parentPTE, PTHREAD_INFO threadInfo) {
     region = getPTERegion(getStartOfLowerPagetable(parentPTE));
 
     numPTEsAged = 0;
-    previousAge = getLeafRegionAge(region);
+    previousAge = getRegionAge(region);
 
 
-#if DBG
-    ASSERT(region->ageListNumber == (LONG64) previousAge)
-#endif
+
 
     pteAddress = getFirstPTEInRegion(region);
 
@@ -352,7 +187,7 @@ ULONG64 ageLeafRegion(pte *parentPTE, PTHREAD_INFO threadInfo) {
         pteAddress++;
     }
 
-    newAge = getLeafRegionAge(region);
+    newAge = getRegionAge(region);
 
     shiftAgeList(parentPTE, previousAge, newAge, threadInfo);
 
@@ -374,12 +209,14 @@ DWORD ager_thread(LPVOID info) {
 
     PPAGETABLE currentPageTable;
     pte *currentPTE;
-    pte *parentPTE;
+
     pfn *page;
 
     pte localPTE;
     pte newPTEContents;
     pte PTEContentsAtTimeOfWrite;
+
+    PTE_REGION* region;
 
     PTHREAD_INFO threadInfo;
 
@@ -389,7 +226,7 @@ DWORD ager_thread(LPVOID info) {
     LONG64 totalPTEsLeftToAge;
     ULONG64 numPTEsAged;
     ULONG64 newAge;
-    ULONG64 oldAge;
+    LONG64 oldAge;
 
     ULONG64 row = 0;
     ULONG64 layer = 0;
@@ -449,6 +286,15 @@ DWORD ager_thread(LPVOID info) {
                             PTEContentsAtTimeOfWrite = writePTE(currentPTE, newPTEContents, localPTE);
 
                             leavePageLock(page, threadInfo);
+
+                            region = getPTERegion(currentPTE);
+
+                            oldAge = getRegionAge(region);
+
+                            if (oldAge == -1) {
+                                addRegionToTail(&vm.pte.ageList[0], region,threadInfo);
+                            }
+
                             continue;
                         } else {
                             // in this branch, I am diving deeper
@@ -499,8 +345,10 @@ DWORD ager_thread(LPVOID info) {
                 } else {
                     // this is the case where we are going in the more inside pte
 
+                    currentPTE = getHigherLevelPTEAddress(currentPTE);
                     // I am getting the start of the upper page
-                    currentPageTable = (PPAGETABLE) PAGE_ALIGN((ULONG64) getHigherLevelPTEAddress(currentPTE));
+                    currentPageTable = (PPAGETABLE) PAGE_ALIGN((ULONG64)currentPTE);
+
                     // I want to return to the previous row I was iterating at
                     layer--;
 

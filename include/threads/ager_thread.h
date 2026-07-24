@@ -6,7 +6,7 @@
 #define AGER_THREAD_H
 
 
-ULONG64 getRegionAge(PTE_REGION* region);
+LONG64 getRegionAge(PTE_REGION* region);
 ULONG64 ageLeafPTE(pte* pteAddress, PTE_REGION* region);
 ULONG64 ageLeafRegion(pte* parentPTE, PTHREAD_INFO threadInfo);
 boolean ageUnnaccessedPTE(pte* pteAddress, pte pteContents, ULONG64* newAge);

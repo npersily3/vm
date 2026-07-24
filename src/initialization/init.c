@@ -223,12 +223,6 @@ VOID init_pte_regions(VOID) {
         InitializeCriticalSection(&currentRegion->lock);
 
 
-#if DBG
-        memset(currentRegion->ageMap, 0, 64 * sizeof(ULONG64));
-        currentRegion->ageListNumber = NOT_ON_LIST;
-#endif
-
-
         currentRegion++;
     }
 }

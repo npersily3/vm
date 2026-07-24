@@ -61,10 +61,9 @@ DWORD scheduler_thread(LPVOID info) {
     ULONG64 numToAgeTotal;
     ULONG64 numToAgeThisWakeup;
 
-    ULONG64 numToTrimTotal;
+
     ULONG64 numToTrimThisWakeup;
 
-    ULONG64 numToWriteTotal;
     ULONG64 numToWriteThisWakeup;
 
     ULONG64 timeToAge;

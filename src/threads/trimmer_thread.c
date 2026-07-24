@@ -24,8 +24,6 @@
 */
 
 
-
-
 #if CORRECTNESS
 
 volatile PULONG64 correctness;
@@ -39,7 +37,6 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pte *currentPTE;
     pfn *page;
     ULONG64 age;
-    boolean regionHasActiveEntry;
 
     currentPTE = getFirstPTEInRegion(currentRegion);
 
@@ -61,18 +58,12 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
             if (oldPTEContents.validFormat.valid == 1) {
                 age = oldPTEContents.validFormat.age;
 
-                ASSERT(currentRegion->numOfAge[age] != 0)
-
                 // if it is valid  we must clear the age but we cannot clear the access bit because that is unfair aging
                 if (oldPTEContents.validFormat.access == 1) {
                     newPTEContents.validFormat.access = 1;
                     newPTEContents.validFormat.age = 0;
 
-                    ASSERT(currentRegion->numOfAge > 0)
-                    currentRegion->numOfAge[age]--;
                     InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
-
-                    currentRegion->numOfAge[0]++;
                     InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
 
                     pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
@@ -81,7 +72,6 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                     // we can break regardless of the result, because the only guy who can change it simultaneously is the access bit setter
                     // and we know that the access bit is already set, so no change will occur so that we can break regardless
                     break;
-
                 }
 
                 // this is for the case when the pte is valid and unnaccessed
@@ -97,8 +87,6 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                 // case where write succeeds
 
-                ASSERT(currentRegion->numOfAge > 0)
-                currentRegion->numOfAge[age]--;
                 InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
 
@@ -107,24 +95,12 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                 virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                 pages[trimmedPagesInRegion] = page;
                 trimmedPagesInRegion++;
-
             }
 
             break;
         }
         currentPTE++;
     }
-    currentPTE = getFirstPTEInRegion(currentRegion);
-    regionHasActiveEntry = FALSE;
-    for (int i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
-        if (currentPTE->validFormat.valid == 1) {
-            regionHasActiveEntry = TRUE;
-            break;
-        }
-        currentPTE++;
-    }
-    currentRegion->hasAgeableEntry = regionHasActiveEntry;
-
     // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
 
@@ -136,7 +112,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     volatile ULONG64 counter;
 
     for (int i = 0; i < CORRECTNESS_SIZE; i++) {
-        counter = correctness[i*PAGE_SIZE/sizeof(ULONG64)];
+        counter = correctness[i * PAGE_SIZE / sizeof(ULONG64)];
     }
 #endif
 
@@ -209,12 +185,12 @@ DWORD page_trimmer(LPVOID info) {
 
     correctness = VirtualAlloc(NULL, PAGE_SIZE * CORRECTNESS_SIZE, MEM_RESERVE | MEM_COMMIT,PAGE_READWRITE);
 
-    if (correctness == NULL ) {
+    if (correctness == NULL) {
         DebugBreak();
     }
 
     for (int i = 0; i < CORRECTNESS_SIZE; i++) {
-        correctness[i*PAGE_SIZE/sizeof(ULONG64)] = 0;
+        correctness[i * PAGE_SIZE / sizeof(ULONG64)] = 0;
     }
 
 #endif
@@ -258,55 +234,40 @@ DWORD page_trimmer(LPVOID info) {
             }
 
 
-            // check to see if there are any active entries in this region
-            if (currentRegion->hasAgeableEntry == TRUE) {
-                ULONG64 finalAge;
+            LONG64 finalAge;
 
-                // get a region, trim it, and move it to the tail of the age list
-                trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
-                totalTrimmedPages += trimmedPagesInRegion;
+            // get a region, trim it, and move it to the tail of the age list
+            trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
+            totalTrimmedPages += trimmedPagesInRegion;
 
-                // wake the writer as soon as the first batch lands, instead of waiting for our whole
-                // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
-                if (signaledWriter == FALSE && trimmedPagesInRegion > 0) {
-                    SetEvent(vm.events.writingStart);
-                    signaledWriter = TRUE;
-                }
-
-
-                if (currentRegion->hasAgeableEntry == TRUE) {
-                    finalAge = getRegionAge(currentRegion);
-
-                    addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
-                }
-
-
-
-
-
-
-                leavePTERegionLock(currentRegion, threadContext);
-
-                InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
-            } else {
-
-
-                leavePTERegionLock(currentRegion, threadContext);
-                counter++;
+            // wake the writer as soon as the first batch lands, instead of waiting for our whole
+            // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
+            if (signaledWriter == FALSE && trimmedPagesInRegion > 0) {
+                SetEvent(vm.events.writingStart);
+                signaledWriter = TRUE;
             }
-            
+
+            // after I trim everything put it back on the appropriate age list, unless it has no
+            // valid PTEs left (getRegionAge == -1)
+            finalAge = getRegionAge(currentRegion);
+            if (finalAge != -1) {
+                addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+            }
+
+
+            leavePTERegionLock(currentRegion, threadContext);
+
+            InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
+
+
             if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
                 return 0;
             }
-
         }
 
         QueryPerformanceCounter(&end);
 
         recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
-
-
-
 
 
         vm.misc.numTrims++;

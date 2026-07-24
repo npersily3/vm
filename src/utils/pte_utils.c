@@ -76,18 +76,44 @@ pte *getFirstPTEInRegion(PTE_REGION *region) {
 }
 
 
+// The age-list sentinels are listHeads embedded in the global vm state, not real PTE_REGIONs in
+// the heap-allocated regions_base, so getFirstPTEInRegion would fabricate a wild pte from one.
+static boolean isSentinelRegion(PTE_REGION *region) {
+    return (char*) region >= (char*) &vm && (char*) region < (char*) &vm + sizeof(vm);
+}
+
 VOID enterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
+    // Sentinel bandaid: no real parent pte to lock, so borrow the page sentinel's CRITICAL_SECTION
+    // on the same listHead (initialized in init_list_head). Only the true &head->region reaches the
+    // blocking enter/leave; the fabricated border pointer only ever hits tryEnter.
+    if (isSentinelRegion(region)) {
+        pListHead head = container_of(region, listHead, region);
+        EnterCriticalSection(&head->page.lock);
+        return;
+    }
     pte* currentPTE = getFirstPTEInRegion(region);
     lockPTE(currentPTE);
 }
 
 VOID leavePTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
+    if (isSentinelRegion(region)) {
+        pListHead head = container_of(region, listHead, region);
+        LeaveCriticalSection(&head->page.lock);
+        return;
+    }
     pte* currentPTE = getFirstPTEInRegion(region);
     unlockPTE(currentPTE);
 }
 
 boolean tryEnterPTERegionLock(PTE_REGION *region, PTHREAD_INFO threadInfo) {
-    return TryEnterCriticalSection(&region->lock);
+    // Bandaid: a fabricated border pointer (container_of on the head entry) also lands in vm; fail
+    // the try-lock so the caller falls back to the exclusive SRW path (what the old zeroed
+    // CRITICAL_SECTION did).
+    if (isSentinelRegion(region)) {
+        return FALSE;
+    }
+    pte* currentPTE = getFirstPTEInRegion(region);
+    return tryLockPTE(currentPTE);
 }
 
 

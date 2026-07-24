@@ -358,14 +358,16 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
                 return FALSE;
             }
 
+            // we do not need to updat the count of root because that should never be trimmed
+            if (findPTELayer(currentPTE) > 0) {
+                higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
+                //TODO can this tear,
+                higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
 
-            higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
-            //TODO can this tear,
-            higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
-
-            enterPageLock(higherLevelPage, threadContext);
-            higherLevelPage->valid_transition_count++;
-            leavePageLock(higherLevelPage, threadContext);
+                enterPageLock(higherLevelPage, threadContext);
+                higherLevelPage->valid_transition_count++;
+                leavePageLock(higherLevelPage, threadContext);
+            }
 
             newPTE.entireFormat = 0;
             newPTE.validFormat.frameNumber = frameNumber;
@@ -582,6 +584,10 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     pte oldPteContents;
     pte newPteContents;
 
+    pte* higherLevelPTE;
+    pfn* higherLevelPage;
+
+
 
     // Exits with page lock held
     page = RemoveFromHeadofPageList(&vm.lists.standby, threadInfo);
@@ -621,6 +627,14 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
 
     // do not have to check the result because we have the lock and we know the pte is invalid
     writePTE(page->pte, newPteContents, oldPteContents);
+
+    higherLevelPTE = getHigherLevelPTEAddress(page->pte);
+    //TODO can this tear,
+    higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
+
+    enterPageLock(higherLevelPage, threadInfo);
+    higherLevelPage->valid_transition_count--;
+    leavePageLock(higherLevelPage, threadInfo);
 
     leavePageLock(page, threadInfo);
 

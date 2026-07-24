@@ -12,7 +12,7 @@
 
 
 // Debug macros
-#define         DBG 1
+#define         DBG 0
 #define DBG_DISK 0
 
 
@@ -344,7 +344,6 @@ typedef struct {
     stochastic_data statistics;
   //  sharedLock lock;
     CRITICAL_SECTION lock;
-    DWORD numOfAge[NUMBER_OF_AGES];
 
     ULONG64 hasAgeableEntry: 1;
 #if DBG
