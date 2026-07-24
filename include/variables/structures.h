@@ -125,7 +125,7 @@ typedef struct {
 #endif
 #define NUM_WRITING_BATCHES (128)
 
-#define SCHEDULER_PERIOD_MS (10)
+#define SCHEDULER_PERIOD_MS (250)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0

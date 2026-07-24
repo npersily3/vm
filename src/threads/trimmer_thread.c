@@ -178,7 +178,6 @@ DWORD page_trimmer(LPVOID info) {
     currentRegion = vm.pte.regions_base;
 
     ULONG64 numToTrimLocal;
-    ULONG64 numFromLocalList;
 
 
 #if CORRECTNESS
@@ -213,14 +212,10 @@ DWORD page_trimmer(LPVOID info) {
         QueryPerformanceCounter(&start);
 
         numToTrimLocal = ReadULong64NoFence(&vm.pte.numToTrim);
-        numFromLocalList = recallPagesFromLocalList(threadContext);
 
-        if (numFromLocalList >= numToTrimLocal) {
-            WriteULong64NoFence(&vm.pte.numToTrim, 0);
-            SetEvent(vm.events.writingStart);
-            continue;
-        }
-        numToTrimLocal -= numFromLocalList;
+        // decrements numToTrimLocal by what it recalls, so if the local caches covered the whole
+        // quota the trim loop below is simply skipped
+        recallPagesFromLocalList(threadContext, &numToTrimLocal);
 
 
         // if we have trimmed enough, or have combed through everything
@@ -283,29 +278,29 @@ DWORD page_trimmer(LPVOID info) {
 /**
  * @brief This function recalls pages from the local lists and adds them to the free lists.
  * @param trimThreadContext Thread info of the caller
- * @return The number of pages that were recalled from the local lists.
+ * @param numNeeded How many pages are still wanted. Decremented by every page recalled, so the
+ *        caller sees exactly how much quota is left. Recalling past the quota is pure loss: each
+ *        extra page just pushes that user thread back onto the slow free-list path on its next fault.
  */
-ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
+VOID recallPagesFromLocalList(PTHREAD_INFO trimThreadContext, PULONG64 numNeeded) {
     PTHREAD_INFO currentThreadContext;
     pfn *page;
-    ULONG64 counter;
     listHead trimmerLocalList;
     PLIST_ENTRY entry;
     pListHead head;
 
 
-    counter = 0;
     init_list_head(&trimmerLocalList);
 
-    for (int i = 0; i < vm.config.number_of_user_threads; i++) {
+    for (int i = 0; i < vm.config.number_of_user_threads && *numNeeded != 0; i++) {
         currentThreadContext = &vm.threadInfo.user[i];
 
         head = &currentThreadContext->localList;
         acquire_srw_exclusive(&head->sharedLock, trimThreadContext);
 
 
-        // make order one
-        while (&head->entry != head->entry.Flink) {
+        // make order one, but stop as soon as we have staged what is left of the quota
+        while (&head->entry != head->entry.Flink && (ULONG64) trimmerLocalList.length < *numNeeded) {
             entry = RemoveHeadList(head);
             page = container_of(entry, pfn, entry);
             InsertHeadList(&trimmerLocalList, &page->entry);
@@ -328,10 +323,9 @@ ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
             entry = RemoveHeadList(head);
             page = container_of(entry, pfn, entry);
             addPageToFreeList(page, trimThreadContext);
-            counter++;
+            (*numNeeded)--;
         }
     }
-    return counter;
 }
 
 

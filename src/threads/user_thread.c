@@ -286,6 +286,12 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
         oldPTEAddress = currentPTEAddress;
     }
 
+    // the hand-over-hand descent above always leaves one lock bit set: the last layer's. It guards
+    // a page table that does not exist (nothing lives below a leaf), so drop it here rather than
+    // leaving it set forever -- the next setLockBit on this pte would spin against it with no one
+    // left to clear it. Also covers the single-layer case, where the loop never runs and the bit
+    // is the one set on the root pte above.
+    clearLockBit(oldPTEAddress);
 
 
 #if CORRECTNESS

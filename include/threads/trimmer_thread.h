@@ -8,7 +8,7 @@
 #include "../variables/structures.h"
 
 DWORD page_trimmer(LPVOID threadContext);
-ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext);
+VOID recallPagesFromLocalList(PTHREAD_INFO trimThreadContext, PULONG64 numNeeded);
 
 BOOL isNextPageInSameRegion(PTE_REGION* nextRegion, PTHREAD_INFO info);
 VOID unmapBatch (PULONG64 virtualAddresses, ULONG64 batchSize);

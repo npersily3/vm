@@ -231,7 +231,7 @@ DWORD testVM(LPVOID lpParam) {
     // Now perform random accesses
 
     // Depending on if we are in debug/performance test mode, spin forever
-#if DBG || spinEvents
+#if spinEvents
     while (TRUE) {
 
 #else
@@ -286,7 +286,7 @@ DWORD testVM(LPVOID lpParam) {
 
 
 #if 1 || DBG
-            if (i % MB(1) == 0) {
+            if (i % MB(5) == 0) {
                 printf(".");
             }
 #endif
@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
         init_config_params(8, 3, 1, 16, 1);
 
 #else
-        init_config_params(8, 2, 1, 16, 1);
+        init_config_params(8, 3, 1, 16, 1);
 #endif
     }
     printf("%llu ", sizeof(pfn));
