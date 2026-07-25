@@ -22,7 +22,9 @@ endif()
 # We only ADD extras here so we don't fight the defaults.
 if(MSVC)
  # Always-on
- add_compile_options(/W3 /TC)
+ # /utf-8: the stats report draws box characters, and without this the execution charset is the
+ # system ANSI codepage, which mangles them at compile time (C4566).
+ add_compile_options(/W3 /TC /utf-8)
  # Release-only extras for max throughput
  add_compile_options("$<$<CONFIG:Release>:/Oi>")  # intrinsics
  add_compile_options("$<$<CONFIG:Release>:/Ot>")  # favor speed
@@ -66,6 +68,7 @@ set(SOURCES
         src/utils/page_utils.c
         src/utils/pte_utils.c
         src/utils/thread_utils.c
+        src/utils/stats.c
         src/vm/vm.c
         src/threads/statistics.c
         src/utils/statistics_utils.c
@@ -88,6 +91,7 @@ set(HEADERS
         include/utils/page_utils.h
         include/utils/pte_utils.h
         include/utils/thread_utils.h
+        include/utils/stats.h
         include/variables/globals.h
         include/variables/macros.h
         include/variables/structures.h

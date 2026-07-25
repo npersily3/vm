@@ -15,6 +15,7 @@
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
 #include "utils/pte_regions_utils.h"
+#include "utils/stats.h"
 
 #if spinEvents
 
@@ -97,8 +98,14 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 
     // adds pages onto the local list from the standby list but does not update them
     // returns with all the pages locked
-    if (removeBatchFromList(&vm.lists.standby, &localList, threadInfo, vm.config.number_of_pages_to_trim_from_stand_by)
-        == LIST_IS_EMPTY) {
+    ULONG64 pagesObtained = removeBatchFromList(&vm.lists.standby, &localList, threadInfo,
+                                                vm.config.number_of_pages_to_trim_from_stand_by);
+
+    STAT_INC(threadInfo, pruneWakeups);
+    STAT_ADD(threadInfo, pruneRequested, vm.config.number_of_pages_to_trim_from_stand_by);
+    STAT_ADD(threadInfo, pruneObtained, pagesObtained);
+
+    if (pagesObtained == LIST_IS_EMPTY) {
         return;
     }
 
@@ -225,6 +232,12 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
 
     ULONG64 arbitrary_va = (ULONG64) parbitrary_va;
 
+    // how many page table pages this one user fault had to materialize on its way down. A fault at
+    // the last layer maps the data page itself, so it is not counted here.
+    ULONG64 pageTablesMaterialized = 0;
+    boolean rootIsLeaf = (vm.config.number_of_page_table_layers == 1);
+
+    STAT_INC(threadContext, faults);
 
     // seed with the actual root pte: entry row0 of the single layer-0 pagetable
     currentPTEAddress = (pte *) vm.pte.start_of_layer[0] + parseVA_Row_value(arbitrary_va, 0);
@@ -240,6 +253,10 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
             if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
                 break;
             }
+        }
+
+        if (rootIsLeaf == FALSE) {
+            pageTablesMaterialized++;
         }
     }
 
@@ -271,6 +288,11 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
                     break;
                 }
             }
+
+            // the last layer's pte maps the data page, not a page table
+            if (i != vm.config.number_of_page_table_layers - 1) {
+                pageTablesMaterialized++;
+            }
         }
 
         // guarantees to work
@@ -293,6 +315,8 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     // is the one set on the root pte above.
     clearLockBit(oldPTEAddress);
 
+    STAT_INC(threadContext, walkPTsMaterialized[
+                 pageTablesMaterialized <= STATS_MAX_LAYERS ? pageTablesMaterialized : STATS_MAX_LAYERS]);
 
 #if CORRECTNESS
     //if we are in correctness mode run the validation code
@@ -337,12 +361,14 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
             frameNumber = rescue_page(currentPTE, (PTHREAD_INFO) threadContext);
             if (frameNumber == REDO_FAULT) {
                 returnValue = REDO_FAULT;
+                STAT_INC(threadContext, redoFaults);
             }
         } else {
             // If we are on a first fault or a disk read map that page.
             frameNumber = mapPage(currentPTE, threadContext);
             if (frameNumber == REDO_FAULT) {
                 returnValue = REDO_FAULT;
+                STAT_INC(threadContext, redoFaults);
             }
         }
 
@@ -451,6 +477,7 @@ ULONG64 rescue_page(pte *currentPTE, PTHREAD_INFO threadInfo) {
 
 #endif
         page->isBeingWritten = FALSE;
+        STAT_INC(threadInfo, rescues[RESCUE_IN_FLIGHT]);
     }
     // If its on standby, remove it and set the disk space free
     else if (page->location == STAND_BY_LIST) {
@@ -460,9 +487,11 @@ ULONG64 rescue_page(pte *currentPTE, PTHREAD_INFO threadInfo) {
 #if DBG
         page->diskIndex = 0;
 #endif
+        STAT_INC(threadInfo, rescues[RESCUE_STANDBY]);
     } else {
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfPageList(&vm.lists.modified, page, threadInfo);
+        STAT_INC(threadInfo, rescues[RESCUE_MODIFIED]);
     }
 
 
@@ -521,12 +550,15 @@ ULONG64 mapPage(pte *currentPTE, LPVOID threadContext) {
                 SetEvent(vm.events.trimmingStart);
 
 
-                vm.misc.pageWaits++;
+                InterlockedIncrement64((volatile LONG64 *) &vm.misc.pageWaits);
 
-                ULONG64 start;
-                ULONG64 end;
+                // QPC, not rdtsc: rdtsc ticks have no documented frequency, so the total was never
+                // convertible into a real duration. QueryPerformanceFrequency gives us one.
+                LARGE_INTEGER start;
+                LARGE_INTEGER end;
+                ULONG64 waited;
 
-                start = ReadTimeStampCounter();
+                QueryPerformanceCounter(&start);
 #if spinEvents
                 spinWhileWaiting();
 #else
@@ -534,9 +566,16 @@ ULONG64 mapPage(pte *currentPTE, LPVOID threadContext) {
 
 #endif
 
-                end = ReadTimeStampCounter();
+                QueryPerformanceCounter(&end);
 
-                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64) (end - start));
+                waited = (ULONG64) (end.QuadPart - start.QuadPart);
+
+                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64) waited);
+
+                STAT_INC(threadInfo, pageWaits);
+                STAT_ADD(threadInfo, waitTicks, waited);
+                STAT_MAX(threadInfo, maxWaitTicks, waited);
+                STAT_INC(threadInfo, waitHist[statsBucket(waited)]);
 
                 lockPTE(currentPTE);
 
@@ -553,8 +592,10 @@ ULONG64 mapPage(pte *currentPTE, LPVOID threadContext) {
         if (!zeroOnePage(page, threadInfo)) {
             DebugBreak();
         }
+        STAT_INC(threadInfo, firstTouch);
     } else {
         modified_read(currentPTE, frameNumber, threadInfo);
+        STAT_INC(threadInfo, diskReads);
     }
 
     page->pte = currentPTE;
@@ -755,6 +796,8 @@ pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
     counter = 0;
     i = 0;
 
+    STAT_INC(threadContext, freeListSearches);
+
     // randomly accesses a freelist first
     localFreeListIndex = GetNextRandom(&threadContext->rng) % vm.config.number_of_free_lists;
 
@@ -769,6 +812,7 @@ pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
             }
             // if all of them were empty at the time we checked
         } else if (counter == 2 * vm.config.number_of_free_lists) {
+            STAT_ADD(threadContext, freeListProbes, counter);
             return LIST_IS_EMPTY;
             // acquire a freelist lock exclusive
         } else {
@@ -822,6 +866,7 @@ pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
                 // return the page at the front of the local list
                 InterlockedDecrement64(&vm.misc.pagesFromLocalCache);
                 InterlockedIncrement64(&vm.misc.pagesFromFree);
+                STAT_ADD(threadContext, freeListProbes, counter + 1);
                 return getPageFromLocalList(threadContext);
             }
         }

@@ -125,7 +125,7 @@ typedef struct {
 #endif
 #define NUM_WRITING_BATCHES (128)
 
-#define SCHEDULER_PERIOD_MS (250)
+#define SCHEDULER_PERIOD_MS (200)
 
 #define COULD_NOT_FIND_SLOT (~0ULL)
 #define LIST_IS_EMPTY 0
@@ -521,6 +521,105 @@ typedef struct {
 } workDone;
 
 
+//
+// Statistics instrumentation.
+//
+// Flip STATS to 0 and every STAT_* macro (utils/stats.h) compiles to nothing, the per-thread
+// counters vanish out of THREAD_INFO, and printStats falls back to the bare summary built from the
+// vm.misc counters that exist either way. Nothing is conditional at runtime.
+//
+// Counters live per-thread rather than in vm.misc precisely so recording is a plain non-interlocked
+// increment on a private cache line -- THREAD_INFO is already 512-byte aligned, so no false sharing
+// and no bus traffic. They are summed once, at exit, in printStats.
+//
+#define STATS 1
+
+// Deepest tree we index per-layer stats for. A deeper config folds its bottom layers into the last
+// slot rather than growing the struct; nothing here is correctness-relevant.
+#define STATS_MAX_LAYERS 8
+
+// Log2 buckets shared by every histogram (batch sizes, wait latencies). Bucket 0 is exactly zero,
+// bucket i > 0 covers [2^(i-1), 2^i). 20 buckets reaches ~500k, past both BATCH_SIZE and any
+// plausible QPC wait.
+#define STATS_BUCKETS 20
+
+// The three shapes a rescue can take. They cost wildly different amounts, so numRescues alone hides
+// the interesting part.
+#define RESCUE_IN_FLIGHT 0
+#define RESCUE_STANDBY   1
+#define RESCUE_MODIFIED  2
+#define RESCUE_KINDS     3
+
+// The four mutually exclusive things the ager can do to a pte, counted per layer. AGER_PRUNED is the
+// subtree skip -- the whole point of the tree comb, and the one number that says whether it pays.
+#define AGER_LEAF_REGION  0
+#define AGER_PRUNED       1
+#define AGER_DESCENDED    2
+#define AGER_AGED_INPLACE 3
+#define AGER_BRANCHES     4
+
+#if STATS
+// INVARIANT: every member is ULONG64. printStats sums these by walking the struct as a flat ULONG64
+// array, so a member of any other type would be summed wrongly.
+typedef struct {
+    // -- user threads: faults --
+    ULONG64 faults;
+    ULONG64 redoFaults;
+    ULONG64 rescues[RESCUE_KINDS];
+    ULONG64 firstTouch;
+    ULONG64 diskReads;
+
+    // -- user threads: page waits (QPC ticks; converted at print time) --
+    ULONG64 pageWaits;
+    ULONG64 waitTicks;
+    ULONG64 maxWaitTicks;
+    ULONG64 waitHist[STATS_BUCKETS];
+
+    // -- user threads: multilevel walk cost --
+    ULONG64 walkPTsMaterialized[STATS_MAX_LAYERS + 1];
+
+    // -- user threads: free list contention --
+    ULONG64 freeListSearches;
+    ULONG64 freeListProbes;
+
+    // -- trimmer --
+    ULONG64 trimBatchSum;
+    ULONG64 trimBatchCount;
+    ULONG64 trimEmptyRegions;
+    ULONG64 trimBatchHist[STATS_BUCKETS];
+    ULONG64 trimmedAge[NUMBER_OF_AGES];
+    ULONG64 trimSkippedAccessed;
+    ULONG64 victimFromAge[NUMBER_OF_AGES];
+    ULONG64 victimNotFound;
+    ULONG64 quotaMet;
+    ULONG64 quotaShort;
+    ULONG64 recalled;
+    ULONG64 recallWakeups;
+
+    // -- writer --
+    ULONG64 writeBatchSum;
+    ULONG64 writeBatchCount;
+    ULONG64 writeBatchHist[STATS_BUCKETS];
+    ULONG64 diskFull;
+    ULONG64 modifiedEmpty;
+
+    // -- ager --
+    ULONG64 agerWakeups;
+    ULONG64 agerPTEsAged;
+    ULONG64 agerBranch[STATS_MAX_LAYERS][AGER_BRANCHES];
+
+    // -- list locks: how often the trylock dance fell back to SRW exclusive --
+    ULONG64 listShared;
+    ULONG64 listFallback;
+
+    // -- standby prune --
+    ULONG64 pruneWakeups;
+    ULONG64 pruneRequested;
+    ULONG64 pruneObtained;
+} statistics;
+#endif
+
+
 typedef struct __declspec(align(512)) {
     ULONG ThreadNumber;
     ULONG ThreadId;
@@ -529,6 +628,10 @@ typedef struct __declspec(align(512)) {
     THREAD_RNG_STATE rng;
     listHead localList;
     workDone work;
+
+#if STATS
+    statistics stats;
+#endif
 
 #if DBG
     ULONG64 pagelocksHeld;

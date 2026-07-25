@@ -12,6 +12,7 @@
 #include "threads/user_thread.h"
 #include "utils/random_utils.h"
 #include "utils/statistics_utils.h"
+#include "utils/stats.h"
 
 // Timestamp counter for random number generation
 static __inline unsigned __int64 GetTimeStampCounter(void) {
@@ -161,38 +162,7 @@ full_virtual_memory_test(VOID) {
     //TODO free everything else
     VirtualFree(vm.va.start, 0, MEM_RELEASE);
 
-    printf("Elapsed time: %llu ms\n", end - start);
-
-    printf("StandBy length %llu  \n", vm.lists.standby.length);
-    printf("Modified length %llu \n", vm.lists.modified.length);
-    printf("Free length %llu \n", vm.lists.free.length);
-    printf("Active length %llu \n", vm.pfn.numActivePages);
-
-    printf("pagewaits %llu \n", vm.misc.pageWaits);
-    printf("total time waiting %llu ticks\n", (vm.misc.totalTimeWaiting));
-
-
-    printf("num physical: %llu \n", vm.config.number_of_physical_pages * PAGE_SIZE / GB(1));
-    printf("num virtual: %llu G\n", vm.config.virtual_address_size / GB(1));
-    printf("num userthreads: %llu \n", vm.config.number_of_user_threads);
-    printf("num freelists: %llu \n", vm.config.number_of_free_lists);
-
-
-    printf("num active pages: %llu \n", vm.pfn.numActivePages);
-
-    double totalHardFaults = (double) vm.misc.pagesFromFree + vm.misc.pagesFromLocalCache + vm.misc.pagesFromStandBy;
-    double totalFaults = vm.misc.numRescues + totalHardFaults;
-
-    printf("num faults %.0f \n", totalFaults);
-    printf("num hard faults %.0f \n", totalHardFaults);
-
-    printf("rescue percentage: %.2f%% \n", ((vm.misc.numRescues / totalFaults) * 100));
-    printf("hard fault percentage: %.2f%% \n", ((totalHardFaults / totalFaults) * 100));
-    printf("Percentages of hard faults:\n");
-
-    printf("num freeList: %.2f%% \n", vm.misc.pagesFromFree / totalHardFaults * 100);
-    printf("num localCache: %.2f%% \n", vm.misc.pagesFromLocalCache / totalHardFaults * 100);
-    printf("num standBy: %.2f%% \n", vm.misc.pagesFromStandBy / totalHardFaults * 100);
+    printStats(end - start);
 
     return;
 }
@@ -237,7 +207,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < MB(500); i++) {
+    for (; i < MB(20 0); i++) {
         //while (TRUE) {
 #endif
 
@@ -345,7 +315,7 @@ int main(int argc, char **argv) {
         init_config_params(8, 3, 1, 16, 1);
 
 #else
-        init_config_params(8, 3, 1, 16, 1);
+        init_config_params(8, 3, 2, 16, 2);
 #endif
     }
     printf("%llu ", sizeof(pfn));
