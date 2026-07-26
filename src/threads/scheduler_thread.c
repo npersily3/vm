@@ -7,6 +7,7 @@
 #include "variables/structures.h"
 
 #define S_TO_100NS (10000000)
+#define FANCY_TRIMMING 1
 
 //this is in seconds
 ULONG64 getPagesPerSecond(workDone work) {
@@ -22,10 +23,10 @@ ULONG64 getPagesPerSecond(workDone work) {
         return 1000;
     }
 
-    ULONG64 scaleFactor = (S_TO_100NS) / time;
+
 
     // upscale our current pages to represent the number in seconds.
-    return pages * scaleFactor;
+    return pages * (S_TO_100NS) / time;
 }
 
 
@@ -38,12 +39,12 @@ DWORD scheduler_thread(LPVOID info) {
 
     ULONG64 pagesLeft;
     ULONG64 localPagesConsumedPerWakeUp;
-    ULONG64 timeUntilOutInSecs;
+    ULONG64 timeUntilOutInMS;
     ULONG64 historyIndex;
     ULONG64 pageConsumptionHistory[PAGES_CONSUMED_LENGTH];
     memset(pageConsumptionHistory, 0, sizeof(ULONG64) * PAGES_CONSUMED_LENGTH);
 
-    ULONG64 timeToMakePagesAvailable;
+    ULONG64 timeToMakePagesAvailableInMS;
 
     workDone agerWork;
     workDone trimmerWork;
@@ -66,12 +67,13 @@ DWORD scheduler_thread(LPVOID info) {
 
     ULONG64 numToWriteThisWakeup;
 
-    ULONG64 timeToAge;
+    ULONG64 timeToAgeInMS;
     ULONG64 perfectTimeToAge;
     // ULONG64 timeToTrim;
     // ULONG64 timeToWrite;
 
     ULONG64 numRoundsToAge;
+
 
     LONG64 localnumOfAge[NUMBER_OF_AGES];
 
@@ -80,6 +82,9 @@ DWORD scheduler_thread(LPVOID info) {
 
     ULONG64 averagePagesConsumedPerWakeup = 0;
     ULONG64 averagePagesConsumedPer100Ns = 0;
+
+    ULONG64 averagePagesTrimmedPerWakeup = 0;
+    ULONG64 averagePagesWrittenPerWakeup = 0;
 
 
     ULONG64 futureTotalOfMaxAge;
@@ -144,7 +149,7 @@ DWORD scheduler_thread(LPVOID info) {
             ULONG64 averagePagesConsumedPerSecond = averagePagesConsumedPerWakeup * 1000 / SCHEDULER_PERIOD_MS;
 
             pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
-            timeUntilOutInSecs = pagesLeft * SCHEDULER_PERIOD_MS / (averagePagesConsumedPerWakeup * 1000);
+            timeUntilOutInMS = pagesLeft * SCHEDULER_PERIOD_MS / (averagePagesConsumedPerWakeup);
 
 
             trimmerWork = vm.threadInfo.trimmer->work;
@@ -153,22 +158,24 @@ DWORD scheduler_thread(LPVOID info) {
                 pageTrimRate = 10000;
             }
 
+            averagePagesTrimmedPerWakeup = pageTrimRate * SCHEDULER_PERIOD_MS / 1000;
 
             writerWork = vm.threadInfo.writer->work;
             pageWriteRate = getPagesPerSecond(writerWork);
             if (pageWriteRate == 0) {
                 pageWriteRate = 10000;
             }
+            averagePagesWrittenPerWakeup = pageWriteRate * SCHEDULER_PERIOD_MS / 1000;
 
-            ULONG64 timeToTrim = (averagePagesConsumedPerWakeup / pageTrimRate);
+            ULONG64 timeToTrimInMS = (averagePagesConsumedPerWakeup * 1000 / pageTrimRate);
 
-            ULONG64 timeToWrite = (averagePagesConsumedPerWakeup / pageWriteRate);
+            ULONG64 timeToWriteInMS = (averagePagesConsumedPerWakeup * 1000 / pageWriteRate);
 
             // Total time to make pages available after aging (trim + write, or max if parallel?)
-            if (timeToWrite > timeToTrim) {
-                timeToMakePagesAvailable = timeToWrite;
+            if (timeToWriteInMS > timeToTrimInMS) {
+                timeToMakePagesAvailableInMS = timeToWriteInMS;
             } else {
-                timeToMakePagesAvailable = timeToTrim;
+                timeToMakePagesAvailableInMS = timeToTrimInMS;
             }
            // timeToMakePagesAvailable = timeToWrite + timeToTrim;
 
@@ -205,21 +212,20 @@ DWORD scheduler_thread(LPVOID info) {
             // if we have done some aging, use it
             if (pageAgeRate != 0) {
                 if (numToAgeTotal > pageAgeRate) {
-                    timeToAge = numToAgeTotal / pageAgeRate;
+                    timeToAgeInMS = numToAgeTotal * 1000 / pageAgeRate;
                 } else {
-                    timeToAge = 1;
+                    timeToAgeInMS = 1;
                 }
             }
 
 
             //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
-            if (timeUntilOutInSecs < timeToMakePagesAvailable) {
+            if (timeUntilOutInMS < timeToMakePagesAvailableInMS) {
                 perfectTimeToAge = 0;
             } else {
-                perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
+                perfectTimeToAge = timeUntilOutInMS - timeToMakePagesAvailableInMS;
             }
 
-            perfectTimeToAge = timeUntilOutInSecs - timeToMakePagesAvailable;
 
             // if we have't aged yet, or should't, age some small amount to get more data
             if (pageAgeRate == 0 || numToAgeTotal == 0) {
@@ -229,10 +235,10 @@ DWORD scheduler_thread(LPVOID info) {
                 // otherwise, age the perceived max number of ptes that can be aged in one second.
                 // numToAgeTotal / perfectTimeToAge (or / timeToAge) is a true rate in pages/sec (both
                 // are real seconds); scale it down to how much of that we should do in one wakeup period.
-                if (timeToAge < perfectTimeToAge) {
-                    numToAgeThisWakeup = numToAgeTotal * SCHEDULER_PERIOD_MS / (perfectTimeToAge * 1000);
+                if (timeToAgeInMS < perfectTimeToAge) {
+                    numToAgeThisWakeup = numToAgeTotal * SCHEDULER_PERIOD_MS / (perfectTimeToAge);
                 } else {
-                    numToAgeThisWakeup = numToAgeTotal * SCHEDULER_PERIOD_MS / (timeToAge * 1000);
+                    numToAgeThisWakeup = numToAgeTotal * SCHEDULER_PERIOD_MS / (timeToAgeInMS);
                 }
             }
 
@@ -240,24 +246,26 @@ DWORD scheduler_thread(LPVOID info) {
                 numToAgeThisWakeup = 10000;
             }
 
-            // Reorder-point pacing: trim+write are now a pipelined relay (trimmer wakes the writer after its
-            // first batch, so they run concurrently), so the combined lead time to make r pages/sec (=
-            // averagePagesConsumedPerSecond, the true rate) available is L = max(r/t, r/w). We only need to
-            // start once our runway (pagesLeft/r, true seconds) shrinks to L -- starting earlier reclaims
-            // pages we don't need yet. Using x <= max(a,b) <=> x<=a OR x<=b, and cross-multiplying to avoid
-            // integer-division truncation: p/r <= r/t  <=>  p*t <= r*r. Since numToTrimThisWakeup is handed
-            // out per-period (averagePagesConsumedPerWakeup), not per-second, the right-hand "r*r" has to be
-            // the per-period count times the true per-second rate, not the per-period count squared.
 
-            // pages left/ avPagesPer second is time till out and the other one is time till make free
-            if (pagesLeft * pageTrimRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerSecond ||
-                pagesLeft * pageWriteRate <= averagePagesConsumedPerWakeup * averagePagesConsumedPerSecond) {
-                numToTrimThisWakeup = averagePagesConsumedPerWakeup;
-                numToWriteThisWakeup = averagePagesConsumedPerWakeup;
-            } else {
-                numToTrimThisWakeup = 0;
-                numToWriteThisWakeup = 0;
-            }
+
+#if FANCY_TRIMMING
+
+        if (averagePagesConsumedPerWakeup > averagePagesWrittenPerWakeup) {
+            numToTrimThisWakeup = averagePagesConsumedPerWakeup;
+            numToWriteThisWakeup = averagePagesConsumedPerWakeup;
+        } else {
+            numToTrimThisWakeup = averagePagesWrittenPerWakeup;
+            numToWriteThisWakeup = averagePagesWrittenPerWakeup;
+        }
+
+#else
+        numToTrimThisWakeup = 1000;
+        numToWriteThisWakeup = 1000;
+
+#endif
+
+
+
         }
 
         InterlockedExchange64(&vm.pte.numToAge, numToAgeThisWakeup);

@@ -231,7 +231,7 @@ DWORD testVM(LPVOID lpParam) {
     // Now perform random accesses
 
     // Depending on if we are in debug/performance test mode, spin forever
-#if spinEvents
+#if spinEvents || DBG || 1
     while (TRUE) {
 
 #else
