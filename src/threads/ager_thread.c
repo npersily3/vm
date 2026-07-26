@@ -6,6 +6,7 @@
 #include "utils/page_utils.h"
 #include "utils/pte_regions_utils.h"
 #include "utils/pte_utils.h"
+#include "utils/stats.h"
 #include "utils/thread_utils.h"
 #include "variables/structures.h"
 
@@ -250,6 +251,8 @@ DWORD ager_thread(LPVOID info) {
         totalPTEsLeftToAge = initialTotalPTEsToAge;
         numPTEsAged = 0;
 
+        STAT_INC(threadInfo, agerWakeups);
+
 
         while (numPTEsAged < totalPTEsLeftToAge) {
             lockPTE(&currentPageTable->pagetable[row]);
@@ -270,6 +273,7 @@ DWORD ager_thread(LPVOID info) {
                 // I want to do recursion but with out the actual recursion, maybe a double break and a change to the stack variables
                 if (localPTE.validFormat.access == 1) {
                     if (isSecondToLastLayer(layer)) {
+                        STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_LEAF_REGION]);
                         setLockBit(currentPTE);
                         numPTEsAged += ageLeafRegion(currentPTE, threadInfo);
                         clearLockBit(currentPTE);
@@ -279,6 +283,10 @@ DWORD ager_thread(LPVOID info) {
 
                         // check if zero
                         if (page->valid_transition_count == 0) {
+                            // the subtree skip: everything below this pte is empty, so the whole
+                            // branch is dropped without descending. This is what the comb buys us
+                            STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_PRUNED]);
+
                             //then I clear the access bit and put it on age 0 list using interlocked compare exchange
                             newPTEContents.entireFormat = localPTE.entireFormat;
                             newPTEContents.validFormat.access = 0;
@@ -298,6 +306,7 @@ DWORD ager_thread(LPVOID info) {
                             continue;
                         } else {
                             // in this branch, I am diving deeper
+                            STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_DESCENDED]);
                             leavePageLock(page, threadInfo);
                             row = 0;
                             break;
@@ -312,6 +321,7 @@ DWORD ager_thread(LPVOID info) {
                         continue;
                     }
                     numPTEsAged += (newAge - oldAge);
+                    STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_AGED_INPLACE]);
 
                     // parent aged oldAge -> newAge, so move its child page table's region between
                     // age-lists; currentPTE's lock bit is that region's lock. The bump MUST come before
@@ -358,6 +368,8 @@ DWORD ager_thread(LPVOID info) {
             }
         }
 
+
+        STAT_ADD(threadInfo, agerPTEsAged, numPTEsAged);
 
         InterlockedExchange64(&vm.pte.numToAge, 0);
         InterlockedExchange((volatile LONG *) &vm.misc.agingInProgress,FALSE);

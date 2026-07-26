@@ -8,6 +8,7 @@
 */
 #include "../../include/utils/page_utils.h"
 #include "../../include/variables/globals.h"
+#include "utils/stats.h"
 #include "utils/thread_utils.h"
 #include "variables/macros.h"
 
@@ -79,6 +80,9 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
         release_srw_shared(&headToRemove->sharedLock);
         acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
         obtainedExclusive = TRUE;
+        STAT_INC(threadInfo, listFallback);
+    } else {
+        STAT_INC(threadInfo, listShared);
     }
 #else
     acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
@@ -260,9 +264,14 @@ VOID removeFromMiddleOfPageList(pListHead head, pfn *page, PTHREAD_INFO threadIn
         }
     }
 
+    if (obtainedPageLocks == TRUE) {
+        STAT_INC(threadInfo, listShared);
+    }
+
 
     // now we need to acquire exclusive
     if (obtainedPageLocks == FALSE) {
+        STAT_INC(threadInfo, listFallback);
         release_srw_shared(&head->sharedLock);
 
 
@@ -379,8 +388,13 @@ pfn *RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
         leavePageLock(&head->page, threadInfo);
     }
 
+    if (obtainedPageLocks == TRUE) {
+        STAT_INC(threadInfo, listShared);
+    }
+
     // switch to exclusive mode
     if (obtainedPageLocks == FALSE) {
+        STAT_INC(threadInfo, listFallback);
         release_srw_shared(&head->sharedLock);
 
 
@@ -502,8 +516,12 @@ VOID addPageToTail(pListHead head, pfn *page, PTHREAD_INFO threadInfo) {
         leavePageLock(&head->page, threadInfo);
     }
 
+    if (obtainedPageLocks == TRUE) {
+        STAT_INC(threadInfo, listShared);
+    }
 
     if (obtainedPageLocks == FALSE) {
+        STAT_INC(threadInfo, listFallback);
         release_srw_shared(&head->sharedLock);
 
 

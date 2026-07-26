@@ -16,6 +16,7 @@
 #include "threads/ager_thread.h"
 #include "threads/user_thread.h"
 #include "utils/pte_regions_utils.h"
+#include "utils/stats.h"
 
 /**
  *@file trimmer_thread.c
@@ -66,6 +67,9 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                     InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
                     InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
 
+                    // walked all the way out here and got nothing: the pte was touched since aging
+                    STAT_INC(threadContext, trimSkippedAccessed);
+
                     pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
 
 
@@ -89,6 +93,9 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                 InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
+                // the age this pte had reached when we took its page. Bunched at MAX_AGE means the
+                // ager is doing its job; bunched at 0-1 means we are trimming pages that are still hot
+                STAT_INC(threadContext, trimmedAge[age]);
 
                 page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
                 page->location = MODIFIED_LIST;
@@ -119,6 +126,10 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
+    STAT_SAMPLE(threadContext, trimBatch, trimmedPagesInRegion);
+    if (trimmedPagesInRegion == 0) {
+        STAT_INC(threadContext, trimEmptyRegions);
+    }
 
     return trimmedPagesInRegion;
 }
@@ -134,10 +145,13 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
 
         if (oldestRegion != NULL) {
+            // which age list actually had a victim. Always landing on age 0 means we are out of slack
+            STAT_INC(threadContext, victimFromAge[age]);
             return oldestRegion;
         }
     }
 
+    STAT_INC(threadContext, victimNotFound);
     return NULL;
 }
 
@@ -225,6 +239,7 @@ DWORD page_trimmer(LPVOID info) {
 
             //nothing to trim
             if (currentRegion == NULL) {
+                STAT_INC(threadContext, quotaShort);
                 break;
             }
 
@@ -264,8 +279,11 @@ DWORD page_trimmer(LPVOID info) {
 
         recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
 
+        if (totalTrimmedPages >= numToTrimLocal) {
+            STAT_INC(threadContext, quotaMet);
+        }
 
-        vm.misc.numTrims++;
+        InterlockedIncrement64((volatile LONG64 *) &vm.misc.numTrims);
 
         // fallback: if we never trimmed anything this cycle, the writer still needs a chance to
         // drain whatever's already on the modified list from before
@@ -291,6 +309,9 @@ VOID recallPagesFromLocalList(PTHREAD_INFO trimThreadContext, PULONG64 numNeeded
 
 
     init_list_head(&trimmerLocalList);
+
+    ULONG64 quotaOnEntry = *numNeeded;
+    STAT_INC(trimThreadContext, recallWakeups);
 
     for (int i = 0; i < vm.config.number_of_user_threads && *numNeeded != 0; i++) {
         currentThreadContext = &vm.threadInfo.user[i];
@@ -326,6 +347,8 @@ VOID recallPagesFromLocalList(PTHREAD_INFO trimThreadContext, PULONG64 numNeeded
             (*numNeeded)--;
         }
     }
+
+    STAT_ADD(trimThreadContext, recalled, quotaOnEntry - *numNeeded);
 }
 
 
