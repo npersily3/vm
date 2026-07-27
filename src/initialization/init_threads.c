@@ -112,7 +112,7 @@ VOID createThreads(VOID) {
     }
     vm.threadInfo.aging = AgingThreadInfo;
 
-    for (int i = 0; i < vm.config.number_of_aging_threads; ++i) {
+    for (int i = 0; i < vm.config.number_of_scheduler_threads; ++i) {
         ThreadContext = &SchedulerThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
         ThreadContext->TransferVaIndex = 0;
@@ -125,6 +125,8 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    vm.threadInfo.scheduler = SchedulerThreadInfo;
+
     vm.misc.agingInProgress = FALSE;
 }
 

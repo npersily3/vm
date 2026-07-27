@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "variables/structures.h"
+#include "utils/stats.h"
 
 #define S_TO_100NS (10000000)
 #define FANCY_TRIMMING 1
@@ -102,7 +103,10 @@ DWORD scheduler_thread(LPVOID info) {
             return 0;
         }
 
+        STAT_INC(threadInfo, schedWakeups);
+
         if (isCalibrating) {
+            STAT_INC(threadInfo, schedCalibrating);
             // Fixed amounts during warmup, scaled to the wakeup period (roughly 1000 pages/sec assumed typical workload)
             numToAgeThisWakeup = SCHEDULER_PERIOD_MS;
             numToTrimThisWakeup = SCHEDULER_PERIOD_MS;
@@ -133,13 +137,10 @@ DWORD scheduler_thread(LPVOID info) {
                 }
                 averagePagesConsumedPerWakeup += pageConsumptionHistory[i];
             }
-            if (i == 0) {
-                continue;
-            }
-            if (averagePagesConsumedPerWakeup == 0) {
-                continue;
-            }
+
             averagePagesConsumedPerWakeup /= i;
+
+            STAT_SAMPLE(threadInfo, schedConsumed, averagePagesConsumedPerWakeup);
 
 
 #if 1
@@ -151,6 +152,10 @@ DWORD scheduler_thread(LPVOID info) {
             pagesLeft = ReadULong64NoFence(&vm.lists.standby.length) + ReadULong64NoFence(&vm.lists.free.length);
             timeUntilOutInMS = pagesLeft * SCHEDULER_PERIOD_MS / (averagePagesConsumedPerWakeup);
 
+            // How many ms of pages are left at the current burn rate. schedHeadroomCount doubles as the
+            // count of wakeups that actually made a decision, so it is the denominator for the rate averages.
+            STAT_SAMPLE(threadInfo, schedHeadroom, timeUntilOutInMS);
+
 
             trimmerWork = vm.threadInfo.trimmer->work;
             pageTrimRate = getPagesPerSecond(trimmerWork);
@@ -159,6 +164,7 @@ DWORD scheduler_thread(LPVOID info) {
             }
 
             averagePagesTrimmedPerWakeup = pageTrimRate * SCHEDULER_PERIOD_MS / 1000;
+            STAT_ADD(threadInfo, schedTrimRateSum, pageTrimRate);
 
             writerWork = vm.threadInfo.writer->work;
             pageWriteRate = getPagesPerSecond(writerWork);
@@ -166,6 +172,7 @@ DWORD scheduler_thread(LPVOID info) {
                 pageWriteRate = 10000;
             }
             averagePagesWrittenPerWakeup = pageWriteRate * SCHEDULER_PERIOD_MS / 1000;
+            STAT_ADD(threadInfo, schedWriteRateSum, pageWriteRate);
 
             ULONG64 timeToTrimInMS = (averagePagesConsumedPerWakeup * 1000 / pageTrimRate);
 
@@ -182,6 +189,7 @@ DWORD scheduler_thread(LPVOID info) {
             // create a copy of the agers circular buffer
             agerWork = vm.threadInfo.aging->work;
             pageAgeRate = getPagesPerSecond(agerWork);
+            STAT_ADD(threadInfo, schedAgeRateSum, pageAgeRate);
 
             numActivePages = ReadULong64NoFence(&vm.pfn.numActivePages);
 
@@ -206,6 +214,8 @@ DWORD scheduler_thread(LPVOID info) {
                 }
             }
 
+            STAT_INC(threadInfo, schedRoundsToAge[numRoundsToAge > NUMBER_OF_AGES ? NUMBER_OF_AGES : numRoundsToAge]);
+
             numToAgeTotal = numActivePages * numRoundsToAge;
 
 
@@ -221,6 +231,8 @@ DWORD scheduler_thread(LPVOID info) {
 
             //this is the time it should take to age what we want, so that the trimmer and writer can make pages available just in time.
             if (timeUntilOutInMS < timeToMakePagesAvailableInMS) {
+                // No slack: the pages run out before the trimmer/writer can replace them.
+                STAT_INC(threadInfo, schedBehind);
                 perfectTimeToAge = 0;
             } else {
                 perfectTimeToAge = timeUntilOutInMS - timeToMakePagesAvailableInMS;
@@ -267,6 +279,11 @@ DWORD scheduler_thread(LPVOID info) {
 
 
         }
+
+        // The quotas as actually published, calibration wakeups included. No separate write histogram:
+        // numToWrite tracks numToTrim exactly under FANCY_TRIMMING.
+        STAT_SAMPLE(threadInfo, schedAge, numToAgeThisWakeup);
+        STAT_SAMPLE(threadInfo, schedTrim, numToTrimThisWakeup);
 
         InterlockedExchange64(&vm.pte.numToAge, numToAgeThisWakeup);
 

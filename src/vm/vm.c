@@ -179,7 +179,7 @@ DWORD testVM(LPVOID lpParam) {
     // DebugBreak();
 
     PULONG_PTR arbitrary_va;
-    unsigned i;
+    ULONG64 i;
     PTHREAD_INFO thread_info;
 
     BOOL page_faulted;
@@ -201,13 +201,14 @@ DWORD testVM(LPVOID lpParam) {
     // Now perform random accesses
 
     // Depending on if we are in debug/performance test mode, spin forever
-#if spinEvents || DBG || 1
+#if spinEvents || DBG || 0
     while (TRUE) {
 
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < MB(20 0); i++) {
+    for (; i < MAXULONG64 - 1; ) {
+         i++;
         //while (TRUE) {
 #endif
 

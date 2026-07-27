@@ -279,12 +279,11 @@ static VOID addStats(statistics *total, const statistics *source) {
 
 
 /**
- * @brief Sums the counters of every thread that records any. The scheduler is skipped: it records
- *        nothing, and vm.threadInfo.scheduler is never populated by createThreads.
+ * @brief Sums the counters of every thread that records any.
  */
 static VOID collectStats(statistics *total) {
-    PTHREAD_INFO groups[4];
-    ULONG64 counts[4];
+    PTHREAD_INFO groups[5];
+    ULONG64 counts[5];
 
     groups[0] = vm.threadInfo.user;
     counts[0] = vm.config.number_of_user_threads;
@@ -294,10 +293,12 @@ static VOID collectStats(statistics *total) {
     counts[2] = vm.config.number_of_writing_threads;
     groups[3] = vm.threadInfo.aging;
     counts[3] = vm.config.number_of_aging_threads;
+    groups[4] = vm.threadInfo.scheduler;
+    counts[4] = vm.config.number_of_scheduler_threads;
 
     memset(total, 0, sizeof(statistics));
 
-    for (int group = 0; group < 4; group++) {
+    for (int group = 0; group < 5; group++) {
         if (groups[group] == NULL) {
             continue;
         }
@@ -488,6 +489,60 @@ VOID printStats(ULONG64 elapsedMs) {
 
             printf("\n");
             row("tables per 1000 faults", "%llu", safeDiv(weighted * 1000, total));
+        }
+
+        //
+        // Scheduler: the quotas it published, and how much slack it had when it picked them.
+        // schedHeadroomCount is the number of wakeups that got as far as a real decision, so it is
+        // the denominator for anything measured only on that path.
+        //
+        rule("SCHEDULER");
+        row("wakeups", "%s  (%s calibrating, %s no history)", fmtCount(stats.schedWakeups),
+            fmtCount(stats.schedCalibrating), fmtCount(stats.schedNoHistory));
+        row("decisions", "%s  (period %d ms)", fmtCount(stats.schedHeadroomCount), SCHEDULER_PERIOD_MS);
+        row("consumption", "%llu pages/wakeup", safeDiv(stats.schedConsumedSum, stats.schedConsumedCount));
+        row("headroom until dry", "%s", fmtTime(safeDiv(stats.schedHeadroomSum, stats.schedHeadroomCount) * 1000));
+        row("no slack to age", "%s  (%.2f%% of decisions)", fmtCount(stats.schedBehind),
+            pct(stats.schedBehind, stats.schedHeadroomCount));
+        printf("\n  observed rates (pages/sec)\n");
+        row("ager", "%s", fmtCount(safeDiv(stats.schedAgeRateSum, stats.schedHeadroomCount)));
+        row("trimmer", "%s", fmtCount(safeDiv(stats.schedTrimRateSum, stats.schedHeadroomCount)));
+        row("writer", "%s", fmtCount(safeDiv(stats.schedWriteRateSum, stats.schedHeadroomCount)));
+        printf("\n  quotas published (pages/wakeup)\n");
+        row("age", "%llu", safeDiv(stats.schedAgeSum, stats.schedAgeCount));
+        row("trim / write", "%llu", safeDiv(stats.schedTrimSum, stats.schedTrimCount));
+
+        printf("\n  age quota\n");
+        histogram(stats.schedAgeHist, FALSE, ticksPerUs);
+        printf("\n  trim quota\n");
+        histogram(stats.schedTrimHist, FALSE, ticksPerUs);
+        printf("\n  headroom (ms until free + standby are exhausted)\n");
+        histogram(stats.schedHeadroomHist, FALSE, ticksPerUs);
+
+        //
+        // How many aging rounds the scheduler thought it needed to reach max age. Piling up at
+        // NUMBER_OF_AGES means the age lists never had enough old pages to satisfy demand.
+        //
+        {
+            ULONG64 total = 0;
+            ULONG64 max = 0;
+            char label[32];
+
+            for (int rounds = 0; rounds <= NUMBER_OF_AGES; rounds++) {
+                total += stats.schedRoundsToAge[rounds];
+                if (stats.schedRoundsToAge[rounds] > max) {
+                    max = stats.schedRoundsToAge[rounds];
+                }
+            }
+
+            printf("\n  aging rounds needed\n");
+            for (int rounds = 0; rounds <= NUMBER_OF_AGES; rounds++) {
+                if (stats.schedRoundsToAge[rounds] == 0) {
+                    continue;
+                }
+                snprintf(label, sizeof(label), "%d round%s", rounds, rounds == 1 ? "" : "s");
+                rowBar(label, stats.schedRoundsToAge[rounds], total, max);
+            }
         }
 
         //

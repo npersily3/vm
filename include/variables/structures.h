@@ -616,6 +616,28 @@ typedef struct {
     ULONG64 pruneWakeups;
     ULONG64 pruneRequested;
     ULONG64 pruneObtained;
+
+    // -- scheduler: the quotas it handed out, and how much slack it had when it did --
+    ULONG64 schedWakeups;
+    ULONG64 schedCalibrating;
+    ULONG64 schedNoHistory;
+    ULONG64 schedBehind;
+    ULONG64 schedConsumedSum;
+    ULONG64 schedConsumedCount;
+    ULONG64 schedConsumedHist[STATS_BUCKETS];
+    ULONG64 schedHeadroomSum;
+    ULONG64 schedHeadroomCount;
+    ULONG64 schedHeadroomHist[STATS_BUCKETS];
+    ULONG64 schedAgeSum;
+    ULONG64 schedAgeCount;
+    ULONG64 schedAgeHist[STATS_BUCKETS];
+    ULONG64 schedTrimSum;
+    ULONG64 schedTrimCount;
+    ULONG64 schedTrimHist[STATS_BUCKETS];
+    ULONG64 schedAgeRateSum;
+    ULONG64 schedTrimRateSum;
+    ULONG64 schedWriteRateSum;
+    ULONG64 schedRoundsToAge[NUMBER_OF_AGES + 1];
 } statistics;
 #endif
 

@@ -290,7 +290,8 @@ DWORD ager_thread(LPVOID info) {
                             //then I clear the access bit and put it on age 0 list using interlocked compare exchange
                             newPTEContents.entireFormat = localPTE.entireFormat;
                             newPTEContents.validFormat.access = 0;
-                            //TODO do I have to check return value
+
+
                             PTEContentsAtTimeOfWrite = writePTE(currentPTE, newPTEContents, localPTE);
 
                             leavePageLock(page, threadInfo);
