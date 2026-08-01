@@ -208,10 +208,11 @@ DWORD testVM(LPVOID lpParam) {
 
     //MB(1)/NUMBER_OF_USER_THREADS
     for (; i < MAXULONG64 - 1; ) {
-         i++;
+
         //while (TRUE) {
 #endif
 
+        i++;
 
         // Randomly access different portions of the virtual address
         // space we obtained above.

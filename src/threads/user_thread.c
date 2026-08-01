@@ -14,6 +14,7 @@
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
+#include "threads/ager_thread.h"
 #include "utils/pte_regions_utils.h"
 #include "utils/stats.h"
 
@@ -347,6 +348,9 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
     pte* higherLevelPTE;
     pfn* higherLevelPage;
 
+    PTE_REGION* region;
+    LONG64 oldAge;
+
 
     returnValue = !REDO_FAULT;
 
@@ -400,6 +404,13 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
                 higherLevelPage->valid_transition_count++;
                 leavePageLock(higherLevelPage, threadContext);
             }
+            
+            region = getPTERegion(currentPTE);
+            oldAge = getRegionAge(region);
+            if (oldAge == -1) {
+                addRegionToTail(&vm.pte.ageList[0], region, threadContext);
+            }
+
 
             newPTE.entireFormat = 0;
             newPTE.validFormat.frameNumber = frameNumber;
@@ -409,6 +420,10 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
             // i do not have to check the result because we have the lock and we expect it to be invalid
             //TODO change this to not be a compare exchange
             writePTE(currentPTE, newPTE, pteContents);
+
+            // entering the valid state at age 0 has to be counted, or the ager's first
+            // Dec[0]/Inc[1] on this pte debits a bucket that never had it -- age 0 goes negative
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
         }
     }
 

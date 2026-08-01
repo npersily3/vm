@@ -81,11 +81,16 @@ boolean ageUnnaccessedPTE(pte *pteAddress, pte pteContents, ULONG64 *newAge) {
 VOID shiftAgeList(pte *parentPTE, ULONG64 oldAge, ULONG64 newAge, PTHREAD_INFO threadInfo) {
     PTE_REGION *region;
 
+    region = getPTERegion(getStartOfLowerPagetable(parentPTE));
+
+    // an off-list region (freshly faulted, or dropped by the trimmer after being emptied) still
+    // has to be re-listed even when its age did not move, or nothing ever puts it back and the
+    // trimmer sees empty age lists while the region is full of active PTEs
+
+//    && region->entry.Flink != NULL
     if (oldAge == newAge) {
         return;
     }
-
-    region = getPTERegion(getStartOfLowerPagetable(parentPTE));
 
     // A region that isn't on any list (freshly faulted, or dropped after being emptied) has NULL
     // links, so there is nothing to unlink -- removeFromMiddle would deref NULL. Just add it.
@@ -145,7 +150,7 @@ ULONG64 ageLeafPTE(pte *pteAddress, PTE_REGION *region) {
         if (pteAtTimeOfWrite.entireFormat == pteContents.entireFormat) {
             InterlockedDecrement64(&vm.pte.globalNumOfAge[currentAge].count);
             InterlockedIncrement64(&vm.pte.globalNumOfAge[newAge].count);
-            return 0;
+            return 1;
         }
 
         // raced: loop again with the fresh contents
@@ -225,9 +230,15 @@ DWORD ager_thread(LPVOID info) {
     currentPageTable = vm.pte.table;
     ULONG64 initialTotalPTEsToAge;
     LONG64 totalPTEsLeftToAge;
-    ULONG64 numPTEsAged;
+    // ptesVisited is work attempted, ptesAdvanced is work that stuck. The quota and the rate metric
+    // both key off visited: an accessed pte resets to 0 and a pte at MAX_AGE stays put, so on a hot
+    // tree advanced can sit at zero forever and the loop would never terminate.
+    ULONG64 ptesVisited;
+    ULONG64 ptesAdvanced;
     ULONG64 newAge;
     LONG64 oldAge;
+
+    LARGE_INTEGER start, end;
 
     ULONG64 row = 0;
     ULONG64 layer = 0;
@@ -249,18 +260,24 @@ DWORD ager_thread(LPVOID info) {
 
         initialTotalPTEsToAge = ReadULong64NoFence(&vm.pte.numToAge);
         totalPTEsLeftToAge = initialTotalPTEsToAge;
-        numPTEsAged = 0;
+        ptesVisited = 0;
+        ptesAdvanced = 0;
 
         STAT_INC(threadInfo, agerWakeups);
 
+        QueryPerformanceCounter(&start);
 
-        while (numPTEsAged < totalPTEsLeftToAge) {
+        while (ptesVisited < totalPTEsLeftToAge) {
             lockPTE(&currentPageTable->pagetable[row]);
 
             for (; row < vm.config.pte_entries_per_pagetable; row++) {
                 //put in agepte
                 currentPTE = &currentPageTable->pagetable[row];
                 localPTE.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
+
+                // every pte we look at is work, valid or not -- a raced retry below re-visits this
+                // row and counts again, which is correct: it cost us a read and a failed CAS
+                ptesVisited++;
 
                 // cannot age what is not valid
                 if (localPTE.validFormat.valid == 0) {
@@ -275,8 +292,12 @@ DWORD ager_thread(LPVOID info) {
                     if (isSecondToLastLayer(layer)) {
                         STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_LEAF_REGION]);
                         setLockBit(currentPTE);
-                        numPTEsAged += ageLeafRegion(currentPTE, threadInfo);
+                        ptesAdvanced += ageLeafRegion(currentPTE, threadInfo);
                         clearLockBit(currentPTE);
+
+                        // ageLeafRegion walks the whole child table unconditionally, so that is
+                        // exactly how many ptes it looked at
+                        ptesVisited += vm.config.pte_entries_per_pagetable;
                     } else {
                         //I am delving further deeper into the tree to see if I can trim this one
                         enterPageLock(page, threadInfo);
@@ -321,7 +342,7 @@ DWORD ager_thread(LPVOID info) {
                         row--;
                         continue;
                     }
-                    numPTEsAged += (newAge - oldAge);
+                    ptesAdvanced += (newAge - oldAge);
                     STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_AGED_INPLACE]);
 
                     // parent aged oldAge -> newAge, so move its child page table's region between
@@ -370,7 +391,13 @@ DWORD ager_thread(LPVOID info) {
         }
 
 
-        STAT_ADD(threadInfo, agerPTEsAged, numPTEsAged);
+        QueryPerformanceCounter(&end);
+
+        STAT_ADD(threadInfo, agerPTEsAged, ptesAdvanced);
+
+        // the scheduler's pageAgeRate comes from here. Without it getPagesPerSecond sees an empty
+        // buffer and hands back its 1000 p/s placeholder forever, which pins numToAge at a constant
+        recordWork(threadInfo, end.QuadPart - start.QuadPart, ptesVisited);
 
         InterlockedExchange64(&vm.pte.numToAge, 0);
         InterlockedExchange((volatile LONG *) &vm.misc.agingInProgress,FALSE);

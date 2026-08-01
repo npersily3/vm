@@ -132,16 +132,17 @@ DWORD scheduler_thread(LPVOID info) {
 
             // find the average page consumption over the last 16 wakeups
             for (; i < PAGES_CONSUMED_LENGTH; i++) {
-                if (pageConsumptionHistory[i] == 0) {
-                    break;
-                }
+
                 averagePagesConsumedPerWakeup += pageConsumptionHistory[i];
             }
 
-            averagePagesConsumedPerWakeup /= i;
+            averagePagesConsumedPerWakeup /= PAGES_CONSUMED_LENGTH;
 
             STAT_SAMPLE(threadInfo, schedConsumed, averagePagesConsumedPerWakeup);
 
+            if (averagePagesConsumedPerWakeup == 0) {
+                averagePagesConsumedPerWakeup = 1;
+            }
 
 #if 1
             // averagePagesConsumedPerWakeup is pages per SCHEDULER_PERIOD_MS, not pages per second --

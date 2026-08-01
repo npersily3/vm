@@ -252,7 +252,7 @@ DWORD page_trimmer(LPVOID info) {
 
             // wake the writer as soon as the first batch lands, instead of waiting for our whole
             // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
-            if (signaledWriter == FALSE && trimmedPagesInRegion > 0) {
+            if (trimmedPagesInRegion > 0) {
                 SetEvent(vm.events.writingStart);
                 signaledWriter = TRUE;
             }
