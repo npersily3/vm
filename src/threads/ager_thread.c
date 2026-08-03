@@ -287,53 +287,56 @@ DWORD ager_thread(LPVOID info) {
                 page = getPFNfromFrameNumber(localPTE.validFormat.frameNumber);
 
 
-                // I want to do recursion but with out the actual recursion, maybe a double break and a change to the stack variables
+               // if it is accessed I might have to delve deeper otherwise just age in place
                 if (localPTE.validFormat.access == 1) {
-                    if (isSecondToLastLayer(layer)) {
-                        STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_LEAF_REGION]);
-                        setLockBit(currentPTE);
-                        ptesAdvanced += ageLeafRegion(currentPTE, threadInfo);
-                        clearLockBit(currentPTE);
 
-                        // ageLeafRegion walks the whole child table unconditionally, so that is
-                        // exactly how many ptes it looked at
-                        ptesVisited += vm.config.pte_entries_per_pagetable;
+                    //I am delving further deeper into the tree to see if I can trim this one
+                    enterPageLock(page, threadInfo);
+
+                    // check if it has any valid or modified entries. The page lock protects this because the count will only change on a fault (gets that lock, or a repurpose)
+                    if (page->valid_transition_count == 0) {
+                        // the subtree skip: everything below this pte is empty, so the whole
+                        // branch is dropped without descending. This is what the comb buys us
+                        STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_PRUNED]);
+
+                        //then I clear the access bit and put it on age 0 list using interlocked compare exchange
+                        newPTEContents.entireFormat = localPTE.entireFormat;
+                        newPTEContents.validFormat.access = 0;
+
+
+                        PTEContentsAtTimeOfWrite = writePTE(currentPTE, newPTEContents, localPTE);
+
+                        leavePageLock(page, threadInfo);
+
+                        region = getPTERegion(currentPTE);
+
+                        oldAge = getRegionAge(region);
+
+                        if (oldAge == -1) {
+                            addRegionToTail(&vm.pte.ageList[0], region,threadInfo);
+                        }
+
+                        continue;
                     } else {
-                        //I am delving further deeper into the tree to see if I can trim this one
-                        enterPageLock(page, threadInfo);
+                        leavePageLock(page, threadInfo);
+                        if (isSecondToLastLayer(layer)) {
+                            STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_LEAF_REGION]);
+                            setLockBit(currentPTE);
+                            ptesAdvanced += ageLeafRegion(currentPTE, threadInfo);
+                            clearLockBit(currentPTE);
 
-                        // check if zero
-                        if (page->valid_transition_count == 0) {
-                            // the subtree skip: everything below this pte is empty, so the whole
-                            // branch is dropped without descending. This is what the comb buys us
-                            STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_PRUNED]);
-
-                            //then I clear the access bit and put it on age 0 list using interlocked compare exchange
-                            newPTEContents.entireFormat = localPTE.entireFormat;
-                            newPTEContents.validFormat.access = 0;
-
-
-                            PTEContentsAtTimeOfWrite = writePTE(currentPTE, newPTEContents, localPTE);
-
-                            leavePageLock(page, threadInfo);
-
-                            region = getPTERegion(currentPTE);
-
-                            oldAge = getRegionAge(region);
-
-                            if (oldAge == -1) {
-                                addRegionToTail(&vm.pte.ageList[0], region,threadInfo);
-                            }
-
-                            continue;
+                            // ageLeafRegion walks the whole child table unconditionally, so that is
+                            // exactly how many ptes it looked at
+                            ptesVisited += vm.config.pte_entries_per_pagetable;
                         } else {
                             // in this branch, I am diving deeper
                             STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_DESCENDED]);
-                            leavePageLock(page, threadInfo);
+
                             row = 0;
                             break;
                         }
                     }
+
                 } else {
                     // valid and unaccessed: bump in place; the helper also shifts the global histogram
                     oldAge = localPTE.validFormat.age;

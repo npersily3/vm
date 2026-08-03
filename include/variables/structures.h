@@ -118,11 +118,10 @@ typedef struct {
 
 
 #define MAX_FAULTS 0xFFFFFF
-#if DBG
-#define BATCH_SIZE (64)
-#else
+
 #define BATCH_SIZE (512)
-#endif
+
+
 #define NUM_WRITING_BATCHES (128)
 
 #define SCHEDULER_PERIOD_MS (200)
