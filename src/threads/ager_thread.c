@@ -70,19 +70,18 @@ boolean ageUnnaccessedPTE(pte *pteAddress, pte pteContents, ULONG64 *newAge) {
 }
 
 /**
- * @brief Moves the region backing parentPTE's child page table from the oldAge age-list to the
- *        newAge one. Same list shuffle as the tail of ageLeafRegion. No-op when the age is unchanged.
- * @param parentPTE The PTE whose child page table's region should be re-listed.
+ * @brief Moves a region from the oldAge age-list to the newAge one. Same list shuffle as the tail
+ *        of ageLeafRegion. No-op when the age is unchanged.
+ * @param region The region to re-list. The caller names it explicitly: deriving it here from a pte
+ *        was ambiguous, since a pte belongs to one region (getPTERegion) but points at another
+ *        (getStartOfLowerPagetable). Callers were measuring one and moving the other, which removed
+ *        regions from lists they were never on -- corrupting the ring and driving length negative.
  * @param oldAge The age-list the region is currently on.
  * @param newAge The age-list the region should move to.
  * @param threadInfo The caller's thread info, forwarded to the list helpers.
  * @pre The region must be locked.
  */
-VOID shiftAgeList(pte *parentPTE, ULONG64 oldAge, ULONG64 newAge, PTHREAD_INFO threadInfo) {
-    PTE_REGION *region;
-
-    region = getPTERegion(getStartOfLowerPagetable(parentPTE));
-
+VOID shiftAgeList(PTE_REGION *region, ULONG64 oldAge, ULONG64 newAge, PTHREAD_INFO threadInfo) {
     // an off-list region (freshly faulted, or dropped by the trimmer after being emptied) still
     // has to be re-listed even when its age did not move, or nothing ever puts it back and the
     // trimmer sees empty age lists while the region is full of active PTEs
@@ -195,7 +194,8 @@ ULONG64 ageLeafRegion(pte *parentPTE, PTHREAD_INFO threadInfo) {
 
     newAge = getRegionAge(region);
 
-    shiftAgeList(parentPTE, previousAge, newAge, threadInfo);
+    // same region that previousAge/newAge were measured on
+    shiftAgeList(region, previousAge, newAge, threadInfo);
 
     return numPTEsAged;
 }
@@ -236,6 +236,7 @@ DWORD ager_thread(LPVOID info) {
     ULONG64 ptesVisited;
     ULONG64 ptesAdvanced;
     ULONG64 newAge;
+    ULONG64 newPTEAge;
     LONG64 oldAge;
 
     LARGE_INTEGER start, end;
@@ -339,23 +340,25 @@ DWORD ager_thread(LPVOID info) {
 
                 } else {
                     // valid and unaccessed: bump in place; the helper also shifts the global histogram
+                    // currentPTE lives in this region; it does not point at it. Aging currentPTE
+                    // can change this region's max age, and changes nothing in the child table.
                     region = getPTERegion(currentPTE);
                     oldAge = getRegionAge(region);
-                    if (ageUnnaccessedPTE(currentPTE, localPTE, &newAge) == FALSE) {
+                    if (ageUnnaccessedPTE(currentPTE, localPTE, &newPTEAge) == FALSE) {
                         //raced: redo this row (the loop's row++ brings us back). No shift -- nothing moved.
                         row--;
                         continue;
                     }
-                    ptesAdvanced += (newAge - oldAge);
+                    // pte ages for the work counter, region ages for the list move -- keeping them in
+                    // separate locals, since oldAge > newPTEAge would underflow the unsigned subtract
+                    ptesAdvanced += (newPTEAge - localPTE.validFormat.age);
                     newAge = getRegionAge(region);
                     STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_AGED_INPLACE]);
 
-                    // parent aged oldAge -> newAge, so move its child page table's region between
-                    // age-lists; currentPTE's lock bit is that region's lock. The bump MUST come before
-                    // the lock: setLockBit flips a bit writePTE's CAS compares, so a held lock fails it.
-                    setLockBit(currentPTE);
-                    shiftAgeList(currentPTE, oldAge, newAge, threadInfo);
-                    clearLockBit(currentPTE);
+                    // no setLockBit here: that bit guards currentPTE's *child* table, which is not the
+                    // region we are moving. This region's lock is the parent of currentPageTable, and
+                    // lockPTE at the top of the while loop is already holding it for the whole scan.
+                    shiftAgeList(region, oldAge, newAge, threadInfo);
                     continue;
                 }
             }
