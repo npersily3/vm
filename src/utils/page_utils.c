@@ -242,6 +242,7 @@ VOID removeFromMiddleOfPageList(pListHead head, pfn *page, PTHREAD_INFO threadIn
         Flink = container_of(page->entry.Flink, pfn, entry);
         Blink = container_of(page->entry.Blink, pfn, entry);
 
+
         if (tryEnterPageLock(Flink, threadInfo) == TRUE) {
             // set blink to null if there is only one page prevents double acquisitions
             if (Flink == Blink) {

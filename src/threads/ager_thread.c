@@ -339,13 +339,15 @@ DWORD ager_thread(LPVOID info) {
 
                 } else {
                     // valid and unaccessed: bump in place; the helper also shifts the global histogram
-                    oldAge = localPTE.validFormat.age;
+                    region = getPTERegion(currentPTE);
+                    oldAge = getRegionAge(region);
                     if (ageUnnaccessedPTE(currentPTE, localPTE, &newAge) == FALSE) {
                         //raced: redo this row (the loop's row++ brings us back). No shift -- nothing moved.
                         row--;
                         continue;
                     }
                     ptesAdvanced += (newAge - oldAge);
+                    newAge = getRegionAge(region);
                     STAT_INC(threadInfo, agerBranch[STAT_LAYER(layer)][AGER_AGED_INPLACE]);
 
                     // parent aged oldAge -> newAge, so move its child page table's region between
