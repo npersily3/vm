@@ -342,7 +342,6 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
     pte pteContents;
     ULONG64 frameNumber;
     pte newPTE;
-    ULONG64 regionStatus;
     PULONG64 arbitrary_va;
 
     pte* higherLevelPTE;

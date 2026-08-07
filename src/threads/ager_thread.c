@@ -201,7 +201,7 @@ ULONG64 ageLeafRegion(pte *parentPTE, PTHREAD_INFO threadInfo) {
 }
 
 __forceinline
-boolean isSecondToLastLayer(int layer) {
+boolean isSecondToLastLayer(ULONG64 layer) {
     return layer == vm.config.number_of_page_table_layers - 2;
 }
 
@@ -229,7 +229,7 @@ DWORD ager_thread(LPVOID info) {
     threadInfo = (PTHREAD_INFO) info;
     currentPageTable = vm.pte.table;
     ULONG64 initialTotalPTEsToAge;
-    LONG64 totalPTEsLeftToAge;
+    ULONG64 totalPTEsLeftToAge;
     // ptesVisited is work attempted, ptesAdvanced is work that stuck. The quota and the rate metric
     // both key off visited: an accessed pte resets to 0 and a pte at MAX_AGE stays put, so on a hot
     // tree advanced can sit at zero forever and the loop would never terminate.
@@ -280,8 +280,8 @@ DWORD ager_thread(LPVOID info) {
                 // row and counts again, which is correct: it cost us a read and a failed CAS
                 ptesVisited++;
 
-                // cannot age what is not valid
-                if (localPTE.validFormat.valid == 0) {
+                // cannot age what is not valid and changing
+                if (localPTE.validFormat.valid == 0 || localPTE.validFormat.lock == 1) {
                     continue;
                 }
 

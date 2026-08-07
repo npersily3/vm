@@ -56,7 +56,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
         while (true) {
             newPTEContents.entireFormat = oldPTEContents.entireFormat;
 
-            if (oldPTEContents.validFormat.valid == 1) {
+            if (oldPTEContents.validFormat.valid == 1 && oldPTEContents.validFormat.lock == 0) {
                 age = oldPTEContents.validFormat.age;
 
                 // if it is valid  we must clear the age but we cannot clear the access bit because that is unfair aging

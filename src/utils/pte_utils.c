@@ -23,7 +23,7 @@
 #define LAST_NINE_BITS_MASK ((1 << 9) - 1)
 
 //TODO deal with pointer types
-pte *getNextLayer(pte *va, int current_layer, ULONG64 row) {
+pte *getNextLayer(pte *va, ULONG64 current_layer, ULONG64 row) {
     ULONG64 index = va - (pte *) vm.pte.start_of_layer[current_layer];
     pte *base = (pte *) vm.pte.start_of_layer[current_layer + 1];
     return base + ((index << 9) + row);
@@ -38,7 +38,7 @@ pte *getNextLayer(pte *va, int current_layer, ULONG64 row) {
  * @return The nine bit row value
  */
 //TODO some checks
-ULONG64 parseVA_Row_value(ULONG64 va, int layer) {
+ULONG64 parseVA_Row_value(ULONG64 va, ULONG64 layer) {
     ULONG64 temp = va - (ULONG64) vm.va.start;
     temp = temp >> 12;
     return (temp >> ((vm.config.number_of_page_table_layers - 1 - layer) * 9)) & (LAST_NINE_BITS_MASK);
@@ -135,8 +135,8 @@ VOID clearLockBit(pte *pte) {
     ASSERT(val == 1);
 }
 
-int findPTELayer(pte *pte) {
-    for (int i = vm.config.number_of_page_table_layers - 1; i > 0; i--) {
+ULONG64 findPTELayer(pte *pte) {
+    for (ULONG64 i = vm.config.number_of_page_table_layers - 1; i > 0; i--) {
         if (vm.pte.start_of_layer[i] <= (PPAGETABLE) pte) {
             return i;
         }

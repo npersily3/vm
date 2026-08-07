@@ -207,7 +207,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < MAXULONG64 - 1; ) {
+    for (; i < GB(1); ) {
 
         //while (TRUE) {
 #endif
@@ -265,7 +265,7 @@ DWORD testVM(LPVOID lpParam) {
         }
     }
 
-    printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
+    printf("full_virtual_memory_test : finished accessing %llu random virtual addresses\n", i);
 
     return 0;
 }
