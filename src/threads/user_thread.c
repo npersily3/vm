@@ -137,7 +137,7 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
         writePTE(currentPTE, new_pte_contents, old_pte_contents);
 
         higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
-        //TODO can this tear,
+
         higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
 
         enterPageLock(higherLevelPage, threadInfo);
@@ -249,7 +249,7 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
     localPTE.entireFormat = ReadULong64NoFence(&currentPTEAddress->entireFormat);
 
     if (localPTE.validFormat.valid == 0) {
-        //TODO make sure everything works with onlockin in the loop
+
         while (true) {
             if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
                 break;
@@ -283,7 +283,7 @@ BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
 
         // I make sure the pte is valid
         if (localPTE.validFormat.valid == 0) {
-            //TODO make sure everything works with onlockin in the loop  ( we probably need to lock and unlock the pte)
+           //the lock and unlock
             while (true) {
                 if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
                     break;

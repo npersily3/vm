@@ -86,6 +86,8 @@ boolean setAccessBit(ULONG64 va) {
     pte oldPTE;
     ULONG64 row;
 
+    pteAddress = get
+
    for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
        row = parseVA_Row_value(va, i);
        if (i == 0) {
@@ -102,6 +104,10 @@ boolean setAccessBit(ULONG64 va) {
                if (oldPTE.validFormat.valid == 0) {
                    return REDO_FAULT;
                }
+
+               if (oldPTE.validFormat.access == 1) {
+                   break;
+               }
                newPTE.entireFormat = oldPTE.entireFormat;
 
                newPTE.validFormat.access = 1;
@@ -110,6 +116,10 @@ boolean setAccessBit(ULONG64 va) {
                pte prev = writePTE(pteAddress, newPTE, oldPTE);
                if (prev.entireFormat == oldPTE.entireFormat) {
                    break;
+               }
+               // in this case we raced and lost to the trimmer
+               if (prev.validFormat.valid == 0) {
+                   return false;
                }
            } __except(EXCEPTION_EXECUTE_HANDLER) {
                printf("?");
@@ -157,12 +167,12 @@ full_virtual_memory_test(VOID) {
     ResetEvent(vm.events.systemShutdown);
 
     end = GetTickCount64();
-    // Now that we're done with our memory we can be a good
-    // citizen and free it.
-    //TODO free everything else
-    VirtualFree(vm.va.start, 0, MEM_RELEASE);
 
+    // Now that we're done with our memory we can be a good citizen and free it. printStats reads
+    // the thread contexts and list lengths, so it has to run first.
     printStats(end - start);
+
+    cleanup_virtual_memory();
 
     return;
 }
@@ -207,7 +217,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < GB(1); ) {
+    for (; i < GB(10); ) {
 
         //while (TRUE) {
 #endif

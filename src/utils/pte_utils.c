@@ -22,7 +22,7 @@
 //Decide what it does
 #define LAST_NINE_BITS_MASK ((1 << 9) - 1)
 
-//TODO deal with pointer types
+
 pte *getNextLayer(pte *va, ULONG64 current_layer, ULONG64 row) {
     ULONG64 index = va - (pte *) vm.pte.start_of_layer[current_layer];
     pte *base = (pte *) vm.pte.start_of_layer[current_layer + 1];
@@ -30,6 +30,20 @@ pte *getNextLayer(pte *va, ULONG64 current_layer, ULONG64 row) {
 }
 
 
+pte* getLeafPTEAddress(ULONG64 va) {
+    pte* currentPTE;
+    ULONG64 row;
+
+    currentPTE = &vm.pte.start_of_layer[0]->pagetable[0];
+
+    for (ULONG64 i = 0; i < vm.config.number_of_page_table_layers; i++) {
+        row = parseVA_Row_value(va, i);
+        currentPTE = getNextLayer(currentPTE, row, 0);
+    }
+
+
+    return currentPTE;
+}
 
 /**
  *
@@ -37,7 +51,7 @@ pte *getNextLayer(pte *va, ULONG64 current_layer, ULONG64 row) {
  * @param layer what page table layer it represents
  * @return The nine bit row value
  */
-//TODO some checks
+
 ULONG64 parseVA_Row_value(ULONG64 va, ULONG64 layer) {
     ULONG64 temp = va - (ULONG64) vm.va.start;
     temp = temp >> 12;

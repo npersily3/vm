@@ -23,6 +23,8 @@ BOOL getPhysicalPages (VOID);
 VOID init_lists(VOID);
 VOID init_free_list(VOID);
 VOID init_list_head(pListHead head);
+VOID delete_list_head(pListHead head);
+VOID cleanup_virtual_memory(VOID);
 VOID init_num_open_slots(VOID);
 VOID init_disk_active(VOID);
 PVOID init_memory(ULONG64 numBytes);

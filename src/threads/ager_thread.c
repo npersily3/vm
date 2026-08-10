@@ -269,6 +269,8 @@ DWORD ager_thread(LPVOID info) {
         QueryPerformanceCounter(&start);
 
         while (ptesVisited < totalPTEsLeftToAge) {
+
+            //TODO big bug where this could fail do to the trimmer working fast
             lockPTE(&currentPageTable->pagetable[row]);
 
             for (; row < vm.config.pte_entries_per_pagetable; row++) {
@@ -362,11 +364,6 @@ DWORD ager_thread(LPVOID info) {
                     continue;
                 }
             }
-
-            //NOTICE (Resolved but keeping comment) I think there is a huge bug, where there is no way for me to clear a parent access bit with absolute certainty that there is no valid ptes,
-            // there is a pathological case where someone slips in and accesses that pte after
-            // The slip in does not matter because the only person who can change a valid to invalid needs the lock we hold.
-
 
 
             unlockPTE(currentPTE);

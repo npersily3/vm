@@ -36,6 +36,7 @@ VOID checkVA(PULONG_PTR va);
 
 pte* getNextLayer(pte* va, ULONG64 current_layer, ULONG64 row);
 ULONG64 parseVA_Row_value(ULONG64 va, ULONG64 layer);
+pte* getLeafPTEAddress(ULONG64 va) ;
 
 ULONG64 findPTELayer(pte *pte);
 pte *getHigherLevelPTEAddress(pte *currentPTE);

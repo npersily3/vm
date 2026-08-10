@@ -219,12 +219,7 @@ VOID init_pte_regions(VOID) {
     vm.pte.globalNumOfAge[0].count = 0;
 
     PTE_REGION *currentRegion = vm.pte.regions_base;
-    for (int i = 0; i < vm.config.cumulative_number_of_page_tables; ++i) {
-        InitializeCriticalSection(&currentRegion->lock);
 
-
-        currentRegion++;
-    }
 }
 
 VOID init_pageTable(VOID) {
@@ -417,7 +412,7 @@ VOID init_list_head(pListHead head) {
     InitializeSRWLock(&head->sharedLock.sharedLock);
 
     InitializeCriticalSection(&head->page.lock);
-    InitializeCriticalSection(&head->region.lock);
+
 
 #if DBG
     head->sharedLock.numHeldShared = 0;
@@ -556,4 +551,95 @@ PVOID init_memory(ULONG64 numBytes) {
 
     memset(new, 0, numBytes);
     return new;
+}
+
+VOID delete_list_head(pListHead head) {
+    // the SRWLOCK needs no teardown
+    DeleteCriticalSection(&head->page.lock);
+
+#if DBG
+    DeleteCriticalSection(&head->sharedLock.debugLock);
+#endif
+}
+
+/**
+ * @brief Tears down everything init_virtual_memory built, in reverse order.
+ *
+ * Only safe once every thread has exited - nothing here checks for live users, and deleting a
+ * critical section someone still holds is undefined. Call it after printStats, which still reads
+ * vm.threadInfo and the list lengths.
+ */
+VOID cleanup_virtual_memory(VOID) {
+    // threads: the handles, their contexts, and the per-user local list locks
+    for (ULONG64 i = 0; i < vm.config.number_of_user_threads; ++i) {
+        CloseHandle(vm.events.userThreadHandles[i]);
+        delete_list_head(&vm.threadInfo.user[i].localList);
+    }
+    for (ULONG64 i = 0; i < vm.config.number_of_system_threads; ++i) {
+        CloseHandle(vm.events.systemThreadHandles[i]);
+    }
+    free(vm.events.userThreadHandles);
+    free(vm.events.systemThreadHandles);
+    free(vm.threadInfo.user);
+    free(vm.threadInfo.trimmer);
+    free(vm.threadInfo.writer);
+    free(vm.threadInfo.aging);
+    free(vm.threadInfo.scheduler);
+
+    CloseHandle(vm.events.userStart);
+    CloseHandle(vm.events.writingStart);
+    CloseHandle(vm.events.trimmingStart);
+    CloseHandle(vm.events.writingEnd);
+    CloseHandle(vm.events.agerStart);
+    CloseHandle(vm.events.systemShutdown);
+
+    // page lists. vm.lists.zeroed is never initialized (see init_lists), so it is not torn down.
+    delete_list_head(&vm.lists.standby);
+    delete_list_head(&vm.lists.modified);
+    for (ULONG64 i = 0; i < vm.config.number_of_free_lists; ++i) {
+        delete_list_head(&vm.lists.free.heads[i]);
+    }
+    free(vm.lists.free.heads);
+
+    // pte regions and the age lists they hang off
+    for (int i = 0; i < NUMBER_OF_AGES; ++i) {
+        delete_list_head(&vm.pte.ageList[i]);
+    }
+
+    free(vm.pte.regions_base);
+    free(vm.pte.start_of_layer);
+    DeleteCriticalSection(&vm.pte.rootLock);
+
+    // disk
+    free(vm.disk.number_of_open_slots);
+    free(vm.disk.activeVa);
+    free(vm.disk.active);
+    free(vm.disk.start);
+
+    // the pfn locks live inside the pfn database, so they must go before it is released. Frame 0 is
+    // the pinned root page directory - init_free_list never gave it a lock.
+    for (ULONG64 i = 1; i < vm.pfn.physical_page_count; ++i) {
+        DeleteCriticalSection(&(vm.pfn.start + vm.pfn.physical_page_numbers[i])->lock);
+    }
+
+    // Releasing the MEM_PHYSICAL regions unmaps their frames, which FreeUserPhysicalPages requires.
+    for (ULONG64 i = 0; i < vm.config.number_of_user_threads; ++i) {
+        VirtualFree(vm.va.userThreadTransfer[i], 0, MEM_RELEASE);
+    }
+    free(vm.va.userThreadTransfer);
+    VirtualFree(vm.va.writing, 0, MEM_RELEASE);
+    VirtualFree(vm.va.start, 0, MEM_RELEASE);
+    VirtualFree(vm.pte.table, 0, MEM_RELEASE);
+    VirtualFree(vm.pfn.start, 0, MEM_RELEASE);
+
+    FreeUserPhysicalPages(vm.events.physical_page_handle,
+                          &vm.pfn.physical_page_count,
+                          vm.pfn.physical_page_numbers);
+    free(vm.pfn.physical_page_numbers);
+    CloseHandle(vm.events.physical_page_handle);
+
+#if DBG
+    free(vm.pte.debugBuffer);
+    free(vm.pfn.debugBuffer);
+#endif
 }

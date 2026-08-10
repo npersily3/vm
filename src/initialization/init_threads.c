@@ -31,8 +31,6 @@ VOID createThreads(VOID) {
     HANDLE Handle;
 
 
-    PTHREAD_INFO ThreadInfo = init_memory(sizeof(THREAD_INFO) * vm.config.number_of_threads);
-
     PTHREAD_INFO UserThreadInfo = init_memory(vm.config.number_of_user_threads * sizeof(THREAD_INFO));
     PTHREAD_INFO TrimmerThreadInfo = init_memory(vm.config.number_of_trimming_threads * sizeof(THREAD_INFO));
     PTHREAD_INFO WriterThreadInfo = init_memory(vm.config.number_of_writing_threads * sizeof(THREAD_INFO));

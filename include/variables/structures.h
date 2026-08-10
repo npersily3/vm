@@ -341,15 +341,7 @@ typedef struct _SHARED_HOLDER_DEBUG {
 typedef struct {
     LIST_ENTRY entry;
     stochastic_data statistics;
-  //  sharedLock lock;
-    CRITICAL_SECTION lock;
 
-    ULONG64 hasAgeableEntry: 1;
-#if DBG
-
-    ULONG64 ageMap[64];
-    LONG64 ageListNumber;
-#endif
 
 }  PTE_REGION;
 
