@@ -15,6 +15,8 @@
 #define         DBG 0
 #define DBG_DISK 0
 
+#define DISK_DELAY_MS 0
+
 
 #if DBG
 #define ASSERT(x) if ((x) == FALSE) DebugBreak();

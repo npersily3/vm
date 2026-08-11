@@ -84,20 +84,11 @@ boolean setAccessBit(ULONG64 va) {
     pte *pteAddress;
     pte newPTE;
     pte oldPTE;
-    ULONG64 row;
 
-    pteAddress = get
+    pteAddress = getLeafPTEAddress(va);
+
 
    for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
-       row = parseVA_Row_value(va, i);
-       if (i == 0) {
-           // root pte: entry row0 of the single layer-0 pagetable
-           pteAddress = (pte *) vm.pte.start_of_layer[0] + row;
-       } else {
-           // descend from the layer i-1 parent into layer i
-           pteAddress = getNextLayer(pteAddress, i - 1, row);
-       }
-
        while (true) {
            __try {
                oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64 *) pteAddress);
@@ -106,7 +97,7 @@ boolean setAccessBit(ULONG64 va) {
                }
 
                if (oldPTE.validFormat.access == 1) {
-                   break;
+                   return !REDO_FAULT;
                }
                newPTE.entireFormat = oldPTE.entireFormat;
 
@@ -122,10 +113,14 @@ boolean setAccessBit(ULONG64 va) {
                    return false;
                }
            } __except(EXCEPTION_EXECUTE_HANDLER) {
+               DebugBreak();
                printf("?");
                break;
            }
-
+       }
+       // the root has no parent -- getHigherLevelPTEAddress would read start_of_layer[-1]
+       if (i + 1 < vm.config.number_of_page_table_layers) {
+           pteAddress = getHigherLevelPTEAddress(pteAddress);
        }
    }
 
@@ -217,7 +212,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < GB(10); ) {
+    for (; i < GB(100); ) {
 
         //while (TRUE) {
 #endif

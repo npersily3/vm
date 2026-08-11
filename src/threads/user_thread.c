@@ -735,6 +735,11 @@ modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
 
     memcpy(transferVaLocation, (PVOID) diskAddress, PAGE_SIZE);
 
+
+#if DISK_DELAY_MS
+
+    Sleep(DISK_DELAY_MS);
+#endif
     freeThreadMapping(threadContext);
 
     set_disk_space_free(diskIndex);

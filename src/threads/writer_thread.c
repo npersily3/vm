@@ -249,6 +249,10 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
         memcpy((PVOID) diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE), PAGE_SIZE);
     }
 
+
+#if DISK_DELAY_MS
+    Sleep(DISK_DELAY_MS);
+#endif
     freeWriterThreadMapping(ThreadContext);
 }
 

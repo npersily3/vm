@@ -34,11 +34,14 @@ pte* getLeafPTEAddress(ULONG64 va) {
     pte* currentPTE;
     ULONG64 row;
 
-    currentPTE = &vm.pte.start_of_layer[0]->pagetable[0];
+    // Seed with row 0 -- the root pte is selected by indexing, not by descending, so the loop below
+    // runs one fewer time than there are layers. Descending L times instead would consume row i as
+    // layer i+1's index and run getNextLayer off the end of start_of_layer.
+    currentPTE = (pte *) vm.pte.start_of_layer[0] + parseVA_Row_value(va, 0);
 
-    for (ULONG64 i = 0; i < vm.config.number_of_page_table_layers; i++) {
+    for (ULONG64 i = 1; i < vm.config.number_of_page_table_layers; i++) {
         row = parseVA_Row_value(va, i);
-        currentPTE = getNextLayer(currentPTE, row, 0);
+        currentPTE = getNextLayer(currentPTE, i - 1, row);
     }
 
 
