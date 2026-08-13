@@ -129,7 +129,7 @@ The locking follows the tree's shape: a region's lock is the lock bit of the PTE
 
 [![A three-layer page table tree drawn left to right, with a user walk slicing the virtual address 0x1d000 into the indices (1, 3, 1, offset), and the three cases the ager can hit at an interior PTE](images/figure3-multilevel.svg)](images/figure3-multilevel.svg)
 
-*Orange is the user's walk, green is the ager. Each PTE is drawn as its age, access, and valid fields, and the tables hold four entries instead of 512 so the whole tree fits. The three green cases are the aging protocol described below.*
+*Orange is the user's walk, green is the ager. Each PTE is drawn as its age, access, and valid fields, and the tables hold four entries instead of 512 so the whole tree fits. The three green cases are the aging protocol described above.*
 
 
 #### **How This Shifted the Access Pattern**
