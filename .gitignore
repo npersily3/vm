@@ -256,3 +256,6 @@
 /cmake-build-experiments/CMakeFiles/vm.dir/src/threads/writer_thread.c.obj
 /cmake-build-bisect/CMakeFiles/vm.dir/src/threads/zero_thread.c.obj
 /cmake-build-experiments/CMakeFiles/vm.dir/src/threads/zero_thread.c.obj
+
+# draw.io autosave backups
+.$*.bkp
