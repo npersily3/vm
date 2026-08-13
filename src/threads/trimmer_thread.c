@@ -16,14 +16,13 @@
 #include "threads/ager_thread.h"
 #include "threads/user_thread.h"
 #include "utils/pte_regions_utils.h"
+#include "utils/stats.h"
 
 /**
  *@file trimmer_thread.c
  *@brief This file contains protocal for unmapping active pages and adding them to a modified list.
  *@author Noah Persily
 */
-
-
 
 
 #if CORRECTNESS
@@ -39,7 +38,6 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     pte *currentPTE;
     pfn *page;
     ULONG64 age;
-    boolean regionHasActiveEntry;
 
     currentPTE = getFirstPTEInRegion(currentRegion);
 
@@ -50,7 +48,7 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     trimmedPagesInRegion = 0;
     ULONG64 pteIndex = 0;
     // for every pte
-    for (; pteIndex < vm.config.number_of_ptes_per_region; pteIndex++) {
+    for (; pteIndex < vm.config.pte_entries_per_pagetable; pteIndex++) {
         // when we find a valid pte, invalidate it and store its info in stack variables
 
         oldPTEContents.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
@@ -58,22 +56,19 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
         while (true) {
             newPTEContents.entireFormat = oldPTEContents.entireFormat;
 
-            if (oldPTEContents.validFormat.valid == 1) {
+            if (oldPTEContents.validFormat.valid == 1 && oldPTEContents.validFormat.lock == 0) {
                 age = oldPTEContents.validFormat.age;
-
-                ASSERT(currentRegion->numOfAge[age] != 0)
 
                 // if it is valid  we must clear the age but we cannot clear the access bit because that is unfair aging
                 if (oldPTEContents.validFormat.access == 1) {
                     newPTEContents.validFormat.access = 1;
                     newPTEContents.validFormat.age = 0;
 
-                    ASSERT(currentRegion->numOfAge > 0)
-                    currentRegion->numOfAge[age]--;
                     InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
-
-                    currentRegion->numOfAge[0]++;
                     InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
+
+                    // walked all the way out here and got nothing: the pte was touched since aging
+                    STAT_INC(threadContext, trimSkippedAccessed);
 
                     pteAtTimeOfWrite = writePTE(currentPTE, newPTEContents, oldPTEContents);
 
@@ -81,7 +76,6 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
                     // we can break regardless of the result, because the only guy who can change it simultaneously is the access bit setter
                     // and we know that the access bit is already set, so no change will occur so that we can break regardless
                     break;
-
                 }
 
                 // this is for the case when the pte is valid and unnaccessed
@@ -97,34 +91,23 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
 
                 // case where write succeeds
 
-                ASSERT(currentRegion->numOfAge > 0)
-                currentRegion->numOfAge[age]--;
                 InterlockedDecrement64(&vm.pte.globalNumOfAge[age].count);
 
+                // the age this pte had reached when we took its page. Bunched at MAX_AGE means the
+                // ager is doing its job; bunched at 0-1 means we are trimming pages that are still hot
+                STAT_INC(threadContext, trimmedAge[age]);
 
                 page = getPFNfromFrameNumber(oldPTEContents.transitionFormat.frameNumber);
                 page->location = MODIFIED_LIST;
                 virtualAddresses[trimmedPagesInRegion] = (ULONG64) pte_to_va(currentPTE);
                 pages[trimmedPagesInRegion] = page;
                 trimmedPagesInRegion++;
-
             }
 
             break;
         }
         currentPTE++;
     }
-    currentPTE = getFirstPTEInRegion(currentRegion);
-    regionHasActiveEntry = FALSE;
-    for (int i = 0; i < vm.config.number_of_ptes_per_region; i++) {
-        if (currentPTE->validFormat.valid == 1) {
-            regionHasActiveEntry = TRUE;
-            break;
-        }
-        currentPTE++;
-    }
-    currentRegion->hasActiveEntry = regionHasActiveEntry;
-
     // batched unmap and add to modified list
     unmapBatch(virtualAddresses, trimmedPagesInRegion);
 
@@ -136,18 +119,22 @@ ULONG64 trimRegion(PTE_REGION *currentRegion, PTHREAD_INFO threadContext) {
     volatile ULONG64 counter;
 
     for (int i = 0; i < CORRECTNESS_SIZE; i++) {
-        counter = correctness[i*PAGE_SIZE/sizeof(ULONG64)];
+        counter = correctness[i * PAGE_SIZE / sizeof(ULONG64)];
     }
 #endif
 
 
     addBatchToModifiedList(pages, trimmedPagesInRegion, threadContext);
 
+    STAT_SAMPLE(threadContext, trimBatch, trimmedPagesInRegion);
+    if (trimmedPagesInRegion == 0) {
+        STAT_INC(threadContext, trimEmptyRegions);
+    }
 
     return trimmedPagesInRegion;
 }
 
-//TODO rewrite to return age 0 regions
+
 PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
     LONG64 age;
     age = MAX_AGE;
@@ -158,10 +145,13 @@ PTE_REGION *getOldestRegion(PTHREAD_INFO threadContext) {
 
 
         if (oldestRegion != NULL) {
+            // which age list actually had a victim. Always landing on age 0 means we are out of slack
+            STAT_INC(threadContext, victimFromAge[age]);
             return oldestRegion;
         }
     }
 
+    STAT_INC(threadContext, victimNotFound);
     return NULL;
 }
 
@@ -199,22 +189,21 @@ DWORD page_trimmer(LPVOID info) {
     events[1] = vm.events.systemShutdown;
 
 
-    currentRegion = vm.pte.RegionsBase;
+    currentRegion = vm.pte.regions_base;
 
     ULONG64 numToTrimLocal;
-    ULONG64 numFromLocalList;
 
 
 #if CORRECTNESS
 
     correctness = VirtualAlloc(NULL, PAGE_SIZE * CORRECTNESS_SIZE, MEM_RESERVE | MEM_COMMIT,PAGE_READWRITE);
 
-    if (correctness == NULL ) {
+    if (correctness == NULL) {
         DebugBreak();
     }
 
     for (int i = 0; i < CORRECTNESS_SIZE; i++) {
-        correctness[i*PAGE_SIZE/sizeof(ULONG64)] = 0;
+        correctness[i * PAGE_SIZE / sizeof(ULONG64)] = 0;
     }
 
 #endif
@@ -237,14 +226,10 @@ DWORD page_trimmer(LPVOID info) {
         QueryPerformanceCounter(&start);
 
         numToTrimLocal = ReadULong64NoFence(&vm.pte.numToTrim);
-        numFromLocalList = recallPagesFromLocalList(threadContext);
 
-        if (numFromLocalList >= numToTrimLocal) {
-            WriteULong64NoFence(&vm.pte.numToTrim, 0);
-            SetEvent(vm.events.writingStart);
-            continue;
-        }
-        numToTrimLocal -= numFromLocalList;
+        // decrements numToTrimLocal by what it recalls, so if the local caches covered the whole
+        // quota the trim loop below is simply skipped
+        recallPagesFromLocalList(threadContext, &numToTrimLocal);
 
 
         // if we have trimmed enough, or have combed through everything
@@ -254,62 +239,51 @@ DWORD page_trimmer(LPVOID info) {
 
             //nothing to trim
             if (currentRegion == NULL) {
+                STAT_INC(threadContext, quotaShort);
                 break;
             }
 
 
-            // check to see if there are any active entries in this region
-            if (currentRegion->hasActiveEntry == TRUE) {
-                ULONG64 finalAge;
+            LONG64 finalAge;
 
-                // get a region, trim it, and move it to the tail of the age list
-                trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
-                totalTrimmedPages += trimmedPagesInRegion;
+            // get a region, trim it, and move it to the tail of the age list
+            trimmedPagesInRegion = trimRegion(currentRegion, threadContext);
+            totalTrimmedPages += trimmedPagesInRegion;
 
-                // wake the writer as soon as the first batch lands, instead of waiting for our whole
-                // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
-                if (signaledWriter == FALSE && trimmedPagesInRegion > 0) {
-                    SetEvent(vm.events.writingStart);
-                    signaledWriter = TRUE;
-                }
-
-
-                if (currentRegion->hasActiveEntry == TRUE) {
-                    finalAge = getRegionAge(currentRegion);
-
-                    addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
-                }
-
-
-
-
-
-
-                leavePTERegionLock(currentRegion, threadContext);
-
-                InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
-            } else {
-
-
-                leavePTERegionLock(currentRegion, threadContext);
-                counter++;
+            // wake the writer as soon as the first batch lands, instead of waiting for our whole
+            // quota, so trimming and writing run concurrently (pipelined) rather than sequentially
+            if (trimmedPagesInRegion > 0) {
+                SetEvent(vm.events.writingStart);
+                signaledWriter = TRUE;
             }
-            
+
+            // after I trim everything put it back on the appropriate age list, unless it has no
+            // valid PTEs left (getRegionAge == -1)
+            finalAge = getRegionAge(currentRegion);
+            if (finalAge != -1) {
+                addRegionToTail(&vm.pte.ageList[finalAge], currentRegion, threadContext);
+            }
+
+
+            leavePTERegionLock(currentRegion, threadContext);
+
+            InterlockedAdd64(&vm.pfn.numActivePages, 0 - trimmedPagesInRegion);
+
+
             if (WaitForSingleObject(vm.events.systemShutdown, 0) == WAIT_OBJECT_0) {
                 return 0;
             }
-
         }
 
         QueryPerformanceCounter(&end);
 
         recordWork(threadContext, end.QuadPart - start.QuadPart, totalTrimmedPages);
 
+        if (totalTrimmedPages >= numToTrimLocal) {
+            STAT_INC(threadContext, quotaMet);
+        }
 
-
-
-
-        vm.misc.numTrims++;
+        InterlockedIncrement64((volatile LONG64 *) &vm.misc.numTrims);
 
         // fallback: if we never trimmed anything this cycle, the writer still needs a chance to
         // drain whatever's already on the modified list from before
@@ -322,29 +296,32 @@ DWORD page_trimmer(LPVOID info) {
 /**
  * @brief This function recalls pages from the local lists and adds them to the free lists.
  * @param trimThreadContext Thread info of the caller
- * @return The number of pages that were recalled from the local lists.
+ * @param numNeeded How many pages are still wanted. Decremented by every page recalled, so the
+ *        caller sees exactly how much quota is left. Recalling past the quota is pure loss: each
+ *        extra page just pushes that user thread back onto the slow free-list path on its next fault.
  */
-ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
+VOID recallPagesFromLocalList(PTHREAD_INFO trimThreadContext, PULONG64 numNeeded) {
     PTHREAD_INFO currentThreadContext;
     pfn *page;
-    ULONG64 counter;
     listHead trimmerLocalList;
     PLIST_ENTRY entry;
     pListHead head;
 
 
-    counter = 0;
     init_list_head(&trimmerLocalList);
 
-    for (int i = 0; i < vm.config.number_of_user_threads; i++) {
+    ULONG64 quotaOnEntry = *numNeeded;
+    STAT_INC(trimThreadContext, recallWakeups);
+
+    for (int i = 0; i < vm.config.number_of_user_threads && *numNeeded != 0; i++) {
         currentThreadContext = &vm.threadInfo.user[i];
 
         head = &currentThreadContext->localList;
         acquire_srw_exclusive(&head->sharedLock, trimThreadContext);
 
 
-        // make order one
-        while (&head->entry != head->entry.Flink) {
+        // make order one, but stop as soon as we have staged what is left of the quota
+        while (&head->entry != head->entry.Flink && (ULONG64) trimmerLocalList.length < *numNeeded) {
             entry = RemoveHeadList(head);
             page = container_of(entry, pfn, entry);
             InsertHeadList(&trimmerLocalList, &page->entry);
@@ -367,10 +344,11 @@ ULONG64 recallPagesFromLocalList(PTHREAD_INFO trimThreadContext) {
             entry = RemoveHeadList(head);
             page = container_of(entry, pfn, entry);
             addPageToFreeList(page, trimThreadContext);
-            counter++;
+            (*numNeeded)--;
         }
     }
-    return counter;
+
+    STAT_ADD(trimThreadContext, recalled, quotaOnEntry - *numNeeded);
 }
 
 

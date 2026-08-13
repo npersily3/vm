@@ -12,6 +12,7 @@
 #include "threads/user_thread.h"
 #include "utils/random_utils.h"
 #include "utils/statistics_utils.h"
+#include "utils/stats.h"
 
 // Timestamp counter for random number generation
 static __inline unsigned __int64 GetTimeStampCounter(void) {
@@ -56,7 +57,8 @@ PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
 PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO thread_info) {
     // Generate the next VA
     PULONG_PTR new_va = (previous_va + 1);
-    if (new_va >= vm.va.end)
+    // wrap at the committed window (not vm.va.end) so the sequential walk stays backable too
+    if (new_va >= vm.va.start + vm.config.virtual_address_size_in_unsigned_chunks)
         new_va = vm.va.start;
 
     // If we are still within a given page, return this VA and continue on.
@@ -83,17 +85,45 @@ boolean setAccessBit(ULONG64 va) {
     pte newPTE;
     pte oldPTE;
 
+    pteAddress = getLeafPTEAddress(va);
 
-    pteAddress = va_to_pte(va);
-    oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64 *) pteAddress);
-    if (oldPTE.validFormat.valid == 0) {
-        return REDO_FAULT;
-    }
-    newPTE.entireFormat = oldPTE.entireFormat;
 
-    newPTE.validFormat.access = 1;
+   for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
+       while (true) {
+           __try {
+               oldPTE.entireFormat = ReadULong64NoFence((volatile ULONG64 *) pteAddress);
+               if (oldPTE.validFormat.valid == 0) {
+                   return REDO_FAULT;
+               }
 
-    writePTE(pteAddress, newPTE, oldPTE);
+               if (oldPTE.validFormat.access == 1) {
+                   return !REDO_FAULT;
+               }
+               newPTE.entireFormat = oldPTE.entireFormat;
+
+               newPTE.validFormat.access = 1;
+
+               // retry only if the compare-exchange lost a race; break once it lands
+               pte prev = writePTE(pteAddress, newPTE, oldPTE);
+               if (prev.entireFormat == oldPTE.entireFormat) {
+                   break;
+               }
+               // in this case we raced and lost to the trimmer
+               if (prev.validFormat.valid == 0) {
+                   return false;
+               }
+           } __except(EXCEPTION_EXECUTE_HANDLER) {
+               DebugBreak();
+               printf("?");
+               break;
+           }
+       }
+       // the root has no parent -- getHigherLevelPTEAddress would read start_of_layer[-1]
+       if (i + 1 < vm.config.number_of_page_table_layers) {
+           pteAddress = getHigherLevelPTEAddress(pteAddress);
+       }
+   }
+
     return 0;
 }
 
@@ -132,43 +162,12 @@ full_virtual_memory_test(VOID) {
     ResetEvent(vm.events.systemShutdown);
 
     end = GetTickCount64();
-    // Now that we're done with our memory we can be a good
-    // citizen and free it.
-    //TODO free everything else
-    VirtualFree(vm.va.start, 0, MEM_RELEASE);
 
-    printf("Elapsed time: %llu ms\n", end - start);
+    // Now that we're done with our memory we can be a good citizen and free it. printStats reads
+    // the thread contexts and list lengths, so it has to run first.
+    printStats(end - start);
 
-    printf("StandBy length %llu  \n", vm.lists.standby.length);
-    printf("Modified length %llu \n", vm.lists.modified.length);
-    printf("Free length %llu \n", vm.lists.free.length);
-    printf("Active length %llu \n", vm.pfn.numActivePages);
-
-    printf("pagewaits %llu \n", vm.misc.pageWaits);
-    printf("total time waiting %llu ticks\n", (vm.misc.totalTimeWaiting));
-
-
-    printf("num physical: %llu \n", vm.config.number_of_physical_pages * PAGE_SIZE / GB(1));
-    printf("num virtual: %llu G\n", vm.config.virtual_address_size / GB(1));
-    printf("num userthreads: %llu \n", vm.config.number_of_user_threads);
-    printf("num freelists: %llu \n", vm.config.number_of_free_lists);
-
-
-    printf("num active pages: %llu \n", vm.pfn.numActivePages);
-
-    double totalHardFaults = (double) vm.misc.pagesFromFree + vm.misc.pagesFromLocalCache + vm.misc.pagesFromStandBy;
-    double totalFaults = vm.misc.numRescues + totalHardFaults;
-
-    printf("num faults %.0f \n", totalFaults);
-    printf("num hard faults %.0f \n", totalHardFaults);
-
-    printf("rescue percentage: %.2f%% \n", ((vm.misc.numRescues / totalFaults) * 100));
-    printf("hard fault percentage: %.2f%% \n", ((totalHardFaults / totalFaults) * 100));
-    printf("Percentages of hard faults:\n");
-
-    printf("num freeList: %.2f%% \n", vm.misc.pagesFromFree / totalHardFaults * 100);
-    printf("num localCache: %.2f%% \n", vm.misc.pagesFromLocalCache / totalHardFaults * 100);
-    printf("num standBy: %.2f%% \n", vm.misc.pagesFromStandBy / totalHardFaults * 100);
+    cleanup_virtual_memory();
 
     return;
 }
@@ -185,7 +184,7 @@ DWORD testVM(LPVOID lpParam) {
     // DebugBreak();
 
     PULONG_PTR arbitrary_va;
-    unsigned i;
+    ULONG64 i;
     PTHREAD_INFO thread_info;
 
     BOOL page_faulted;
@@ -206,17 +205,19 @@ DWORD testVM(LPVOID lpParam) {
     arbitrary_va = get_arbitrary_va(thread_info);
     // Now perform random accesses
 
-// Depending on if we are in debug/performance test mode, spin forever
-#if DBG || spinEvents
+    // Depending on if we are in debug/performance test mode, spin forever
+#if spinEvents || DBG || 0
     while (TRUE) {
 
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < MB(500); i++) {
+    for (; i < GB(100); ) {
+
         //while (TRUE) {
 #endif
 
+        i++;
 
         // Randomly access different portions of the virtual address
         // space we obtained above.
@@ -252,7 +253,7 @@ DWORD testVM(LPVOID lpParam) {
             redo_fault = REDO_FAULT;
             counter = 0;
             while (redo_fault == REDO_FAULT) {
-                redo_fault = pageFault(arbitrary_va, lpParam);
+                redo_fault = pageFaultEntryPoint(arbitrary_va, lpParam);
             }
             redo_try_same_address = TRUE;
             i--;
@@ -262,22 +263,22 @@ DWORD testVM(LPVOID lpParam) {
 
 
 #if 1 || DBG
-            if (i % MB(10) == 0) {
+            if (i % MB(5) == 0) {
                 printf(".");
             }
 #endif
         }
     }
 
-    printf("full_virtual_memory_test : finished accessing %u random virtual addresses\n", i);
+    printf("full_virtual_memory_test : finished accessing %llu random virtual addresses\n", i);
 
     return 0;
 }
 
 
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
     // Test our very complicated usermode virtual implementation.
-    //
+    //\
     // We will control the virtual and physical address space management
     // ourselves with the only two exceptions being that we will :
     //
@@ -298,20 +299,31 @@ main(int argc, char **argv) {
     //
     // This is where we can be as creative as we like, the sky's the limit !
     memset(&vm, 0, sizeof(vm));
-    //calls get physical pages, because his parameters might change
-    init_base_config();
 
     if (argc > 1) {
-        if (argc != 5) {
-            printf("should be of format -> vm_debug [numUserThreads] [vaSizeInGigs] [paSizeInGigs]  [numFreeLists]");
+        if (argc != 6) {
+            printf("should be of format -> vm_debug [numUserThreads] [layers] [paSizeInGigs]  [numFreeLists] [diskInGigs]");
             exit(1);
         }
 
         ULONG64 userThreads = (ULONG64) atoi(argv[1]);
-        ULONG64 vaSizeInGigs = (ULONG64) atoi(argv[2]);
+        ULONG64 num_layers = (ULONG64) atoi(argv[2]);
         ULONG64 paSizeInGigs = (ULONG64) atoi(argv[3]);
         ULONG64 numFreeLists = (ULONG64) atoi(argv[4]);
+        ULONG64 diskSizeInGigs = (ULONG64) atoi(argv[5]);
+
+        init_config_params(userThreads, num_layers, paSizeInGigs, numFreeLists, diskSizeInGigs);
     } else {
+        // default: 8 user threads, 2 pte layers (1 GB VA), 1 GB physical, 16 free lists, 1 GB disk.
+        // L=2 keeps VA (1 GB) fully backable by physical+disk, so uniform-random access stays
+        // within commit. TODO: support n layers by default (L=3 = 512 GB VA) once the test uses a
+        // locality-biased access pattern instead of uniform-random, so we don't outrun commit.
+#if DBG
+        init_config_params(8, 3, 1, 16, 1);
+
+#else
+        init_config_params(8, 3, 2, 16, 2);
+#endif
     }
     printf("%llu ", sizeof(pfn));
 #if DBG

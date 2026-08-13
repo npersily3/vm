@@ -6,6 +6,9 @@
 #include "../../include/variables/structures.h"
 #include "../../include/variables/globals.h"
 #include "../../include/initialization/init.h"
+
+#include <math.h>
+
 #include "../../include/variables/macros.h"
 #include "../../include/initialization/init_threads.h"
 
@@ -23,64 +26,70 @@
 
 state vm;
 
-VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 vaSizeInGigs, ULONG64 physicalInGigs,
-                        ULONG64 numFreeLists) {
-    vm.config.virtual_address_size = GB(vaSizeInGigs);
-    vm.config.number_of_physical_pages = GB(physicalInGigs) / PAGE_SIZE;
 
-    vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
+// makes life easy
+ULONG64 power(ULONG64 base, ULONG64 power) {
 
-    getPhysicalPages();
+    if (power == 0) return 1;
 
-    vm.config.number_of_disk_divisions = 1;
-    vm.config.disk_size_in_bytes = (vm.config.virtual_address_size - (PAGE_SIZE * vm.config.number_of_physical_pages) +
-                                    (2 * PAGE_SIZE));
-    vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
-    vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
+    ULONG64 start = base;
 
-    vm.config.number_of_user_threads = number_of_user_threads;
-    vm.config.number_of_trimming_threads = 1;
-    vm.config.number_of_writing_threads = 1;
-    vm.config.number_of_threads = vm.config.number_of_user_threads + vm.config.number_of_trimming_threads + vm.config.
-                                  number_of_writing_threads;
-    vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
-
-    vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
-    vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages / 2;
-    vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
-
-
-    vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
-    vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
-
-    vm.config.number_of_ptes_per_region = 64;
-    vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
-
-    vm.config.number_of_free_lists = numFreeLists;
-    vm.config.time_until_recall_pages = 2500000;
+    for (ULONG64 i = 1; i < power; i++) {
+        start *= base;
+    }
+    return start;
 }
 
+VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULONG64 physicalInGigs,
+                        ULONG64 numFreeLists, ULONG64 diskInGigs) {
 
-VOID init_base_config(VOID) {
-#if DBG
-    vm.config.virtual_address_size = MB(128);
-    vm.config.number_of_physical_pages = MB(64) / PAGE_SIZE;
-#else
 
-    vm.config.virtual_address_size = GB(4);
-    vm.config.number_of_physical_pages = GB(2) / PAGE_SIZE;
-#endif
-    vm.config.virtual_address_size_in_unsigned_chunks = vm.config.virtual_address_size / sizeof(ULONG64);
+    vm.config.number_of_page_table_layers = num_layers;
+    vm.config.pte_entries_per_pagetable = PAGE_SIZE / sizeof(pte);
 
+
+    // this is only the reservable space.
+    vm.config.number_of_leaf_ptes  = power(vm.config.pte_entries_per_pagetable, num_layers);
+    vm.config.virtual_address_size = vm.config.number_of_leaf_ptes * PAGE_SIZE;
+
+    // this is in pagetables: layer k holds 512^k pagetables, k = 0 .. num_layers-1
+    vm.config.cumulative_number_of_page_tables = 0;
+    for (ULONG i = 0; i < num_layers; i++) {
+        vm.config.cumulative_number_of_page_tables += power(vm.config.pte_entries_per_pagetable, i);
+    }
+
+    vm.config.number_of_leaf_pagetables = vm.config.number_of_leaf_ptes / vm.config.pte_entries_per_pagetable;
+
+    // we might not get all our pages, but that is okay. We just have to make sure nothing is conditioned upon stale values
+    vm.config.number_of_physical_pages = GB(physicalInGigs) / PAGE_SIZE;
     getPhysicalPages();
 
+    // disk stuff
     vm.config.number_of_disk_divisions = 1;
-    vm.config.disk_size_in_bytes = (vm.config.virtual_address_size - (PAGE_SIZE * vm.config.number_of_physical_pages) +
-                                    (2 * PAGE_SIZE));
+    vm.config.disk_size_in_bytes = GB(diskInGigs);
     vm.config.disk_size_in_pages = vm.config.disk_size_in_bytes / PAGE_SIZE;
     vm.config.disk_division_size_in_pages = vm.config.disk_size_in_pages / vm.config.number_of_disk_divisions;
 
-    vm.config.number_of_user_threads = 8;
+    // amount actually pageable (commitable): physical + disk, minus the zero slot and transfer
+    // page, minus every possible page table frame. Page tables are physical-backed (never on
+    // disk) and are not commitable data; cumulative_number_of_page_tables already counts the
+    // pinned root, so we reserve for the whole tree here.
+    if (vm.config.cumulative_number_of_page_tables + 2 >=
+        vm.config.number_of_physical_pages + vm.config.disk_size_in_pages) {
+        printf("Not enough physical+disk to back the page tables; reduce layers or add memory/disk\n");
+        DebugBreak();
+    }
+    vm.config.max_commit_size_in_pages = vm.config.number_of_physical_pages + vm.config.disk_size_in_pages
+                                         - 2 - vm.config.cumulative_number_of_page_tables;
+
+    // Confine the access pattern to the committed (backable) space, so a large VA (e.g. 3 layers
+    // = 512 GB) never overcommits. Clamp to the real VA (number_of_leaf_ptes = VA in pages) so a
+    // fully-backable config (commit >= VA, e.g. the L=2 default) doesn't index past vm.va.end.
+    ULONG64 accessible_pages = min(vm.config.max_commit_size_in_pages, vm.config.number_of_leaf_ptes);
+    vm.config.virtual_address_size_in_unsigned_chunks = accessible_pages * (PAGE_SIZE / sizeof(ULONG64));
+
+    //threads
+    vm.config.number_of_user_threads = number_of_user_threads;
     vm.config.number_of_trimming_threads = 1;
     vm.config.number_of_writing_threads = 1;
     vm.config.number_of_aging_threads = 1;
@@ -91,26 +100,20 @@ VOID init_base_config(VOID) {
                                   vm.config.number_of_writing_threads +
                                   vm.config.number_of_aging_threads +
                                   vm.config.number_of_scheduler_threads;
-
     vm.config.number_of_system_threads = vm.config.number_of_threads - vm.config.number_of_user_threads;
 
+    //misc
     vm.config.size_of_user_thread_transfer_va_space_in_pages = 128;
     vm.config.stand_by_trim_threshold = vm.config.number_of_physical_pages * 7 / 8;
     vm.config.number_of_pages_to_trim_from_stand_by = vm.config.number_of_physical_pages / 8;
-
-
-    vm.config.number_of_ptes = vm.config.virtual_address_size / PAGE_SIZE;
-    vm.config.page_table_size_in_bytes = vm.config.number_of_ptes * sizeof(pte);
-
-
-#if DBG
-    vm.config.number_of_ptes_per_region = 64;
-#else
-    vm.config.number_of_ptes_per_region = 512;
-#endif
-    vm.config.number_of_pte_regions = vm.config.number_of_ptes / vm.config.number_of_ptes_per_region;
+    vm.config.number_of_free_lists = numFreeLists;
     vm.config.time_until_recall_pages = 2500000;
-    vm.config.number_of_free_lists = 16;
+
+    memset(&vm.config.parameter, 0, sizeof(vm.config.parameter));
+
+    // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
+    vm.config.parameter.Type = MemExtendedParameterUserPhysicalHandle;
+    vm.config.parameter.Handle = vm.events.physical_page_handle;
 }
 
 BOOL
@@ -209,30 +212,55 @@ VOID initAgeList(VOID) {
 VOID init_pte_regions(VOID) {
     initAgeList();
 
-    //nptodo add the case where NUMPTES is not divisible by 64
-    vm.pte.RegionsBase = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.number_of_pte_regions);
+    // one region per pagetable across every layer: branch and leaf regions are uniform,
+    // so the ager/trimmer treat them identically. Indexed by whole-table pagetable offset
+    // (see getPTERegion: region - vm.pte.table).
+    vm.pte.regions_base = (PTE_REGION *) init_memory(sizeof(PTE_REGION) * vm.config.cumulative_number_of_page_tables);
     vm.pte.globalNumOfAge[0].count = 0;
 
-    PTE_REGION *currentRegion = vm.pte.RegionsBase;
-    for (int i = 0; i < vm.config.number_of_pte_regions; ++i) {
-        InitializeCriticalSection(&currentRegion->lock);
+    PTE_REGION *currentRegion = vm.pte.regions_base;
 
-
-#if DBG
-        memset(currentRegion->ageMap, 0, 64 * sizeof(ULONG64));
-        currentRegion->ageListNumber = NOT_ON_LIST;
-#endif
-
-
-        currentRegion++;
-    }
 }
 
 VOID init_pageTable(VOID) {
+
+    InitializeCriticalSection(&vm.pte.rootLock);
+
     ULONG64 numBytes;
     // Initialize the page table
-    numBytes = vm.config.page_table_size_in_bytes;
-    vm.pte.table = (pte *) init_memory(numBytes);
+    numBytes = vm.config.cumulative_number_of_page_tables * sizeof(PAGETABLE);
+    vm.pte.table = (PPAGETABLE) VirtualAlloc2(NULL,
+                                         NULL,
+                                         numBytes,
+                                         MEM_RESERVE | MEM_PHYSICAL,
+                                         PAGE_READWRITE,
+                                         &vm.config.parameter,
+                                         1);
+
+    if (vm.pte.table == NULL) {
+        printf("Cannot allocate page table\n");
+        DebugBreak();
+    }
+
+    // store the pointers to the start of each layer for easy pointer math.
+    // layer k holds 512^k pagetables, so layer i begins after the sum of all
+    // lower layers: start_of_layer[i] = table + (512^0 + ... + 512^(i-1)).
+    vm.pte.start_of_layer = malloc(vm.config.number_of_page_table_layers * sizeof(PPAGETABLE));
+    ULONG64 pagetableOffset = 0;
+    for (int i = 0; i < vm.config.number_of_page_table_layers; ++i) {
+        vm.pte.start_of_layer[i] = vm.pte.table + pagetableOffset;
+        pagetableOffset += power(vm.config.pte_entries_per_pagetable, i);
+    }
+
+    // Pin the root page directory to the reserved frame 0 (withheld in init_free_list) so the
+    // root pte read at the top of every fault is always backed and never itself faults.
+    ULONG_PTR rootFrame = vm.pfn.physical_page_numbers[0];
+    if (MapUserPhysicalPages(vm.pte.table, 1, &rootFrame) == FALSE) {
+        printf("Failed to map root page directory\n");
+        DebugBreak();
+    }
+    // start its ptes invalid
+    memset(vm.pte.table, 0, sizeof(PAGETABLE));
 
     init_pte_regions();
 #if DBG
@@ -339,10 +367,13 @@ VOID init_free_list(VOID) {
         init_list_head(&vm.lists.free.heads[i]);
     }
 
-    vm.lists.free.length = vm.config.number_of_physical_pages;
+    // frame 0 (physical_page_numbers[0]) is reserved for the root page directory so it is always
+    // resident and the first pte read in every fault never itself faults. It is pinned in
+    // init_pageTable; the free list gets every other frame.
+    vm.lists.free.length = vm.pfn.physical_page_count - 1;
 
-    // Add every page to the free list
-    for (int i = 0; i < vm.pfn.physical_page_count; ++i) {
+    // Add every page except the reserved root frame to the free list
+    for (int i = 1; i < vm.pfn.physical_page_count; ++i) {
         pfn *new_pfn = (pfn *) (vm.pfn.start + vm.pfn.physical_page_numbers[i]);
 
         // Calculate the page-aligned range that contains this pfn structure
@@ -381,7 +412,7 @@ VOID init_list_head(pListHead head) {
     InitializeSRWLock(&head->sharedLock.sharedLock);
 
     InitializeCriticalSection(&head->page.lock);
-    InitializeCriticalSection(&head->region.lock);
+
 
 #if DBG
     head->sharedLock.numHeldShared = 0;
@@ -444,18 +475,14 @@ BOOL getPhysicalPages(VOID) {
 
 
 BOOL initVA() {
-    MEM_EXTENDED_PARAMETER parameter = {0};
 
-    // Allocate a MEM_PHYSICAL region that is "connected" to the AWE section created above
-    parameter.Type = MemExtendedParameterUserPhysicalHandle;
-    parameter.Handle = vm.events.physical_page_handle;
 
     vm.va.start = (PULONG_PTR) VirtualAlloc2(NULL,
                                              NULL,
                                              vm.config.virtual_address_size,
                                              MEM_RESERVE | MEM_PHYSICAL,
                                              PAGE_READWRITE,
-                                             &parameter,
+                                             &vm.config.parameter,
                                              1);
     if (vm.va.start == NULL) {
         printf("Failed to allocate virtual address space: size %I64x \n ", vm.config.virtual_address_size);
@@ -470,7 +497,7 @@ BOOL initVA() {
                                                PAGE_SIZE * BATCH_SIZE * NUM_WRITING_BATCHES,
                                                MEM_RESERVE | MEM_PHYSICAL,
                                                PAGE_READWRITE,
-                                               &parameter,
+                                               &vm.config.parameter,
                                                1);
     if (vm.va.writing == NULL) {
         printf("Failed to allocate transfer VA for writing\n");
@@ -487,7 +514,7 @@ BOOL initVA() {
                                                                  PAGE_SIZE,
                                                                  MEM_RESERVE | MEM_PHYSICAL,
                                                                  PAGE_READWRITE,
-                                                                 &parameter,
+                                                                 &vm.config.parameter,
                                                                  1);
         if (vm.va.userThreadTransfer[i] == NULL) {
             printf("Failed to allocate user thread transfer VA %d\n", i);
@@ -524,4 +551,95 @@ PVOID init_memory(ULONG64 numBytes) {
 
     memset(new, 0, numBytes);
     return new;
+}
+
+VOID delete_list_head(pListHead head) {
+    // the SRWLOCK needs no teardown
+    DeleteCriticalSection(&head->page.lock);
+
+#if DBG
+    DeleteCriticalSection(&head->sharedLock.debugLock);
+#endif
+}
+
+/**
+ * @brief Tears down everything init_virtual_memory built, in reverse order.
+ *
+ * Only safe once every thread has exited - nothing here checks for live users, and deleting a
+ * critical section someone still holds is undefined. Call it after printStats, which still reads
+ * vm.threadInfo and the list lengths.
+ */
+VOID cleanup_virtual_memory(VOID) {
+    // threads: the handles, their contexts, and the per-user local list locks
+    for (ULONG64 i = 0; i < vm.config.number_of_user_threads; ++i) {
+        CloseHandle(vm.events.userThreadHandles[i]);
+        delete_list_head(&vm.threadInfo.user[i].localList);
+    }
+    for (ULONG64 i = 0; i < vm.config.number_of_system_threads; ++i) {
+        CloseHandle(vm.events.systemThreadHandles[i]);
+    }
+    free(vm.events.userThreadHandles);
+    free(vm.events.systemThreadHandles);
+    free(vm.threadInfo.user);
+    free(vm.threadInfo.trimmer);
+    free(vm.threadInfo.writer);
+    free(vm.threadInfo.aging);
+    free(vm.threadInfo.scheduler);
+
+    CloseHandle(vm.events.userStart);
+    CloseHandle(vm.events.writingStart);
+    CloseHandle(vm.events.trimmingStart);
+    CloseHandle(vm.events.writingEnd);
+    CloseHandle(vm.events.agerStart);
+    CloseHandle(vm.events.systemShutdown);
+
+    // page lists. vm.lists.zeroed is never initialized (see init_lists), so it is not torn down.
+    delete_list_head(&vm.lists.standby);
+    delete_list_head(&vm.lists.modified);
+    for (ULONG64 i = 0; i < vm.config.number_of_free_lists; ++i) {
+        delete_list_head(&vm.lists.free.heads[i]);
+    }
+    free(vm.lists.free.heads);
+
+    // pte regions and the age lists they hang off
+    for (int i = 0; i < NUMBER_OF_AGES; ++i) {
+        delete_list_head(&vm.pte.ageList[i]);
+    }
+
+    free(vm.pte.regions_base);
+    free(vm.pte.start_of_layer);
+    DeleteCriticalSection(&vm.pte.rootLock);
+
+    // disk
+    free(vm.disk.number_of_open_slots);
+    free(vm.disk.activeVa);
+    free(vm.disk.active);
+    free(vm.disk.start);
+
+    // the pfn locks live inside the pfn database, so they must go before it is released. Frame 0 is
+    // the pinned root page directory - init_free_list never gave it a lock.
+    for (ULONG64 i = 1; i < vm.pfn.physical_page_count; ++i) {
+        DeleteCriticalSection(&(vm.pfn.start + vm.pfn.physical_page_numbers[i])->lock);
+    }
+
+    // Releasing the MEM_PHYSICAL regions unmaps their frames, which FreeUserPhysicalPages requires.
+    for (ULONG64 i = 0; i < vm.config.number_of_user_threads; ++i) {
+        VirtualFree(vm.va.userThreadTransfer[i], 0, MEM_RELEASE);
+    }
+    free(vm.va.userThreadTransfer);
+    VirtualFree(vm.va.writing, 0, MEM_RELEASE);
+    VirtualFree(vm.va.start, 0, MEM_RELEASE);
+    VirtualFree(vm.pte.table, 0, MEM_RELEASE);
+    VirtualFree(vm.pfn.start, 0, MEM_RELEASE);
+
+    FreeUserPhysicalPages(vm.events.physical_page_handle,
+                          &vm.pfn.physical_page_count,
+                          vm.pfn.physical_page_numbers);
+    free(vm.pfn.physical_page_numbers);
+    CloseHandle(vm.events.physical_page_handle);
+
+#if DBG
+    free(vm.pte.debugBuffer);
+    free(vm.pfn.debugBuffer);
+#endif
 }

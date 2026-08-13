@@ -14,7 +14,9 @@
 #include "../../include/disk/disk.h"
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
+#include "threads/ager_thread.h"
 #include "utils/pte_regions_utils.h"
+#include "utils/stats.h"
 
 #if spinEvents
 
@@ -83,9 +85,13 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
     listHead localList;
     pfn *page;
     pfn *nextPage;
+
     pte new_pte_contents;
     pte old_pte_contents;
     pte *currentPTE;
+
+    pte* higherLevelPTE;
+    pfn* higherLevelPage;
 
 
     init_list_head(&localList);
@@ -93,8 +99,14 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 
     // adds pages onto the local list from the standby list but does not update them
     // returns with all the pages locked
-    if (removeBatchFromList(&vm.lists.standby, &localList, threadInfo, vm.config.number_of_pages_to_trim_from_stand_by)
-        == LIST_IS_EMPTY) {
+    ULONG64 pagesObtained = removeBatchFromList(&vm.lists.standby, &localList, threadInfo,
+                                                vm.config.number_of_pages_to_trim_from_stand_by);
+
+    STAT_INC(threadInfo, pruneWakeups);
+    STAT_ADD(threadInfo, pruneRequested, vm.config.number_of_pages_to_trim_from_stand_by);
+    STAT_ADD(threadInfo, pruneObtained, pagesObtained);
+
+    if (pagesObtained == LIST_IS_EMPTY) {
         return;
     }
 
@@ -123,6 +135,16 @@ VOID batchVictimsFromStandByList(PTHREAD_INFO threadInfo) {
 
         // I do not have to check for the return value because the only person who updates the pte when it is invalid needs a lock
         writePTE(currentPTE, new_pte_contents, old_pte_contents);
+
+        higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
+
+        higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
+
+        enterPageLock(higherLevelPage, threadInfo);
+        higherLevelPage->valid_transition_count--;
+        leavePageLock(higherLevelPage, threadInfo);
+
+
 
         // cannot have this line because we need to store the contents
         // set_disk_space_free(page->diskIndex);
@@ -190,75 +212,179 @@ VOID freeThreadMapping(PTHREAD_INFO threadContext) {
 }
 
 /**
+ *
+ * @param arbitrary_va
+ * @param threadContext
+ * @return
+ */
+BOOL pageFaultEntryPoint(PULONG_PTR parbitrary_va, LPVOID threadContext) {
+    pte *currentPTEAddress;
+    pte *oldPTEAddress;
+    pte localPTE;
+//    pte expectedContents;
+    ULONG64 row;
+    ASSERT(isVaValid((ULONG64) parbitrary_va))
+
+    // Checks to see if the user is accessing out of bounds va space
+    if (isVaValid((ULONG64) parbitrary_va) == FALSE) {
+        DebugBreak();
+        printf("invalid va %p\n", parbitrary_va);
+    }
+
+    ULONG64 arbitrary_va = (ULONG64) parbitrary_va;
+
+    // how many page table pages this one user fault had to materialize on its way down. A fault at
+    // the last layer maps the data page itself, so it is not counted here.
+    ULONG64 pageTablesMaterialized = 0;
+    boolean rootIsLeaf = (vm.config.number_of_page_table_layers == 1);
+
+    STAT_INC(threadContext, faults);
+
+    // seed with the actual root pte: entry row0 of the single layer-0 pagetable
+    currentPTEAddress = (pte *) vm.pte.start_of_layer[0] + parseVA_Row_value(arbitrary_va, 0);
+
+
+    EnterCriticalSection(&vm.pte.rootLock);
+
+    localPTE.entireFormat = ReadULong64NoFence(&currentPTEAddress->entireFormat);
+
+    if (localPTE.validFormat.valid == 0) {
+
+        while (true) {
+            if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
+                break;
+            }
+        }
+
+        if (rootIsLeaf == FALSE) {
+            pageTablesMaterialized++;
+        }
+    }
+
+
+    // guarantees to work
+    setLockBit(currentPTEAddress);
+
+    // TODO see if this has to be interlocked word tearing
+    currentPTEAddress->validFormat.access = 1;
+
+    oldPTEAddress = currentPTEAddress;
+
+    LeaveCriticalSection(&vm.pte.rootLock);
+
+    // a ptes accessed in the loop will be locked. SO there is not a possibility of someone slipping in and trimming it
+    for (int i = 1; i < vm.config.number_of_page_table_layers; i++) {
+        // i get the next row value
+        row = parseVA_Row_value(arbitrary_va, i);
+        // I get the address of the pte (descend from the layer i-1 parent into layer i)
+        currentPTEAddress = getNextLayer(currentPTEAddress, i - 1, row);
+
+        localPTE.entireFormat = ReadULong64NoFence(&currentPTEAddress->entireFormat);
+
+        // I make sure the pte is valid
+        if (localPTE.validFormat.valid == 0) {
+           //the lock and unlock
+            while (true) {
+                if (pageFault(currentPTEAddress, threadContext) != REDO_FAULT) {
+                    break;
+                }
+            }
+
+            // the last layer's pte maps the data page, not a page table
+            if (i != vm.config.number_of_page_table_layers - 1) {
+                pageTablesMaterialized++;
+            }
+        }
+
+        // guarantees to work
+        setLockBit(currentPTEAddress);
+
+        //TODO  (word tearing double check to see if we need to do interlocked)
+        currentPTEAddress->validFormat.access = 1;
+
+        // unlock the old one
+        clearLockBit(oldPTEAddress);
+
+        // start the descent into a new page table layer
+        oldPTEAddress = currentPTEAddress;
+    }
+
+    // the hand-over-hand descent above always leaves one lock bit set: the last layer's. It guards
+    // a page table that does not exist (nothing lives below a leaf), so drop it here rather than
+    // leaving it set forever -- the next setLockBit on this pte would spin against it with no one
+    // left to clear it. Also covers the single-layer case, where the loop never runs and the bit
+    // is the one set on the root pte above.
+    clearLockBit(oldPTEAddress);
+
+    STAT_INC(threadContext, walkPTsMaterialized[
+                 pageTablesMaterialized <= STATS_MAX_LAYERS ? pageTablesMaterialized : STATS_MAX_LAYERS]);
+
+#if CORRECTNESS
+    //if we are in correctness mode run the validation code
+    checkVA(parbitrary_va);
+#endif
+
+    return !REDO_FAULT;
+}
+
+
+/**
  *@brief This function is the core of the program. It will culminate in the mapping of a physical page to the passed in virtual address.
  *@param arbitrary_va The virtual address that is being accessed and faulted on.
  *@param threadContext The information about the faulting thread.
+ *@pre the parents pte lock bit must be
  *@return A boolean that determines whether we need to back up and redo the fault.
 */
 
-BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
+BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
     BOOL returnValue;
-    pte *currentPTE;
+
     pte pteContents;
     ULONG64 frameNumber;
     pte newPTE;
-    ULONG64 regionStatus;
+    PULONG64 arbitrary_va;
 
+    pte* higherLevelPTE;
+    pfn* higherLevelPage;
 
-    currentPTE = va_to_pte((ULONG64) arbitrary_va);
-
-
-    // Checks to see if the user is accessing out of bounds va space
-    if (isVaValid((ULONG64) arbitrary_va) == FALSE) {
-        DebugBreak();
-        printf("invalid va %p\n", arbitrary_va);
-    }
+    PTE_REGION* region;
+    LONG64 oldAge;
 
 
     returnValue = !REDO_FAULT;
 
 
-    lockPTE(currentPTE);
     pteContents.entireFormat = ReadULong64NoFence((volatile ULONG64 *) currentPTE);
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
         // If the pte is in flight in the system threads
-        if ((currentPTE->transitionFormat.isTransition == TRUE)) {
+        if (currentPTE->transitionFormat.isTransition == TRUE) {
             // Determine if the rescue told us to back up or not
-            frameNumber = rescue_page((ULONG64) arbitrary_va, currentPTE, (PTHREAD_INFO) threadContext);
+            frameNumber = rescue_page(currentPTE, (PTHREAD_INFO) threadContext);
             if (frameNumber == REDO_FAULT) {
                 returnValue = REDO_FAULT;
+                STAT_INC(threadContext, redoFaults);
             }
         } else {
             // If we are on a first fault or a disk read map that page.
-            frameNumber = mapPage((ULONG64) arbitrary_va, currentPTE, threadContext);
+            frameNumber = mapPage(currentPTE, threadContext);
             if (frameNumber == REDO_FAULT) {
                 returnValue = REDO_FAULT;
+                STAT_INC(threadContext, redoFaults);
             }
         }
 
 
         // keeps track of pte region so that trimmer can skip blank ones
         if (returnValue != REDO_FAULT) {
-            PTE_REGION *region = getPTERegion(currentPTE);
 
-            regionStatus = region->hasActiveEntry;
 
 
             ULONG64 numActivePages = InterlockedIncrement64(&vm.pfn.numActivePages);
 
-            if (numActivePages >  2*vm.config.number_of_physical_pages/2) {
-                if (InterlockedCompareExchange64(&vm.misc.trimmerPending, 1, 0) == 0) {
-                    InterlockedExchange64(&vm.pte.numToTrim,   vm.config.number_of_physical_pages/5);
-                    InterlockedExchange64(&vm.pte.numToWrite,   vm.config.number_of_physical_pages/5);
-                    SetEvent(vm.events.trimmingStart);
-                }
-            }
 
-
-
-
+            arbitrary_va = pte_to_va(currentPTE);
 
             if (MapUserPhysicalPages((PVOID) arbitrary_va, 1, &frameNumber) == FALSE) {
                 DebugBreak();
@@ -266,22 +392,24 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
                        frameNumber);
                 return FALSE;
             }
-#if CORRECTNESS
-            //if we are in correctness mode run the validation code
-            checkVA(arbitrary_va);
-#endif
 
-            // if this is the first active pte make it an aging candidate
-            if (regionStatus == FALSE) {
-#if DBG
+            // we do not need to updat the count of root because that should never be trimmed
+            if (findPTELayer(currentPTE) > 0) {
+                higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
+                //TODO can this tear,
+                higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
 
-                ASSERT(region->ageListNumber == NOT_ON_LIST)
-#endif
+                enterPageLock(higherLevelPage, threadContext);
+                higherLevelPage->valid_transition_count++;
+                leavePageLock(higherLevelPage, threadContext);
+            }
+            
+            region = getPTERegion(currentPTE);
+            oldAge = getRegionAge(region);
+            if (oldAge == -1) {
                 addRegionToTail(&vm.pte.ageList[0], region, threadContext);
             }
-            InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
-            region->hasActiveEntry = TRUE;
-            region->numOfAge[0]++;
+
 
             newPTE.entireFormat = 0;
             newPTE.validFormat.frameNumber = frameNumber;
@@ -289,15 +417,14 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
             newPTE.validFormat.access = 1;
             newPTE.validFormat.age = 0;
             // i do not have to check the result because we have the lock and we expect it to be invalid
+            //TODO change this to not be a compare exchange
             writePTE(currentPTE, newPTE, pteContents);
+
+            // entering the valid state at age 0 has to be counted, or the ager's first
+            // Dec[0]/Inc[1] on this pte debits a bucket that never had it -- age 0 goes negative
+            InterlockedIncrement64(&vm.pte.globalNumOfAge[0].count);
         }
     }
-
-
-
-
-
-    unlockPTE(currentPTE);
 
 
     return returnValue;
@@ -318,7 +445,7 @@ BOOL pageFault(PULONG_PTR arbitrary_va, LPVOID threadContext) {
  * @pre The page table entry must be locked on entry to this function.
  * @post The caller must unlock the page table entry
  */
-ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadInfo) {
+ULONG64 rescue_page(pte *currentPTE, PTHREAD_INFO threadInfo) {
     pfn *page;
     ULONG64 frameNumber;
 
@@ -364,6 +491,7 @@ ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadIn
 
 #endif
         page->isBeingWritten = FALSE;
+        STAT_INC(threadInfo, rescues[RESCUE_IN_FLIGHT]);
     }
     // If its on standby, remove it and set the disk space free
     else if (page->location == STAND_BY_LIST) {
@@ -373,9 +501,11 @@ ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadIn
 #if DBG
         page->diskIndex = 0;
 #endif
+        STAT_INC(threadInfo, rescues[RESCUE_STANDBY]);
     } else {
         // It must be on the modified list now if it was determined to be a rescue but no a write in progress or a standby page
         removeFromMiddleOfPageList(&vm.lists.modified, page, threadInfo);
+        STAT_INC(threadInfo, rescues[RESCUE_MODIFIED]);
     }
 
 
@@ -402,7 +532,7 @@ ULONG64 rescue_page(ULONG64 arbitrary_va, pte *currentPTE, PTHREAD_INFO threadIn
  * @post The caller must unlock the page table entry.
  */
 
-ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
+ULONG64 mapPage(pte *currentPTE, LPVOID threadContext) {
     pfn *page;
     ULONG64 frameNumber;
     PTHREAD_INFO threadInfo;
@@ -434,12 +564,15 @@ ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
                 SetEvent(vm.events.trimmingStart);
 
 
-                vm.misc.pageWaits++;
+                InterlockedIncrement64((volatile LONG64 *) &vm.misc.pageWaits);
 
-                ULONG64 start;
-                ULONG64 end;
+                // QPC, not rdtsc: rdtsc ticks have no documented frequency, so the total was never
+                // convertible into a real duration. QueryPerformanceFrequency gives us one.
+                LARGE_INTEGER start;
+                LARGE_INTEGER end;
+                ULONG64 waited;
 
-                start = ReadTimeStampCounter();
+                QueryPerformanceCounter(&start);
 #if spinEvents
                 spinWhileWaiting();
 #else
@@ -447,9 +580,16 @@ ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
 
 #endif
 
-                end = ReadTimeStampCounter();
+                QueryPerformanceCounter(&end);
 
-                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64) (end - start));
+                waited = (ULONG64) (end.QuadPart - start.QuadPart);
+
+                InterlockedAdd64((volatile LONG64 *) &vm.misc.totalTimeWaiting, (LONG64) waited);
+
+                STAT_INC(threadInfo, pageWaits);
+                STAT_ADD(threadInfo, waitTicks, waited);
+                STAT_MAX(threadInfo, maxWaitTicks, waited);
+                STAT_INC(threadInfo, waitHist[statsBucket(waited)]);
 
                 lockPTE(currentPTE);
 
@@ -466,8 +606,10 @@ ULONG64 mapPage(ULONG64 arbitrary_va, pte *currentPTE, LPVOID threadContext) {
         if (!zeroOnePage(page, threadInfo)) {
             DebugBreak();
         }
+        STAT_INC(threadInfo, firstTouch);
     } else {
         modified_read(currentPTE, frameNumber, threadInfo);
+        STAT_INC(threadInfo, diskReads);
     }
 
     page->pte = currentPTE;
@@ -502,6 +644,10 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     pfn *page;
     pte oldPteContents;
     pte newPteContents;
+
+    pte* higherLevelPTE;
+    pfn* higherLevelPage;
+
 
 
     // Exits with page lock held
@@ -543,6 +689,14 @@ pfn *getVictimFromStandByList(PTHREAD_INFO threadInfo) {
     // do not have to check the result because we have the lock and we know the pte is invalid
     writePTE(page->pte, newPteContents, oldPteContents);
 
+    higherLevelPTE = getHigherLevelPTEAddress(page->pte);
+    //TODO can this tear,
+    higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);
+
+    enterPageLock(higherLevelPage, threadInfo);
+    higherLevelPage->valid_transition_count--;
+    leavePageLock(higherLevelPage, threadInfo);
+
     leavePageLock(page, threadInfo);
 
     // I will now prune if no one else is pruning
@@ -581,6 +735,11 @@ modified_read(pte *currentPTE, ULONG64 frameNumber, PTHREAD_INFO threadContext) 
 
     memcpy(transferVaLocation, (PVOID) diskAddress, PAGE_SIZE);
 
+
+#if DISK_DELAY_MS
+
+    Sleep(DISK_DELAY_MS);
+#endif
     freeThreadMapping(threadContext);
 
     set_disk_space_free(diskIndex);
@@ -656,6 +815,8 @@ pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
     counter = 0;
     i = 0;
 
+    STAT_INC(threadContext, freeListSearches);
+
     // randomly accesses a freelist first
     localFreeListIndex = GetNextRandom(&threadContext->rng) % vm.config.number_of_free_lists;
 
@@ -670,6 +831,7 @@ pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
             }
             // if all of them were empty at the time we checked
         } else if (counter == 2 * vm.config.number_of_free_lists) {
+            STAT_ADD(threadContext, freeListProbes, counter);
             return LIST_IS_EMPTY;
             // acquire a freelist lock exclusive
         } else {
@@ -723,6 +885,7 @@ pfn *getPageFromFreeList(PTHREAD_INFO threadContext) {
                 // return the page at the front of the local list
                 InterlockedDecrement64(&vm.misc.pagesFromLocalCache);
                 InterlockedIncrement64(&vm.misc.pagesFromFree);
+                STAT_ADD(threadContext, freeListProbes, counter + 1);
                 return getPageFromLocalList(threadContext);
             }
         }

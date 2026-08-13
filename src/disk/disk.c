@@ -45,11 +45,9 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
     }
 
 
-    // accounts for the extra slot case
-    end = start + ((ULONG64) vm.config.disk_division_size_in_pages / (ULONG64)64);
-    if (freePortion == vm.config.number_of_disk_divisions - 1) {
-        end += 1;
-    }
+    // round up, matching numEntries in init_disk_active -- the leftover bits of the last word are
+    // already marked in-use there, so scanning it is safe. an unconditional +1 walks off the bitmap.
+    end = start + (((ULONG64) vm.config.disk_division_size_in_pages + 63) / (ULONG64)64);
 
 
 
@@ -66,6 +64,7 @@ ULONG64 getMultipleDiskIndices(PULONG64 diskIndices) {
                 ASSERT(freePortion == 0)
                 InterlockedDecrement64((volatile LONG64 *)&vm.disk.number_of_open_slots[freePortion]);
                 returnValue = 8 * sizeof(ULONG64) * (start - vm.disk.active) + bitOffset;
+                ASSERT(returnValue < vm.config.disk_size_in_pages)
                 diskIndices[numDiskSlotsFilled] = returnValue;
                 vm.disk.activeVa[returnValue] = (pte*) (1ULL << 63);
                 numDiskSlotsFilled++;

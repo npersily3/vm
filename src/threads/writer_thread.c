@@ -12,6 +12,7 @@
 #include "../../include/utils/thread_utils.h"
 #include "initialization/init.h"
 #include "threads/user_thread.h"
+#include "utils/stats.h"
 /**
  *@file writer_thread.c
  *@brief This file contains all the functions associated with writing to page that have been recently trimmed to disk.
@@ -93,7 +94,7 @@ DWORD diskWriter(LPVOID info) {
 
     while (TRUE) {
         returnEvent = WaitForMultipleObjects(2, events, FALSE, INFINITE);
-        vm.misc.numWrites++;
+        InterlockedIncrement64((volatile LONG64 *) &vm.misc.numWrites);
 
         //if the system shutdown event was signaled, exit
         if (returnEvent - WAIT_OBJECT_0 == 1) {
@@ -114,6 +115,7 @@ DWORD diskWriter(LPVOID info) {
 
             // the disk itself is full -- nothing more we can do this cycle
             if (localBatchSize == COULD_NOT_FIND_SLOT) {
+                STAT_INC(threadContext, diskFull);
                 break;
             }
 
@@ -133,6 +135,7 @@ DWORD diskWriter(LPVOID info) {
             // modified list is momentarily empty -- the trimmer may still be feeding it (we run
             // concurrently with it now), so give it a short chance to catch up before giving up
             if (localBatchSize == 0) {
+                STAT_INC(threadContext, modifiedEmpty);
                 emptyRetries++;
                 if (emptyRetries >= MAX_EMPTY_RETRIES ||
                     WaitForSingleObject(vm.events.systemShutdown, 1) == WAIT_OBJECT_0) {
@@ -144,6 +147,8 @@ DWORD diskWriter(LPVOID info) {
 
             // simply converts indices to addresses
             getDiskAddressesFromDiskIndices(diskIndexArray, diskAddressArray, localBatchSize);
+
+            STAT_SAMPLE(threadContext, writeBatch, localBatchSize);
 
             // actual write to disk
             writeToDisk(localBatchSize, frameNumberArray, diskAddressArray, threadContext);
@@ -244,6 +249,10 @@ VOID writeToDisk(ULONG64 localBatchSize, PULONG64 frameNumberArray, PULONG64 dis
         memcpy((PVOID) diskAddressArray[i], (PVOID) ((ULONG64) vm.va.writing + i * PAGE_SIZE), PAGE_SIZE);
     }
 
+
+#if DISK_DELAY_MS
+    Sleep(DISK_DELAY_MS);
+#endif
     freeWriterThreadMapping(ThreadContext);
 }
 

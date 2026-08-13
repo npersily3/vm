@@ -15,7 +15,10 @@ PTE_REGION* getPTERegion(pte* pte);
 pte* getFirstPTEInRegion(PTE_REGION* region);
 BOOL isPTEValid(pte* pte);
 VOID unlockPTE(pte* pte);
+bool tryLockPTE(pte* currentPTE);
 VOID lockPTE(pte* pte);
+VOID setLockBit (pte* pte);
+VOID clearLockBit(pte *pte);
 pte writePTE(pte* pteAddress, pte NewPteContents, pte expectedOldPteContents);
 #if DBG
 VOID recordPTEAccess(pte* pteAddress, pte NewPteContents);
@@ -31,5 +34,12 @@ VOID checkVA(PULONG_PTR va);
 #endif
 
 
+pte* getNextLayer(pte* va, ULONG64 current_layer, ULONG64 row);
+ULONG64 parseVA_Row_value(ULONG64 va, ULONG64 layer);
+pte* getLeafPTEAddress(ULONG64 va) ;
 
+ULONG64 findPTELayer(pte *pte);
+pte *getHigherLevelPTEAddress(pte *currentPTE);
+pte* getStartOfLowerPagetable(pte *currentPTE);
+int isLeafPTE(pte* currentPTE);
 #endif //PTE_UTILS_H

@@ -8,6 +8,7 @@
 */
 #include "../../include/utils/page_utils.h"
 #include "../../include/variables/globals.h"
+#include "utils/stats.h"
 #include "utils/thread_utils.h"
 #include "variables/macros.h"
 
@@ -51,7 +52,7 @@ volatile ULONG64 pagesremoved;
  * @post All the pages added to the local list need to be unlocked
  */
 #if 1
-// todo Right now I am making a conscious design choice to back up immediately, I assume there is a smart way to back up, but right now I am just going to quit immeadiately
+
 ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD_INFO threadInfo,
                             ULONG64 number_of_pages) {
     pfn *firstPage;
@@ -79,6 +80,9 @@ ULONG64 removeBatchFromList(pListHead headToRemove, pListHead headToAdd, PTHREAD
         release_srw_shared(&headToRemove->sharedLock);
         acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
         obtainedExclusive = TRUE;
+        STAT_INC(threadInfo, listFallback);
+    } else {
+        STAT_INC(threadInfo, listShared);
     }
 #else
     acquire_srw_exclusive(&headToRemove->sharedLock, threadInfo);
@@ -238,6 +242,7 @@ VOID removeFromMiddleOfPageList(pListHead head, pfn *page, PTHREAD_INFO threadIn
         Flink = container_of(page->entry.Flink, pfn, entry);
         Blink = container_of(page->entry.Blink, pfn, entry);
 
+
         if (tryEnterPageLock(Flink, threadInfo) == TRUE) {
             // set blink to null if there is only one page prevents double acquisitions
             if (Flink == Blink) {
@@ -260,9 +265,14 @@ VOID removeFromMiddleOfPageList(pListHead head, pfn *page, PTHREAD_INFO threadIn
         }
     }
 
+    if (obtainedPageLocks == TRUE) {
+        STAT_INC(threadInfo, listShared);
+    }
+
 
     // now we need to acquire exclusive
     if (obtainedPageLocks == FALSE) {
+        STAT_INC(threadInfo, listFallback);
         release_srw_shared(&head->sharedLock);
 
 
@@ -379,8 +389,13 @@ pfn *RemoveFromHeadofPageList(pListHead head, PTHREAD_INFO threadInfo) {
         leavePageLock(&head->page, threadInfo);
     }
 
+    if (obtainedPageLocks == TRUE) {
+        STAT_INC(threadInfo, listShared);
+    }
+
     // switch to exclusive mode
     if (obtainedPageLocks == FALSE) {
+        STAT_INC(threadInfo, listFallback);
         release_srw_shared(&head->sharedLock);
 
 
@@ -502,8 +517,12 @@ VOID addPageToTail(pListHead head, pfn *page, PTHREAD_INFO threadInfo) {
         leavePageLock(&head->page, threadInfo);
     }
 
+    if (obtainedPageLocks == TRUE) {
+        STAT_INC(threadInfo, listShared);
+    }
 
     if (obtainedPageLocks == FALSE) {
+        STAT_INC(threadInfo, listFallback);
         release_srw_shared(&head->sharedLock);
 
 

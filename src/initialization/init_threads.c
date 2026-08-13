@@ -31,8 +31,6 @@ VOID createThreads(VOID) {
     HANDLE Handle;
 
 
-    PTHREAD_INFO ThreadInfo = init_memory(sizeof(THREAD_INFO) * vm.config.number_of_threads);
-
     PTHREAD_INFO UserThreadInfo = init_memory(vm.config.number_of_user_threads * sizeof(THREAD_INFO));
     PTHREAD_INFO TrimmerThreadInfo = init_memory(vm.config.number_of_trimming_threads * sizeof(THREAD_INFO));
     PTHREAD_INFO WriterThreadInfo = init_memory(vm.config.number_of_writing_threads * sizeof(THREAD_INFO));
@@ -112,7 +110,7 @@ VOID createThreads(VOID) {
     }
     vm.threadInfo.aging = AgingThreadInfo;
 
-    for (int i = 0; i < vm.config.number_of_aging_threads; ++i) {
+    for (int i = 0; i < vm.config.number_of_scheduler_threads; ++i) {
         ThreadContext = &SchedulerThreadInfo[i];
         ThreadContext->ThreadNumber = maxThread;
         ThreadContext->TransferVaIndex = 0;
@@ -125,6 +123,8 @@ VOID createThreads(VOID) {
 
         maxThread++;
     }
+    vm.threadInfo.scheduler = SchedulerThreadInfo;
+
     vm.misc.agingInProgress = FALSE;
 }
 
