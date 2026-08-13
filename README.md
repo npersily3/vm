@@ -102,8 +102,6 @@ A fault now descends the tree instead of indexing into it. At each layer I parse
 
 The other new piece of bookkeeping is a count on the PFN of every page table page: how many of its 512 PTEs are currently valid or in transition. It is incremented when a fault materializes a child underneath it and decremented when that child goes away. A page table can only be reclaimed once that count hits zero — a transition entry counts because pages on the modified and standby lists carry back-pointers to their owning PTE, and the writer and the repurpose path follow those pointers directly without walking the tree and without any ability to fault. Trimming a page table with transition entries in it would unmap the exact memory those threads are about to write into. The same counter is also what lets the ager skip work.
 
-*Orange is the user's walk, green is the ager. Each PTE is drawn as its age, access, and valid fields, and the tables hold four entries instead of 512 so the whole tree fits. The three green cases are the aging protocol described below.*
-
 #### **Lock Order Follows the Tree**
 
 With a flat table, all PTE locks were peers: one layer, never two PTE locks held at once, and the only ordering rule that mattered was the coarse one — PTE, then list, then disk.
@@ -129,7 +127,9 @@ The locking follows the tree's shape: a region's lock is the lock bit of the PTE
 
 
 
-![A three-layer page table tree drawn left to right, with a user walk slicing the virtual address 0x1d000 into the indices (1, 3, 1, offset), and the three cases the ager can hit at an interior PTE](images/figure3-multilevel.svg)
+[![A three-layer page table tree drawn left to right, with a user walk slicing the virtual address 0x1d000 into the indices (1, 3, 1, offset), and the three cases the ager can hit at an interior PTE](images/figure3-multilevel.svg)](images/figure3-multilevel.svg)
+
+*Orange is the user's walk, green is the ager. Each PTE is drawn as its age, access, and valid fields, and the tables hold four entries instead of 512 so the whole tree fits. The three green cases are the aging protocol described below.*
 
 
 #### **How This Shifted the Access Pattern**
