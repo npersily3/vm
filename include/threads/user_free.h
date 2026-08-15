@@ -7,9 +7,15 @@
 #include "variables/structures.h"
 
 
-BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo);
-VOID unmapActivePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn** page) ;
-BOOL unmapRescuePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn** page, boolean* addToFreeList);
-VOID unmapDiskFormatPTE(pte* currentPTE, PTHREAD_INFO threadInfo);
+BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info);
+
+BOOL freePTE(pte *currentPTE, PTHREAD_INFO thread_info);
+
+BOOL freeActivePage(pte pteContents, PTHREAD_INFO thread_info);
+
+BOOL freeTransitionPage(pte pteContents, PTHREAD_INFO thread_info);
+
+BOOL freeDiskPage(pte pteContents, PTHREAD_INFO thread_info);
+
 
 #endif //USER_FREE_H

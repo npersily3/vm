@@ -1,160 +1,113 @@
-// //
-// // Created by nrper on 7/30/2025.
-// //
-//
-// #include "../../include/threads/user_free.h"
-//
-// #include <stdio.h>
-//
-// #include "disk/disk.h"
-// #include "threads/user_thread.h"
-// #include "utils/page_utils.h"
-// #include "utils/pte_utils.h"
-// #include "utils/thread_utils.h"
-// #include "variables/globals.h"
-//
-//
-// BOOL freeVa(PULONG64 arbitrary_va, PTHREAD_INFO threadInfo) {
-//
-//     pte* currentPTE;
-//     PTE_REGION* region;
-//     PCRITICAL_SECTION currentPageTableLock;
-//
-//     boolean wasOnPage;
-//     pfn* page;
-//     ULONG64 freeListIndex;
-//
-//     if (isVaValid((ULONG64) arbitrary_va) == FALSE) {
-//         DebugBreak();
-//
-//     }
-//
-//     currentPTE = va_to_pte((ULONG64) arbitrary_va);
-//
-//
-//     region = getPTERegion(currentPTE);
-//     currentPageTableLock = &region->lock;
-//
-//     EnterCriticalSection(currentPageTableLock);
-//
-//
-//     if (currentPTE->validFormat.valid == 1) {
-//         unmapActivePage(currentPTE, threadInfo, page);
-//         wasOnPage = TRUE;
-//     } else if (isRescue(currentPTE)) {
-//         // sets wasOnPage
-//       if (unmapRescuePage(currentPTE, threadInfo, page, &wasOnPage) == REDO_FREE) {
-//           return REDO_FREE;
-//       }
-//     } else {
-//         unmapDiskFormatPTE(currentPTE, threadInfo);
-//         wasOnPage = FALSE;
-//     }
-//
-//     if (wasOnPage) {
-//         zeroOnePage(page, threadInfo);
-//
-//         freeListIndex = InterlockedIncrement(&freeListAddIndex);
-//         freeListIndex %= NUMBER_OF_FREE_LISTS;
-//         addPageToTail(&headFreeLists[freeListIndex], page, threadInfo);
-//         leavePageLock(page, threadInfo);
-//         InterlockedIncrement64(&freeListLength);
-//     }
-//
-//
-//
-//     currentPTE->entireFormat = EMPTY_PTE;
-//
-//
-//     return !REDO_FREE;
-// }
-//
-//
-// VOID unmapActivePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn** page) {
-//     PVOID va;
-//
-//     ULONG64 frameNumber;
-//
-//
-//     va = pte_to_va(currentPTE);
-//
-//     frameNumber = currentPTE->validFormat.frameNumber;
-//
-//     *page = getPFNfromFrameNumber(frameNumber);
-//
-//     enterPageLock(*page, threadInfo);
-//     removeFromMiddleOfList(&headActiveList, *page, threadInfo);
-//
-//     if (MapUserPhysicalPages(va, 1, NULL) == FALSE) {
-//         DebugBreak();
-//         printf("full_virtual_memory_test : could not map VA %p to page %llX\n", va, frameNumber);
-//         return;
-//     }
-//
-//
-//     return;
-// }
-//
-// BOOL unmapRescuePage(pte* currentPTE, PTHREAD_INFO threadInfo, pfn** page, boolean* addToFreeList) {
-//
-//
-//     ULONG64 frameNumber;
-//
-//     pte entryContents;
-//     entryContents.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
-//
-//
-//     if ((entryContents.transitionFormat.contentsLocation != MODIFIED_LIST)  &&
-//         (entryContents.transitionFormat.contentsLocation != STAND_BY_LIST )) {
-//
-//         return REDO_FREE;
-//     }
-//
-//     frameNumber = entryContents.transitionFormat.frameNumber;
-//     page = getPFNfromFrameNumber(frameNumber);
-//
-//     if ((*page)->pte->entireFormat != entryContents.entireFormat) {
-//         return REDO_FREE;
-//     }
-//
-//
-//     enterPageLock(page, threadInfo);
-//
-//     if ((*page)->pte != currentPTE) {
-//         leavePageLock(page, threadInfo);
-//         return REDO_FREE;
-//     }
-//
-//     if ((currentPTE->transitionFormat.contentsLocation != MODIFIED_LIST)  &&
-//         (currentPTE->transitionFormat.contentsLocation != STAND_BY_LIST )) {
-//
-//         leavePageLock(page, threadInfo);
-//         return REDO_FREE;
-//     }
-//     ASSERT(currentPTE->transitionFormat.frameNumber == frameNumber);
-//     //if there is a write in progress
-//     if (page->isBeingWritten == TRUE) {
-//         page->isBeingWritten = FALSE;
-//         page->isBeingFreed = TRUE;
-//         leavePageLock(page, threadInfo);
-//         *addToFreeList = FALSE;
-//     }
-//     else if (currentPTE->transitionFormat.contentsLocation == STAND_BY_LIST) {
-//
-//         removeFromMiddleOfList(&headStandByList, page, threadInfo);
-//         set_disk_space_free(page->diskIndex);
-//         *addToFreeList = TRUE;
-//
-//     } else {
-//         removeFromMiddleOfList(&headModifiedList,page, threadInfo);
-//         *addToFreeList = TRUE;
-//     }
-//
-//
-//
-//     return !REDO_FREE;
-// }
-//
-// VOID unmapDiskFormatPTE(pte* currentPTE, PTHREAD_INFO threadInfo) {
-//     set_disk_space_free(currentPTE->invalidFormat.diskIndex);
-// }
+#include <stdio.h>
+
+#include "utils/pte_utils.h"
+#include "variables/structures.h"
+#include "threads/user_free.h"
+
+#include "disk/disk.h"
+#include "threads/user_thread.h"
+#include "utils/page_utils.h"
+#include "utils/thread_utils.h"
+
+BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
+}
+
+BOOL freePTE(pte *currentPTE, PTHREAD_INFO thread_info) {
+    pte newContents;
+    newContents.entireFormat = 0;
+
+    pte oldContents;
+    pte writeContents;
+    PVOID va;
+
+    pfn* parentPage;
+    pte* parentPTE;
+
+
+    va = pte_to_va(currentPTE);
+
+
+    lockPTE(currentPTE);
+
+    // at this point in time we want another access to this region to trigger a pagefault so the lock stops it
+    // this is not a problem in a real os because the pte 0 already does the unmap
+    if (MapUserPhysicalPages(va, 1, NULL) == FALSE) {
+        printf("Failed to unmap");
+        DebugBreak();
+    }
+
+    oldContents.entireFormat = ReadULong64NoFence(&currentPTE->entireFormat);
+
+    writeContents = writePTE(currentPTE, newContents, oldContents);
+
+    // do something maybe spin
+    if (oldContents.entireFormat != writeContents.entireFormat) {
+    }
+
+
+    if (oldContents.validFormat.valid == FALSE && oldContents.transitionFormat.isTransition == FALSE) {
+        freeDiskPage(oldContents, thread_info);
+    } else {
+        if (oldContents.validFormat.valid == 1) {
+            freeActivePage(oldContents, thread_info);
+        } else {
+            freeTransitionPage(oldContents, thread_info);
+        }
+        parentPTE = getHigherLevelPTEAddress(currentPTE);
+        ASSERT(parentPTE.validFormat.valid == TRUE);
+        parentPage = getPFNfromFrameNumber(parentPTE->validFormat.frameNumber);
+
+        enterPageLock(parentPage, thread_info);
+
+        parentPage->valid_transition_count--;
+    }
+
+
+
+
+
+
+    // at this point in time the pte is zero and we have the previous contents
+    unlockPTE(currentPTE);
+}
+
+BOOL freeActivePage(pte pteContents, PTHREAD_INFO thread_info) {
+    
+}
+
+
+BOOL freeTransitionPage(pte pteContents, PTHREAD_INFO thread_info) {
+    pfn* page;
+
+
+
+
+    page = getPFNfromFrameNumber(pteContents.transitionFormat.frameNumber);
+
+    enterPageLock(page, thread_info);
+
+    // if a disk io is in place, we cannot have the contents of the physical page be changed, so we cannot add it immeadiately
+    //to the free list, our options are to wait until disk io is done which blocks this thread, or set a flag so the writer knows to put
+    // it on the free list
+    if (page->isBeingWritten == 1) {
+        page->isBeingWritten = FALSE;
+        page->isBeingFreed = TRUE;
+    } else {
+        if (page->location == MODIFIED_LIST) {
+            removeFromMiddleOfPageList(&vm.lists.modified, page, thread_info);
+        } else {
+            removeFromMiddleOfPageList(&vm.lists.standby, page, thread_info);
+            freeDiskPage(pteContents, thread_info);
+        }
+        addPageToFreeList(page, thread_info);
+    }
+    leavePageLock(page, thread_info);
+
+    return TRUE;
+}
+
+BOOL freeDiskPage(pte pteContents, PTHREAD_INFO thread_info) {
+    set_disk_space_free(pteContents.invalidFormat.diskIndex);
+
+    return TRUE;
+}
