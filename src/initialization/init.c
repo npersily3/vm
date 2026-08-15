@@ -82,11 +82,12 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
     vm.config.max_commit_size_in_pages = vm.config.number_of_physical_pages + vm.config.disk_size_in_pages
                                          - 2 - vm.config.cumulative_number_of_page_tables;
 
-    // Confine the access pattern to the committed (backable) space, so a large VA (e.g. 3 layers
-    // = 512 GB) never overcommits. Clamp to the real VA (number_of_leaf_ptes = VA in pages) so a
-    // fully-backable config (commit >= VA, e.g. the L=2 default) doesn't index past vm.va.end.
-    ULONG64 accessible_pages = min(vm.config.max_commit_size_in_pages, vm.config.number_of_leaf_ptes);
-    vm.config.virtual_address_size_in_unsigned_chunks = accessible_pages * (PAGE_SIZE / sizeof(ULONG64));
+    // The access pattern roams the whole reserved VA. It used to be clipped to the committed size,
+    // because nothing ever gave memory back and a 512 GB VA would outrun commit; user threads now
+    // hand back their oldest region once they reach their share of max_commit_size_in_pages
+    // (recordRegionVisit in vm.c), so the budget bounds commit rather than the address range.
+    vm.config.virtual_address_size_in_unsigned_chunks =
+            vm.config.number_of_leaf_ptes * (PAGE_SIZE / sizeof(ULONG64));
 
     //threads
     vm.config.number_of_user_threads = number_of_user_threads;

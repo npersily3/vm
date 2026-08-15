@@ -9,6 +9,7 @@
 #include <wchar.h>
 #include "vm.h"
 #include "../../include/variables/macros.h"
+#include "threads/user_free.h"
 #include "threads/user_thread.h"
 #include "utils/random_utils.h"
 #include "utils/statistics_utils.h"
@@ -43,6 +44,73 @@ PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
 
     random_number &= ~0x7;
     return vm.va.start + random_number;
+}
+
+
+/**
+ * @brief The base va of the leaf region (one page table's worth of va) that holds this address.
+ */
+static ULONG64 regionBaseOf(ULONG64 va) {
+    ULONG64 span = vm.config.pte_entries_per_pagetable * PAGE_SIZE;
+
+    return (ULONG64) vm.va.start + ((va - (ULONG64) vm.va.start) / span) * span;
+}
+
+/**
+ * @brief Hands back the region this thread visited longest ago -- every va in it, committed or not.
+ */
+static VOID freeOldestRegion(PTHREAD_INFO thread_info) {
+    ULONG64 oldest;
+    ULONG64 base;
+    ULONG64 i;
+
+    if (thread_info->visitedCount == 0) {
+        return;
+    }
+
+    // visitedHead is the next slot to write, so the oldest live entry is however many entries back
+    oldest = (thread_info->visitedHead + thread_info->regionBudget - thread_info->visitedCount)
+             % thread_info->regionBudget;
+    base = thread_info->visitedRegions[oldest];
+    thread_info->visitedCount--;
+
+    // ponytail: one tree walk per page. A region is exactly one leaf page table, so this could
+    // instead walk down once and free all of its ptes under a single lock. Worth doing if freeing
+    // ever shows up in a profile; the walk is the whole cost here.
+    for (i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
+        freeVA(base + i * PAGE_SIZE, thread_info);
+    }
+}
+
+/**
+ * @brief Records the region a faulting va lives in. If the thread is already at its commit budget,
+ *        this frees the oldest region first, so the new commit lands inside the budget rather than
+ *        pushing past it.
+ */
+static VOID recordRegionVisit(PTHREAD_INFO thread_info, ULONG64 va) {
+    ULONG64 base;
+    ULONG64 newest;
+
+    base = regionBaseOf(va);
+
+    // the access pattern runs sequentially inside a page table most of the time, so comparing
+    // against the newest entry alone catches nearly every repeat. One that slips through costs a
+    // slot and a pass of no-op frees later, it cannot break the bound
+    if (thread_info->visitedCount != 0) {
+        newest = (thread_info->visitedHead + thread_info->regionBudget - 1) % thread_info->regionBudget;
+
+        if (thread_info->visitedRegions[newest] == base) {
+            return;
+        }
+    }
+
+    if (thread_info->visitedCount == thread_info->regionBudget) {
+        freeOldestRegion(thread_info);
+    }
+
+    thread_info->visitedRegions[thread_info->visitedHead] = base;
+    thread_info->visitedHead = (thread_info->visitedHead + 1) % thread_info->regionBudget;
+    thread_info->visitedCount++;
 }
 
 
@@ -249,6 +317,10 @@ DWORD testVM(LPVOID lpParam) {
         }
 
         if (page_faulted) {
+            // before the fault, not after: if this va is in a region we have not got room for, we
+            // give one back first, so we are never over budget even for the length of one fault
+            recordRegionVisit(thread_info, (ULONG64) arbitrary_va);
+
             //continuously fault on the same va
             redo_fault = REDO_FAULT;
             counter = 0;

@@ -644,6 +644,17 @@ typedef struct __declspec(align(512)) {
     listHead localList;
     workDone work;
 
+    // Commit budget. Handed out once at thread creation: an equal slice of what the system can
+    // actually back. Tracked by leaf region (one page table, pte_entries_per_pagetable pages) rather
+    // than by page, so the buffer is 512x smaller and a full buffer is the "about to overcommit"
+    // signal. regionBudget * pte_entries_per_pagetable is an upper bound on the pages held, so
+    // duplicate entries only make the thread more conservative, never less.
+    ULONG64 commitLimitInPages;
+    ULONG64 regionBudget;
+    ULONG64 *visitedRegions;
+    ULONG64 visitedHead;
+    ULONG64 visitedCount;
+
 #if STATS
     statistics stats;
 #endif
