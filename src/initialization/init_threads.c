@@ -49,19 +49,19 @@ VOID createThreads(VOID) {
         ThreadContext->TransferVaIndex = 0;
         init_list_head(&ThreadContext->localList);
 
-        // split what the system can back evenly, then convert to whole leaf regions -- the unit the
-        // thread tracks and frees in. A config too small to give a thread one region still gets one,
-        // otherwise it can never commit anything at all
+        // an equal slice of what the system can actually back. The history is sized to match: a
+        // thread can never hold more committed pages than its quota, so it can never have more
+        // history entries either
         ThreadContext->commitLimitInPages = vm.config.max_commit_size_in_pages / vm.config.number_of_user_threads;
-        ThreadContext->regionBudget = ThreadContext->commitLimitInPages / vm.config.pte_entries_per_pagetable;
 
-        if (ThreadContext->regionBudget == 0) {
-            ThreadContext->regionBudget = 1;
+        if (ThreadContext->commitLimitInPages == 0) {
+            ThreadContext->commitLimitInPages = 1;
         }
 
-        ThreadContext->visitedRegions = init_memory(ThreadContext->regionBudget * sizeof(ULONG64));
-        ThreadContext->visitedHead = 0;
-        ThreadContext->visitedCount = 0;
+        ThreadContext->committedPages = 0;
+        ThreadContext->history = init_memory(ThreadContext->commitLimitInPages * sizeof(ULONG64));
+        ThreadContext->historyHead = 0;
+        ThreadContext->historyCount = 0;
 
         Handle = createNewThread(testVM, ThreadContext);
         ThreadContext->ThreadHandle = Handle;

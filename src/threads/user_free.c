@@ -9,6 +9,7 @@
 #include "threads/user_thread.h"
 #include "utils/page_utils.h"
 #include "utils/pte_regions_utils.h"
+#include "utils/stats.h"
 #include "utils/thread_utils.h"
 
 // A pte nobody has ever touched is all zeroes: not valid, not in transition, no disk slot. It is
@@ -31,7 +32,8 @@ static boolean isPTEEmpty(pte contents) {
  *
  * @param va The virtual address to free.
  * @param thread_info The thread info of the caller.
- * @retval TRUE if the va is now free, including the case where it was never touched.
+ * @retval TRUE if a committed pte was freed, FALSE if there was nothing there to free. The caller
+ *         counts pages with this, so "already free" and "just freed" have to be distinguishable.
  */
 BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
     pte *currentPTE;
@@ -41,8 +43,12 @@ BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
     ULONG64 row;
     ULONG64 layer;
     ULONG64 lastLayer;
+    ULONG64 tablesMaterialized;
 
     lastLayer = vm.config.number_of_page_table_layers - 1;
+    tablesMaterialized = 0;
+
+    STAT_INC(thread_info, frees);
 
     ASSERT(isVaValid(va))
 
@@ -64,7 +70,8 @@ BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
     // an empty pte means nothing below it was ever faulted in, so the whole subtree is already free
     if (isPTEEmpty(localPTE)) {
         LeaveCriticalSection(&vm.pte.rootLock);
-        return TRUE;
+        STAT_INC(thread_info, freeWalkPTsMaterialized[0]);
+        return FALSE;
     }
 
     // single layer config: the root pte is itself the leaf, and its lock is rootLock rather than a
@@ -72,12 +79,14 @@ BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
     if (lastLayer == 0) {
         freePTE(currentPTE, thread_info);
         LeaveCriticalSection(&vm.pte.rootLock);
+        STAT_INC(thread_info, freeWalkPTsMaterialized[0]);
         return TRUE;
     }
 
     if (localPTE.validFormat.valid == 0) {
         while (pageFault(currentPTE, thread_info) == REDO_FAULT) {
         }
+        tablesMaterialized++;
     }
 
     setLockBit(currentPTE);
@@ -100,12 +109,15 @@ BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
 
         if (isPTEEmpty(localPTE)) {
             clearLockBit(parentPTE);
-            return TRUE;
+            STAT_INC(thread_info, freeWalkPTsMaterialized[
+                         tablesMaterialized <= STATS_MAX_LAYERS ? tablesMaterialized : STATS_MAX_LAYERS]);
+            return FALSE;
         }
 
         if (localPTE.validFormat.valid == 0) {
             while (pageFault(currentPTE, thread_info) == REDO_FAULT) {
             }
+            tablesMaterialized++;
         }
 
         setLockBit(currentPTE);
@@ -123,12 +135,24 @@ BOOL freeVA(ULONG64 va, PTHREAD_INFO thread_info) {
 
     localPTE.entireFormat = ReadULong64NoFence(&leafPTE->entireFormat);
 
-    if (isPTEEmpty(localPTE) == FALSE) {
-        // we are still holding parentPTE's bit, which is exactly lockPTE(leafPTE)
-        freePTE(leafPTE, thread_info);
+    // the same walk cost the faulter records, paid the other way round: every table counted here was
+    // one this free had to bring back from disk before it could read what to free
+    STAT_INC(thread_info, freeWalkPTsMaterialized[
+                 tablesMaterialized <= STATS_MAX_LAYERS ? tablesMaterialized : STATS_MAX_LAYERS]);
+
+    if (isPTEEmpty(localPTE)) {
+        clearLockBit(parentPTE);
+        return FALSE;
     }
 
+    // we are still holding parentPTE's bit, which is exactly lockPTE(leafPTE)
+    freePTE(leafPTE, thread_info);
+
     clearLockBit(parentPTE);
+
+    // the other half of the commit counter pageFault maintains. Only leaf ptes ever reach here, so
+    // this pairs one for one with the increment there
+    thread_info->committedPages--;
 
     return TRUE;
 }
@@ -172,11 +196,14 @@ BOOL freePTE(pte *currentPTE, PTHREAD_INFO thread_info) {
 
 
     if (oldContents.validFormat.valid == FALSE && oldContents.transitionFormat.isTransition == FALSE) {
+        STAT_INC(thread_info, freed[FREE_DISK]);
         freeDiskPage(oldContents, thread_info);
     } else {
         if (oldContents.validFormat.valid == 1) {
+            STAT_INC(thread_info, freed[FREE_ACTIVE]);
             freeActivePage(oldContents, thread_info);
         } else {
+            STAT_INC(thread_info, freed[FREE_TRANSITION]);
             freeTransitionPage(oldContents, thread_info);
         }
         parentPTE = getHigherLevelPTEAddress(currentPTE);

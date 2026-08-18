@@ -85,7 +85,7 @@ VOID init_config_params(ULONG64 number_of_user_threads, ULONG64 num_layers, ULON
     // The access pattern roams the whole reserved VA. It used to be clipped to the committed size,
     // because nothing ever gave memory back and a 512 GB VA would outrun commit; user threads now
     // hand back their oldest region once they reach their share of max_commit_size_in_pages
-    // (recordRegionVisit in vm.c), so the budget bounds commit rather than the address range.
+    // (freeOldestPages in vm.c), so the budget bounds commit rather than the address range.
     vm.config.virtual_address_size_in_unsigned_chunks =
             vm.config.number_of_leaf_ptes * (PAGE_SIZE / sizeof(ULONG64));
 

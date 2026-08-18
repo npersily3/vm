@@ -123,6 +123,11 @@ typedef struct {
 
 #define BATCH_SIZE (512)
 
+// How much of its quota a user thread hands back once it reaches it. Freeing a single page per fault
+// would also work, but then every fault at the ceiling pays for a tree walk; a small run amortizes
+// that over the faults that follow.
+#define PAGES_TO_FREE_AT_QUOTA (64)
+
 
 #define NUM_WRITING_BATCHES (128)
 
@@ -543,6 +548,13 @@ typedef struct {
 #define RESCUE_MODIFIED  2
 #define RESCUE_KINDS     3
 
+// The three shapes a free can take, the mirror of the rescue kinds: where the page was when the
+// free reached it. Same split freePTE branches on.
+#define FREE_ACTIVE      0
+#define FREE_TRANSITION  1
+#define FREE_DISK        2
+#define FREE_KINDS       3
+
 // The four mutually exclusive things the ager can do to a pte, counted per layer. AGER_PRUNED is the
 // subtree skip -- the whole point of the tree comb, and the one number that says whether it pays.
 #define AGER_LEAF_REGION  0
@@ -570,6 +582,22 @@ typedef struct {
 
     // -- user threads: multilevel walk cost --
     ULONG64 walkPTsMaterialized[STATS_MAX_LAYERS + 1];
+
+    // -- user threads: frees. The mirror of the fault counters above: frees counts freeVA entries
+    // the way faults counts fault entries, freed[] splits them the way rescues[] does, and
+    // freeWalkPTsMaterialized is the same walk cost paid in reverse -- a free has to fault a
+    // trimmed-out page table back in before it can read what to free.
+    ULONG64 frees;
+    ULONG64 freed[FREE_KINDS];
+    ULONG64 freeWalkPTsMaterialized[STATS_MAX_LAYERS + 1];
+    ULONG64 quotaTrips;
+    ULONG64 freeBatchSum;
+    ULONG64 freeBatchCount;
+    ULONG64 freeBatchHist[STATS_BUCKETS];
+
+    // -- user threads: access pattern. Revisits are accesses aimed at an address this thread has
+    // touched before, the only way to tell the history is doing anything.
+    ULONG64 revisits;
 
     // -- user threads: free list contention --
     ULONG64 freeListSearches;
@@ -644,16 +672,20 @@ typedef struct __declspec(align(512)) {
     listHead localList;
     workDone work;
 
-    // Commit budget. Handed out once at thread creation: an equal slice of what the system can
-    // actually back. Tracked by leaf region (one page table, pte_entries_per_pagetable pages) rather
-    // than by page, so the buffer is 512x smaller and a full buffer is the "about to overcommit"
-    // signal. regionBudget * pte_entries_per_pagetable is an upper bound on the pages held, so
-    // duplicate entries only make the thread more conservative, never less.
+    // Commit budget, handed out once at thread creation: an equal slice of what the system can
+    // actually back. committedPages is maintained by the fault path (pageFault, on the branch that
+    // finds the pte invalid) and by freeVA, so it counts exactly the leaf ptes this thread put into
+    // commit and has not given back.
+    //
+    // history is every one of those pages, oldest first: the access pattern draws from it to revisit
+    // addresses it has already touched, and the quota check frees from its tail. Push on commit and
+    // pop on free are 1:1, so historyCount and committedPages track each other, and a buffer of
+    // commitLimitInPages entries can never overflow.
     ULONG64 commitLimitInPages;
-    ULONG64 regionBudget;
-    ULONG64 *visitedRegions;
-    ULONG64 visitedHead;
-    ULONG64 visitedCount;
+    ULONG64 committedPages;
+    ULONG64 *history;
+    ULONG64 historyHead;
+    ULONG64 historyCount;
 
 #if STATS
     statistics stats;

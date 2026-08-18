@@ -48,73 +48,77 @@ PULONG_PTR get_arbitrary_va(PTHREAD_INFO thread_info) {
 
 
 /**
- * @brief The base va of the leaf region (one page table's worth of va) that holds this address.
+ * @brief Appends a page this thread just committed to its history.
  */
-static ULONG64 regionBaseOf(ULONG64 va) {
-    ULONG64 span = vm.config.pte_entries_per_pagetable * PAGE_SIZE;
+static VOID historyPush(PTHREAD_INFO thread_info, ULONG64 va) {
+    // pushes are 1:1 with commits and pops are 1:1 with frees, so the buffer holds exactly the live
+    // commits and cannot outgrow the quota it was sized from
+    ASSERT(thread_info->historyCount < thread_info->commitLimitInPages)
 
-    return (ULONG64) vm.va.start + ((va - (ULONG64) vm.va.start) / span) * span;
+    thread_info->history[thread_info->historyHead] = va;
+    thread_info->historyHead = (thread_info->historyHead + 1) % thread_info->commitLimitInPages;
+    thread_info->historyCount++;
 }
 
 /**
- * @brief Hands back the region this thread visited longest ago -- every va in it, committed or not.
+ * @brief An address this thread has touched before, drawn uniformly from its history.
+ * @retval NULL if it has not committed anything yet.
  */
-static VOID freeOldestRegion(PTHREAD_INFO thread_info) {
+static PULONG_PTR historyPick(PTHREAD_INFO thread_info) {
+    ULONG64 back;
+    ULONG64 index;
+
+    if (thread_info->historyCount == 0) {
+        return NULL;
+    }
+
+    // count back from the newest entry, so the arithmetic does not care where the ring wrapped
+    back = GetNextRandom(&thread_info->rng) % thread_info->historyCount;
+    index = (thread_info->historyHead + thread_info->commitLimitInPages - 1 - back)
+            % thread_info->commitLimitInPages;
+
+    return (PULONG_PTR) thread_info->history[index];
+}
+
+/**
+ * @brief Frees the pages this thread committed longest ago, until it is back under quota.
+ */
+static VOID freeOldestPages(PTHREAD_INFO thread_info) {
     ULONG64 oldest;
-    ULONG64 base;
-    ULONG64 i;
+    ULONG64 va;
+    ULONG64 freed;
+    ULONG64 target;
 
-    if (thread_info->visitedCount == 0) {
-        return;
-    }
+    freed = 0;
+    target = thread_info->committedPages > PAGES_TO_FREE_AT_QUOTA
+                 ? thread_info->committedPages - PAGES_TO_FREE_AT_QUOTA
+                 : 0;
 
-    // visitedHead is the next slot to write, so the oldest live entry is however many entries back
-    oldest = (thread_info->visitedHead + thread_info->regionBudget - thread_info->visitedCount)
-             % thread_info->regionBudget;
-    base = thread_info->visitedRegions[oldest];
-    thread_info->visitedCount--;
+    while (thread_info->committedPages > target && thread_info->historyCount != 0) {
+        // historyHead is the next slot to write, so the oldest live entry is historyCount back
+        oldest = (thread_info->historyHead + thread_info->commitLimitInPages - thread_info->historyCount)
+                 % thread_info->commitLimitInPages;
+        va = thread_info->history[oldest];
+        thread_info->historyCount--;
 
-    // ponytail: one tree walk per page. A region is exactly one leaf page table, so this could
-    // instead walk down once and free all of its ptes under a single lock. Worth doing if freeing
-    // ever shows up in a profile; the walk is the whole cost here.
-    for (i = 0; i < vm.config.pte_entries_per_pagetable; i++) {
-        freeVA(base + i * PAGE_SIZE, thread_info);
-    }
-}
-
-/**
- * @brief Records the region a faulting va lives in. If the thread is already at its commit budget,
- *        this frees the oldest region first, so the new commit lands inside the budget rather than
- *        pushing past it.
- */
-static VOID recordRegionVisit(PTHREAD_INFO thread_info, ULONG64 va) {
-    ULONG64 base;
-    ULONG64 newest;
-
-    base = regionBaseOf(va);
-
-    // the access pattern runs sequentially inside a page table most of the time, so comparing
-    // against the newest entry alone catches nearly every repeat. One that slips through costs a
-    // slot and a pass of no-op frees later, it cannot break the bound
-    if (thread_info->visitedCount != 0) {
-        newest = (thread_info->visitedHead + thread_info->regionBudget - 1) % thread_info->regionBudget;
-
-        if (thread_info->visitedRegions[newest] == base) {
-            return;
+        // freeVA decrements committedPages itself when it actually frees something, which is what
+        // ends this loop
+        if (freeVA(va, thread_info) == TRUE) {
+            freed++;
         }
     }
 
-    if (thread_info->visitedCount == thread_info->regionBudget) {
-        freeOldestRegion(thread_info);
-    }
-
-    thread_info->visitedRegions[thread_info->visitedHead] = base;
-    thread_info->visitedHead = (thread_info->visitedHead + 1) % thread_info->regionBudget;
-    thread_info->visitedCount++;
+    STAT_INC(thread_info, quotaTrips);
+    STAT_SAMPLE(thread_info, freeBatch, freed);
 }
 
 
 #define PAGE_JUMP_PROBABILITY .1
+
+// Of the page jumps, the share that lands on an address this thread has committed before instead of
+// a fresh one. Without it the pattern only ever sprays new pages: nothing is re-accessed, so nothing
+// is ever hot, and the age lists have no reason to prefer one page over another.
+#define REVISIT_PROBABILITY .5
 
 /**
  * @brief Gets the next va based on an algorithm that decides if it should access sequentially or randomly
@@ -125,7 +129,7 @@ static VOID recordRegionVisit(PTHREAD_INFO thread_info, ULONG64 va) {
 PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO thread_info) {
     // Generate the next VA
     PULONG_PTR new_va = (previous_va + 1);
-    // wrap at the committed window (not vm.va.end) so the sequential walk stays backable too
+    // wrap at the end of the va space
     if (new_va >= vm.va.start + vm.config.virtual_address_size_in_unsigned_chunks)
         new_va = vm.va.start;
 
@@ -136,8 +140,23 @@ PULONG_PTR get_next_va(PULONG_PTR previous_va, PTHREAD_INFO thread_info) {
     // And we will jump to a random page with a probability (1-p)
 
     double p = (double) (GetNextRandom(&thread_info->rng) >> 11) * (1.0 / 9007199254740992.0);
-    if (p < PAGE_JUMP_PROBABILITY)
-        new_va = get_arbitrary_va(thread_info);
+    if (p < PAGE_JUMP_PROBABILITY) {
+        PULONG_PTR revisit = NULL;
+        double q = (double) (GetNextRandom(&thread_info->rng) >> 11) * (1.0 / 9007199254740992.0);
+
+        // a jump either revisits something in our history or goes somewhere new. Early on the
+        // history is empty, so those jumps fall through to a fresh address on their own
+        if (q < REVISIT_PROBABILITY) {
+            revisit = historyPick(thread_info);
+        }
+
+        if (revisit != NULL) {
+            STAT_INC(thread_info, revisits);
+            new_va = revisit;
+        } else {
+            new_va = get_arbitrary_va(thread_info);
+        }
+    }
 
     return new_va;
 }
@@ -259,6 +278,7 @@ DWORD testVM(LPVOID lpParam) {
     BOOL redo_fault;
     BOOL redo_try_same_address;
     ULONG64 counter;
+    ULONG64 committedBefore;
 
     i = 1;
     thread_info = (PTHREAD_INFO) lpParam;
@@ -280,7 +300,7 @@ DWORD testVM(LPVOID lpParam) {
 #else
 
     //MB(1)/NUMBER_OF_USER_THREADS
-    for (; i < GB(100); ) {
+    for (; i < GB(1); ) {
 
         //while (TRUE) {
 #endif
@@ -317,9 +337,13 @@ DWORD testVM(LPVOID lpParam) {
         }
 
         if (page_faulted) {
-            // before the fault, not after: if this va is in a region we have not got room for, we
-            // give one back first, so we are never over budget even for the length of one fault
-            recordRegionVisit(thread_info, (ULONG64) arbitrary_va);
+            // hand pages back before taking any, not after: the fault below may commit one, and we
+            // would rather sit at the quota than step over it
+            if (thread_info->committedPages >= thread_info->commitLimitInPages) {
+                freeOldestPages(thread_info);
+            }
+
+            committedBefore = thread_info->committedPages;
 
             //continuously fault on the same va
             redo_fault = REDO_FAULT;
@@ -327,6 +351,14 @@ DWORD testVM(LPVOID lpParam) {
             while (redo_fault == REDO_FAULT) {
                 redo_fault = pageFaultEntryPoint(arbitrary_va, lpParam);
             }
+
+            // pageFault is what counts the commit, so the counter moving is how we know this fault
+            // took a new page rather than rescuing one we already had. Only then does the page join
+            // the history, which is both what we revisit and what we free from
+            if (thread_info->committedPages != committedBefore) {
+                historyPush(thread_info, ROUND_DOWN_TO_PAGE(arbitrary_va));
+            }
+
             redo_try_same_address = TRUE;
             i--;
         } else {

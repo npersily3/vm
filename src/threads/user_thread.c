@@ -349,15 +349,23 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
 
     PTE_REGION* region;
     LONG64 oldAge;
+    ULONG64 layer;
 
 
     returnValue = !REDO_FAULT;
 
+    layer = findPTELayer(currentPTE);
 
     pteContents.entireFormat = ReadULong64NoFence((volatile ULONG64 *) currentPTE);
 
     // If the page fault was already handled by another thread
     if (pteContents.validFormat.valid != TRUE) {
+        // A pte with no frame in transition and no disk slot has never held anything: this fault is
+        // what puts it into commit. A rescue or a disk read is a page that is already committed, so
+        // neither of those moves the counter.
+        boolean firstCommit = (pteContents.transitionFormat.isTransition == 0)
+                              && (pteContents.invalidFormat.diskIndex == 0);
+
         // If the pte is in flight in the system threads
         if (currentPTE->transitionFormat.isTransition == TRUE) {
             // Determine if the rescue told us to back up or not
@@ -393,8 +401,15 @@ BOOL pageFault(pte *currentPTE, LPVOID threadContext) {
                 return FALSE;
             }
 
+            // Page tables are not commitable data -- init reserves for the whole tree up front and
+            // takes it out of max_commit_size_in_pages -- so only leaf ptes count against the
+            // faulting thread's quota. The free path decrements this in freeVA.
+            if (firstCommit && layer == vm.config.number_of_page_table_layers - 1) {
+                ((PTHREAD_INFO) threadContext)->committedPages++;
+            }
+
             // we do not need to updat the count of root because that should never be trimmed
-            if (findPTELayer(currentPTE) > 0) {
+            if (layer > 0) {
                 higherLevelPTE = getHigherLevelPTEAddress(currentPTE);
                 //TODO can this tear,
                 higherLevelPage = getPFNfromFrameNumber(higherLevelPTE->validFormat.frameNumber);

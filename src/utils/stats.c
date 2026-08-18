@@ -414,6 +414,7 @@ VOID printStats(ULONG64 elapsedMs) {
     {
         statistics stats;
         ULONG64 rescueTotal;
+        ULONG64 freedTotal;
         ULONG64 trimmedTotal;
         ULONG64 agedTotal;
 
@@ -489,6 +490,69 @@ VOID printStats(ULONG64 elapsedMs) {
 
             printf("\n");
             row("tables per 1000 faults", "%llu", safeDiv(weighted * 1000, total));
+        }
+
+        //
+        // What a free cost. The mirror of FAULT DETAIL: entries is every freeVA the budget forced,
+        // most of which find a pte that is already free, exactly as most fault entries find a pte
+        // another thread already handled.
+        //
+        freedTotal = stats.freed[FREE_ACTIVE] + stats.freed[FREE_TRANSITION] + stats.freed[FREE_DISK];
+
+        rule("FREE DETAIL");
+        row("entries", "%s", fmtCount(stats.frees));
+        row("pages freed", "%s  (%.2f%%)", fmtCount(freedTotal), pct(freedTotal, stats.frees));
+        row("already free", "%s  (%.2f%%)", fmtCount(stats.frees - freedTotal),
+            pct(stats.frees - freedTotal, stats.frees));
+        row("quota trips", "%s", fmtCount(stats.quotaTrips));
+        row("pages per trip", "%llu  (target %d)", safeDiv(stats.freeBatchSum, stats.freeBatchCount),
+            PAGES_TO_FREE_AT_QUOTA);
+        row("revisits", "%s  (%.2f%% of faults)", fmtCount(stats.revisits),
+            pct(stats.revisits, stats.faults));
+        printf("\n  freed kind\n");
+        {
+            ULONG64 max = 0;
+            for (int i = 0; i < FREE_KINDS; i++) {
+                if (stats.freed[i] > max) {
+                    max = stats.freed[i];
+                }
+            }
+            rowBar("active", stats.freed[FREE_ACTIVE], freedTotal, max);
+            rowBar("transition", stats.freed[FREE_TRANSITION], freedTotal, max);
+            rowBar("on disk", stats.freed[FREE_DISK], freedTotal, max);
+        }
+        printf("\n  pages freed per quota trip\n");
+        histogram(stats.freeBatchHist, FALSE, ticksPerUs);
+
+        //
+        // The same walk cost as TREE WALK above, paid in reverse. Anything above zero here is a page
+        // table read back from disk purely so a free could see what was under it.
+        //
+        rule("FREE TREE WALK  (page tables faulted back in per free)");
+        {
+            ULONG64 total = 0;
+            ULONG64 max = 0;
+            ULONG64 weighted = 0;
+            char label[32];
+
+            for (ULONG64 i = 0; i <= STATS_MAX_LAYERS; i++) {
+                total += stats.freeWalkPTsMaterialized[i];
+                weighted += i * stats.freeWalkPTsMaterialized[i];
+                if (stats.freeWalkPTsMaterialized[i] > max) {
+                    max = stats.freeWalkPTsMaterialized[i];
+                }
+            }
+
+            for (ULONG64 i = 0; i <= STATS_MAX_LAYERS; i++) {
+                if (stats.freeWalkPTsMaterialized[i] == 0) {
+                    continue;
+                }
+                snprintf(label, sizeof(label), "%llu table%s", i, i == 1 ? "" : "s");
+                rowBar(label, stats.freeWalkPTsMaterialized[i], total, max);
+            }
+
+            printf("\n");
+            row("tables per 1000 frees", "%llu", safeDiv(weighted * 1000, total));
         }
 
         //
